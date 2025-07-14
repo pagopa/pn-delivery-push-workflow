@@ -16,14 +16,21 @@ Parameters:
     Type: String
     Description: URL da cui caricare i frammenti di template di infrastruttura
   
+  AlarmSNSTopicName:
+    Type: String
+    Description: 'Topic alarm'
+  
+  LogRetention:
+    Type: Number
+    Default: 14
+  
+  AlarmSNSTopicArn:
+    Type: String
+  
   Version:
     Type: String
     Description: 'keep track of used projects commitIds'
   
-  CdcKinesisSourceStreamArn:
-    Type: String
-    Description: 'Where to send CDC'
-
 Resources:
     NullResource:
         Type: AWS::CloudFormation::WaitConditionHandle
