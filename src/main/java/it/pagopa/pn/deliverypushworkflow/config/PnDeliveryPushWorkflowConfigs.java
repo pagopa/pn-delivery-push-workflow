@@ -11,5 +11,4 @@ import org.springframework.context.annotation.Import;
 @Data
 @Import({SharedAutoConfiguration.class})
 public class PnDeliveryPushWorkflowConfigs {
-
 }

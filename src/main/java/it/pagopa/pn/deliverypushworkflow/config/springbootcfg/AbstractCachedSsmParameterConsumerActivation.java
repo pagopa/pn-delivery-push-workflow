@@ -1,4 +1,4 @@
-package it.pagopa.pn.deliverypushworkflow.config;
+package it.pagopa.pn.deliverypushworkflow.config.springbootcfg;
 
 import it.pagopa.pn.commons.abstractions.impl.AbstractCachedSsmParameterConsumer;
 import org.springframework.context.annotation.Configuration;

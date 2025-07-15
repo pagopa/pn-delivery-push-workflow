@@ -1,4 +1,4 @@
-package it.pagopa.pn.deliverypushworkflow.config;
+package it.pagopa.pn.deliverypushworkflow.config.springbootcfg;
 
 
 import it.pagopa.pn.commons.exceptions.ExceptionHelper;

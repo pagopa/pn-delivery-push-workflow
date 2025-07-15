@@ -1,4 +1,4 @@
-package it.pagopa.pn.deliverypushworkflow.config;
+package it.pagopa.pn.deliverypushworkflow.config.springbootcfg;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.springframework.beans.factory.annotation.Qualifier;
