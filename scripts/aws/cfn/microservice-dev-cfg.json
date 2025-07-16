@@ -1,15 +1,30 @@
 {
   "Parameters": {
-    "EnhancedWebSecurityEnabled": "true",
-    "CpuValue": "2048",
-    "MemoryAmount": "4GB",
-    "MinTasksNumber": "1",
-    "MaxTasksNumber": "1",
-    "AutoscalingThreshold": "650",
     "CpuValueWorkflow": "2048",
     "MemoryAmountWorkflow": "4GB",
     "MinTasksNumberWorkflow": "1",
     "MaxTasksNumberWorkflow": "1",
-    "AutoscalingThresholdWorkflow": "650"
+    "AutoscalingThresholdWorkflow": "650",
+    "DocumentCreationRequestTableName": "pn-DocumentCreationRequestTable",
+    "DocumentCreationRequestTableArn": "arn:aws:dynamodb:eu-south-1:830192246553:table/pn-DocumentCreationRequestTable",
+    "PaperNotificationFailedDynamoTableName": "pn-PaperNotificationFailed",
+    "PaperNotificationFailedDynamoTableArn": "arn:aws:dynamodb:eu-south-1:830192246553:table/pn-PaperNotificationFailed",
+    "DeliveryPushInputsQueueName": "pn-delivery_push_inputs.fifo",
+    "DeliveryPushInputsQueueARN": "arn:aws:sqs:eu-south-1:830192246553:pn-delivery_push_inputs.fifo",
+    "DeliveryPushInputsQueueAlarmARN": "arn:aws:cloudwatch:eu-south-1:830192246553:alarm:pn-delivery_push_inputs-DLQ-HasMessage",
+    "DeliveryPushInputsQueueAgeAlarmARN": "arn:aws:cloudwatch:eu-south-1:830192246553:alarm:pn-delivery_push_inputs-HasOldMessage",
+    "ExternalChannelsOutputsQueueName": "pn-external_channel_outputs",
+    "ExternalChannelsOutputsQueueARN": "arn:aws:sqs:eu-south-1:830192246553:pn-external_channel_outputs",
+    "ScheduledActionsQueueName": "pn-delivery_push_actions",
+    "ScheduledActionsQueueARN": "arn:aws:sqs:eu-south-1:830192246553:pn-delivery_push_actions",
+    "ScheduledActionsQueueAlarmARN": "arn:aws:cloudwatch:eu-south-1:830192246553:alarm:pn-delivery_push_actions-DLQ-HasMessage",
+    "ScheduledActionsQueueAgeAlarmARN": "arn:aws:cloudwatch:eu-south-1:830192246553:alarm:pn-delivery_push_actions-HasOldMessage",
+    "NationalRegistries2DeliveryPushQueueName": "pn-nationalregistries_to_deliverypush",
+    "NationalRegistries2DeliveryPushQueueARN": "arn:aws:sqs:eu-south-1:830192246553:pn-nationalregistries_to_deliverypush",
+    "NationalRegistries2DeliveryPushQueueAlarmARN": "arn:aws:cloudwatch:eu-south-1:830192246553:alarm:pn-nationalregistries_to_deliverypush-DLQ-HasMessage",
+    "NationalRegistries2DeliveryPushQueueAgeAlarmARN": "arn:aws:cloudwatch:eu-south-1:830192246553:alarm:pn-nationalregistries_to_deliverypush-HasOldMessage",
+    "EcsWorkflowLogGroup": "/aws/ecs/pn-delivery-push-workflow",
+    "ExternalChannelBaseUrl": "http://internal-pn-re-Appli-48XPECMOE3EA-883877619.eu-south-1.elb.amazonaws.com:8080/",
+    "SandboxSafeStorageBaseUrl": "http://vpce-0dded6c8c8504a79b-oqtwh7nb.vpce-svc-07d53855bfe7d3c4a.eu-south-1.vpce.amazonaws.com:8080/"
   }
 }
