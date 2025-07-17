@@ -1,0 +1,28 @@
+package it.pagopa.pn.deliverypushworkflow.middleware.pnclient.paperchannel;
+
+
+import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
+import it.pagopa.pn.deliverypushworkflow.dto.delivery.notification.NotificationInt;
+import it.pagopa.pn.deliverypushworkflow.dto.delivery.notification.NotificationRecipientInt;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+import java.util.List;
+
+@Data
+@AllArgsConstructor
+@Builder
+@EqualsAndHashCode
+public class PaperChannelSendRequest {
+    private final NotificationInt notificationInt;
+    private final NotificationRecipientInt recipientInt;
+    private final PhysicalAddressInt receiverAddress;
+    private final String requestId;
+    private final String productType;
+    private final List<String> attachments;
+    private final PhysicalAddressInt arAddress;
+    private final PhysicalAddressInt senderAddress;
+
+}

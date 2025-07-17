@@ -1,4 +1,4 @@
-package it.pagopa.pn.deliverypushworkflow.middleware.queue.springbootcfg;
+package it.pagopa.pn.deliverypushworkflow.config;
 
 import it.pagopa.pn.commons.abstractions.impl.AbstractCachedSsmParameterConsumer;
 import it.pagopa.pn.commons.configs.aws.AwsConfigs;
