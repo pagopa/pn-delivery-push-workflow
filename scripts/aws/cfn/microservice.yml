@@ -6,11 +6,11 @@ Parameters:
     Type: String
     Description: 'Usually pn can be pnXYZ where XYZ are the feature number, useful to create
       experimental environments without crash official development environment'
-
+  
   AlarmSNSTopicArn:
     Type: String
     Description: ARN of alarm topic
-
+  
   WebApiDnsName:
     Type: String
     Description: 'The DNS name used for WEB rest API.'
@@ -18,27 +18,27 @@ Parameters:
   CorsAllowedDomains:
     Type: String
     Description: 'Comma separated list of domains allowed to make cross origin request'
-
+  
   ContainerImageUri:
     Type: String
     Description: 'Exact container image URI with full repository and image digest'
-
+  
   MicroserviceNumber:
     Type: Number
     Description: 'Disambiguation useful for load balancer rules'
-
+  
   TemplateBucketBaseUrl:
     Type: String
     Description: 'The S3 bucket from which to fetch the templates used by this stack.'
-
+  
   ECSClusterName:
     Type: String
     Description: 'The name of the ECS cluster where the microservice is going to be deployed'
-
+  
   SubnetsIds:
     Type: String
     Description: 'subnets ids comma separated list. Where to deploy the microservice'
-
+  
   VpcId:
     Type: String
     Description: 'VpcId where the microservice is going to be deployed'
@@ -46,15 +46,24 @@ Parameters:
   EcsDefaultSecurityGroup:
     Type: String
     Description: 'Default security group required by infrastructure'
-
+  
   ApplicationLoadBalancerListenerArn:
     Type: String
     Description: 'Load balancer listener where HTTP endpoints is going to be registered'
-
+  
   ApplicationLoadBalancerDomain:
     Type: String
     Description: 'Base URL of the load balancer where the service is going to be reachable'
-
+  
+  ApplicationLoadBalancerMetricsDimensionName:
+    Type: String
+    Default: ''
+    Description: 'Application load balancer dimension name'
+  
+  AlbSecurityGroup:
+    Type: String
+    Description: 'Application load balancer security group'
+  
   NetworkLoadBalancerLink:
     Type: String
     Description: 'network load balancer link for API-GW'
@@ -142,19 +151,143 @@ Parameters:
     Default: 1
     Type: Number
     Description: activate when N datapoint on M (Workflow task)
-    
+  
   ApplicativeEnvFileChecksum:
     Type: String
     Default: ''
     Description: 'Applicative environment variable file checksum'
+    
+  # Log group parameters
+  EcsWorkflowLogGroup:
+    Type: String
+    Description: 'Ecs log group name (Workflow task)'
   
+  LogAlarmStrategy:
+    Type: String
+    Default: 'FATAL'
+  
+  # --- Base URLs ---
+  ExternalChannelBaseUrl:
+    Type: String
+    Description: 'External channel base url'
+  
+  SandboxSafeStorageBaseUrl:
+    Type: String
+    Description: 'Safe storage base url'
+  
+  # --- DynamoDB Tables ---
+  PaperNotificationFailedDynamoTableName:
+    Type: String
+    Description: 'Name of dynamodb table containing unreacheble notifications recipients'
+  
+  PaperNotificationFailedDynamoTableArn:
+    Type: String
+    Description: 'ARN of dynamodb table containing unreacheble notifications recipients'
+  
+  DocumentCreationRequestTableName:
+    Type: String
+    Description: 'Name of dynamodb table containing unreacheble notifications recipients'
+  
+  DocumentCreationRequestTableArn:
+    Type: String
+    Description: 'ARN of dynamodb table containing unreacheble notifications recipients'
+    
+  # --- SQS Queues ---
+  DeliveryPushInputsQueueName:
+    Type: String
+    Description: 'Queue to pull for inputs event'
+    
+  DeliveryPushInputsQueueARN:
+    Type: String
+    Description: 'Queue to pull for inputs event'
+    
+  DeliveryPushInputsQueueAlarmARN:
+    Type: String
+    Description: 'pn-delivery-push input queue alarm ARN'
+    
+  DeliveryPushInputsQueueAgeAlarmARN:
+    Type: String
+    Description: 'pn-delivery-push input queue age alarm ARN'
+    
+  ExternalChannelsOutputsQueueName:
+    Type: String
+    Description: 'Pull external-channel messages from this Queue'
+    
+  ExternalChannelsOutputsQueueARN:
+    Type: String
+    Description: 'Pull external-channel messages from this Queue'
+    
+  ScheduledActionsQueueName:
+    Type: String
+    Description: 'Send and pull ready-to-do actions th this queue'
+    
+  ScheduledActionsQueueARN:
+    Type: String
+    Description: 'Send and pull ready-to-do actions th this queue'
+    
+  ScheduledActionsQueueAlarmARN:
+    Type: String
+    Description: delivery push actions done queue dlq alarm ARN
+    
+  ScheduledActionsQueueAgeAlarmARN:
+    Type: String
+    Description: delivery push actions done queue age alarm ARN
+    
+  NationalRegistries2DeliveryPushQueueName:
+    Type: String
+    Description: 'National Registries to delivery-push queue name'
+    
+  NationalRegistries2DeliveryPushQueueARN:
+    Type: String
+    Description: 'National Registries to delivery-push queue ARN'
+    
+  NationalRegistries2DeliveryPushQueueAlarmARN:
+    Type: String
+    Description: 'National Registries to delivery-push queue dlq alarm'
+    
+  NationalRegistries2DeliveryPushQueueAgeAlarmARN:
+    Type: String
+    Description: 'National Registries to delivery-push queue age alarm'
+    
+  DeliveryPushToExternalRegistriesQueueURL: # defined in pn-infra
+    Type: String
+    Description: 'delivery-push to external-registries queue URL'
+    
+  DeliveryPushToExternalRegistriesQueueARN: # defined in pn-infra
+    Type: String
+    Description: 'delivery-push to external-registries queue ARN'
+  
+  # --- FeatureFlags ---
+  WebhookFeatureFlags:
+    Type: CommaDelimitedList
+    Description: List containing in order StartReadStream, StopReadStream, StartWriteBusinessTimestamp, StopWriteBusinessTimestamp
+    Default: '1999-01-01T00:00:00Z,2099-02-01T00:00:00Z,2099-01-01T00:00:00Z,2099-02-01T00:00:00Z'
+  
+  pfNewWorkflowFeatureFlag:
+    Type: CommaDelimitedList
+    Description: List containing in order pfNewWorkflowStart, pfNewWorkflowStop
+    Default: '2099-01-01T00:00:00Z,2099-02-01T00:00:00Z'
+  
+  PagoPaNotificationFee:
+    Type: String
+    Description: 'PagoPa notification fee per le notifiche create PRIMA della v2.1. Per le successive, il default viene impostato da pn-delivery e arriva nella notifica.'
+    Default: '100'
+  
+  PagoPaNotificationVat:
+    Type: String
+    Description: 'PagoPa notification vat per le notifiche create PRIMA della v2.1. Per le successive, il default viene impostato da pn-delivery e arriva nella notifica.'
+    Default: '22'
+  
+Conditions:
+    UseExternalChannelMock: !Equals [ !Ref ExternalChannelBaseUrl, "Mock" ]
+
 Resources:
   DeliveryPushWorkflowServiceMicroservice:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/ecs-service.yaml"
       Parameters:
-        MicroServiceUniqueName: !Sub '${ProjectName}-pn-delivery-push-workflow-service'
+        MicroServiceUniqueName: !Sub '${ProjectName}-delivery-push-workflow-service'
         CpuValue: !Ref CpuValueWorkflow
         MemoryAmount: !Ref MemoryAmountWorkflow
         HealthCheckTimeout: !Ref HealthCheckTimeout
@@ -171,6 +304,37 @@ Resources:
         AlarmSNSTopicArn: !Ref AlarmSNSTopicArn
         ContainerImageURI: !Sub '${ContainerImageUri}'
         ContainerEnvEntry1: !Sub 'AWS_REGIONCODE=${AWS::Region}'
+        ContainerEnvEntry2: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_NEWNOTIFICATIONS=${DeliveryPushInputsQueueName}'
+        ContainerEnvEntry3: !Sub 'PN_DELIVERYPUSHWORKFLOW_PAPERCHANNELBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
+        ContainerEnvEntry4: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_FROMEXTERNALCHANNEL=${ExternalChannelsOutputsQueueName}'
+        ContainerEnvEntry5: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_SCHEDULEDACTIONS=${ScheduledActionsQueueName}'
+        ContainerEnvEntry6:
+          Fn::If:
+            - UseExternalChannelMock
+            - !Sub 'PN_DELIVERYPUSHWORKFLOW_EXTERNALCHANNELBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
+            - !Sub 'PN_DELIVERYPUSHWORKFLOW_EXTERNALCHANNELBASEURL=${ExternalChannelBaseUrl}'
+        ContainerEnvEntry7: !Sub 'PN_DELIVERYPUSHWORKFLOW_USERATTRIBUTESBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
+        ContainerEnvEntry8: !Sub 'PN_DELIVERYPUSHWORKFLOW_SAFESTORAGEBASEURL=${SandboxSafeStorageBaseUrl}'
+        ContainerEnvEntry9: !Sub 'PN_DELIVERYPUSHWORKFLOW_DELIVERYBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
+        ContainerEnvEntry10: !Sub 'PN_DELIVERYPUSHWORKFLOW_MANDATEBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
+        ContainerEnvEntry11: !Sub 'PN_DELIVERYPUSHWORKFLOW_EXTERNALREGISTRYBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
+        ContainerEnvEntry12: !Sub 'CORS_ALLOWED_DOMAINS=${CorsAllowedDomains}'
+        ContainerEnvEntry13: !Sub 'PN_DELIVERYPUSH_FAILEDNOTIFICATIONDAO_TABLENAME=${PaperNotificationFailedDynamoTableName}'
+        ContainerEnvEntry14: 'SPRING_CLOUD_FUNCTION_DEFINITION_LIST=pnDeliveryPushInputsInboundConsumer;pnExtChannelEventInboundConsumer;pnDeliveryPushActionsInboundConsumer;pnNationalRegistriesEventInboundConsumer'
+        ContainerEnvEntry16: !Sub 'PN_DELIVERYPUSHWORKFLOW_NATIONALREGISTRIESBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
+        ContainerEnvEntry17: !Sub 'PN_DELIVERYPUSHWORKFLOW_DOCUMENTCREATIONREQUESTDAO_TABLENAME=${DocumentCreationRequestTableName}'
+        ContainerEnvEntry18: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_NATIONALREGISTRIESEVENTS=${NationalRegistries2DeliveryPushQueueName}'
+        ContainerEnvEntry19: !Sub 'PN_DELIVERYPUSHWORKFLOW_PAGOPANOTIFICATIONFEE=${PagoPaNotificationFee}'
+        ContainerEnvEntry20: !Sub 'PN_DELIVERYPUSHWORKFLOW_PAGOPANOTIFICATIONVAT=${PagoPaNotificationVat}'
+        ContainerEnvEntry21: !Sub 'PN_DELIVERYPUSHWORKFLOW_TEMPLATESENGINEBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
+        ContainerEnvEntry22: !Sub 'PN_DELIVERYPUSHWORKFLOW_TIMELINECLIENTBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
+        ContainerEnvEntry23: !Sub [ 'PN_DELIVERYPUSHWORKFLOW_PFNEWWORKFLOWSTART=${SelectedEnv}', { SelectedEnv: !Select [ 0, !Ref pfNewWorkflowFeatureFlag ] } ]
+        ContainerEnvEntry24: !Sub [ 'PN_DELIVERYPUSHWORKFLOW_PFNEWWORKFLOWSTOP=${SelectedEnv}', { SelectedEnv: !Select [ 1, !Ref pfNewWorkflowFeatureFlag ] } ]
+        ContainerEnvEntry25: !Sub [ 'PN_DELIVERYPUSHWORKFLOW_STARTWRITEBUSINESSTIMESTAMP=${SelectedEnv}', { SelectedEnv: !Select [ 2, !Ref WebhookFeatureFlags ] } ]
+        ContainerEnvEntry26: !Sub [ 'PN_DELIVERYPUSHWORKFLOW_STOPWRITEBUSINESSTIMESTAMP=${SelectedEnv}', { SelectedEnv: !Select [ 3, !Ref WebhookFeatureFlags ] } ]
+        ContainerEnvEntry27: !Sub 'PN_DELIVERYPUSHWORKFLOW_EMDINTEGRATIONBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
+        ContainerEnvEntry28: !Sub 'PN_DELIVERYPUSHWORKFLOW_ACTIONMANAGERBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
+        ContainerEnvEntry29: 'PN_DELIVERYPUSHWORKFLOW_WEBAPP_FAQSENDHASH=send-cosa-e'
         ApplicativeEnvFileChecksum: !Ref ApplicativeEnvFileChecksum
         JavaToolOptions: '-Dreactor.netty.ioWorkerCount=50'
         MappedPaths: '/pn-delivery-push-workflow-service-not-available'
@@ -180,3 +344,158 @@ Resources:
         EcsDefaultSecurityGroup: !Ref EcsDefaultSecurityGroup
         LoadBalancerListenerArn: !Ref ApplicationLoadBalancerListenerArn
         LoadBalancerRulePriority: !Ref MicroserviceNumber
+        TaskRoleManagedPolicyArn: !Ref DeliveryPushWorkflowServiceMicroserviceTaskManagedPolicy
+        AlbSecurityGroup: !Ref AlbSecurityGroup
+        EcsLogGroup: !Ref EcsWorkflowLogGroup
+  
+  ## Dashboard
+  DeliveryPushWorkflowServiceMicroserviceCloudWatchDashboard:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/microservice-cloudwatch-dashboard.yaml"
+      Parameters:
+        DashboardName: !Sub "${ProjectName}-delivery-push-workflow-service"
+        DynamoDBTableNames: !Join
+          - ','
+          - - !Ref PaperNotificationFailedDynamoTableName
+            - !Ref DocumentCreationRequestTableName
+        AlarmArns: !Join
+          - ','
+          - - !GetAtt DeliveryPushWorkflowServiceMicroservice.Outputs.FatalLogsMetricAlarmArn
+            - !Ref DeliveryPushInputsQueueAlarmARN
+            - !Ref DeliveryPushInputsQueueAgeAlarmARN
+            - !Ref ScheduledActionsQueueAlarmARN
+            - !Ref ScheduledActionsQueueAgeAlarmARN
+            - !Ref NationalRegistries2DeliveryPushQueueAlarmARN
+            - !Ref NationalRegistries2DeliveryPushQueueAgeAlarmARN
+        QueueArns: !Join
+          - ','
+          - - !Ref DeliveryPushInputsQueueARN
+            - !Ref ExternalChannelsOutputsQueueARN
+            - !Ref ScheduledActionsQueueARN
+            - !Ref NationalRegistries2DeliveryPushQueueARN
+        LogGroupsNames: !Join
+          - ','
+          - - !Sub '/aws/ecs/${ProjectName}-delivery-push-workflow'
+
+  # Grant operational rights to PN-Delivery-Push-Workflow-Service microservice
+  DeliveryPushWorkflowServiceMicroserviceTaskManagedPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - sqs:ChangeMessageVisibility
+              - sqs:ChangeMessageVisibilityBatch
+              - sqs:DeleteMessage
+              - sqs:DeleteMessageBatch
+              - sqs:GetQueueAttributes
+              - sqs:GetQueueUrl
+              - sqs:ReceiveMessage
+              - sqs:SendMessage
+              - sqs:SendMessageBatch
+            Resource:
+              - !Ref DeliveryPushInputsQueueARN
+              - !Ref ExternalChannelsOutputsQueueARN
+              - !Ref ScheduledActionsQueueARN
+              - !Ref NationalRegistries2DeliveryPushQueueARN
+          - Effect: Allow
+            Action:
+              - 'ssm:GetParameter'
+              - 'ssm:GetParameters'
+            Resource:
+              - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/MapPaMVP'
+              - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/radd-experimentation-zip-*'
+          - Effect: Allow
+            Action:
+              - 'dynamodb:GetItem'
+              - 'dynamodb:Query'
+              - 'dynamodb:PutItem'
+              - 'dynamodb:DeleteItem'
+              - 'dynamodb:UpdateItem'
+            Resource:
+              - !Sub "${PaperNotificationFailedDynamoTableArn}"
+              - !Sub "${DocumentCreationRequestTableArn}"
+  
+  #### Alarm for custom metric Autoscaling
+  AlarmCustomAutoscalingWorkflow:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+      AlarmName: !Sub "${ProjectName}-delivery-push-workflow-service-autoscaling-custom"
+      AlarmDescription: "Trigger scaling based on custom metric"
+      DatapointsToAlarm: !Ref AutoscalingDataPointWorkflowN
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      Metrics:
+        - Id: m1
+          MetricStat:
+            Metric:
+              Dimensions:
+                - Name: QueueName
+                  Value: !Ref "DeliveryPushInputsQueueName"
+              Namespace: "AWS/SQS"
+              MetricName: "ApproximateNumberOfMessagesVisible"
+            Period: !Ref AutoscalingCheckPeriod
+            Stat: Average
+          ReturnData: False
+        - Id: m2
+          MetricStat:
+            Metric:
+              Dimensions:
+                - Name: QueueName
+                  Value: !Ref "ExternalChannelsOutputsQueueName"
+              Namespace: "AWS/SQS"
+              MetricName: "ApproximateNumberOfMessagesVisible"
+            Period: !Ref AutoscalingCheckPeriod
+            Stat: Average
+          ReturnData: False
+        - Id: m3
+          MetricStat:
+            Metric:
+              Dimensions:
+                - Name: QueueName
+                  Value: !Ref "NationalRegistries2DeliveryPushQueueName"
+              Namespace: "AWS/SQS"
+              MetricName: "ApproximateNumberOfMessagesVisible"
+            Period: !Ref AutoscalingCheckPeriod
+            Stat: Average
+          ReturnData: False
+        - Id: m4
+          MetricStat:
+            Metric:
+              Dimensions:
+                - Name: QueueName
+                  Value: !Ref "ScheduledActionsQueueName"
+              Namespace: "AWS/SQS"
+              MetricName: "ApproximateNumberOfMessagesVisible"
+            Period: !Ref AutoscalingCheckPeriod
+            Stat: Average
+          ReturnData: False
+        - Id: m5
+          MetricStat:
+            Metric:
+              Dimensions:
+                - Name: TargetGroup
+                  Value: !GetAtt DeliveryPushWorkflowServiceMicroservice.Outputs.TargetGroupName
+                - Name: LoadBalancer
+                  Value: !Ref ApplicationLoadBalancerMetricsDimensionName
+              Namespace: "AWS/ApplicationELB"
+              MetricName: "HealthyHostCount"
+            Period: !Ref AutoscalingCheckPeriod
+            Stat: Average
+          ReturnData: False
+        - Id: code
+          Expression: !Sub "IF(m5==0, 101, (100*(m1+m2+m3+m4)) / (${ConsumedQueueMessagePerMinuteWorkflow} * m5) )"
+          Label: !Sub "${ProjectName}-delivery-push-workflow-service-queue-custom-metric"
+          ReturnData: False
+        - Id: e1
+          Expression: "code"
+          Label: !Sub "${ProjectName}-delivery-push-workflow-service-autoscale-custom-metric"
+      
+      EvaluationPeriods: !Ref AutoscalingDataPointWorkflowM
+      Threshold: 60
+      AlarmActions:
+        - !GetAtt DeliveryPushWorkflowServiceMicroservice.Outputs.ScaleUpPolicy
+      OKActions:
+        - !GetAtt DeliveryPushWorkflowServiceMicroservice.Outputs.ScaleDownPolicy
