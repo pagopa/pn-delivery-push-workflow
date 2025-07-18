@@ -14,12 +14,26 @@ import org.springframework.context.annotation.Import;
 public class PnDeliveryPushWorkflowConfigs {
     private Topics topics;
 
+    private DocumentCreationRequestDao documentCreationRequestDao;
+
+    private FailedNotificationDao failedNotificationDao;
+
     @Data
     public static class Topics {
         private String newNotifications;
         private String fromExternalChannel;
         private String scheduledActions;
         private String nationalRegistriesEvents;
+    }
+
+    @Data
+    public static class DocumentCreationRequestDao {
+        private String tableName;
+    }
+
+    @Data
+    public static class FailedNotificationDao {
+        private String tableName;
     }
 
     @PostConstruct
