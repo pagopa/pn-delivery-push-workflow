@@ -15,7 +15,7 @@ import java.util.List;
 @Import({SharedAutoConfiguration.class})
 public class PnDeliveryPushWorkflowConfigs {
     private Topics topics;
-
+  
     private ErrorCorrectionLevel errorCorrectionLevelQrCode;
 
     private boolean additionalLangsEnabled;
@@ -64,6 +64,10 @@ public class PnDeliveryPushWorkflowConfigs {
 
     private String safeStorageCxIdUpdatemetadata;
 
+    private DocumentCreationRequestDao documentCreationRequestDao;
+
+    private FailedNotificationDao failedNotificationDao;
+
     @Data
     public static class Topics {
         private String newNotifications;
@@ -81,6 +85,16 @@ public class PnDeliveryPushWorkflowConfigs {
         private String landingUrl;
         private String raddPhoneNumber;
         private String aarSenderLogoUrlTemplate;
+    }
+
+    @Data
+    public static class DocumentCreationRequestDao {
+        private String tableName;
+    }
+
+    @Data
+    public static class FailedNotificationDao {
+        private String tableName;
     }
 
     @PostConstruct
