@@ -4,7 +4,7 @@ package it.pagopa.pn.deliverypushworkflow.dto.documentcreation;
 import it.pagopa.pn.deliverypushworkflow.dto.legalfacts.LegalFactCategoryInt;
 
 public enum DocumentCreationTypeInt {
-    AAR(DocumentCategoryInt.AAR.getValue()),
+    AAR("AAR"),
 
     ANALOG_FAILURE_DELIVERY(LegalFactCategoryInt.ANALOG_FAILURE_DELIVERY.getValue()),
 
