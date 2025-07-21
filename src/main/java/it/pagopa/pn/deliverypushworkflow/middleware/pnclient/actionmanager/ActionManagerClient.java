@@ -1,0 +1,14 @@
+package it.pagopa.pn.deliverypushworkflow.middleware.pnclient.actionmanager;
+
+import it.pagopa.pn.commons.log.PnLogger;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.actionmanager.model.NewActionDto;
+
+
+public interface ActionManagerClient {
+    String CLIENT_NAME = PnLogger.EXTERNAL_SERVICES.PN_ACTION_MANAGER;
+    String UNSCHEDULE_ACTION_PROCESS_NAME = "UNSCHEDULE ACTION";
+    String ADD_ONLY_ACTION_IF_ABSENT_PROCESS_NAME = "ADD ONLY ACTION IF ABSENT";
+
+    void unscheduleAction(String actionId);
+    void addOnlyActionIfAbsent(NewActionDto action);
+}
