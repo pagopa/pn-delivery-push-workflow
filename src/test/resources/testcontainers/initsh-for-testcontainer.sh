@@ -16,7 +16,6 @@ for qn in  $( echo $queues_fifo | tr " " "\n" ) ; do
         sqs create-queue \
         --attributes '{"DelaySeconds":"2","FifoQueue": "true","ContentBasedDeduplication": "true"}' \
         --queue-name $qn
-
 done
 
 
