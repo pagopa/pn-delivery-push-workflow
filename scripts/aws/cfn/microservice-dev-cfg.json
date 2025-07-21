@@ -5,6 +5,9 @@
     "MinTasksNumberWorkflow": "1",
     "MaxTasksNumberWorkflow": "1",
     "AutoscalingThresholdWorkflow": "650",
+    "ConsumedQueueMessagePerMinuteWorkflow": "3000",
+    "CdcKinesisSourceStreamArn": "arn:aws:kinesis:eu-south-1:830192246553:stream/pn-cdc-stream",
+    "CdcKinesisSourceStreamKeyArn": "arn:aws:kms:eu-south-1:830192246553:key/3bc181f8-9590-49c1-a783-fe6ead65adab",
     "DocumentCreationRequestTableName": "pn-DocumentCreationRequestTable",
     "DocumentCreationRequestTableArn": "arn:aws:dynamodb:eu-south-1:830192246553:table/pn-DocumentCreationRequestTable",
     "PaperNotificationFailedDynamoTableName": "pn-PaperNotificationFailed",
@@ -24,6 +27,8 @@
     "NationalRegistries2DeliveryPushQueueAlarmARN": "arn:aws:cloudwatch:eu-south-1:830192246553:alarm:pn-nationalregistries_to_deliverypush-DLQ-HasMessage",
     "NationalRegistries2DeliveryPushQueueAgeAlarmARN": "arn:aws:cloudwatch:eu-south-1:830192246553:alarm:pn-nationalregistries_to_deliverypush-HasOldMessage",
     "EcsWorkflowLogGroup": "/aws/ecs/pn-delivery-push-workflow",
+    "NotificationCancellationActionInsertLambdaMaximumBatchingWindowInSeconds": "60",
+    "NotificationCancellationActionInsertLambdaBatchSize": "20",
     "ExternalChannelBaseUrl": "http://internal-pn-re-Appli-48XPECMOE3EA-883877619.eu-south-1.elb.amazonaws.com:8080/",
     "SandboxSafeStorageBaseUrl": "http://vpce-0dded6c8c8504a79b-oqtwh7nb.vpce-svc-07d53855bfe7d3c4a.eu-south-1.vpce.amazonaws.com:8080/"
   }
