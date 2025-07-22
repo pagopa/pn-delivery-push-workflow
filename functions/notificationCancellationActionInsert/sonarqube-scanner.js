@@ -1,7 +1,6 @@
 let options = {
   "sonar.organization": "pagopa",
-  "sonar.projectKey":
-    "pagopa_pn-delivery-push-notificationCancellationActionInsert",
+  "sonar.projectKey":"pagopa_pn-notificationcancellationactioninsert-workflow",
 };
 
 if (process.env.PR_NUM) {

@@ -1,6 +1,6 @@
 let options = {
   "sonar.organization": "pagopa",
-  "sonar.projectKey": "pagopa_pn-delivery-push-paperEventsCostUpdate",
+  "sonar.projectKey": "pagopa_pn-papereventscostupdate-workflow",
 };
 
 if (process.env.PR_NUM) {
