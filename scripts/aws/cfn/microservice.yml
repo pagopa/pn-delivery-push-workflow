@@ -165,6 +165,32 @@ Parameters:
   LogAlarmStrategy:
     Type: String
     Default: 'FATAL'
+    
+  # Logging parameters
+  WireTapLogActivation:
+    Type: String
+    Default: false
+    Description: Activation of wire logs
+    AllowedValues:
+      - true
+      - false
+  
+  PnCronAnalyzer:
+    Type: String
+    Default: '-'
+    Description: Cron for which you send the metric to CloudWatch
+  
+  # EFS parameters
+  FargateEFSFileSystemID:
+    Type: String
+    Description: "EFS Filesystem"
+  
+  MountEfs:
+    Type: String
+    Default: "false"
+    AllowedValues:
+      - "true"
+      - "false"
   
   # --- Base URLs ---
   ExternalChannelBaseUrl:
@@ -302,6 +328,9 @@ Resources:
         AutoscalingDataPointN: !Ref AutoscalingDataPointWorkflowN
         AutoscalingDataPointM: !Ref AutoscalingDataPointWorkflowM
         AlarmSNSTopicArn: !Ref AlarmSNSTopicArn
+        EfsFilesystem: !Ref FargateEFSFileSystemID
+        MountEfs: !Ref MountEfs
+        WireTapLogActivation: !Ref WireTapLogActivation
         ContainerImageURI: !Sub '${ContainerImageUri}'
         ContainerEnvEntry1: !Sub 'AWS_REGIONCODE=${AWS::Region}'
         ContainerEnvEntry2: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_NEWNOTIFICATIONS=${DeliveryPushInputsQueueName}'
@@ -335,6 +364,8 @@ Resources:
         ContainerEnvEntry27: !Sub 'PN_DELIVERYPUSHWORKFLOW_EMDINTEGRATIONBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
         ContainerEnvEntry28: !Sub 'PN_DELIVERYPUSHWORKFLOW_ACTIONMANAGERBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
         ContainerEnvEntry29: 'PN_DELIVERYPUSHWORKFLOW_WEBAPP_FAQSENDHASH=send-cosa-e'
+        ContainerEnvEntry30: !Sub 'PN_CRON_ANALYZER=${PnCronAnalyzer}'
+        ContainerEnvEntry31: !Sub 'WIRE_TAP_LOG=${WireTapLogActivation}'
         ApplicativeEnvFileChecksum: !Ref ApplicativeEnvFileChecksum
         JavaToolOptions: '-Dreactor.netty.ioWorkerCount=50'
         MappedPaths: '/pn-delivery-push-workflow-service-not-available'
