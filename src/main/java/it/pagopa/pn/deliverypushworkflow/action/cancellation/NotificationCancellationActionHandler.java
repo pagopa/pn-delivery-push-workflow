@@ -1,0 +1,27 @@
+package it.pagopa.pn.deliverypushworkflow.action.cancellation;
+
+import it.pagopa.pn.deliverypushworkflow.service.NotificationCancellationService;
+import lombok.AllArgsConstructor;
+import lombok.CustomLog;
+import org.springframework.stereotype.Component;
+
+@Component
+@AllArgsConstructor
+@CustomLog
+public class NotificationCancellationActionHandler {
+
+    private final NotificationCancellationService notificationCancellationService;
+
+    public void continueCancellationProcess(String iun){
+        log.debug("Start cancelNotification - iun={}", iun);
+
+        notificationCancellationService.continueCancellationProcess(iun);
+    }
+
+    public void completeCancellationProcess(String iun, String legalFactId) {
+        log.debug("Start completeCancellationProcess - iun={}, legalFactId={}", iun, legalFactId);
+
+        notificationCancellationService.completeCancellationProcess(iun, legalFactId);
+    }
+
+}

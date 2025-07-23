@@ -32,7 +32,7 @@
 		<dependency>
 			<groupId>it.pagopa.pn</groupId>
 			<artifactId>pn-commons</artifactId>
-			<version>2.12.1-SPRINGBOOT3</version>
+			<version>2.13.0-SPRINGBOOT3</version>
 		</dependency>
 
 		<dependency>
@@ -136,6 +136,18 @@
 			<optional>true</optional>
 		</dependency>
 
+		<dependency>
+			<groupId>com.openhtmltopdf</groupId>
+			<artifactId>openhtmltopdf-pdfbox</artifactId>
+			<version>1.0.10</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.modelmapper</groupId>
+			<artifactId>modelmapper</artifactId>
+			<version>3.1.0</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>
@@ -166,7 +178,7 @@
 			<plugin>
 				<groupId>org.openapitools</groupId>
 				<artifactId>openapi-generator-maven-plugin</artifactId>
-				<version>7.12.0</version>
+				<version>7.4.0</version>
 				<executions>
 					<!-- OPEN API CLIENT PN-SAFESTORAGE -->
 					<execution>
@@ -182,6 +194,7 @@
 							<generateApiDocumentation>false</generateApiDocumentation>
 							<generateApiTests>false</generateApiTests>
 							<generateModelTests>false</generateModelTests>
+							<additionalProperties>removeEnumValuePrefix=false</additionalProperties>
 							<configOptions>
 								<useJakartaEe>true</useJakartaEe>
 								<swaggerAnnotations>false</swaggerAnnotations>
@@ -198,7 +211,6 @@
 							</configOptions>
 							<modelPackage>${project.groupId}.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.model</modelPackage>
 							<apiPackage>${project.groupId}.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.v1.api</apiPackage>
-							<modelNameSuffix>Dto</modelNameSuffix>
 						</configuration>
 					</execution>
 					<!-- OPEN API CLIENT PN-PAPER-CHANNEL -->
@@ -215,6 +227,7 @@
 							<generateApiDocumentation>false</generateApiDocumentation>
 							<generateApiTests>false</generateApiTests>
 							<generateModelTests>false</generateModelTests>
+							<additionalProperties>removeEnumValuePrefix=false</additionalProperties>
 							<typeMappings>
 								<typeMapping>OffsetDateTime=Instant</typeMapping>
 							</typeMappings>
@@ -253,6 +266,7 @@
 							<generateApiDocumentation>false</generateApiDocumentation>
 							<generateApiTests>false</generateApiTests>
 							<generateModelTests>false</generateModelTests>
+							<additionalProperties>removeEnumValuePrefix=false</additionalProperties>
 							<typeMappings>
 								<typeMapping>OffsetDateTime=Instant</typeMapping>
 							</typeMappings>
@@ -273,7 +287,6 @@
 							</configOptions>
 							<modelPackage>${project.groupId}.deliverypushworkflow.generated.openapi.msclient.actionmanager.model</modelPackage>
 							<apiPackage>${project.groupId}.deliverypushworkflow.generated.openapi.msclient.actionmanager.api</apiPackage>
-							<modelNameSuffix>Dto</modelNameSuffix>
 						</configuration>
 					</execution>
 					<!-- OPEN API CLIENT TEMPLATE-ENGINE -->
@@ -293,6 +306,7 @@
 							<generateApiDocumentation>false</generateApiDocumentation>
 							<generateApiTests>false</generateApiTests>
 							<generateModelTests>false</generateModelTests>
+							<additionalProperties>removeEnumValuePrefix=false</additionalProperties>
 							<typeMappings>
 								<typeMapping>OffsetDateTime=java.time.Instant</typeMapping>
 								<typeMapping>file=byte[]</typeMapping>
@@ -311,7 +325,6 @@
 							</configOptions>
 							<modelPackage>${project.groupId}.deliverypushworkflow.generated.openapi.msclient.templatesengine.model</modelPackage>
 							<apiPackage>${project.groupId}.deliverypushworkflow.generated.openapi.msclient.templatesengine.api</apiPackage>
-							<modelNameSuffix>Dto</modelNameSuffix>
 						</configuration>
 					</execution>
 					<!-- OPEN API CLIENT PN-TIMELINE-SERVICE -->
@@ -330,6 +343,7 @@
 							<generateApiDocumentation>false</generateApiDocumentation>
 							<generateApiTests>false</generateApiTests>
 							<generateModelTests>false</generateModelTests>
+							<additionalProperties>removeEnumValuePrefix=false</additionalProperties>
 							<typeMappings>
 								<typeMapping>OffsetDateTime=java.time.Instant</typeMapping>
 							</typeMappings>
@@ -347,7 +361,6 @@
 							</configOptions>
 							<modelPackage>it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model</modelPackage>
 							<apiPackage>it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.api</apiPackage>
-							<modelNameSuffix>Dto</modelNameSuffix>
 						</configuration>
 					</execution>
 					<!-- OPEN API CLIENT PN-DELIVERY -->
@@ -364,6 +377,7 @@
 							<library>resttemplate</library>
 							<generateApiTests>false</generateApiTests>
 							<generateModelTests>false</generateModelTests>
+							<additionalProperties>removeEnumValuePrefix=false</additionalProperties>
 							<typeMappings>
 								<typeMapping>OffsetDateTime=java.time.Instant</typeMapping>
 							</typeMappings>
@@ -376,6 +390,7 @@
 								<annotationLibrary>none</annotationLibrary>
 								<documentationProvider>source</documentationProvider>
 								<openApiNullable>false</openApiNullable>
+								<!-- <containerDefaultToNull>true</containerDefaultToNull> Genera modelli con Liste e Map con default a null -->
 								<skipDefaultInterface>false</skipDefaultInterface>
 								<useTags>true</useTags>
 							</configOptions>
@@ -397,6 +412,7 @@
 							<library>webclient</library>
 							<generateApiTests>false</generateApiTests>
 							<generateModelTests>false</generateModelTests>
+							<additionalProperties>removeEnumValuePrefix=false</additionalProperties>
 							<typeMappings>
 								<typeMapping>OffsetDateTime=java.time.Instant</typeMapping>
 							</typeMappings>
@@ -433,6 +449,7 @@
 							<generateApiDocumentation>false</generateApiDocumentation>
 							<generateApiTests>false</generateApiTests>
 							<generateModelTests>false</generateModelTests>
+							<additionalProperties>removeEnumValuePrefix=false</additionalProperties>
 							<configOptions>
 								<useJakartaEe>true</useJakartaEe>
 								<swaggerAnnotations>false</swaggerAnnotations>
@@ -447,7 +464,6 @@
 							</configOptions>
 							<modelPackage>${project.groupId}.deliverypushworkflow.generated.openapi.msclient.externalchannel.model</modelPackage>
 							<apiPackage>${project.groupId}.deliverypushworkflow.generated.openapi.msclient.externalchannel.api</apiPackage>
-							<modelNameSuffix>Dto</modelNameSuffix>
 						</configuration>
 					</execution>
 
@@ -465,6 +481,7 @@
 							<generateApiDocumentation>false</generateApiDocumentation>
 							<generateApiTests>false</generateApiTests>
 							<generateModelTests>false</generateModelTests>
+							<additionalProperties>removeEnumValuePrefix=false</additionalProperties>
 							<typeMappings>
 								<typeMapping>OffsetDateTime=Instant</typeMapping>
 							</typeMappings>
@@ -485,7 +502,6 @@
 							</configOptions>
 							<modelPackage>${project.groupId}.deliverypushworkflow.generated.openapi.msclient.externalregistry.model</modelPackage>
 							<apiPackage>${project.groupId}.deliverypushworkflow.generated.openapi.msclient.externalregistry.api</apiPackage>
-							<modelNameSuffix>Dto</modelNameSuffix>
 						</configuration>
 					</execution>
 
@@ -502,6 +518,7 @@
 							<generateApiDocumentation>false</generateApiDocumentation>
 							<generateApiTests>false</generateApiTests>
 							<generateModelTests>false</generateModelTests>
+							<additionalProperties>removeEnumValuePrefix=false</additionalProperties>
 							<typeMappings>
 								<typeMapping>OffsetDateTime=Instant</typeMapping>
 							</typeMappings>
@@ -522,7 +539,6 @@
 							</configOptions>
 							<modelPackage>${project.groupId}.deliverypushworkflow.generated.openapi.msclient.externalregistry.model</modelPackage>
 							<apiPackage>${project.groupId}.deliverypushworkflow.generated.openapi.msclient.externalregistry.api</apiPackage>
-							<modelNameSuffix>Dto</modelNameSuffix>
 						</configuration>
 					</execution>
 
@@ -540,6 +556,7 @@
 							<generateApiDocumentation>false</generateApiDocumentation>
 							<generateApiTests>false</generateApiTests>
 							<generateModelTests>false</generateModelTests>
+							<additionalProperties>removeEnumValuePrefix=false</additionalProperties>
 							<typeMappings>
 								<typeMapping>OffsetDateTime=Instant</typeMapping>
 							</typeMappings>
@@ -560,7 +577,6 @@
 							</configOptions>
 							<modelPackage>${project.groupId}.deliverypushworkflow.generated.openapi.msclient.externalregistry-reactive.model</modelPackage>
 							<apiPackage>${project.groupId}.deliverypushworkflow.generated.openapi.msclient.externalregistry-reactive.api</apiPackage>
-							<modelNameSuffix>Dto</modelNameSuffix>
 						</configuration>
 					</execution>
 					<!-- OPEN API CLIENT PN-EMD-INTEGRATION -->
@@ -577,6 +593,7 @@
 							<generateApiDocumentation>false</generateApiDocumentation>
 							<generateApiTests>false</generateApiTests>
 							<generateModelTests>false</generateModelTests>
+							<additionalProperties>removeEnumValuePrefix=false</additionalProperties>
 							<typeMappings><typeMapping>OffsetDateTime=Instant</typeMapping></typeMappings>
 							<importMappings><importMapping>java.time.OffsetDateTime=java.time.Instant</importMapping></importMappings>
 							<configOptions>
@@ -596,7 +613,6 @@
 							</configOptions>
 							<modelPackage>${project.groupId}.deliverypushworkflow.generated.openapi.msclient.emd.integration.model</modelPackage>
 							<apiPackage>${project.groupId}.deliverypushworkflow.generated.openapi.msclient.emd.integration.api</apiPackage>
-							<modelNameSuffix>Dto</modelNameSuffix>
 						</configuration>
 					</execution>
 					<!-- OPEN API CLIENT PN-DATA-VAULT REACTIVE-->
@@ -613,6 +629,7 @@
 							<generateApiDocumentation>false</generateApiDocumentation>
 							<generateApiTests>false</generateApiTests>
 							<generateModelTests>false</generateModelTests>
+							<additionalProperties>removeEnumValuePrefix=false</additionalProperties>
 							<typeMappings><typeMapping>OffsetDateTime=Instant</typeMapping></typeMappings>
 							<importMappings><importMapping>java.time.OffsetDateTime=java.time.Instant</importMapping></importMappings>
 							<configOptions>
@@ -648,6 +665,7 @@
 							<generateApiDocumentation>false</generateApiDocumentation>
 							<generateApiTests>false</generateApiTests>
 							<generateModelTests>false</generateModelTests>
+							<additionalProperties>removeEnumValuePrefix=false</additionalProperties>
 							<typeMappings><typeMapping>OffsetDateTime=Instant</typeMapping></typeMappings>
 							<importMappings><importMapping>java.time.OffsetDateTime=java.time.Instant</importMapping></importMappings>
 							<configOptions>
@@ -666,7 +684,6 @@
 							</configOptions>
 							<apiPackage>${project.groupId}.deliverypushworkflow.generated.openapi.msclient.nationalregistries.api</apiPackage>
 							<modelPackage>${project.groupId}.deliverypushworkflow.generated.openapi.msclient.nationalregistries.model</modelPackage>
-							<modelNameSuffix>Dto</modelNameSuffix>
 						</configuration>
 					</execution>
 					<!-- OPEN API CLIENT PN-USER-ATTRIBUTES -->
@@ -683,6 +700,7 @@
 							<generateApiDocumentation>false</generateApiDocumentation>
 							<generateApiTests>false</generateApiTests>
 							<generateModelTests>false</generateModelTests>
+							<additionalProperties>removeEnumValuePrefix=false</additionalProperties>
 							<typeMappings><typeMapping>OffsetDateTime=Instant</typeMapping></typeMappings>
 							<importMappings><importMapping>java.time.OffsetDateTime=java.time.Instant</importMapping></importMappings>
 							<configOptions>
@@ -699,7 +717,6 @@
 							</configOptions>
 							<apiPackage>${project.groupId}.deliverypushworkflow.generated.openapi.msclient.userattributes.api</apiPackage>
 							<modelPackage>${project.groupId}.deliverypushworkflow.generated.openapi.msclient.userattributes.model</modelPackage>
-							<modelNameSuffix>Dto</modelNameSuffix>
 						</configuration>
 					</execution>
 				</executions>

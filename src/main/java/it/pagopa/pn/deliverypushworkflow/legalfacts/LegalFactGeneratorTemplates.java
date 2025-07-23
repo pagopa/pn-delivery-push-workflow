@@ -1,20 +1,20 @@
 package it.pagopa.pn.deliverypushworkflow.legalfacts;
 
-import it.pagopa.pn.api.dto.events.EndWorkflowStatus;
+import it.pagopa.pn.deliverypushworkflow.action.utils.EndWorkflowStatus;
 import it.pagopa.pn.commons.exceptions.PnInternalException;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
-import it.pagopa.pn.deliverypushworkflow.dto.datavault.RecipientTypeInt;
-import it.pagopa.pn.deliverypushworkflow.dto.delivery.notification.NotificationInt;
-import it.pagopa.pn.deliverypushworkflow.dto.delivery.notification.NotificationRecipientInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.datavault.RecipientTypeInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
 import it.pagopa.pn.deliverypushworkflow.dto.legalfacts.AARInfo;
 import it.pagopa.pn.deliverypushworkflow.dto.mandate.DelegateInfoInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendDigitalFeedbackDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.templatesengine.model.*;
-import it.pagopa.pn.deliverypushworkflow.middleware.pnclient.templatesengine.TemplatesClient;
-import it.pagopa.pn.deliverypushworkflow.middleware.pnclient.templatesengine.TemplatesClientPec;
-import it.pagopa.pn.deliverypushworkflow.util.PnSendMode;
-import it.pagopa.pn.deliverypushworkflow.util.PnSendModeUtils;
-import it.pagopa.pn.deliverypushworkflow.util.QrCodeUtils;
+import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.templatesengine.TemplatesClient;
+import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.templatesengine.TemplatesClientPec;
+import it.pagopa.pn.deliverypushworkflow.utils.PnSendMode;
+import it.pagopa.pn.deliverypushworkflow.utils.PnSendModeUtils;
+import it.pagopa.pn.deliverypushworkflow.utils.QrCodeUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -38,32 +38,10 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
 
     private final CustomInstantWriter instantWriter;
     private final PhysicalAddressWriter physicalAddressWriter;
-    private final PnDeliveryPushWorkflowConfigs pnDeliveryPushConfigs;
+    private final PnDeliveryPushWorkflowConfigs pnDeliveryPushWorkflowConfigs;
     private final PnSendModeUtils pnSendModeUtils;
     private final TemplatesClient templatesClient;
     private final TemplatesClientPec templatesClientPec;
-
-
-    /**
-     * Generates the legal fact for a received notification.
-     *
-     * @param notification the {@link NotificationInt} object containing notification details,
-     *                     including sender, recipients, and metadata.
-     * @return a byte[] representing the generated pdf notification received legal fact.
-     * @throws IllegalArgumentException if the notification is null or contains incomplete data.
-     *
-     * <p><strong>Note:</strong></p>
-     * Ensure the {@code templatesClient} is properly configured to handle the generated
-     * {@link NotificationReceivedLegalFactDto} and return the expected byte array.
-     */
-    @Override
-    public byte[] generateNotificationReceivedLegalFact(NotificationInt notification) {
-        log.info("retrieve NotificationReceivedLegalFact template for iun {}", notification.getIun());
-        NotificationReceivedLegalFactDto legalFact =
-                notificationReceivedLegalFact(notification, physicalAddressWriter, instantWriter);
-        LanguageEnumDto language = getLanguage(notification.getAdditionalLanguages());
-        return templatesClient.notificationReceivedLegalFact(language, legalFact);
-    }
 
 
     /**
@@ -83,7 +61,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      *
      * <p><strong>Note:</strong></p>
      * Ensure that {@code templatesClient} is properly configured to handle the generated
-     * {@link NotificationViewedLegalFactDto} object and return the expected byte array.
+     * {@link NotificationViewedLegalFact} object and return the expected byte array.
      */
     @Override
     public byte[] generateNotificationViewedLegalFact(String iun,
@@ -92,14 +70,14 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
                                                       Instant timeStamp,
                                                       NotificationInt notification) {
         log.info("retrieve NotificationViewedLegalFact template for iun {}", iun);
-        NotificationViewedLegalFactDto notificationViewedLegalFact =
+        NotificationViewedLegalFact notificationViewedLegalFact =
                 notificationViewedLegalFact(
                         iun,
                         recipient,
                         delegateInfo,
                         timeStamp,
                         instantWriter);
-        LanguageEnumDto language = getLanguage(notification.getAdditionalLanguages());
+        LanguageEnum language = getLanguage(notification.getAdditionalLanguages());
         return templatesClient.notificationViewedLegalFact(language, notificationViewedLegalFact);
     }
 
@@ -123,7 +101,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      *
      * <p><strong>Note:</strong></p>
      * Ensure that {@code templatesClient} is correctly configured to handle the generated
-     * {@link PecDeliveryWorkflowLegalFactDto} object and return the expected byte array.
+     * {@link PecDeliveryWorkflowLegalFact} object and return the expected byte array.
      */
     @Override
     public byte[] generatePecDeliveryWorkflowLegalFact(List<SendDigitalFeedbackDetailsInt> feedbackFromExtChannelList,
@@ -132,7 +110,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
                                                        EndWorkflowStatus status,
                                                        Instant completionWorkflowDate) {
         log.info("retrieve PecDeliveryWorkflowLegalFact template for iun {}", notification.getIun());
-        PecDeliveryWorkflowLegalFactDto pecDeliveryWorkflowLegalFact =
+        PecDeliveryWorkflowLegalFact pecDeliveryWorkflowLegalFact =
                 pecDeliveryWorkflowLegalFact(
                         feedbackFromExtChannelList,
                         notification,
@@ -140,7 +118,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
                         status,
                         completionWorkflowDate,
                         instantWriter);
-        LanguageEnumDto language = getLanguage(notification.getAdditionalLanguages());
+        LanguageEnum language = getLanguage(notification.getAdditionalLanguages());
         return templatesClient.pecDeliveryWorkflowLegalFact(language, pecDeliveryWorkflowLegalFact);
     }
 
@@ -161,7 +139,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      *
      * <p><strong>Note:</strong></p>
      * Ensure that {@code templatesClient} is properly configured to handle the generated
-     * {@link AnalogDeliveryWorkflowFailureLegalFactDto} object and return the expected byte array.
+     * {@link AnalogDeliveryWorkflowFailureLegalFact} object and return the expected byte array.
      */
     @Override
     public byte[] generateAnalogDeliveryFailureWorkflowLegalFact(NotificationInt notification,
@@ -169,13 +147,13 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
                                                                  EndWorkflowStatus status,
                                                                  Instant failureWorkflowDate) {
         log.info("retrieve AnalogDeliveryFailureWorkflowLegalFact template for iun {}", notification.getIun());
-        AnalogDeliveryWorkflowFailureLegalFactDto analogDeliveryWorkflowFailureLegalFact =
+        AnalogDeliveryWorkflowFailureLegalFact analogDeliveryWorkflowFailureLegalFact =
                 analogDeliveryWorkflowFailureLegalFact(
                         notification,
                         recipient,
                         failureWorkflowDate,
                         instantWriter);
-        LanguageEnumDto language = getLanguage(notification.getAdditionalLanguages());
+        LanguageEnum language = getLanguage(notification.getAdditionalLanguages());
         return templatesClient.analogDeliveryWorkflowFailureLegalFact(language, analogDeliveryWorkflowFailureLegalFact);
     }
 
@@ -193,17 +171,17 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      *
      * <p><strong>Note:</strong></p>
      * Ensure that {@code templatesClient} is properly configured to handle the generated
-     * {@link NotificationCancelledLegalFactDto} object and return the expected pdf byte array.
+     * {@link NotificationCancelledLegalFact} object and return the expected pdf byte array.
      */
     @Override
     public byte[] generateNotificationCancelledLegalFact(NotificationInt notification, Instant notificationCancellationRequestDate) {
         log.info("retrieve NotificationCancelledLegalFact template for iun {}", notification.getIun());
-        NotificationCancelledLegalFactDto cancelledLegalFact =
+        NotificationCancelledLegalFact cancelledLegalFact =
                 cancelledLegalFact(
                         notification,
                         notificationCancellationRequestDate,
                         instantWriter);
-        LanguageEnumDto language = getLanguage(notification.getAdditionalLanguages());
+        LanguageEnum language = getLanguage(notification.getAdditionalLanguages());
         return templatesClient.notificationCancelledLegalFact(language, cancelledLegalFact);
     }
 
@@ -217,13 +195,13 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      *
      * <p><strong>Note:</strong></p>
      * Ensure that {@code templatesClient} is properly configured to handle the generated
-     * {@link NotificationAarForSubjectDto} object and return the expected subject string.
+     * {@link NotificationAarForSubject} object and return the expected subject string.
      */
     @Override
     public String generateNotificationAARSubject(NotificationInt notification) {
         log.info("retrieve NotificationAARSubject template for iun {}", notification.getIun());
-        NotificationAarForSubjectDto notificationAARSubject = notificationAARSubject(notification);
-        LanguageEnumDto language = getLanguage(notification.getAdditionalLanguages());
+        NotificationAarForSubject notificationAARSubject = notificationAARSubject(notification);
+        LanguageEnum language = getLanguage(notification.getAdditionalLanguages());
         return templatesClient.notificationAarForSubject(language, notificationAARSubject);
     }
 
@@ -239,11 +217,11 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      *
      * <p><strong>Note:</strong></p>
      * Ensure that {@code templatesClient} is properly configured to handle the generated
-     * {@link NotificationAarForSubjectDto} object and return the expected subject string.
+     * {@link NotificationAarForSubject} object and return the expected subject string.
      */
     @Override
     public AARInfo generateNotificationAAR(NotificationInt notification, NotificationRecipientInt recipient, String quickAccessToken) {
-        LanguageEnumDto language = getLanguage(notification.getAdditionalLanguages());
+        LanguageEnum language = getLanguage(notification.getAdditionalLanguages());
         PnSendMode pnSendMode = pnSendModeUtils.getPnSendMode(notification.getSentAt());
         String qrCodeQuickAccessUrlAarDetail = this.getQrCodeQuickAccessUrlAarDetail(recipient, quickAccessToken);
         String accessUrl = this.getAccessUrl(recipient);
@@ -259,7 +237,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
             switch (aarTemplateType) {
                 case AAR_NOTIFICATION -> {
                     log.info("retrieve NotificationAAR template for iun {}", notification.getIun());
-                    NotificationAarDto notificationAAR =
+                    NotificationAar notificationAAR =
                             notificationAAR(
                                     notification,
                                     recipient,
@@ -273,7 +251,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
                 }
                 case AAR_NOTIFICATION_RADD_ALT -> {
                     log.info("retrieve NotificationAARRADDalt template for iun {}", notification.getIun());
-                    NotificationAarRaddAltDto notificationAARRADDalt =
+                    NotificationAarRaddAlt notificationAARRADDalt =
                             notificationAARRADDalt(
                                     notification,
                                     recipient,
@@ -284,7 +262,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
                                     this.getAccessLinkLabel(),
                                     perfezionamentoLink,
                                     perfezionamentoLinkLabel,
-                                    pnDeliveryPushConfigs.getWebapp().getRaddPhoneNumber(),
+                                    pnDeliveryPushWorkflowConfigs.getWebapp().getRaddPhoneNumber(),
                                     this.buildAarSenderLogo(notification.getSender().getPaId()));
                     bytesArrayGeneratedAar = templatesClient.notificationAarRaddAlt(language, notificationAARRADDalt);
                 }
@@ -316,19 +294,19 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      *
      * <p><strong>Note:</strong></p>
      * Ensure that {@code templatesClient} is properly configured to handle the generated
-     * {@link NotificationAarForEmailDto} object and return the expected email body string.
+     * {@link NotificationAarForEmail} object and return the expected email body string.
      */
     @Override
     public String generateNotificationAARBody(NotificationInt notification, NotificationRecipientInt recipient, String quickAccessToken) {
         log.info("retrieve NotificationAARBody template for iun {}", notification.getIun());
-        NotificationAarForEmailDto notificationAAR =
+        NotificationAarForEmail notificationAAR =
                 notificationAarForEmail(
                         notification,
                         this.getPerfezionamentoLink(),
                         this.getQuickAccessLink(recipient, quickAccessToken),
                         this.getFAQSendURL(),
                         this.getAccessUrl(recipient));
-        LanguageEnumDto language = getLanguage(notification.getAdditionalLanguages());
+        LanguageEnum language = getLanguage(notification.getAdditionalLanguages());
         return templatesClient.notificationAarForEmail(language, notificationAAR);
     }
 
@@ -346,14 +324,14 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      *
      * <p><strong>Note:</strong></p>
      * Ensure that {@code templatesClient} is properly configured to handle the generated
-     * {@link NotificationAarForPecDto} object and return the expected PEC email body string.
+     * {@link NotificationAarForPec} object and return the expected PEC email body string.
      */
     @Override
     public String generateNotificationAARPECBody(NotificationInt notification,
                                                  NotificationRecipientInt recipient,
                                                  String quickAccessToken) {
         log.info("retrieve NotificationAARPECBody template for iun {}", notification.getIun());
-        NotificationAarForPecDto notificationAAR = notificationAarForPec(
+        NotificationAarForPec notificationAAR = notificationAarForPec(
                 notification,
                 recipient,
                 this.getQuickAccessLink(recipient, quickAccessToken),
@@ -361,7 +339,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
                 this.getFAQSendURL(),
                 this.getAccessUrl(recipient),
                 recipient.getRecipientType().getValue());
-        LanguageEnumDto language = getLanguage(notification.getAdditionalLanguages());
+        LanguageEnum language = getLanguage(notification.getAdditionalLanguages());
         return templatesClientPec.parametrizedNotificationAarForPec(language, notificationAAR);
     }
 
@@ -375,13 +353,13 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      *
      * <p><strong>Note:</strong></p>
      * Ensure that {@code templatesClient} is properly configured to handle the generated
-     * {@link NotificationAarForSmsDto} object and return the expected SMS body string.
+     * {@link NotificationAarForSms} object and return the expected SMS body string.
      */
     @Override
     public String generateNotificationAARForSMS(NotificationInt notification) {
         log.info("retrieve NotificationAARForSMS template for iun {}", notification.getIun());
-        NotificationAarForSmsDto notificationAARForSMS = notificationAarForSms(notification);
-        LanguageEnumDto language = getLanguage(notification.getAdditionalLanguages());
+        NotificationAarForSms notificationAARForSMS = notificationAarForSms(notification);
+        LanguageEnum language = getLanguage(notification.getAdditionalLanguages());
         return templatesClient.notificationAarForSms(language, notificationAARForSMS);
     }
 
@@ -415,7 +393,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
         String url = getQuickAccessLink(recipient, quickAccessToken);
         // Definire altezza e larghezza del qrcode
         return "data:image/png;base64, " .concat(Base64.getEncoder().encodeToString(QrCodeUtils.generateQRCodeImage(url, 180, 180,
-                pnDeliveryPushConfigs.getErrorCorrectionLevelQrCode()))); //Todo: base64 cambiato
+                pnDeliveryPushWorkflowConfigs.getErrorCorrectionLevelQrCode())));
     }
 
     /**
@@ -427,7 +405,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      * @return a {@link String} representing the full quick access URL, including the token as a query parameter.
      */
     private String getQuickAccessLink(NotificationRecipientInt recipient, String quickAccessToken) {
-        String templateUrl = getAccessUrl(recipient) + pnDeliveryPushConfigs.getWebapp().getQuickAccessUrlAarDetailSuffix();
+        String templateUrl = getAccessUrl(recipient) + pnDeliveryPushWorkflowConfigs.getWebapp().getQuickAccessUrlAarDetailSuffix();
         log.debug("getQrCodeQuickAccessUrlAarDetail templateUrl {} quickAccessLink {}", templateUrl, quickAccessToken);
         return templateUrl + '=' + quickAccessToken;
     }
@@ -438,7 +416,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      * @return a {@link String} representing the complete URL for the "perfezionamento" page.
      */
     private String getPerfezionamentoLink() {
-        return pnDeliveryPushConfigs.getWebapp().getLandingUrl() + "perfezionamento";
+        return pnDeliveryPushWorkflowConfigs.getWebapp().getLandingUrl() + "perfezionamento";
     }
 
     /**
@@ -452,7 +430,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
     }
 
     private String getAccessLink() {
-        return pnDeliveryPushConfigs.getWebapp().getLandingUrl();
+        return pnDeliveryPushWorkflowConfigs.getWebapp().getLandingUrl();
     }
 
     /**
@@ -463,20 +441,20 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      */
     private String getAccessLinkLabel() {
         try {
-            String host = new URL(pnDeliveryPushConfigs.getWebapp().getLandingUrl()).getHost();
+            String host = new URL(pnDeliveryPushWorkflowConfigs.getWebapp().getLandingUrl()).getHost();
             return host.startsWith("www.") ? host.substring(4) : host;
         } catch (MalformedURLException e) {
             log.warn("cannot get host", e);
-            return pnDeliveryPushConfigs.getWebapp().getLandingUrl();
+            return pnDeliveryPushWorkflowConfigs.getWebapp().getLandingUrl();
         }
     }
 
     private String getFAQAccessLink() {
-        return pnDeliveryPushConfigs.getWebapp().getLandingUrl() + pnDeliveryPushConfigs.getWebapp().getFaqUrlTemplateSuffix();
+        return pnDeliveryPushWorkflowConfigs.getWebapp().getLandingUrl() + pnDeliveryPushWorkflowConfigs.getWebapp().getFaqUrlTemplateSuffix();
     }
 
     private String getFAQSendURL() {
-        return this.getFAQAccessLink() + "#" + pnDeliveryPushConfigs.getWebapp().getFaqSendHash();
+        return this.getFAQAccessLink() + "#" + pnDeliveryPushWorkflowConfigs.getWebapp().getFaqSendHash();
     }
 
     /**
@@ -487,8 +465,8 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      */
     private String getAccessUrl(NotificationRecipientInt recipient) {
         return RecipientTypeInt.PF == recipient.getRecipientType()
-                ? pnDeliveryPushConfigs.getWebapp().getDirectAccessUrlTemplatePhysical()
-                : pnDeliveryPushConfigs.getWebapp().getDirectAccessUrlTemplateLegal();
+                ? pnDeliveryPushWorkflowConfigs.getWebapp().getDirectAccessUrlTemplatePhysical()
+                : pnDeliveryPushWorkflowConfigs.getWebapp().getDirectAccessUrlTemplateLegal();
     }
 
     /**
@@ -496,13 +474,13 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      *
      * @param additionalLanguages a {@link List} of {@link String} representing the additional languages to be considered.
      *                            If the list is empty or null, the default language (Italian) is returned.
-     * @return a {@link LanguageEnumDto} representing the selected language. It returns {@link LanguageEnumDto#IT}
+     * @return a {@link LanguageEnum} representing the selected language. It returns {@link LanguageEnum#IT}
      *         if no additional languages are available or enabled, otherwise the first language from the list.
      * @throws IllegalArgumentException if the provided list contains invalid language values.
      */
-    private LanguageEnumDto getLanguage(List<String> additionalLanguages) {
-        return (!pnDeliveryPushConfigs.isAdditionalLangsEnabled() || CollectionUtils.isEmpty(additionalLanguages))
-                ? LanguageEnumDto.IT : LanguageEnumDto.fromValue(additionalLanguages.get(0));
+    private LanguageEnum getLanguage(List<String> additionalLanguages) {
+        return (!pnDeliveryPushWorkflowConfigs.isAdditionalLangsEnabled() || CollectionUtils.isEmpty(additionalLanguages))
+                ? LanguageEnum.IT : LanguageEnum.fromValue(additionalLanguages.get(0));
     }
 
     /**
@@ -512,7 +490,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      * @return the formatted URL containing the specified PA ID
      */
     private String buildAarSenderLogo(String paId) {
-        String aarUrlTemplate = pnDeliveryPushConfigs.getWebapp().getAarSenderLogoUrlTemplate();
+        String aarUrlTemplate = pnDeliveryPushWorkflowConfigs.getWebapp().getAarSenderLogoUrlTemplate();
         return aarUrlTemplate.replace("<PA_ID>", paId);
     }
 

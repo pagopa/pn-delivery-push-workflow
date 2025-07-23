@@ -1,9 +1,8 @@
 package it.pagopa.pn.deliverypushworkflow.legalfacts;
 
-
-import it.pagopa.pn.api.dto.events.EndWorkflowStatus;
-import it.pagopa.pn.deliverypushworkflow.dto.delivery.notification.NotificationInt;
-import it.pagopa.pn.deliverypushworkflow.dto.delivery.notification.NotificationRecipientInt;
+import it.pagopa.pn.deliverypushworkflow.action.utils.EndWorkflowStatus;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
 import it.pagopa.pn.deliverypushworkflow.dto.legalfacts.AARInfo;
 import it.pagopa.pn.deliverypushworkflow.dto.mandate.DelegateInfoInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendDigitalFeedbackDetailsInt;
@@ -13,14 +12,6 @@ import java.time.Instant;
 import java.util.List;
 
 public interface LegalFactGenerator {
-
-    /**
-     * Generates the legal fact for a received notification.
-     *
-     * @param notification the notification object containing details about the notification.
-     * @return a byte array representing the pdf legal fact for the received notification.
-     */
-    byte[] generateNotificationReceivedLegalFact(NotificationInt notification) throws IOException;
 
     /**
      * Generates the legal fact for a cancelled notification.

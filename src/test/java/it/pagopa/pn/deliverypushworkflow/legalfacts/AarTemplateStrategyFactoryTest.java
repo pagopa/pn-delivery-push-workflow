@@ -1,13 +1,13 @@
 package it.pagopa.pn.deliverypushworkflow.legalfacts;
 
 
-import it.pagopa.pn.deliverypushworkflow.util.CheckRADDExperimentation;
+import it.pagopa.pn.deliverypushworkflow.utils.CheckRADDExperimentation;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
-import static it.pagopa.pn.deliverypushworkflow.dto.utils.AarUtils.*;
+import static it.pagopa.pn.deliverypushworkflow.action.utils.AarUtils.*;
 
 class AarTemplateStrategyFactoryTest {
     @Mock

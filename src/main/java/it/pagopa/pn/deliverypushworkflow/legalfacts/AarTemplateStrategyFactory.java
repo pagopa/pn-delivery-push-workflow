@@ -1,8 +1,8 @@
 package it.pagopa.pn.deliverypushworkflow.legalfacts;
 
-import it.pagopa.pn.deliverypushworkflow.dto.utils.AarUtils;
+import it.pagopa.pn.deliverypushworkflow.action.utils.AarUtils;
 
-import it.pagopa.pn.deliverypushworkflow.util.CheckRADDExperimentation;
+import it.pagopa.pn.deliverypushworkflow.utils.CheckRADDExperimentation;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 

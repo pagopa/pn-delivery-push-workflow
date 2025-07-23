@@ -1,0 +1,23 @@
+package it.pagopa.pn.deliverypushworkflow.dto.cost;
+
+import lombok.*;
+
+import java.time.Instant;
+
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Builder(toBuilder = true)
+@EqualsAndHashCode
+@ToString
+public class NotificationProcessCost {
+    private int partialCost;
+    private Integer totalCost;
+    private int analogCost;
+    private int sendFee;
+    private Integer vat;
+    private Integer paFee;
+    private Instant notificationViewDate;
+    private Instant refinementDate;
+}
+

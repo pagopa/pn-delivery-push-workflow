@@ -2,8 +2,8 @@ package it.pagopa.pn.deliverypushworkflow.dto.timeline.details;
 
 import it.pagopa.pn.deliverypushworkflow.dto.address.DigitalAddressSourceInt;
 import it.pagopa.pn.deliverypushworkflow.dto.address.LegalDigitalAddressInt;
-import it.pagopa.pn.deliverypushworkflow.dto.externalchannel.ResponseStatusInt;
-import it.pagopa.pn.deliverypushworkflow.util.AuditLogUtils;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.externalchannel.ResponseStatusInt;
+import it.pagopa.pn.deliverypushworkflow.utils.AuditLogUtils;
 import lombok.*;
 
 import java.time.Instant;
