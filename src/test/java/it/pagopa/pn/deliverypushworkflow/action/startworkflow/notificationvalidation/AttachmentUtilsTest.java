@@ -95,7 +95,7 @@ class AttachmentUtilsTest {
         Assertions.assertNotNull(attachments1);
         Assertions.assertFalse(attachments1.isEmpty());
         Assertions.assertEquals(1, attachments1.size());
-        Assertions.assertEquals(expectedResult,attachments1.get(0));
+        Assertions.assertEquals(expectedResult,attachments1.getFirst());
 
     }
 
@@ -119,7 +119,7 @@ class AttachmentUtilsTest {
         Assertions.assertNotNull(attachments1);
         Assertions.assertFalse(attachments1.isEmpty());
         Assertions.assertEquals(2, attachments1.size());
-        Assertions.assertEquals(expectedAarUrl, attachments1.get(0));
+        Assertions.assertEquals(expectedAarUrl, attachments1.getFirst());
         Assertions.assertEquals(expectedDocumentUrl, attachments1.get(1));
     }
 
@@ -192,7 +192,7 @@ class AttachmentUtilsTest {
                 .generatedAarUrl("http").build();
         Mockito.when(aarUtils.getAarGenerationDetails(any(), Mockito.anyInt())).thenReturn(aarGenerationDetails);
         Mockito.lenient().when(notificationProcessCostService.notificationProcessCostF24(any(), anyInt(), any(), any(), any(),any())).thenReturn(Mono.just(2));
-        Mockito.when(notificationUtils.getRecipientFromIndex(any(),anyInt())).thenReturn(notification.getRecipients().get(0));
+        Mockito.when(notificationUtils.getRecipientFromIndex(any(),anyInt())).thenReturn(notification.getRecipients().getFirst());
 
         GeneratedF24DetailsInt generatedF24DetailsInt = new GeneratedF24DetailsInt(0,List.of("f24Attachment"));
         TimelineElementInternal details = new TimelineElementInternal().toBuilder().details(generatedF24DetailsInt).build();
@@ -205,7 +205,7 @@ class AttachmentUtilsTest {
         Assertions.assertNotNull(attachments);
         Assertions.assertFalse(attachments.isEmpty());
         Assertions.assertEquals(expectedSize, attachments.size());
-        Assertions.assertEquals(expectedAarUrl, attachments.get(0));
+        Assertions.assertEquals(expectedAarUrl, attachments.getFirst());
         Assertions.assertEquals(expectedDocumentUrl, attachments.get(1));
         Assertions.assertEquals(expectedPagoPaUrl, attachments.get(2));
         Assertions.assertEquals(expectedF24Url, attachments.get(3));
@@ -245,7 +245,7 @@ class AttachmentUtilsTest {
         NotificationInt notification = TestUtils.getNotificationV2WithoutPayments();
 
         Mockito.when(aarUtils.getAarGenerationDetails(any(), Mockito.anyInt())).thenReturn(AarGenerationDetailsInt.builder().generatedAarUrl("http").build());
-        Mockito.when(notificationUtils.getRecipientFromIndex(notification, 0)).thenReturn(notification.getRecipients().get(0));
+        Mockito.when(notificationUtils.getRecipientFromIndex(notification, 0)).thenReturn(notification.getRecipients().getFirst());
 
         //WHEN
         List<String> attachmentsRecipient = attachmentUtils.retrieveAttachments(notification, 0, SendAttachmentMode.AAR_DOCUMENTS_PAYMENTS, F24ResolutionMode.RESOLVE_WITH_TIMELINE, List.of(), false);
@@ -265,7 +265,7 @@ class AttachmentUtilsTest {
         AarGenerationDetailsInt aarGenerationDetails = AarGenerationDetailsInt.builder()
                 .generatedAarUrl("http").build();
         Mockito.when(aarUtils.getAarGenerationDetails(any(), Mockito.anyInt())).thenReturn(aarGenerationDetails);
-        Mockito.when(notificationUtils.getRecipientFromIndex(any(),anyInt())).thenReturn(notification.getRecipients().get(0));
+        Mockito.when(notificationUtils.getRecipientFromIndex(any(),anyInt())).thenReturn(notification.getRecipients().getFirst());
 
         //WHEN
         List<String> attachments = attachmentUtils.retrieveAttachments(notification, 0, SendAttachmentMode.AAR_DOCUMENTS_PAYMENTS, F24ResolutionMode.RESOLVE_WITH_REPLACED_LIST, null, true);
@@ -283,7 +283,7 @@ class AttachmentUtilsTest {
         AarGenerationDetailsInt aarGenerationDetails = AarGenerationDetailsInt.builder()
                 .generatedAarUrl("http").build();
         Mockito.when(aarUtils.getAarGenerationDetails(any(), Mockito.anyInt())).thenReturn(aarGenerationDetails);
-        Mockito.when(notificationUtils.getRecipientFromIndex(any(),anyInt())).thenReturn(notification.getRecipients().get(0));
+        Mockito.when(notificationUtils.getRecipientFromIndex(any(),anyInt())).thenReturn(notification.getRecipients().getFirst());
         Mockito.when(timelineUtils.getGeneratedF24(any(),any())).thenReturn(Optional.empty());
 
         // THEN
@@ -299,47 +299,12 @@ class AttachmentUtilsTest {
         AarGenerationDetailsInt aarGenerationDetails = AarGenerationDetailsInt.builder()
                 .generatedAarUrl("http").build();
         Mockito.when(aarUtils.getAarGenerationDetails(any(), Mockito.anyInt())).thenReturn(aarGenerationDetails);
-        Mockito.when(notificationUtils.getRecipientFromIndex(any(),anyInt())).thenReturn(notification.getRecipients().get(0));
+        Mockito.when(notificationUtils.getRecipientFromIndex(any(),anyInt())).thenReturn(notification.getRecipients().getFirst());
         Mockito.when(timelineUtils.getGeneratedF24(any(),any())).thenThrow(new RuntimeException("aaaa"));
 
         // THEN
         assertThrows(RuntimeException.class, () -> attachmentUtils.retrieveAttachments(notification, 0, SendAttachmentMode.AAR_DOCUMENTS_PAYMENTS, F24ResolutionMode.RESOLVE_WITH_TIMELINE, replaced , false));
     }
-
-    @Test
-    void changeAttachmentsStatusToAttached() {
-        //GIVEN
-        NotificationRecipientInt recipient = getNotificationRecipientInt();
-        NotificationInt notification = getNotificationInt(recipient);
-
-        UpdateFileMetadataResponseInt resp = new UpdateFileMetadataResponseInt();
-        resp.setResultCode("200.00");
-
-        Mockito.when(safeStorageService.updateFileMetadata(any(), any())).thenReturn(Mono.just(resp));
-
-        //WHEN
-        attachmentUtils.changeAttachmentsStatusToAttached(notification);
-
-        //THEN
-        Mockito.verify(safeStorageService, Mockito.times(2)).updateFileMetadata(any(), any());
-    }
-
-    @Test
-    void changeAttachmentsStatusToAttachedFail() {
-        //GIVEN
-        NotificationRecipientInt recipient = getNotificationRecipientInt();
-        NotificationInt notification = getNotificationInt(recipient);
-
-
-        Mockito.when(safeStorageService.updateFileMetadata(any(), any())).thenThrow(new PnInternalException("test", "test"));
-
-        //WHEN
-        assertThrows(PnInternalException.class, () -> attachmentUtils.changeAttachmentsStatusToAttached(notification));
-
-        //THEN
-        Mockito.verify(safeStorageService, Mockito.times(1)).updateFileMetadata(any(), any());
-    }
-
 
     @Test
     void changeAttachmentsRetention() {
@@ -370,24 +335,6 @@ class AttachmentUtilsTest {
         Flux<Void> flux = attachmentUtils.changeAttachmentsRetention(notification, 20);
         //WHEN
         assertThrows(PnInternalException.class, flux::blockFirst);
-
-        //THEN
-        Mockito.verify(safeStorageService, Mockito.times(1)).updateFileMetadata(any(), any());
-    }
-
-    @Test
-    void changeAttachmentsStatusToAttachedFail400() {
-        //GIVEN
-        NotificationRecipientInt recipient = getNotificationRecipientInt();
-        NotificationInt notification = getNotificationInt(recipient);
-
-        UpdateFileMetadataResponseInt resp = new UpdateFileMetadataResponseInt();
-        resp.setResultCode("400.00");
-
-        Mockito.when(safeStorageService.updateFileMetadata(any(), any())).thenReturn(Mono.just(resp));
-
-        //WHEN
-        assertThrows(PnInternalException.class, () -> attachmentUtils.changeAttachmentsStatusToAttached(notification));
 
         //THEN
         Mockito.verify(safeStorageService, Mockito.times(1)).updateFileMetadata(any(), any());

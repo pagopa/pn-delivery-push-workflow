@@ -7,9 +7,11 @@ import it.pagopa.pn.deliverypushworkflow.service.ActionService;
 import it.pagopa.pn.deliverypushworkflow.service.mapper.ActionManagerMapper;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 @Slf4j
 @AllArgsConstructor
+@Service
 public class ActionServiceRestImpl implements ActionService
  {
     private final ActionManagerClient actionManagerClient;

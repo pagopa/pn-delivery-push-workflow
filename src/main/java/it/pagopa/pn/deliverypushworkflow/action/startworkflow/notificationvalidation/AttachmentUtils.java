@@ -1,21 +1,16 @@
 package it.pagopa.pn.deliverypushworkflow.action.startworkflow.notificationvalidation;
 
 import it.pagopa.pn.commons.exceptions.PnInternalException;
-import it.pagopa.pn.commons.exceptions.PnValidationException;
-import it.pagopa.pn.commons.utils.MDCUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.AarUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.NotificationUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
-import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.*;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.NotificationChannelType;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.SendAttachmentMode;
-import it.pagopa.pn.deliverypushworkflow.dto.ext.safestorage.FileDownloadResponseInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.safestorage.FileTagEnumInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.AarGenerationDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.GeneratedF24DetailsInt;
-import it.pagopa.pn.deliverypushworkflow.exceptions.*;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.model.UpdateFileMetadataRequest;
 import it.pagopa.pn.deliverypushworkflow.service.NotificationProcessCostService;
 import it.pagopa.pn.deliverypushworkflow.service.SafeStorageService;
@@ -27,7 +22,6 @@ import lombok.CustomLog;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.unit.DataSize;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -38,7 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 import static it.pagopa.pn.deliverypushworkflow.exceptions.PnDeliveryPushExceptionCodes.*;
 
@@ -54,13 +47,6 @@ public class AttachmentUtils {
     private final AarUtils aarUtils;
     private final NotificationUtils notificationUtils;
     private final TimelineUtils timelineUtils;
-
-
-    public void changeAttachmentsStatusToAttached(NotificationInt notification ) {
-        log.info( "changeAttachmentsStatusToAttached iun={}", notification.getIun());
-
-        forEachAttachment(notification, this::changeAttachmentStatusToAttached, true);
-    }
 
     public Flux<Void> changeAttachmentsRetention(NotificationInt notification, int retentionUntilDays) {
         log.info( "changeAttachmentsRetention iun={}", notification.getIun());
@@ -105,29 +91,6 @@ public class AttachmentUtils {
         return res;
     }
 
-    private void forEachAttachment(NotificationInt notification, Consumer<NotificationDocumentInt> callback, boolean includeF24Metadata)
-    {
-        for(NotificationDocumentInt attachment : notification.getDocuments()) {
-            callback.accept(attachment);
-        }
-
-        for(NotificationRecipientInt recipient : notification.getRecipients()) {
-            if(recipient.getPayments() != null) {
-                recipient.getPayments().forEach(
-                        payment -> {
-                            if(payment.getPagoPA() != null && payment.getPagoPA().getAttachment() != null) {
-                                callback.accept(payment.getPagoPA().getAttachment());
-                            }
-
-                            if(includeF24Metadata && payment.getF24() != null && payment.getF24().getMetadataAttachment() != null) {
-                                callback.accept(payment.getF24().getMetadataAttachment());
-                            }
-                        }
-                );
-            }
-        }
-    }
-
     private List<NotificationDocumentInt> getAllAttachment(NotificationInt notification)
     {
         List<NotificationDocumentInt> notificationDocuments = new ArrayList<>(notification.getDocuments());
@@ -149,18 +112,6 @@ public class AttachmentUtils {
                 }
             });
         }
-    }
-
-    private void changeAttachmentStatusToAttached(NotificationDocumentInt attachment) {
-        NotificationDocumentInt.Ref ref = attachment.getRef();
-        final String ATTACHED_STATUS = "ATTACHED";
-        log.debug( "changeAttachmentStatusToAttached begin changing status for attachment with key={}", ref.getKey());
-
-        MDCUtils.addMDCToContextAndExecute(
-                updateFileMetadata(ref.getKey(), ATTACHED_STATUS, null)
-                        .doOnSuccess( res -> log.info( "changeAttachmentStatusToAttached changed status for attachment with key={}", ref.getKey()))
-        ).block();
-        
     }
 
     private Mono<Void> changeAttachmentRetention(NotificationDocumentInt attachment, int retentionUntilDays) {
