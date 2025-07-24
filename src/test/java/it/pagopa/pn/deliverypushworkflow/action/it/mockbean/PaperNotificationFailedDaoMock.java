@@ -5,8 +5,6 @@ import it.pagopa.pn.deliverypushworkflow.middleware.dao.failednotificationdao.Pa
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class PaperNotificationFailedDaoMock implements PaperNotificationFailedDao {
     private Collection<PaperNotificationFailed> paperNotificationsFailed;
@@ -22,12 +20,6 @@ public class PaperNotificationFailedDaoMock implements PaperNotificationFailedDa
     @Override
     public void addPaperNotificationFailed(PaperNotificationFailed paperNotificationFailed) {
         this.paperNotificationsFailed.add(paperNotificationFailed);
-    }
-
-    @Override
-    public Set<PaperNotificationFailed> getPaperNotificationFailedByRecipientId(String recipientId) {
-        Collection<PaperNotificationFailed> paperNotificationsFailedCopy = new ArrayList<>(paperNotificationsFailed);
-        return paperNotificationsFailedCopy.stream().filter(paperNotificationFailed -> recipientId.equals(paperNotificationFailed.getRecipientId())).collect(Collectors.toSet());
     }
 
     @Override
