@@ -31,7 +31,7 @@
     "NotificationCancellationActionInsertLambdaBatchSize": "20",
     "ExternalChannelBaseUrl": "http://internal-pn-re-Appli-48XPECMOE3EA-883877619.eu-south-1.elb.amazonaws.com:8080/",
     "SandboxSafeStorageBaseUrl": "http://vpce-0dded6c8c8504a79b-oqtwh7nb.vpce-svc-07d53855bfe7d3c4a.eu-south-1.vpce.amazonaws.com:8080/",
-    "WorkflowLambdasEnabledStart": "1756512000000",
-    "WorkflowLambdasEnabledEnd": "4070908800000"
+    "NewWorkflowLambdasEnabledStart": "1756512000000",
+    "NewWorkflowLambdasEnabledEnd": "4070908800000"
   }
 }
