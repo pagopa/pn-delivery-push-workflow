@@ -14,16 +14,11 @@ import org.springframework.stereotype.Component;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
-import software.amazon.awssdk.enhanced.dynamodb.model.PageIterable;
 import software.amazon.awssdk.enhanced.dynamodb.model.PutItemEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-
-import static software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional.keyEqualTo;
 
 @Slf4j
 @Component
@@ -36,16 +31,6 @@ public class PaperNotificationFailedEntityDaoDynamo extends AbstractDynamoKeyVal
 
     private static String tableName(PnDeliveryPushWorkflowConfigs cfg ) {
         return cfg.getFailedNotificationDao().getTableName();
-    }
-
-    @Override
-    public Set<PaperNotificationFailedEntity> findByRecipientId(String recipientId) {
-        PageIterable<PaperNotificationFailedEntity> timelineElementPages = table.query(keyEqualTo(k -> k.partitionValue(recipientId)));
-
-        Set<PaperNotificationFailedEntity> set = new HashSet<>();
-        timelineElementPages.stream().forEach(pages -> set.addAll(pages.items()));
-
-        return set;
     }
 
     @Override
