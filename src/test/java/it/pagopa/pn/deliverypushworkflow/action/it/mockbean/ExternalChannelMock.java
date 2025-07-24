@@ -133,7 +133,7 @@ public class ExternalChannelMock implements ExternalChannelSendClient {
         extChannelResponse.setStatus(ProgressEventCategory.PROGRESS);
         extChannelResponse.setEventTimestamp(Instant.now().atOffset(ZoneOffset.UTC));
         extChannelResponse.setRequestId(timelineEventId);
-        extChannelResponse.setEventCode(LegalMessageSentDetails.EventCodeEnum.C001); //ACCETTAZIONE //TODO Da gestire la non accettazione
+        extChannelResponse.setEventCode(LegalMessageSentDetails.EventCodeEnum.C001); //ACCETTAZIONE
         extChannelResponse.setGeneratedMessage(
                 new DigitalMessageReference()
                         .id("test_id")

@@ -1,6 +1,5 @@
 package it.pagopa.pn.deliverypushworkflow.action.completionworkflow;
 
-import it.pagopa.pn.commons.configs.MVPParameterConsumer;
 import it.pagopa.pn.commons.log.PnAuditLogEvent;
 import it.pagopa.pn.deliverypushworkflow.action.it.utils.NotificationRecipientTestBuilder;
 import it.pagopa.pn.deliverypushworkflow.action.it.utils.NotificationTestBuilder;
@@ -24,8 +23,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.time.Instant;
 
 class FailureWorkflowHandlerTest {
-    @Mock
-    private MVPParameterConsumer mvpParameterConsumer;
     @Mock
     private RefinementScheduler refinementScheduler;
     @Mock
@@ -108,8 +105,6 @@ class FailureWorkflowHandlerTest {
                 .thenReturn(timelineElement);
         Mockito.when(logEvent.generateSuccess()).thenReturn(Mockito.mock(PnAuditLogEvent.class));
 
-        Mockito.when(mvpParameterConsumer.isMvp(Mockito.anyString())).thenReturn(false);
-
         //WHEN
         handler.handleFailureWorkflow(notification, recIndex, logEvent, details);
         
@@ -142,8 +137,6 @@ class FailureWorkflowHandlerTest {
         Mockito.when(timelineUtils.buildFailureDigitalWorkflowTimelineElement(notification, recIndex, details.getLegalFactId()))
                 .thenReturn(timelineElement);
         Mockito.when(logEvent.generateSuccess()).thenReturn(Mockito.mock(PnAuditLogEvent.class));
-
-        Mockito.when(mvpParameterConsumer.isMvp(Mockito.anyString())).thenReturn(true);
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(true);
         
         //WHEN

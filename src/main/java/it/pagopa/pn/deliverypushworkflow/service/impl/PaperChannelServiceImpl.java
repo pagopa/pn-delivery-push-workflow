@@ -1,6 +1,5 @@
 package it.pagopa.pn.deliverypushworkflow.service.impl;
 
-import it.pagopa.pn.commons.configs.MVPParameterConsumer;
 import it.pagopa.pn.commons.log.PnAuditLogEvent;
 import it.pagopa.pn.commons.log.PnAuditLogEventType;
 import it.pagopa.pn.deliverypushworkflow.action.analogworkflow.AnalogWorkflowUtils;
@@ -42,7 +41,6 @@ public class PaperChannelServiceImpl implements PaperChannelService {
     private final PaperChannelSendClient paperChannelSendClient;
     private final NotificationUtils notificationUtils;
     private final TimelineUtils timelineUtils;
-    private final MVPParameterConsumer mvpParameterConsumer;
     private final AnalogWorkflowUtils analogWorkflowUtils;
     private final AuditLogService auditLogService;
     private final AttachmentUtils attachmentUtils;
@@ -90,17 +88,9 @@ public class PaperChannelServiceImpl implements PaperChannelService {
         boolean isNotificationAlreadyViewedOrPaid = checkIsNotificationViewedOrPaid(notification.getIun(), recIndex);
 
         if( !isNotificationAlreadyViewedOrPaid ){
-            String senderTaxId = notification.getSender().getPaTaxId();
 
-            if( Boolean.FALSE.equals( mvpParameterConsumer.isMvp( senderTaxId ) ) ){
-
-                prepareAnalogDomicile(notification, recIndex, sentAttemptMade);
-                log.info("Paper notification sent to paperChannel - iun={} id={}", notification.getIun(), recIndex);
-
-            }else {
-                log.info("Paper message is not handled, paper notification will not be sent to paperChannel - iun={} recipientIndex={}", notification.getIun(), recIndex);
-                paperChannelUtils.addPaperNotificationNotHandledToTimeline(notification, recIndex);
-            }
+            prepareAnalogDomicile(notification, recIndex, sentAttemptMade);
+            log.info("Paper notification sent to paperChannel - iun={} id={}", notification.getIun(), recIndex);
         } else {
             log.info("Notification is already viewed or paid, paper notification will not be sent to paperChannel - iun={} recipientIndex={}", notification.getIun(), recIndex);
         }
@@ -117,7 +107,6 @@ public class PaperChannelServiceImpl implements PaperChannelService {
                 // va segnalato perchè è un caso "strano", non si capisce come abbia fatto l'utente a pagarla senza riceverla
                 // cmq, non è il caso di fatal, perchè non serve venga svegliato il repereibile. Quando sarà disponibile
                 // un'allarmistica light, questo è un caso da mettere come allarme light
-                // TODO mettere come alarm LIGHT
                 log.error("Notification is PAID but not VIEWED, should check how! iun={} recIndex={}", iun, recIndex);
             }
         }

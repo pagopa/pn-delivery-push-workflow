@@ -1,6 +1,5 @@
 package it.pagopa.pn.deliverypushworkflow.service.impl;
 
-import it.pagopa.pn.commons.configs.MVPParameterConsumer;
 import it.pagopa.pn.commons.log.PnAuditLogEvent;
 import it.pagopa.pn.commons.log.PnAuditLogEventType;
 import it.pagopa.pn.deliverypushworkflow.action.analogworkflow.AnalogWorkflowUtils;
@@ -45,8 +44,6 @@ class PaperChannelServiceImplTest {
     @Mock
     private TimelineUtils timelineUtils;
     @Mock
-    private MVPParameterConsumer mvpParameterConsumer;
-    @Mock
     private AnalogWorkflowUtils analogWorkflowUtils;
     @Mock
     private AuditLogService auditLogService;
@@ -64,7 +61,6 @@ class PaperChannelServiceImplTest {
                 paperChannelSendClient,
                 notificationUtils,
                 timelineUtils,
-                mvpParameterConsumer,
                 analogWorkflowUtils,
                 auditLogService,
                 attachmentUtils);

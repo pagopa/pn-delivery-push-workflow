@@ -1,7 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.action.it;
 
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
-import it.pagopa.pn.commons.configs.MVPParameterConsumer;
 import it.pagopa.pn.deliverypushworkflow.action.analogworkflow.*;
 import it.pagopa.pn.deliverypushworkflow.action.cancellation.NotificationCancellationActionHandler;
 import it.pagopa.pn.deliverypushworkflow.action.checkattachmentretention.CheckAttachmentRetentionHandler;
@@ -106,7 +105,6 @@ import static org.awaitility.Awaitility.setDefaultTimeout;
         RegisteredLetterSender.class,
         PaperNotificationFailedDaoMock.class,
         ExternalChannelMock.class,
-        MVPParameterConsumer.class,
         NotificationCost.class,
         ViewNotification.class,
         PnDeliveryClientReactiveMock.class,
