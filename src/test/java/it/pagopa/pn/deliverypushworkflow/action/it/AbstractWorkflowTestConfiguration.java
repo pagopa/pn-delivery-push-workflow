@@ -72,8 +72,8 @@ public class AbstractWorkflowTestConfiguration {
     }
 
     @Bean
-    public PnSafeStorageClient safeStorageTest() {
-        return new SafeStorageClientMock();
+    public PnSafeStorageClient safeStorageTest(@Lazy SchedulerService schedulerService, @Lazy DocumentCreationRequestDaoMock documentCreationRequestDaoMock) {
+        return new SafeStorageClientMock(documentCreationRequestDaoMock, schedulerService);
     }
 
     @Bean

@@ -222,7 +222,7 @@ public class TestUtils {
 
         Assertions.assertTrue(failDigitalWorkflowOpt.isPresent());
         TimelineElementInternal failDigitalWorkflow = failDigitalWorkflowOpt.get();
-        Assertions.assertNotNull(failDigitalWorkflow.getLegalFactsIds().get(0));
+        Assertions.assertNotNull(failDigitalWorkflow.getLegalFactsIds().getFirst());
     }
 
     public static void checkAnalogWorkflowRecipientDeceased(
@@ -250,15 +250,22 @@ public class TestUtils {
         );
     }
 
+    public static boolean isRefinementPresent(String iun, Integer recIndex, TimelineService timelineService) {
+        return getRefinement(iun, recIndex, timelineService).isPresent();
+    }
 
-    public static void checkRefinement(String iun, Integer recIndex, TimelineService timelineService) {
-        Assertions.assertTrue(timelineService.getTimelineElement(
+    public static boolean isCancelledNotification(String iun, TimelineService timelineService) {
+        return timelineService.getTimelineElement(
                 iun,
-                TimelineEventId.REFINEMENT.buildEventId(
+                TimelineEventId.NOTIFICATION_CANCELLED.buildEventId(
                         EventId.builder()
                                 .iun(iun)
-                                .recIndex(recIndex)
-                                .build())).isPresent());
+                                .build())).isPresent();
+    }
+
+
+    public static void checkRefinement(String iun, Integer recIndex, TimelineService timelineService) {
+        Assertions.assertTrue(isRefinementPresent(iun, recIndex, timelineService));
     }
 
     public static void checkExternalChannelPecSend(String iunExpected, String addressExpected, String iunValue, String addressValue) {
@@ -319,7 +326,7 @@ public class TestUtils {
 
         Assertions.assertTrue(timelineElementInternal.isPresent());
         TimelineElementInternal timelineElement = timelineElementInternal.get();
-        Assertions.assertNotNull(timelineElement.getLegalFactsIds().get(0));
+        Assertions.assertNotNull(timelineElement.getLegalFactsIds().getFirst());
         Assertions.assertNotNull(timelineElement.getTimestamp());
 
         SendDigitalProgressDetailsInt details = (SendDigitalProgressDetailsInt) timelineElement.getDetails();
@@ -349,7 +356,7 @@ public class TestUtils {
 
         Assertions.assertTrue(timelineElementInternal.isPresent());
         TimelineElementInternal timelineElement = timelineElementInternal.get();
-        Assertions.assertNotNull(timelineElement.getLegalFactsIds().get(0));
+        Assertions.assertNotNull(timelineElement.getLegalFactsIds().getFirst());
         Assertions.assertNotNull(timelineElement.getTimestamp());
 
         SendDigitalFeedbackDetailsInt details = (SendDigitalFeedbackDetailsInt) timelineElement.getDetails();
@@ -357,35 +364,16 @@ public class TestUtils {
         Assertions.assertEquals(status, details.getResponseStatus());
     }
 
-    /* TODO: Capire se devono rimanere questi metodi
-
-    public synchronized static NotificationStatusInt getNotificationStatus(NotificationInt notification, TimelineService timelineService, StatusUtils statusUtils) {
-        int numberOfRecipient = notification.getRecipients().size();
-        Instant notificationCreatedAt = notification.getSentAt();
-
-        Set<TimelineElementInternal> timelineElements = timelineService.getTimeline(notification.getIun(), true);
-
-        List<NotificationStatusHistoryElementInt> statusHistoryElements = statusUtils.getStatusHistory(timelineElements, numberOfRecipient, notificationCreatedAt);
-        
-        log.info("[TEST] timelineElements {}", timelineElements.stream().map(t -> t.getElementId()).toList());
-        NotificationStatusInt notificationStatusInt =  statusUtils.getCurrentStatus(statusHistoryElements);
-        log.info("[TEST] notificationStatus {} - iun={}", notificationStatusInt, notification.getIun());
-        return notificationStatusInt;
+    public static boolean isPresentUnreachable(String iun, Integer recIndex, TimelineService timelineService) {
+        return timelineService.getTimelineElement(
+                iun,
+                TimelineEventId.COMPLETELY_UNREACHABLE.buildEventId(
+                        EventId.builder()
+                                .iun(iun)
+                                .recIndex(recIndex)
+                                .build())
+        ).isPresent();
     }
-
-    public synchronized static boolean checkNotificationStatusHistoryContainsDesiredStatus(NotificationInt notification, TimelineService timelineService, StatusUtils statusUtils, NotificationStatusInt desiredStatus) {
-        int numberOfRecipient = notification.getRecipients().size();
-        Instant notificationCreatedAt = notification.getSentAt();
-
-        Set<TimelineElementInternal> timelineElements = timelineService.getTimeline(notification.getIun(), true);
-
-        List<NotificationStatusHistoryElementInt> statusHistoryElements = statusUtils.getStatusHistory(timelineElements, numberOfRecipient, notificationCreatedAt);
-        
-        log.info("[TEST] Searching status {} in status history is {} ",desiredStatus, statusHistoryElements);
-        return statusHistoryElements.stream().anyMatch(history -> history.getStatus().equals(desiredStatus));
-    }
-
-     */
 
     public static void checkIsNotPresentRefinement(String iun, Integer recIndex, TimelineService timelineService) {
         Assertions.assertFalse(timelineService.getTimelineElement(
@@ -555,18 +543,6 @@ public class TestUtils {
         return timelineElementOpt.isPresent();
     }
 
-    public static boolean checkIsPresentRequestAccepted(String iun, TimelineService timelineService) {
-        Optional<TimelineElementInternal> timelineElementOpt = timelineService.getTimelineElement(
-                iun,
-                TimelineEventId.REQUEST_ACCEPTED.buildEventId(
-                        EventId.builder()
-                                .iun(iun)
-                                .build())
-        );
-
-        return timelineElementOpt.isPresent();
-    }
-
     public static Optional<TimelineElementInternal> getRefinement(String iun, Integer recIndex, TimelineService timelineService) {
         return timelineService.getTimelineElement(
                 iun,
@@ -588,13 +564,13 @@ public class TestUtils {
         Mockito.verify(scheduler, Mockito.times(refinementNumberOfInvocation)).scheduleEvent(eq(iun), eq(recIndex), instantArgumentCaptor.capture(), Mockito.any(ActionType.class));
         List<Instant> instantArgumentCaptorList = instantArgumentCaptor.getAllValues();
         //Viene ottenuta la data di perfezionamento (Valutare se inserire la data di scheduling come campo del timeline element details)
-        Instant refinementDate = instantArgumentCaptorList.get(instantArgumentCaptorList.size() - 1);
+        Instant refinementDate = instantArgumentCaptorList.getLast();
 
         List<TimelineElementInternal> lastSendDigitalElementList = timelineService.getTimeline(iun, false).stream()
                 .filter(element -> TimelineElementCategoryInt.SEND_DIGITAL_DOMICILE.equals(element.getCategory()))
                 .sorted(Comparator.comparing(TimelineElementInternal::getTimestamp)).collect(Collectors.toList());
 
-        Instant lastSendDigitalDate = lastSendDigitalElementList.get(lastSendDigitalElementList.size() - 1).getTimestamp();
+        Instant lastSendDigitalDate = lastSendDigitalElementList.getLast().getTimestamp();
         //Viene ottenuta la data dell'ultimo invio verso externalChannel
         ZonedDateTime notificationDateTime = DateFormatUtils.parseInstantToZonedDateTime(lastSendDigitalDate);
 
@@ -661,51 +637,6 @@ public class TestUtils {
                                             .build();
                         }).toList();
         return listNotificationDocument;
-    }
-
-    public static List<NotificationDocumentInt> firstFileUploadFromNotificationTooBig(List<DocumentWithContent> documentWithContentList,
-                                                             List<NotificationDocumentInt> listNotificationDocument,
-                                                             SafeStorageClientMock safeStorageClientMock) {
-        for (DocumentWithContent documentWithContent : documentWithContentList) {
-            FileCreationWithContentRequest fileCreationWithContentRequest = new FileCreationWithContentRequest();
-            fileCreationWithContentRequest.setContentType("application/pdf" + TOO_BIG);
-            fileCreationWithContentRequest.setDocumentType(PN_NOTIFICATION_ATTACHMENT);
-            fileCreationWithContentRequest.setContent(documentWithContent.getContent().getBytes());
-            safeStorageClientMock.createFile(fileCreationWithContentRequest, documentWithContent.getDocument().getDigests().getSha256());
-            listNotificationDocument = createFileAndGetDocumentList(listNotificationDocument, safeStorageClientMock, documentWithContent.getDocument(), fileCreationWithContentRequest);
-        }
-        return listNotificationDocument;
-    }
-
-
-    public static List<NotificationDocumentInt> firstFileUploadFromNotificationNotAPDF(List<DocumentWithContent> documentWithContentList,
-                                                              List<NotificationDocumentInt> listNotificationDocument,
-                                                              SafeStorageClientMock safeStorageClientMock) {
-        for (DocumentWithContent documentWithContent : documentWithContentList) {
-            FileCreationWithContentRequest fileCreationWithContentRequest = new FileCreationWithContentRequest();
-            fileCreationWithContentRequest.setContentType("application/pdf" + NOT_A_PDF);
-            fileCreationWithContentRequest.setDocumentType(PN_NOTIFICATION_ATTACHMENT);
-            fileCreationWithContentRequest.setContent(documentWithContent.getContent().getBytes());
-            listNotificationDocument = createFileAndGetDocumentList(listNotificationDocument, safeStorageClientMock, documentWithContent.getDocument(), fileCreationWithContentRequest);
-        }
-        
-        return listNotificationDocument;
-    }
-
-    public static NotificationInt firstFileUploadFromNotificationError(NotificationInt notification, SafeStorageClientMock safeStorageClientMock, byte[] differentFileContent) {
-        List<NotificationDocumentInt> listNotificationDocument = notification.getDocuments();
-
-        for (NotificationDocumentInt attachment : notification.getDocuments()) {
-            FileCreationWithContentRequest fileCreationWithContentRequest = new FileCreationWithContentRequest();
-            fileCreationWithContentRequest.setContentType("application/pdf");
-            fileCreationWithContentRequest.setDocumentType(PN_NOTIFICATION_ATTACHMENT);
-            fileCreationWithContentRequest.setContent(differentFileContent);
-            safeStorageClientMock.createFile(fileCreationWithContentRequest, attachment.getDigests().getSha256());
-            listNotificationDocument = createFileAndGetDocumentList(listNotificationDocument, safeStorageClientMock, attachment, fileCreationWithContentRequest);
-        }
-        return notification.toBuilder()
-                .documents(listNotificationDocument)
-                .build();
     }
 
     public static List<DocumentWithContent> getDocumentWithContents(String fileDoc, List<NotificationDocumentInt> notificationDocumentList) {
@@ -1194,7 +1125,8 @@ public class TestUtils {
                                                PaperNotificationFailedDaoMock paperNotificationFailedDaoMock,
                                                PnDataVaultClientReactiveMock pnDataVaultClientReactiveMock,
                                                DocumentCreationRequestDaoMock documentCreationRequestDaoMock,
-                                               ActionPoolMock actionPoolMock
+                                               ActionPoolMock actionPoolMock,
+                                               TimelineClientMock timelineClientMock
     ) {
 
         log.info("CLEARING MOCKS");
@@ -1209,6 +1141,7 @@ public class TestUtils {
         pnDataVaultClientReactiveMock.clear();
         documentCreationRequestDaoMock.clear();
         actionPoolMock.clear();
+        timelineClientMock.clear();
         
         ConsoleAppenderCustom.initializeLog();
     }
