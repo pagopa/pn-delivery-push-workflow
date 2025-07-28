@@ -1,0 +1,28 @@
+package it.pagopa.pn.deliverypushworkflow.dto.timeline.details;
+
+import lombok.*;
+
+import java.time.Instant;
+
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+@Builder(toBuilder = true)
+@EqualsAndHashCode
+@ToString
+public class PublicRegistryCallDetailsInt implements RecipientRelatedTimelineElementDetails {
+    private int recIndex;
+    private DeliveryModeInt deliveryMode;
+    private ContactPhaseInt contactPhase;
+    private int sentAttemptMade;
+    private Instant sendDate;
+    private String relatedFeedbackTimelineId;
+    
+    public String toLog() {
+        return String.format(
+                "recIndex=%d",
+                recIndex
+        );
+    }
+}

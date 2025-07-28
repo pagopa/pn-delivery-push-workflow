@@ -1,42 +1,87 @@
 package it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer;
 
+import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
+import it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.router.EventRouter;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.messaging.support.MessageBuilder;
 
-import static java.util.Collections.emptyMap;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(SpringExtension.class)
 class ExtConsumerTest {
-    @InjectMocks
-    private ExtConsumer extConsumer;
 
-    @Test
-    void pnExtChannelEventInboundConsumer_processesValidMessageWithoutException() {
-        Message<String> message = mock(Message.class);
-        when(message.getPayload()).thenReturn("evento-valido");
-        when(message.getHeaders()).thenReturn(new MessageHeaders(emptyMap()));
-        extConsumer.pnExtChannelEventInboundConsumer(message);
+    private EventRouter eventRouter;
+    private ExtConsumer handler;
+    private static final String PAYLOAD = "payload";
+
+    @BeforeEach
+    void setUp() {
+        eventRouter = mock(EventRouter.class);
+        handler = new ExtConsumer(eventRouter, mock(PnDeliveryPushWorkflowConfigs.class));
     }
 
     @Test
-    void pnExtChannelEventInboundConsumer_throwsExceptionWhenSetMdcFails() {
-        Message<String> message = mock(Message.class);
-        when(message.getPayload()).thenReturn("evento-errore");
-        // Simula errore su setMdc tramite mock statico se possibile, altrimenti su getPayload
-        doThrow(new RuntimeException("Errore simulato"))
-                .when(message).getPayload();
+    void routesMessageWithEventTypeHeader() {
+        Message<String> message = MessageBuilder.withPayload(PAYLOAD)
+                .setHeader("eventType", "CUSTOM_EVENT")
+                .build();
 
-        assertThrows(RuntimeException.class, () -> extConsumer.pnExtChannelEventInboundConsumer(message));
+        handler.pnExtChannelEventInboundConsumer(message);
+
+        ArgumentCaptor<EventRouter.RoutingConfig> configCaptor = ArgumentCaptor.forClass(EventRouter.RoutingConfig.class);
+        verify(eventRouter).route(eq(message), configCaptor.capture());
+        assertEquals("CUSTOM_EVENT", configCaptor.getValue().getEventType());
+        assertTrue(configCaptor.getValue().isDeserializePayload());
     }
 
     @Test
-    void pnExtChannelEventInboundConsumer_throwsExceptionOnNullMessage() {
-        assertThrows(NullPointerException.class, () -> extConsumer.pnExtChannelEventInboundConsumer(null));
+    void routesMessageWithDefaultEventTypeWhenHeaderMissing() {
+        Message<String> message = MessageBuilder.withPayload(PAYLOAD).build();
+
+        handler.pnExtChannelEventInboundConsumer(message);
+
+        ArgumentCaptor<EventRouter.RoutingConfig> configCaptor = ArgumentCaptor.forClass(EventRouter.RoutingConfig.class);
+        verify(eventRouter).route(eq(message), configCaptor.capture());
+        assertEquals("SEND_PEC_RESPONSE", configCaptor.getValue().getEventType());
+    }
+
+    @Test
+    void routesMessageWithEventTypeMockExtChannel() {
+        Message<String> message = MessageBuilder.withPayload(PAYLOAD)
+                .setHeader("eventType", "EXTERNAL_CHANNELS_EVENT")
+                .build();
+
+        handler.pnExtChannelEventInboundConsumer(message);
+
+        ArgumentCaptor<EventRouter.RoutingConfig> configCaptor = ArgumentCaptor.forClass(EventRouter.RoutingConfig.class);
+        verify(eventRouter).route(eq(message), configCaptor.capture());
+        assertEquals("SEND_PEC_RESPONSE", configCaptor.getValue().getEventType());
+    }
+
+    @Test
+    void routesMessageWithDefaultEventTypeWhenHeaderEmpty() {
+        Message<String> message = MessageBuilder.withPayload(PAYLOAD)
+                .setHeader("eventType", "")
+                .build();
+
+        handler.pnExtChannelEventInboundConsumer(message);
+
+        ArgumentCaptor<EventRouter.RoutingConfig> configCaptor = ArgumentCaptor.forClass(EventRouter.RoutingConfig.class);
+        verify(eventRouter).route(eq(message), configCaptor.capture());
+        assertEquals("SEND_PEC_RESPONSE", configCaptor.getValue().getEventType());
+    }
+
+    @Test
+    void handlesExceptionAndRethrows() {
+        Message<String> message = MessageBuilder.withPayload(PAYLOAD)
+                .setHeader("eventType", "CUSTOM_EVENT")
+                .build();
+
+        doThrow(new RuntimeException("fail")).when(eventRouter).route(any(), any());
+
+        assertThrows(RuntimeException.class, () -> handler.pnExtChannelEventInboundConsumer(message));
     }
 }

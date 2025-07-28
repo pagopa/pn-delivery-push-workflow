@@ -8,7 +8,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 @EnableAutoConfiguration(exclude= {SqsAutoConfiguration.class, ContextFunctionCatalogAutoConfiguration.class})
-public abstract class MockAWSObjectsTest {
+public abstract class MockAWSObjectsTest extends MockActionPoolTest {
 
 //    @MockBean
 //    private AmazonSQSAsync amazonSQS;

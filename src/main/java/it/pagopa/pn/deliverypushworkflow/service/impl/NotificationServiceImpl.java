@@ -1,0 +1,61 @@
+package it.pagopa.pn.deliverypushworkflow.service.impl;
+
+import it.pagopa.pn.commons.exceptions.PnInternalException;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
+import it.pagopa.pn.deliverypushworkflow.exceptions.PnNotFoundException;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.SentNotificationV25;
+import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.delivery.PnDeliveryClient;
+import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.delivery.PnDeliveryClientReactive;
+import it.pagopa.pn.deliverypushworkflow.service.NotificationService;
+import it.pagopa.pn.deliverypushworkflow.service.mapper.NotificationMapper;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
+
+import java.util.Map;
+
+import static it.pagopa.pn.deliverypushworkflow.exceptions.PnDeliveryPushExceptionCodes.ERROR_CODE_DELIVERYPUSH_NOTIFICATIONFAILED;
+
+@Service
+@Slf4j
+public class NotificationServiceImpl implements NotificationService {
+    private final PnDeliveryClient pnDeliveryClient;
+    private final PnDeliveryClientReactive pnDeliveryClientReactive;
+
+    public NotificationServiceImpl(PnDeliveryClient pnDeliveryClient,
+                                   PnDeliveryClientReactive pnDeliveryClientReactive) {
+        this.pnDeliveryClient = pnDeliveryClient;
+        this.pnDeliveryClientReactive = pnDeliveryClientReactive;
+    }
+
+    @Override
+    public NotificationInt getNotificationByIun(String iun) {
+        SentNotificationV25 sentNotification = pnDeliveryClient.getSentNotification(iun);
+        log.debug("Get notification OK for - iun {}", iun);
+
+        if (sentNotification != null) {
+            return NotificationMapper.externalToInternal(sentNotification);
+        } else {
+            log.error("Get notification is not valid for - iun {}", iun);
+            throw new PnInternalException("Get notification is not valid for - iun " + iun, ERROR_CODE_DELIVERYPUSH_NOTIFICATIONFAILED);
+        }        
+    }
+
+
+    @Override
+    public Mono<Void> removeAllNotificationCostsByIun(String iun) {
+        return pnDeliveryClientReactive.removeAllNotificationCostsByIun(iun)
+                .onErrorResume( error -> {
+                    log.error("removeAllNotificationCostsByIun error ={} - iun {}", error,  iun);
+                    return Mono.error(new PnInternalException("removeAllNotificationCostsByIun error - iun " + iun, ERROR_CODE_DELIVERYPUSH_NOTIFICATIONFAILED, error));
+                });
+    }
+
+
+    @Override
+    public Map<String, String> getRecipientsQuickAccessLinkToken(String iun) {
+       Map<String, String> resp = pnDeliveryClient.getQuickAccessLinkTokensPrivate(iun);
+       log.debug("Get QuickAccessLinkToken OK for - iun {}", iun);
+       return resp;         
+    }
+}

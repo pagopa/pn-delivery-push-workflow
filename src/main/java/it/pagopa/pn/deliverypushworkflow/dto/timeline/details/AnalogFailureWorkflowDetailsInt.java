@@ -1,0 +1,22 @@
+package it.pagopa.pn.deliverypushworkflow.dto.timeline.details;
+
+import lombok.*;
+
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+@Builder(toBuilder = true)
+@EqualsAndHashCode
+@ToString
+public class AnalogFailureWorkflowDetailsInt implements RecipientRelatedTimelineElementDetails {
+    private int recIndex;
+    private String generatedAarUrl;
+
+    public String toLog() {
+        return String.format(
+                "recIndex=%d",
+                recIndex
+        );
+    }
+}

@@ -8,8 +8,6 @@ public enum DocumentCreationTypeInt {
 
     ANALOG_FAILURE_DELIVERY(LegalFactCategoryInt.ANALOG_FAILURE_DELIVERY.getValue()),
 
-    SENDER_ACK(LegalFactCategoryInt.SENDER_ACK.getValue()),
-
     DIGITAL_DELIVERY(LegalFactCategoryInt.DIGITAL_DELIVERY.getValue()),
 
     RECIPIENT_ACCESS(LegalFactCategoryInt.RECIPIENT_ACCESS.getValue()),
