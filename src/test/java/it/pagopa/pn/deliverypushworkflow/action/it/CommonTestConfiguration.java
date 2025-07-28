@@ -10,6 +10,7 @@ import it.pagopa.pn.deliverypushworkflow.action.completionworkflow.*;
 import it.pagopa.pn.deliverypushworkflow.action.digitalworkflow.*;
 import it.pagopa.pn.deliverypushworkflow.action.it.mockbean.*;
 import it.pagopa.pn.deliverypushworkflow.action.it.utils.TestUtils;
+import it.pagopa.pn.deliverypushworkflow.action.it.mockbean.TimelineClientMock;
 import it.pagopa.pn.deliverypushworkflow.action.notificationpaid.NotificationPaidHandler;
 import it.pagopa.pn.deliverypushworkflow.action.notificationview.NotificationCost;
 import it.pagopa.pn.deliverypushworkflow.action.notificationview.NotificationViewLegalFactCreationResponseHandler;
@@ -185,6 +186,8 @@ public class CommonTestConfiguration {
     @Autowired
     DocumentCreationRequestDaoMock documentCreationRequestDaoMock;
     @Autowired
+    TimelineClientMock timelineClientMock;
+    @Autowired
     PnDeliveryPushWorkflowConfigs cfg;
     
     @BeforeEach
@@ -208,7 +211,8 @@ public class CommonTestConfiguration {
                 paperNotificationFailedDaoMock,
                 pnDataVaultClientReactiveMock,
                 documentCreationRequestDaoMock,
-                actionPoolMock
+                actionPoolMock,
+                timelineClientMock
         );
     }
 

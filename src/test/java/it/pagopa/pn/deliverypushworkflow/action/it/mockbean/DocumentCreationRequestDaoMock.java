@@ -4,6 +4,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.documentcreation.DocumentCreationRe
 import it.pagopa.pn.deliverypushworkflow.middleware.dao.documentcreationdao.DocumentCreationRequestDao;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -23,5 +24,19 @@ public class DocumentCreationRequestDaoMock implements DocumentCreationRequestDa
         }
         documentMap.put(documentCreationRequest.getKey(), documentCreationRequest);
         log.info("document added to documentMap {}", documentCreationRequest);
+    }
+
+    // Aggiunto solo per i TestIT
+    public Optional<DocumentCreationRequest> getDocumentCreationRequest(String key) {
+        log.info("[TEST] start getDocumentCreationRequest for key: {}", key);
+        DocumentCreationRequest documentCreationRequest = documentMap.get(key);
+
+        Optional<DocumentCreationRequest> documentCreationRequestOptional = documentCreationRequest != null ? Optional.of(documentCreationRequest) : Optional.empty();
+        if(documentCreationRequestOptional.isPresent()){
+            return documentCreationRequestOptional;
+        }else {
+            log.info("document creation request for fileKey {} is not present. This is documentCreationRequestPresent={}", key, documentMap.toString());
+            return Optional.empty();
+        }
     }
 }
