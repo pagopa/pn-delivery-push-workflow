@@ -325,6 +325,14 @@ Parameters:
     Type: CommaDelimitedList
     Description: List containing in order pfNewWorkflowStart, pfNewWorkflowStop
     Default: '2099-01-01T00:00:00Z,2099-02-01T00:00:00Z'
+    
+  NewWorkflowLambdasEnabledStart:
+    Type: String
+    Description: 'Start date in EPOCH millis format (important!) for lambdas enabled'
+  
+  NewWorkflowLambdasEnabledEnd:
+    Type: String
+    Description: 'End date in EPOCH millis format (important!) for lambdas enabled'
   
   PagoPaNotificationFee:
     Type: String
@@ -664,7 +672,13 @@ Resources:
         - ReportBatchItemFailures
       FilterCriteria:
         Filters:
-          - Pattern: '{ "data" : { "tableName" : [ "pn-Timelines" ], "eventName": [ "INSERT" ] } }'
+          - Pattern: !Join
+              - ''
+              - - '{ "data" : { "tableName" : [ "pn-Timelines" ], "eventName": [ "INSERT" ], "dynamodb": { "ApproximateCreationDateTime": [{ "numeric": [ ">=", '
+                - !Ref NewWorkflowLambdasEnabledStart
+                - ', "<", '
+                - !Ref NewWorkflowLambdasEnabledEnd
+                - ']}] } } }'
       MaximumBatchingWindowInSeconds: !Sub ${NotificationCancellationActionInsertLambdaMaximumBatchingWindowInSeconds}
       StartingPosition: TRIM_HORIZON
       DestinationConfig:
@@ -773,7 +787,13 @@ Resources:
         - ReportBatchItemFailures
       FilterCriteria:
         Filters:
-          - Pattern: '{ "data" : { "tableName" : [ "pn-Timelines" ], "eventName": [ "INSERT" ] } }'
+          - Pattern: !Join
+              - ''
+              - - '{ "data" : { "tableName" : [ "pn-Timelines" ], "eventName": [ "INSERT" ], "dynamodb": { "ApproximateCreationDateTime": [{ "numeric": [ ">=", '
+                - !Ref NewWorkflowLambdasEnabledStart
+                - ', "<", '
+                - !Ref NewWorkflowLambdasEnabledEnd
+                - ']}] } } }'
       MaximumBatchingWindowInSeconds: !Sub ${PaperEventsCostUpdateLambdaMaximumBatchingWindowInSeconds}
       StartingPosition: TRIM_HORIZON
       DestinationConfig:
