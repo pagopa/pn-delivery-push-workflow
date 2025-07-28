@@ -31,6 +31,19 @@ build/
 
 ### VS Code ###
 .vscode/
-.history
-.vscode
-target
+
+### MAC ###
+**/.DS_Store
+
+# coverage
+.nyc_output/
+coverage/
+
+# lambda
+function.zip
+code_layer.zip
+lib_layer.zip
+nodejs/
+
+# Node.js
+node_modules/
