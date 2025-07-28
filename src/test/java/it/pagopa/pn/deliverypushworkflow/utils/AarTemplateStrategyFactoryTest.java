@@ -4,13 +4,12 @@ import it.pagopa.pn.deliverypushworkflow.legalfacts.AarTemplateChooseStrategy;
 import it.pagopa.pn.deliverypushworkflow.legalfacts.AarTemplateStrategyFactory;
 import it.pagopa.pn.deliverypushworkflow.legalfacts.DynamicRADDExperimentationChooseStrategy;
 import it.pagopa.pn.deliverypushworkflow.legalfacts.StaticAarTemplateChooseStrategy;
-import it.pagopa.pn.deliverypushworkflow.util.CheckRADDExperimentation;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
-import static it.pagopa.pn.deliverypushworkflow.dto.utils.AarUtils.*;
+import static it.pagopa.pn.deliverypushworkflow.action.utils.AarUtils.*;
 
 
 class AarTemplateStrategyFactoryTest {

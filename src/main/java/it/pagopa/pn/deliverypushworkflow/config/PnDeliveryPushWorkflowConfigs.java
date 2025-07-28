@@ -2,17 +2,24 @@ package it.pagopa.pn.deliverypushworkflow.config;
 
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import it.pagopa.pn.commons.conf.SharedAutoConfiguration;
+import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
+import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.impl.TimeParams;
 import jakarta.annotation.PostConstruct;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+
 @Configuration
 @ConfigurationProperties( prefix = "pn.delivery-push-workflow")
 @Data
 @Import({SharedAutoConfiguration.class})
+@Slf4j
 public class PnDeliveryPushWorkflowConfigs {
     private Topics topics;
   
@@ -68,6 +75,31 @@ public class PnDeliveryPushWorkflowConfigs {
 
     private FailedNotificationDao failedNotificationDao;
 
+    private String pfNewWorkflowStart;
+
+    private String pfNewWorkflowStop;
+
+    private String AAROnlyPECForRADDAndPF;
+
+    private ExternalChannel externalChannel;
+
+    private TimeParams timeParams;
+
+    private Integer retentionAttachmentDaysAfterRefinement;
+
+    private Instant featureUnreachableRefinementPostAARStartDate;
+
+    private String activationDeceasedWorkflowDate;
+
+    private int pagoPaNotificationBaseCost;
+
+    private int pagoPaNotificationFee;
+
+    private int pagoPaNotificationVat;
+
+    private PaperChannel paperChannel;
+
+
     @Data
     public static class Topics {
         private String newNotifications;
@@ -75,6 +107,7 @@ public class PnDeliveryPushWorkflowConfigs {
         private String scheduledActions;
         private String nationalRegistriesEvents;
     }
+
     @Data
     public static class Webapp {
         private String directAccessUrlTemplatePhysical;
@@ -97,8 +130,51 @@ public class PnDeliveryPushWorkflowConfigs {
         private String tableName;
     }
 
+    @Data
+    public static class ExternalChannel {
+
+        private List<String> digitalCodesProgress;
+        private List<String> digitalCodesSuccess;
+        private List<String> digitalCodesFail;
+        private List<String> digitalCodesRetryable;
+
+        private List<String> digitalCodesFatallog;
+
+        private int digitalRetryCount;
+        private Duration digitalRetryDelay;
+        private Duration digitalSendNoresponseTimeout;
+
+    }
+
+    @Data
+    public static class SenderAddress {
+        private String fullname;
+        private String address;
+        private String zipcode;
+        private String city;
+        private String pr;
+        private String country;
+    }
+
+    @Data
+    public static class PaperChannel {
+
+        private SenderAddress senderAddress;
+
+        public PhysicalAddressInt getSenderPhysicalAddress(){
+            return PhysicalAddressInt.builder()
+                    .fullname(senderAddress.getFullname())
+                    .address(senderAddress.getAddress())
+                    .zip(senderAddress.getZipcode())
+                    .province(senderAddress.getPr())
+                    .municipality(senderAddress.getCity())
+                    .foreignState(senderAddress.getCountry())
+                    .build();
+        }
+    }
+
     @PostConstruct
     public void init() {
-        System.out.println(this);
+        log.info("PnDeliveryPushWorkflowConfigs={}", this);
     }
 }

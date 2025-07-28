@@ -5,15 +5,11 @@ import it.pagopa.pn.deliverypushworkflow.middleware.dao.failednotificationdao.Pa
 import it.pagopa.pn.deliverypushworkflow.middleware.dao.failednotificationdao.dynamo.PaperNotificationFailedDaoDynamo;
 import it.pagopa.pn.deliverypushworkflow.middleware.dao.failednotificationdao.dynamo.entity.PaperNotificationFailedEntity;
 import it.pagopa.pn.deliverypushworkflow.middleware.dao.failednotificationdao.dynamo.mapper.DtoToEntityNotificationFailedMapper;
-import it.pagopa.pn.deliverypushworkflow.middleware.dao.failednotificationdao.dynamo.mapper.EntityToDtoNotificationFailedMapper;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
-import java.util.Collections;
-import java.util.Set;
 
 class PaperNotificationFailedDaoDynamoTest {
 
@@ -23,17 +19,13 @@ class PaperNotificationFailedDaoDynamoTest {
     @Mock
     private DtoToEntityNotificationFailedMapper dtoToEntity;
 
-    @Mock
-    private EntityToDtoNotificationFailedMapper entityToDto;
-
     private PaperNotificationFailedDaoDynamo dynamo;
 
     @BeforeEach
     void setUp() {
         dao = Mockito.mock(PaperNotificationFailedEntityDao.class);
         dtoToEntity = Mockito.mock(DtoToEntityNotificationFailedMapper.class);
-        entityToDto = Mockito.mock(EntityToDtoNotificationFailedMapper.class);
-        dynamo = new PaperNotificationFailedDaoDynamo(dao, dtoToEntity, entityToDto);
+        dynamo = new PaperNotificationFailedDaoDynamo(dao, dtoToEntity);
     }
 
     @Test
@@ -46,20 +38,6 @@ class PaperNotificationFailedDaoDynamoTest {
         dynamo.addPaperNotificationFailed(dto);
 
         Mockito.verify(dao, Mockito.times(1)).put(entity);
-    }
-
-    @Test
-    void getPaperNotificationFailedByRecipientId() {
-        PaperNotificationFailed dto = buildPaperNotificationFailed();
-        PaperNotificationFailedEntity entity = buildPaperNotificationFailedEntity();
-
-        Mockito.when(entityToDto.entityToDto(entity)).thenReturn(dto);
-        Mockito.when(dao.findByRecipientId("001")).thenReturn(Collections.singleton(entity));
-
-        Set<PaperNotificationFailed> actual = dynamo.getPaperNotificationFailedByRecipientId("001");
-
-        Assertions.assertEquals(1, actual.size());
-
     }
 
     @Test

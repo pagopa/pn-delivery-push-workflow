@@ -1,42 +1,56 @@
 package it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer;
 
+import it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.router.EventRouter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static java.util.Collections.emptyMap;
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(SpringExtension.class)
 class DeliveryPushInputsConsumerTest {
     @InjectMocks
-    private DeliveryPushInputsConsumer deliveryPushInputsConsumer;
+    private DeliveryPushInputsConsumer handler;
+
+    @Mock
+    private EventRouter eventRouter;
 
     @Test
-    void pnDeliveryPushInputsInboundConsumer_logsMessageOnValidInput() {
-        Message<String> message = mock(Message.class);
-        when(message.getPayload()).thenReturn("notifica-valida");
-        when(message.getHeaders()).thenReturn(new MessageHeaders(emptyMap()));
+    void pnDeliveryPushInputsInboundConsumer_routesMessageSuccessfully() {
+        Message<String> message = Mockito.mock(Message.class);
+        Mockito.when(message.getPayload()).thenReturn("Test Payload");
+        Mockito.when(message.getHeaders()).thenReturn(new MessageHeaders(Map.of("eventType", "NOTIFICATION_VALIDATION")));
 
-        deliveryPushInputsConsumer.pnDeliveryPushInputsInboundConsumer(message);
+        handler.pnDeliveryPushInputsInboundConsumer(message);
+
+        EventRouter.RoutingConfig expectedConfig = EventRouter.RoutingConfig.builder()
+                .deserializePayload(true)
+                .build();
+        Mockito.verify(eventRouter).route(message, expectedConfig);
     }
 
     @Test
-    void pnDeliveryPushInputsInboundConsumer_throwsExceptionOnProcessingError() {
-        Message<String> message = mock(Message.class);
-        when(message.getPayload()).thenReturn("errore-notifica");
-        doThrow(new RuntimeException("Errore simulato"))
-                .when(message).getPayload();
+    void pnDeliveryPushInputsInboundConsumer_handlesExceptionGracefully() {
+        Message<String> message = Mockito.mock(Message.class);
+        Mockito.when(message.getPayload()).thenReturn("Test Payload");
+        Mockito.when(message.getHeaders()).thenReturn(new MessageHeaders(Map.of("eventType", "NOTIFICATION_VALIDATION")));
 
-        assertThrows(RuntimeException.class, () -> deliveryPushInputsConsumer.pnDeliveryPushInputsInboundConsumer(message));
+        Mockito.doThrow(new RuntimeException("Test Exception"))
+                .when(eventRouter).route(Mockito.any(), Mockito.any());
+
+        assertThrows(RuntimeException.class, () -> handler.pnDeliveryPushInputsInboundConsumer(message));
+
+        EventRouter.RoutingConfig expectedConfig = EventRouter.RoutingConfig.builder()
+                .deserializePayload(true)
+                .build();
+        Mockito.verify(eventRouter).route(message, expectedConfig);
     }
 
-    @Test
-    void pnDeliveryPushInputsInboundConsumer_handlesNullMessageGracefully() {
-        assertThrows(NullPointerException.class, () -> deliveryPushInputsConsumer.pnDeliveryPushInputsInboundConsumer(null));
-    }
 }

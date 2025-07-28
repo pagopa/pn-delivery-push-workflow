@@ -1,8 +1,8 @@
 package it.pagopa.pn.deliverypushworkflow.legalfacts;
 
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
-import it.pagopa.pn.deliverypushworkflow.dto.delivery.notification.NotificationInt;
-import it.pagopa.pn.deliverypushworkflow.dto.delivery.notification.NotificationRecipientInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

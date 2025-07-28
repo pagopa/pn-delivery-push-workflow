@@ -165,7 +165,7 @@ Parameters:
   LogAlarmStrategy:
     Type: String
     Default: 'FATAL'
-    
+
   # Logging parameters
   WireTapLogActivation:
     Type: String
@@ -174,24 +174,24 @@ Parameters:
     AllowedValues:
       - true
       - false
-  
+
   PnCronAnalyzer:
     Type: String
     Default: '-'
     Description: Cron for which you send the metric to CloudWatch
-  
+
   # EFS parameters
   FargateEFSFileSystemID:
     Type: String
     Description: "EFS Filesystem"
-  
+
   MountEfs:
     Type: String
     Default: "false"
     AllowedValues:
       - "true"
       - "false"
-  
+
   # --- Base URLs ---
   ExternalChannelBaseUrl:
     Type: String
@@ -282,28 +282,7 @@ Parameters:
   DeliveryPushToExternalRegistriesQueueARN: # defined in pn-infra
     Type: String
     Description: 'delivery-push to external-registries queue ARN'
-  
-  # --- FeatureFlags ---
-  WebhookFeatureFlags:
-    Type: CommaDelimitedList
-    Description: List containing in order StartReadStream, StopReadStream, StartWriteBusinessTimestamp, StopWriteBusinessTimestamp
-    Default: '1999-01-01T00:00:00Z,2099-02-01T00:00:00Z,2099-01-01T00:00:00Z,2099-02-01T00:00:00Z'
-  
-  pfNewWorkflowFeatureFlag:
-    Type: CommaDelimitedList
-    Description: List containing in order pfNewWorkflowStart, pfNewWorkflowStop
-    Default: '2099-01-01T00:00:00Z,2099-02-01T00:00:00Z'
-  
-  PagoPaNotificationFee:
-    Type: String
-    Description: 'PagoPa notification fee per le notifiche create PRIMA della v2.1. Per le successive, il default viene impostato da pn-delivery e arriva nella notifica.'
-    Default: '100'
-  
-  PagoPaNotificationVat:
-    Type: String
-    Description: 'PagoPa notification vat per le notifiche create PRIMA della v2.1. Per le successive, il default viene impostato da pn-delivery e arriva nella notifica.'
-    Default: '22'
-  
+
 Conditions:
     UseExternalChannelMock: !Equals [ !Ref ExternalChannelBaseUrl, "Mock" ]
 
@@ -334,7 +313,7 @@ Resources:
         ContainerImageURI: !Sub '${ContainerImageUri}'
         ContainerEnvEntry1: !Sub 'AWS_REGIONCODE=${AWS::Region}'
         ContainerEnvEntry2: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_NEWNOTIFICATIONS=${DeliveryPushInputsQueueName}'
-        ContainerEnvEntry3: !Sub 'PN_DELIVERYPUSHWORKFLOW_PAPERCHANNELBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
+        ContainerEnvEntry3: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_NATIONALREGISTRIESEVENTS=${NationalRegistries2DeliveryPushQueueName}'
         ContainerEnvEntry4: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_FROMEXTERNALCHANNEL=${ExternalChannelsOutputsQueueName}'
         ContainerEnvEntry5: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_SCHEDULEDACTIONS=${ScheduledActionsQueueName}'
         ContainerEnvEntry6:
@@ -342,30 +321,22 @@ Resources:
             - UseExternalChannelMock
             - !Sub 'PN_DELIVERYPUSHWORKFLOW_EXTERNALCHANNELBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
             - !Sub 'PN_DELIVERYPUSHWORKFLOW_EXTERNALCHANNELBASEURL=${ExternalChannelBaseUrl}'
-        ContainerEnvEntry7: !Sub 'PN_DELIVERYPUSHWORKFLOW_USERATTRIBUTESBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
-        ContainerEnvEntry8: !Sub 'PN_DELIVERYPUSHWORKFLOW_SAFESTORAGEBASEURL=${SandboxSafeStorageBaseUrl}'
-        ContainerEnvEntry9: !Sub 'PN_DELIVERYPUSHWORKFLOW_DELIVERYBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
-        ContainerEnvEntry10: !Sub 'PN_DELIVERYPUSHWORKFLOW_MANDATEBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
-        ContainerEnvEntry11: !Sub 'PN_DELIVERYPUSHWORKFLOW_EXTERNALREGISTRYBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
-        ContainerEnvEntry12: !Sub 'CORS_ALLOWED_DOMAINS=${CorsAllowedDomains}'
-        ContainerEnvEntry13: !Sub 'PN_DELIVERYPUSH_FAILEDNOTIFICATIONDAO_TABLENAME=${PaperNotificationFailedDynamoTableName}'
-        ContainerEnvEntry14: 'SPRING_CLOUD_FUNCTION_DEFINITION_LIST=pnDeliveryPushInputsInboundConsumer;pnExtChannelEventInboundConsumer;pnDeliveryPushActionsInboundConsumer;pnNationalRegistriesEventInboundConsumer'
-        ContainerEnvEntry16: !Sub 'PN_DELIVERYPUSHWORKFLOW_NATIONALREGISTRIESBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
-        ContainerEnvEntry17: !Sub 'PN_DELIVERYPUSHWORKFLOW_DOCUMENTCREATIONREQUESTDAO_TABLENAME=${DocumentCreationRequestTableName}'
-        ContainerEnvEntry18: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_NATIONALREGISTRIESEVENTS=${NationalRegistries2DeliveryPushQueueName}'
-        ContainerEnvEntry19: !Sub 'PN_DELIVERYPUSHWORKFLOW_PAGOPANOTIFICATIONFEE=${PagoPaNotificationFee}'
-        ContainerEnvEntry20: !Sub 'PN_DELIVERYPUSHWORKFLOW_PAGOPANOTIFICATIONVAT=${PagoPaNotificationVat}'
-        ContainerEnvEntry21: !Sub 'PN_DELIVERYPUSHWORKFLOW_TEMPLATESENGINEBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
-        ContainerEnvEntry22: !Sub 'PN_DELIVERYPUSHWORKFLOW_TIMELINECLIENTBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
-        ContainerEnvEntry23: !Sub [ 'PN_DELIVERYPUSHWORKFLOW_PFNEWWORKFLOWSTART=${SelectedEnv}', { SelectedEnv: !Select [ 0, !Ref pfNewWorkflowFeatureFlag ] } ]
-        ContainerEnvEntry24: !Sub [ 'PN_DELIVERYPUSHWORKFLOW_PFNEWWORKFLOWSTOP=${SelectedEnv}', { SelectedEnv: !Select [ 1, !Ref pfNewWorkflowFeatureFlag ] } ]
-        ContainerEnvEntry25: !Sub [ 'PN_DELIVERYPUSHWORKFLOW_STARTWRITEBUSINESSTIMESTAMP=${SelectedEnv}', { SelectedEnv: !Select [ 2, !Ref WebhookFeatureFlags ] } ]
-        ContainerEnvEntry26: !Sub [ 'PN_DELIVERYPUSHWORKFLOW_STOPWRITEBUSINESSTIMESTAMP=${SelectedEnv}', { SelectedEnv: !Select [ 3, !Ref WebhookFeatureFlags ] } ]
-        ContainerEnvEntry27: !Sub 'PN_DELIVERYPUSHWORKFLOW_EMDINTEGRATIONBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
-        ContainerEnvEntry28: !Sub 'PN_DELIVERYPUSHWORKFLOW_ACTIONMANAGERBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
-        ContainerEnvEntry29: 'PN_DELIVERYPUSHWORKFLOW_WEBAPP_FAQSENDHASH=send-cosa-e'
-        ContainerEnvEntry30: !Sub 'PN_CRON_ANALYZER=${PnCronAnalyzer}'
-        ContainerEnvEntry31: !Sub 'WIRE_TAP_LOG=${WireTapLogActivation}'
+        ContainerEnvEntry7: !Sub 'PN_DELIVERYPUSHWORKFLOW_PAPERCHANNELBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
+        ContainerEnvEntry8: !Sub 'PN_DELIVERYPUSHWORKFLOW_USERATTRIBUTESBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
+        ContainerEnvEntry9: !Sub 'PN_DELIVERYPUSHWORKFLOW_SAFESTORAGEBASEURL=${SandboxSafeStorageBaseUrl}'
+        ContainerEnvEntry10: !Sub 'PN_DELIVERYPUSHWORKFLOW_DELIVERYBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
+        ContainerEnvEntry11: !Sub 'PN_DELIVERYPUSHWORKFLOW_MANDATEBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
+        ContainerEnvEntry12: !Sub 'PN_DELIVERYPUSHWORKFLOW_EXTERNALREGISTRYBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
+        ContainerEnvEntry13: !Sub 'PN_DELIVERYPUSHWORKFLOW_TEMPLATESENGINEBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
+        ContainerEnvEntry14: !Sub 'PN_DELIVERYPUSHWORKFLOW_TIMELINECLIENTBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
+        ContainerEnvEntry15: !Sub 'PN_DELIVERYPUSHWORKFLOW_EMDINTEGRATIONBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
+        ContainerEnvEntry16: !Sub 'PN_DELIVERYPUSHWORKFLOW_ACTIONMANAGERBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
+        ContainerEnvEntry17: !Sub 'PN_DELIVERYPUSHWORKFLOW_NATIONALREGISTRIESBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
+        ContainerEnvEntry18: 'PN_DELIVERYPUSHWORKFLOW_DATAVAULTBASEURL=http://alb.confidential.pn.internal:8080'
+        ContainerEnvEntry19: !Sub 'PN_DELIVERYPUSHWORKFLOW_DOCUMENTCREATIONREQUESTDAO_TABLENAME=${DocumentCreationRequestTableName}'
+        ContainerEnvEntry20: !Sub 'PN_DELIVERYPUSHWORKFLOW_FAILEDNOTIFICATIONDAO_TABLENAME=${PaperNotificationFailedDynamoTableName}'
+        ContainerEnvEntry21: !Sub 'PN_CRON_ANALYZER=${PnCronAnalyzer}'
+        ContainerEnvEntry22: !Sub 'WIRE_TAP_LOG=${WireTapLogActivation}'
         ApplicativeEnvFileChecksum: !Ref ApplicativeEnvFileChecksum
         JavaToolOptions: '-Dreactor.netty.ioWorkerCount=50'
         MappedPaths: '/pn-delivery-push-workflow-service-not-available'
@@ -437,7 +408,6 @@ Resources:
               - 'ssm:GetParameter'
               - 'ssm:GetParameters'
             Resource:
-              - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/MapPaMVP'
               - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/radd-experimentation-zip-*'
           - Effect: Allow
             Action:

@@ -1,0 +1,300 @@
+package it.pagopa.pn.deliverypushworkflow.action.it;
+
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
+import it.pagopa.pn.deliverypushworkflow.action.analogworkflow.*;
+import it.pagopa.pn.deliverypushworkflow.action.cancellation.NotificationCancellationActionHandler;
+import it.pagopa.pn.deliverypushworkflow.action.checkattachmentretention.CheckAttachmentRetentionHandler;
+import it.pagopa.pn.deliverypushworkflow.action.choosedeliverymode.ChooseDeliveryModeHandler;
+import it.pagopa.pn.deliverypushworkflow.action.choosedeliverymode.ChooseDeliveryModeUtilsImpl;
+import it.pagopa.pn.deliverypushworkflow.action.completionworkflow.*;
+import it.pagopa.pn.deliverypushworkflow.action.digitalworkflow.*;
+import it.pagopa.pn.deliverypushworkflow.action.it.mockbean.*;
+import it.pagopa.pn.deliverypushworkflow.action.it.utils.TestUtils;
+import it.pagopa.pn.deliverypushworkflow.action.notificationpaid.NotificationPaidHandler;
+import it.pagopa.pn.deliverypushworkflow.action.notificationview.NotificationCost;
+import it.pagopa.pn.deliverypushworkflow.action.notificationview.NotificationViewLegalFactCreationResponseHandler;
+import it.pagopa.pn.deliverypushworkflow.action.notificationview.NotificationViewedRequestHandler;
+import it.pagopa.pn.deliverypushworkflow.action.notificationview.ViewNotification;
+import it.pagopa.pn.deliverypushworkflow.action.refinement.RefinementHandler;
+import it.pagopa.pn.deliverypushworkflow.action.startworkflow.ScheduleRecipientWorkflow;
+import it.pagopa.pn.deliverypushworkflow.action.startworkflow.notificationvalidation.AttachmentUtils;
+import it.pagopa.pn.deliverypushworkflow.action.startworkflowrecipient.AarCreationResponseHandler;
+import it.pagopa.pn.deliverypushworkflow.action.startworkflowrecipient.StartWorkflowForRecipientHandler;
+import it.pagopa.pn.deliverypushworkflow.action.utils.*;
+import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
+import it.pagopa.pn.deliverypushworkflow.legalfacts.AarTemplateStrategyFactory;
+import it.pagopa.pn.deliverypushworkflow.legalfacts.DynamicRADDExperimentationChooseStrategy;
+import it.pagopa.pn.deliverypushworkflow.logtest.ConsoleAppenderCustom;
+import it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.handler.action.*;
+import it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.router.EventHandlerRegistry;
+import it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.router.EventRouter;
+import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.impl.TimeParams;
+import it.pagopa.pn.deliverypushworkflow.middleware.responsehandler.DocumentCreationResponseHandler;
+import it.pagopa.pn.deliverypushworkflow.middleware.responsehandler.ExternalChannelResponseHandler;
+import it.pagopa.pn.deliverypushworkflow.middleware.responsehandler.NationalRegistriesResponseHandler;
+import it.pagopa.pn.deliverypushworkflow.middleware.responsehandler.PaperChannelResponseHandler;
+import it.pagopa.pn.deliverypushworkflow.service.impl.*;
+import it.pagopa.pn.deliverypushworkflow.service.mapper.SmartMapper;
+import it.pagopa.pn.deliverypushworkflow.service.utils.PublicRegistryUtils;
+import it.pagopa.pn.deliverypushworkflow.utils.CheckRADDExperimentation;
+import it.pagopa.pn.deliverypushworkflow.utils.FeatureEnabledUtils;
+import it.pagopa.pn.deliverypushworkflow.utils.PnSendModeUtils;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import static org.awaitility.Awaitility.setDefaultTimeout;
+
+@ContextConfiguration(classes = {
+        StartWorkflowForRecipientHandler.class,
+        AnalogWorkflowHandler.class,
+        ChooseDeliveryModeHandler.class,
+        DigitalWorkFlowHandler.class,
+        DigitalWorkFlowExternalChannelResponseHandler.class,
+        AnalogFailureDeliveryCreationResponseHandler.class,
+        PaperChannelServiceImpl.class,
+        PaperChannelUtils.class,
+        PaperChannelResponseHandler.class,
+        AnalogWorkflowPaperChannelResponseHandler.class,
+        AuditLogServiceImpl.class,
+        DigitalWorkFlowRetryHandler.class,
+        CompletionWorkFlowHandler.class,
+        NationalRegistriesResponseHandler.class,
+        NationalRegistriesServiceImpl.class,
+        ExternalChannelServiceImpl.class,
+        IoServiceImpl.class,
+        SafeStorageServiceImpl.class,
+        ExternalChannelResponseHandler.class,
+        RefinementHandler.class,
+        NotificationViewedRequestHandler.class,
+        DigitalWorkFlowUtils.class,
+        CourtesyMessageUtils.class,
+        AarUtils.class,
+        CompletelyUnreachableUtils.class,
+        ExternalChannelUtils.class,
+        AnalogWorkflowUtils.class,
+        ChooseDeliveryModeUtilsImpl.class,
+        TimelineUtils.class,
+        TimelineServiceHttpImpl.class,
+        TimelineClientMock.class,
+        PublicRegistryUtils.class,
+        NotificationServiceImpl.class,
+        PaperNotificationFailedServiceImpl.class,
+        AddressBookServiceImpl.class,
+        ConfidentialInformationServiceImpl.class,
+        AttachmentUtils.class,
+        NotificationUtils.class,
+        PecDeliveryWorkflowLegalFactsGenerator.class,
+        AnalogDeliveryFailureWorkflowLegalFactsGenerator.class,
+        RefinementScheduler.class,
+        RegisteredLetterSender.class,
+        PaperNotificationFailedDaoMock.class,
+        ExternalChannelMock.class,
+        NotificationCost.class,
+        ViewNotification.class,
+        PnDeliveryClientReactiveMock.class,
+        DocumentCreationRequestServiceImpl.class,
+        DocumentCreationRequestDaoMock.class,
+        DocumentCreationResponseHandler.class,
+        ScheduleRecipientWorkflow.class,
+        AarCreationResponseHandler.class,
+        NotificationViewLegalFactCreationResponseHandler.class,
+        DigitalDeliveryCreationResponseHandler.class,
+        FailureWorkflowHandler.class,
+        SuccessWorkflowHandler.class,
+        DigitalWorkflowFirstSendRepeatHandler.class,
+        SendAndUnscheduleNotification.class,
+        CommonTestConfiguration.SpringTestConfiguration.class,
+        PnExternalRegistriesClientReactiveMock.class,
+        PaperChannelMock.class,
+        NotificationPaidHandler.class,
+        NotificationCancellationServiceImpl.class,
+        NotificationCancellationActionHandler.class,
+        PnSendModeUtils.class,
+        CheckAttachmentRetentionHandler.class,
+        ActionPoolMock.class,
+        SendDigitalFinalStatusResponseHandler.class,
+        AarTemplateStrategyFactory.class,
+        DynamicRADDExperimentationChooseStrategy.class,
+        CheckRADDExperimentation.class,
+        FeatureEnabledUtils.class,
+        AnalogFinalStatusResponseHandler.class,
+        SmartMapper.class,
+        PnEmdIntegrationClientMock.class,
+        EventRouter.class,
+        EventHandlerRegistry.class,
+        ActionHandlerRegistry.class,
+        StartRecipientWorkflowHandler.class,
+        ChooseDeliveryModeEventHandler.class,
+        AnalogWorkflowEventHandler.class,
+        RefinementNotificationHandler.class,
+        DigitalWorkflowRetryActionHandler.class,
+        DigitalWorkflowNoResponseTimeoutActionHandler.class,
+        CheckAttachmentRetentionEventHandler.class,
+        DigitalWorkflowNextActionHandler.class,
+        DigitalWorkflowNextExecuteActionHandler.class,
+        DocumentCreationResponseEventHandler.class,
+        SendDigitalFinalStatusResponseEventHandler.class,
+        PostAcceptedProcessingCompletedHandler.class,
+        SendAnalogFinalStatusResponseHandler.class
+})
+@ExtendWith(SpringExtension.class)
+@TestPropertySource(value = "classpath:/application-testIT.properties")
+@DirtiesContext
+@EnableScheduling
+public class CommonTestConfiguration {
+    private static final String[] PARAMETER_STORES_MAP_ZIP_EXPERIMENTATION_LIST = {"radd-expeAAArimentation-zip-1", "radd-experimentation-zip-2", "radd-experimentation-zip-3", "radd-experimentation-zip-4", "radd-experimentation-zip-5"};
+
+    @TestConfiguration
+    static class SpringTestConfiguration extends AbstractWorkflowTestConfiguration {
+        public SpringTestConfiguration() {
+            super();
+        }
+    }
+    @Autowired
+    ActionPoolMock actionPoolMock;
+    @Autowired
+    SafeStorageClientMock safeStorageClientMock;
+    @Autowired
+    PnDeliveryClientMock pnDeliveryClientMock;
+    @Autowired
+    UserAttributesClientMock addressBookMock;
+    @Autowired
+    NationalRegistriesClientMock nationalRegistriesClientMock;
+    @Autowired
+    InstantNowSupplier instantNowSupplier;
+    @Autowired
+    PaperNotificationFailedDaoMock paperNotificationFailedDaoMock;
+    @Autowired
+    PnDataVaultClientReactiveMock pnDataVaultClientReactiveMock;
+    @Autowired
+    DocumentCreationRequestDaoMock documentCreationRequestDaoMock;
+    @Autowired
+    PnDeliveryPushWorkflowConfigs cfg;
+    
+    @BeforeEach
+    public void setup() {
+        setDefaultTimeout(Duration.ofSeconds(120));
+
+        // Viene creato un oggetto Answer per ottenere l'istante corrente al momento della chiamata ...
+        Answer<Instant> answer = invocation -> Instant.now();
+        // e configurato Mockito per restituire l'istante corrente al momento della chiamata
+        Mockito.when(instantNowSupplier.get()).thenAnswer(answer);
+        
+        setcCommonsConfigurationPropertiesForTest(cfg);
+
+        ConsoleAppenderCustom.initializeLog();
+
+        TestUtils.initializeAllMockClient(
+                safeStorageClientMock,
+                pnDeliveryClientMock,
+                addressBookMock,
+                nationalRegistriesClientMock,
+                paperNotificationFailedDaoMock,
+                pnDataVaultClientReactiveMock,
+                documentCreationRequestDaoMock,
+                actionPoolMock
+        );
+    }
+
+    private void setcCommonsConfigurationPropertiesForTest(PnDeliveryPushWorkflowConfigs cfg) {
+        // Impostazione delle proprietà TimeParams
+        TimeParams times = new TimeParams();
+        times.setWaitingForReadCourtesyMessage(Duration.ofSeconds(1));
+        times.setSecondNotificationWorkflowWaitingTime(Duration.ofSeconds(1));
+        times.setSchedulingDaysSuccessDigitalRefinement(Duration.ofSeconds(1));
+        times.setSchedulingDaysFailureDigitalRefinement(Duration.ofSeconds(1));
+        times.setSchedulingDaysSuccessAnalogRefinement(Duration.ofSeconds(1));
+        times.setSchedulingDaysFailureAnalogRefinement(Duration.ofSeconds(1));
+        times.setNotificationNonVisibilityTime("21:00");
+        times.setTimeToAddInNonVisibilityTimeCase(Duration.ofSeconds(1));
+        times.setCheckAttachmentTimeBeforeExpiration(Duration.ofSeconds(2));
+        times.setAttachmentTimeToAddAfterExpiration(Duration.ofSeconds(50));
+        
+        Mockito.when(cfg.getTimeParams()).thenReturn(times);
+
+        // Impostazione delle proprietà PaperChannel
+        PnDeliveryPushWorkflowConfigs.PaperChannel paperChannel = new PnDeliveryPushWorkflowConfigs.PaperChannel();
+        PnDeliveryPushWorkflowConfigs.SenderAddress senderAddress = new PnDeliveryPushWorkflowConfigs.SenderAddress();
+        senderAddress.setFullname("PagoPA S.p.A.");
+        senderAddress.setAddress("Via Sardegna n. 38");
+        senderAddress.setZipcode("00187");
+        senderAddress.setCity("Roma");
+        senderAddress.setPr("Roma");
+        senderAddress.setCountry("Italia");
+        paperChannel.setSenderAddress(senderAddress);
+        Mockito.when(cfg.getPaperChannel()).thenReturn(paperChannel);
+
+        // Impostazione delle proprietà Webapp
+        PnDeliveryPushWorkflowConfigs.Webapp webapp = new PnDeliveryPushWorkflowConfigs.Webapp();
+        webapp.setDirectAccessUrlTemplatePhysical("http://localhost:8090/dist/direct_access_pf");
+        webapp.setDirectAccessUrlTemplateLegal("http://localhost:8090/dist/direct_access_pg");
+        webapp.setFaqUrlTemplateSuffix("faq.html");
+        webapp.setQuickAccessUrlAarDetailSuffix("notifica?aar");
+        webapp.setLandingUrl("https://www.dev.pn.pagopa.it");
+        webapp.setRaddPhoneNumber("06.4520.2323");
+        webapp.setAarSenderLogoUrlTemplate("TO_BASE64_RESOLVER:https://example.com/<PA_ID>/logo.png");
+        Mockito.when(cfg.getWebapp()).thenReturn(webapp);
+        
+        // Impostazione delle proprietà ExternalChannel
+        PnDeliveryPushWorkflowConfigs.ExternalChannel externalChannel = new PnDeliveryPushWorkflowConfigs.ExternalChannel();
+        externalChannel.setDigitalCodesProgress(Collections.singletonList("C001"));
+        externalChannel.setDigitalCodesRetryable(Arrays.asList("C008", "C010"));
+        externalChannel.setDigitalCodesSuccess(Collections.singletonList("C003"));
+        externalChannel.setDigitalCodesFail(Arrays.asList("C002", "C004", "C006", "C009"));
+        externalChannel.setDigitalCodesFatallog(Arrays.asList("C008", "C010"));
+        externalChannel.setDigitalRetryCount(-1);
+        externalChannel.setDigitalRetryDelay(Duration.ofMinutes(10));
+        externalChannel.setDigitalSendNoresponseTimeout(Duration.ofSeconds(50));
+        Mockito.when(cfg.getExternalChannel()).thenReturn(externalChannel);
+
+        // Impostazione delle proprietà di retention degli allegati
+        Mockito.when(cfg.getRetentionAttachmentDaysAfterRefinement()).thenReturn(120);
+
+
+        // Impostazione delle proprietà di PnSendMode
+        List<String> pnSendModeList = new ArrayList<>();
+        pnSendModeList.add("1970-01-01T00:00:00Z;AAR-DOCUMENTS-PAYMENTS;AAR-DOCUMENTS-PAYMENTS;AAR-DOCUMENTS-PAYMENTS;AAR_NOTIFICATION");
+        pnSendModeList.add("2023-11-30T23:00:00Z;AAR;AAR;AAR-DOCUMENTS-PAYMENTS;AAR_NOTIFICATION_RADD");
+
+
+        Mockito.when(cfg.getPnSendMode()).thenReturn(pnSendModeList);
+        
+        //Set send fee
+        Mockito.when(cfg.getPagoPaNotificationBaseCost()).thenReturn(100);
+
+        Mockito.when(cfg.getErrorCorrectionLevelQrCode()).thenReturn(ErrorCorrectionLevel.H);
+
+        List<String> pnRaddExperimentationStore = new ArrayList<>();
+        pnRaddExperimentationStore.add(PARAMETER_STORES_MAP_ZIP_EXPERIMENTATION_LIST[0]);
+        pnRaddExperimentationStore.add(PARAMETER_STORES_MAP_ZIP_EXPERIMENTATION_LIST[1]);
+        pnRaddExperimentationStore.add(PARAMETER_STORES_MAP_ZIP_EXPERIMENTATION_LIST[2]);
+        pnRaddExperimentationStore.add(PARAMETER_STORES_MAP_ZIP_EXPERIMENTATION_LIST[3]);
+        pnRaddExperimentationStore.add(PARAMETER_STORES_MAP_ZIP_EXPERIMENTATION_LIST[4]);
+        Mockito.when(cfg.getRaddExperimentationStoresName()).thenReturn(pnRaddExperimentationStore);
+
+        Mockito.when(cfg.getFeatureUnreachableRefinementPostAARStartDate()).thenReturn(Instant.parse("2024-11-27T00:00:00Z"));
+
+        Mockito.when(cfg.getPfNewWorkflowStop()).thenReturn("2099-03-31T23:00:00Z");
+        Mockito.when(cfg.getPfNewWorkflowStart()).thenReturn("2099-02-13T23:00:00Z");
+
+        Mockito.when(cfg.getTemplateURLforPEC()).thenReturn("/templates-engine-private/v1/templates/notification-aar-for-pec");
+        Mockito.when(cfg.getTemplatesEngineBaseUrl()).thenReturn("http://localhost:8090");
+    }
+
+}

@@ -1,15 +1,15 @@
 package it.pagopa.pn.deliverypushworkflow.service.mapper;
 
-import it.pagopa.pn.api.dto.events.EndWorkflowStatus;
+import it.pagopa.pn.deliverypushworkflow.action.utils.EndWorkflowStatus;
 import it.pagopa.pn.commons.utils.FileUtils;
 
 import it.pagopa.pn.deliverypushworkflow.dto.address.DigitalAddressSourceInt;
 import it.pagopa.pn.deliverypushworkflow.dto.address.LegalDigitalAddressInt;
-import it.pagopa.pn.deliverypushworkflow.dto.delivery.notification.NotificationDocumentInt;
-import it.pagopa.pn.deliverypushworkflow.dto.delivery.notification.NotificationInt;
-import it.pagopa.pn.deliverypushworkflow.dto.delivery.notification.NotificationPaymentInfoInt;
-import it.pagopa.pn.deliverypushworkflow.dto.delivery.notification.NotificationRecipientInt;
-import it.pagopa.pn.deliverypushworkflow.dto.externalchannel.ResponseStatusInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationDocumentInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationPaymentInfoInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.externalchannel.ResponseStatusInt;
 import it.pagopa.pn.deliverypushworkflow.dto.mandate.DelegateInfoInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendDigitalFeedbackDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.templatesengine.model.*;
@@ -28,7 +28,7 @@ public class TemplatesEngineMapper {
     private TemplatesEngineMapper() {
     }
 
-    public static NotificationAarRaddAltDto notificationAARRADDalt(NotificationInt notification,
+    public static NotificationAarRaddAlt notificationAARRADDalt(NotificationInt notification,
                                                                    NotificationRecipientInt recipient,
                                                                    String qrCodeQuickAccessUrlAarDetail,
                                                                    String piattaformaNotificheURL,
@@ -39,20 +39,20 @@ public class TemplatesEngineMapper {
                                                                    String perfezionamentoLinkLabel,
                                                                    String raddPhoneNumber,
                                                                    String senderLogoBase64) {
-        AarRaddAltSenderDto sender = new AarRaddAltSenderDto()
+        AarRaddAltSender sender = new AarRaddAltSender()
                 .paDenomination(notification.getSender().getPaDenomination());
 
-        AarRaddAltNotificationDto altNotification = new AarRaddAltNotificationDto()
+        AarRaddAltNotification altNotification = new AarRaddAltNotification()
                 .iun(notification.getIun())
                 .subject(notification.getSubject())
                 .sender(sender);
 
-        AarRaddAltRecipientDto aarRecipient = new AarRaddAltRecipientDto()
+        AarRaddAltRecipient aarRecipient = new AarRaddAltRecipient()
                 .recipientType(recipient.getRecipientType().getValue())
                 .taxId(recipient.getTaxId())
                 .denomination(recipient.getDenomination());
 
-        return new NotificationAarRaddAltDto()
+        return new NotificationAarRaddAlt()
                 .notification(altNotification)
                 .recipient(aarRecipient)
                 .piattaformaNotificheURL(piattaformaNotificheURL)
@@ -66,7 +66,7 @@ public class TemplatesEngineMapper {
                 .senderLogoBase64(senderLogoBase64);
     }
 
-    public static NotificationAarDto notificationAAR(NotificationInt notification,
+    public static NotificationAar notificationAAR(NotificationInt notification,
                                                      NotificationRecipientInt recipient,
                                                      String qrCodeQuickAccessUrlAarDetail,
                                                      String piattaformaNotificheURL,
@@ -74,19 +74,19 @@ public class TemplatesEngineMapper {
                                                      String perfezionamentoLink,
                                                      String perfezionamentoLinkLabel,
                                                      String senderLogoBase64) {
-        AarSenderDto sender = new AarSenderDto()
+        AarSender sender = new AarSender()
                 .paDenomination(notification.getSender().getPaDenomination());
 
-        AarNotificationDto aarNotification = new AarNotificationDto()
+        AarNotification aarNotification = new AarNotification()
                 .iun(notification.getIun())
                 .subject(notification.getSubject())
                 .sender(sender);
 
-        AarRecipientDto aarRecipient = new AarRecipientDto()
+        AarRecipient aarRecipient = new AarRecipient()
                 .recipientType(recipient.getRecipientType().getValue())
                 .taxId(recipient.getTaxId());
 
-        return new NotificationAarDto()
+        return new NotificationAar()
                 .notification(aarNotification)
                 .recipient(aarRecipient)
                 .piattaformaNotificheURL(piattaformaNotificheURL)
@@ -97,37 +97,37 @@ public class TemplatesEngineMapper {
                 .senderLogoBase64(senderLogoBase64);
     }
 
-    public static NotificationAarForSmsDto notificationAarForSms(NotificationInt notification) {
-        AarForSmsSenderDto sender = new AarForSmsSenderDto()
+    public static NotificationAarForSms notificationAarForSms(NotificationInt notification) {
+        AarForSmsSender sender = new AarForSmsSender()
                 .paDenomination(notification.getSender().getPaDenomination());
 
-        AarForSmsNotificationDto aarForSmsNotification = new AarForSmsNotificationDto()
+        AarForSmsNotification aarForSmsNotification = new AarForSmsNotification()
                 .iun(notification.getIun())
                 .sender(sender);
 
-        return new NotificationAarForSmsDto()
+        return new NotificationAarForSms()
                 .notification(aarForSmsNotification);
     }
 
-    public static NotificationAarForPecDto notificationAarForPec(NotificationInt notification,
+    public static NotificationAarForPec notificationAarForPec(NotificationInt notification,
                                                               NotificationRecipientInt recipient,
                                                               String quickAccessLink,
                                                               String perfezionamentoLink,
                                                               String faqSendURL,
                                                               String piattaformaNotificheURL,
                                                               String recipientTypeForHTMLTemplate) {
-        AarForPecSenderDto sender = new AarForPecSenderDto()
+        AarForPecSender sender = new AarForPecSender()
                 .paDenomination(notification.getSender().getPaDenomination());
 
-        AarForPecNotificationDto pecNotification = new AarForPecNotificationDto()
+        AarForPecNotification pecNotification = new AarForPecNotification()
                 .iun(notification.getIun())
                 .subject(notification.getSubject())
                 .sender(sender);
 
-        AarForPecRecipientDto aarForPecRecipient = new AarForPecRecipientDto()
+        AarForPecRecipient aarForPecRecipient = new AarForPecRecipient()
                 .taxId(recipient.getTaxId());
 
-        return new NotificationAarForPecDto()
+        return new NotificationAarForPec()
                 .perfezionamentoURL(perfezionamentoLink)
                 .quickAccessLink(quickAccessLink)
                 .pnFaqSendURL(faqSendURL)
@@ -137,19 +137,19 @@ public class TemplatesEngineMapper {
                 .recipientType(recipientTypeForHTMLTemplate);
     }
 
-    public static NotificationAarForEmailDto notificationAarForEmail(NotificationInt notification,
+    public static NotificationAarForEmail notificationAarForEmail(NotificationInt notification,
                                                                   String perfezionamentoLink,
                                                                   String quickAccessLink,
                                                                   String faqSendURL,
                                                                   String piattaformaNotificheURL) {
-        AarForEmailSenderDto sender = new AarForEmailSenderDto()
+        AarForEmailSender sender = new AarForEmailSender()
                 .paDenomination(notification.getSender().getPaDenomination());
 
-        AarForEmailNotificationDto aarForEmailNotification = new AarForEmailNotificationDto()
+        AarForEmailNotification aarForEmailNotification = new AarForEmailNotification()
                 .iun(notification.getIun())
                 .sender(sender);
 
-        return new NotificationAarForEmailDto()
+        return new NotificationAarForEmail()
                 .perfezionamentoURL(perfezionamentoLink)
                 .quickAccessLink(quickAccessLink)
                 .pnFaqSendURL(faqSendURL)
@@ -157,70 +157,70 @@ public class TemplatesEngineMapper {
                 .notification(aarForEmailNotification);
     }
 
-    public static NotificationAarForSubjectDto notificationAARSubject(NotificationInt notification) {
-        AarForSubjectSenderDto sender = new AarForSubjectSenderDto()
+    public static NotificationAarForSubject notificationAARSubject(NotificationInt notification) {
+        AarForSubjectSender sender = new AarForSubjectSender()
                 .paDenomination(notification.getSender().getPaDenomination());
 
-        AarForSubjectNotificationDto aarForSubjectNotification = new AarForSubjectNotificationDto()
+        AarForSubjectNotification aarForSubjectNotification = new AarForSubjectNotification()
                 .sender(sender)
                 .iun(notification.getIun());
 
-        return new NotificationAarForSubjectDto()
+        return new NotificationAarForSubject()
                 .notification(aarForSubjectNotification);
     }
 
-    public static NotificationCancelledLegalFactDto cancelledLegalFact(NotificationInt notification,
+    public static NotificationCancelledLegalFact cancelledLegalFact(NotificationInt notification,
                                                                     Instant notificationCancellationRequestDate,
                                                                     CustomInstantWriter instantWriter) {
-        NotificationCancelledSenderDto sender = new NotificationCancelledSenderDto()
+        NotificationCancelledSender sender = new NotificationCancelledSender()
                 .paDenomination(notification.getSender().getPaDenomination());
 
-        List<NotificationCancelledRecipientDto> recipients = notification.getRecipients()
+        List<NotificationCancelledRecipient> recipients = notification.getRecipients()
                 .stream()
-                .map(recipientInt -> new NotificationCancelledRecipientDto()
+                .map(recipientInt -> new NotificationCancelledRecipient()
                         .denomination(recipientInt.getDenomination())
                         .taxId(recipientInt.getTaxId()))
                 .toList();
 
-        NotificationCancelledNotificationDto notificationCancelledNotification = new NotificationCancelledNotificationDto()
+        NotificationCancelledNotification notificationCancelledNotification = new NotificationCancelledNotification()
                 .iun(notification.getIun())
                 .recipients(recipients)
                 .sender(sender);
 
-        return new NotificationCancelledLegalFactDto()
+        return new NotificationCancelledLegalFact()
                 .notificationCancelledDate(instantWriter.instantToDate(notificationCancellationRequestDate))
                 .notification(notificationCancelledNotification);
     }
 
-    public static AnalogDeliveryWorkflowFailureLegalFactDto analogDeliveryWorkflowFailureLegalFact(NotificationInt notification,
+    public static AnalogDeliveryWorkflowFailureLegalFact analogDeliveryWorkflowFailureLegalFact(NotificationInt notification,
                                                                                                 NotificationRecipientInt recipient,
                                                                                                 Instant failureWorkflowDate,
                                                                                                 CustomInstantWriter instantWriter) {
-        AnalogDeliveryWorkflowFailureRecipientDto analogDeliveryWorkflowFailureRecipient = new AnalogDeliveryWorkflowFailureRecipientDto()
+        AnalogDeliveryWorkflowFailureRecipient analogDeliveryWorkflowFailureRecipient = new AnalogDeliveryWorkflowFailureRecipient()
                 .denomination(recipient.getDenomination())
                 .taxId(recipient.getTaxId());
 
-        return new AnalogDeliveryWorkflowFailureLegalFactDto()
+        return new AnalogDeliveryWorkflowFailureLegalFact()
                 .iun(notification.getIun())
                 .recipient(analogDeliveryWorkflowFailureRecipient)
                 .endWorkflowDate(instantWriter.instantToDate(failureWorkflowDate, true))
                 .endWorkflowTime(instantWriter.instantToTime(failureWorkflowDate));
     }
 
-    public static PecDeliveryWorkflowLegalFactDto pecDeliveryWorkflowLegalFact(List<SendDigitalFeedbackDetailsInt> feedbackFromExtChannelList,
+    public static PecDeliveryWorkflowLegalFact pecDeliveryWorkflowLegalFact(List<SendDigitalFeedbackDetailsInt> feedbackFromExtChannelList,
                                                                             NotificationInt notification,
                                                                             NotificationRecipientInt recipient,
                                                                             EndWorkflowStatus status,
                                                                             Instant completionWorkflowDate,
                                                                             CustomInstantWriter instantWriter) {
-        List<PecDeliveryWorkflowDeliveryDto> pecDeliveries = feedbackFromExtChannelList.stream()
+        List<PecDeliveryWorkflowDelivery> pecDeliveries = feedbackFromExtChannelList.stream()
                 .map(feedbackFromExtChannel -> {
                     ResponseStatusInt sentPecStatus = feedbackFromExtChannel.getResponseStatus();
                     Instant notificationDate = feedbackFromExtChannel.getNotificationDate();
                     String addressSource = Optional.ofNullable(feedbackFromExtChannel.getDigitalAddressSource())
                             .map(DigitalAddressSourceInt::getValue)
                             .orElse(null);
-                    return new PecDeliveryWorkflowDeliveryDto()
+                    return new PecDeliveryWorkflowDelivery()
                             .denomination(recipient.getDenomination())
                             .taxId(recipient.getTaxId())
                             .address(feedbackFromExtChannel.getDigitalAddress().getAddress())
@@ -229,41 +229,41 @@ public class TemplatesEngineMapper {
                             .responseDate(instantWriter.instantToDate(notificationDate))
                             .ok(ResponseStatusInt.OK.equals(sentPecStatus));
                 })
-                .sorted(Comparator.comparing(PecDeliveryWorkflowDeliveryDto::getResponseDate))
+                .sorted(Comparator.comparing(PecDeliveryWorkflowDelivery::getResponseDate))
                 .toList();
 
-        return new PecDeliveryWorkflowLegalFactDto()
+        return new PecDeliveryWorkflowLegalFact()
                 .iun(notification.getIun())
                 .endWorkflowStatus(status.toString())
                 .deliveries(pecDeliveries)
                 .endWorkflowDate(instantWriter.instantToDate(completionWorkflowDate));
     }
 
-    public static NotificationViewedLegalFactDto notificationViewedLegalFact(String iun,
+    public static NotificationViewedLegalFact notificationViewedLegalFact(String iun,
                                                                           NotificationRecipientInt recipient,
                                                                           DelegateInfoInt delegateInfo,
                                                                           Instant timeStamp,
                                                                           CustomInstantWriter instantWriter) {
-        NotificationViewedRecipientDto notificationViewedRecipient = new NotificationViewedRecipientDto()
+        NotificationViewedRecipient notificationViewedRecipient = new NotificationViewedRecipient()
                 .denomination(recipient.getDenomination())
                 .taxId(recipient.getTaxId());
 
-        return new NotificationViewedLegalFactDto()
+        return new NotificationViewedLegalFact()
                 .recipient(notificationViewedRecipient)
                 .iun(iun)
                 .delegate(notificationViewedDelegate(delegateInfo))
                 .when(instantWriter.instantToDate(timeStamp));
     }
 
-    private static NotificationViewedDelegateDto notificationViewedDelegate(DelegateInfoInt delegateInfo) {
+    private static NotificationViewedDelegate notificationViewedDelegate(DelegateInfoInt delegateInfo) {
         return delegateInfo != null ?
-                new NotificationViewedDelegateDto()
+                new NotificationViewedDelegate()
                         .denomination(delegateInfo.getDenomination())
                         .taxId(delegateInfo.getTaxId())
                 : null;
     }
 
-    public static NotificationReceivedLegalFactDto notificationReceivedLegalFact(NotificationInt notification,
+    public static NotificationReceivedLegalFact notificationReceivedLegalFact(NotificationInt notification,
                                                                               PhysicalAddressWriter physicalAddressWriter,
                                                                               CustomInstantWriter instantWriter) {
         String physicalAddressAndDenomination;
@@ -271,46 +271,46 @@ public class TemplatesEngineMapper {
                 .map(NotificationInt::getRecipients)
                 .orElse(new ArrayList<>());
 
-        List<NotificationReceivedRecipientDto> receivedRecipients = new ArrayList<>();
+        List<NotificationReceivedRecipient> receivedRecipients = new ArrayList<>();
         for (var recipientInt : recipients) {
             String denomination = recipientInt.getDenomination();
             physicalAddressAndDenomination = physicalAddressWriter.nullSafePhysicalAddressToString(
                     recipientInt.getPhysicalAddress(), denomination, "<br/>");
-            NotificationReceivedRecipientDto notificationReceivedNotification =
+            NotificationReceivedRecipient notificationReceivedNotification =
                     notificationReceivedNotification(physicalAddressAndDenomination, recipientInt);
             receivedRecipients.add(notificationReceivedNotification);
         }
 
-        NotificationReceivedNotificationDto notificationReceivedNotification = new NotificationReceivedNotificationDto()
+        NotificationReceivedNotification notificationReceivedNotification = new NotificationReceivedNotification()
                 .iun(notification.getIun())
                 .recipients(receivedRecipients)
                 .sender(sender(notification));
 
-        return new NotificationReceivedLegalFactDto()
+        return new NotificationReceivedLegalFact()
                 .sendDate(instantWriter.instantToDate(notification.getSentAt()))
                 .subject(notification.getSubject())
                 .notification(notificationReceivedNotification)
                 .digests(extractNotificationAttachmentDigests(notification));
     }
 
-    private static NotificationReceivedRecipientDto notificationReceivedNotification(String physicalAddressAndDenomination,
+    private static NotificationReceivedRecipient notificationReceivedNotification(String physicalAddressAndDenomination,
                                                                                   NotificationRecipientInt recipientInt) {
         return recipientInt != null ?
-                new NotificationReceivedRecipientDto()
+                new NotificationReceivedRecipient()
                         .physicalAddressAndDenomination(physicalAddressAndDenomination)
                         .denomination(recipientInt.getDenomination())
                         .taxId(recipientInt.getTaxId())
                         .digitalDomicile(digitalDomicile(recipientInt.getDigitalDomicile())) : null;
     }
 
-    private static NotificationReceivedDigitalDomicileDto digitalDomicile(LegalDigitalAddressInt domicile) {
-        return domicile != null ? new NotificationReceivedDigitalDomicileDto().address(domicile.getAddress()) : null;
+    private static NotificationReceivedDigitalDomicile digitalDomicile(LegalDigitalAddressInt domicile) {
+        return domicile != null ? new NotificationReceivedDigitalDomicile().address(domicile.getAddress()) : null;
     }
 
-    private static NotificationReceivedSenderDto sender(NotificationInt notification) {
+    private static NotificationReceivedSender sender(NotificationInt notification) {
         var senderInt = Optional.of(notification).map(NotificationInt::getSender).orElse(null);
         return senderInt != null ?
-                new NotificationReceivedSenderDto()
+                new NotificationReceivedSender()
                         .paDenomination(senderInt.getPaDenomination())
                         .paTaxId(senderInt.getPaTaxId())
                 : null;

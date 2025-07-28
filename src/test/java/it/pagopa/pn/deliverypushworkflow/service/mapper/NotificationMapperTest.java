@@ -1,0 +1,100 @@
+package it.pagopa.pn.deliverypushworkflow.service.mapper;
+
+import it.pagopa.pn.deliverypushworkflow.action.it.utils.NotificationRecipientTestBuilder;
+import it.pagopa.pn.deliverypushworkflow.action.it.utils.NotificationTestBuilder;
+import it.pagopa.pn.deliverypushworkflow.action.it.utils.PhysicalAddressBuilder;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
+import java.util.Collections;
+
+class NotificationMapperTest {
+
+
+    @Test
+    void internalToExternal() {
+        String denomination = "Mario rossi";
+        NotificationInt expected = NotificationTestBuilder.builder()
+                .withIun("IUN01")
+                .withNotificationRecipient( NotificationRecipientTestBuilder.builder()
+                        .withTaxId("TAXID01")
+                        .withDenomination(denomination)
+                        .withPhysicalAddress(PhysicalAddressBuilder.builder()
+                                .withAddress("Via Nuova")
+                                .withFullName(denomination)
+                                .build())
+                        .build())
+                .withNotificationFeePolicy(it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.NotificationFeePolicy.DELIVERY_MODE)
+                .build();
+        expected = expected.toBuilder()
+                .version("v1")
+                .vat(22)
+                .build();
+        
+        SentNotificationV25 sent = NotificationMapper.internalToExternal( expected );
+        NotificationInt actual = NotificationMapper.externalToInternal( sent );
+        
+        Assertions.assertEquals(expected, actual );
+        
+    }
+
+    @Test
+    void externalToInternal() {
+        SentNotificationV25 expected = getExternalNotification();
+
+        NotificationInt internal = NotificationMapper.externalToInternal( expected );
+        SentNotificationV25 actual = NotificationMapper.internalToExternal( internal );
+        
+        Assertions.assertEquals( expected, actual );
+    }
+
+    private SentNotificationV25 getExternalNotification() {
+        return new SentNotificationV25()
+                .iun("IUN_01")
+                .paProtocolNumber("protocol_01")
+                .subject("Subject 01")
+                .senderPaId( "pa_02" )
+                .physicalCommunicationType(SentNotificationV25.PhysicalCommunicationTypeEnum.REGISTERED_LETTER_890)
+                .amount(18)
+                .paymentExpirationDate("2022-10-22")
+                .notificationFeePolicy(NotificationFeePolicy.DELIVERY_MODE)
+                .recipients( Collections.singletonList(
+                       new NotificationRecipientV24()
+                                .taxId("Codice Fiscale 01")
+                                .recipientType(NotificationRecipientV24.RecipientTypeEnum.PF)
+                                .denomination("Nome Cognome/Ragione Sociale")
+                               .digitalDomicile(
+                                       new NotificationDigitalAddress()
+                                               .address("address")
+                                               .type(NotificationDigitalAddress.TypeEnum.PEC)
+                               )
+                               .physicalAddress(
+                                       new NotificationPhysicalAddress()
+                                               .address("physicalAddress")
+                                               .municipality("municipality")
+                               )
+                ))
+                .documents(Arrays.asList(
+                        new NotificationDocument()
+                                .ref( new NotificationAttachmentBodyRef()
+                                        .key("doc00")
+                                        .versionToken("v01_doc00")
+                                )
+                                .digests(new NotificationAttachmentDigests()
+                                        .sha256("sha256_doc00")
+                                ),
+                        new NotificationDocument()
+                                .ref(  new NotificationAttachmentBodyRef()
+                                        .key("doc01")
+                                        .versionToken("v01_doc01")
+                                )
+                                .digests(new NotificationAttachmentDigests()
+                                        .sha256("sha256_doc01")
+                                )
+                ))
+                .additionalLanguages(Collections.emptyList());
+    }
+}

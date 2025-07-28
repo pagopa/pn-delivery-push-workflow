@@ -1,46 +1,79 @@
 package it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer;
 
+import it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.router.EventRouter;
+import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.Action;
+import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ActionType;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static java.util.Collections.emptyMap;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(SpringExtension.class)
 class ActionConsumerTest {
     @InjectMocks
     private ActionConsumer actionConsumer;
+    @Mock
+    private EventRouter eventRouter;
 
     @Test
-    void pnDeliveryPushActionsInboundConsumer_logsMessageOnValidInput() {
-        Message<String> message = Mockito.mock(Message.class);
-        Mockito.when(message.getPayload()).thenReturn("valid-payload");
-        Mockito.when(message.getHeaders()).thenReturn(new MessageHeaders(emptyMap()));
+    void pnDeliveryPushActionsInboundConsumer_routesMessageSuccessfully() {
+        Action action = Action.builder().iun("test_IUN").recipientIndex(0).type(ActionType.ANALOG_WORKFLOW).build();
+        Message<Action> message = Mockito.mock(Message.class);
+        Mockito.when(message.getPayload()).thenReturn(action);
+        Mockito.when(message.getHeaders()).thenReturn(new MessageHeaders(Map.of("test", "headerValue")));
 
         actionConsumer.pnDeliveryPushActionsInboundConsumer(message);
+
+        EventRouter.RoutingConfig expectedConfig = EventRouter.RoutingConfig.builder()
+                .eventType(ActionType.ANALOG_WORKFLOW.name())
+                .build();
+        Mockito.verify(eventRouter).route(message, expectedConfig);
     }
 
     @Test
-    void pnDeliveryPushActionsInboundConsumer_throwsExceptionOnProcessingError() {
-        Message<String> message = Mockito.mock(Message.class);
-        Mockito.when(message.getPayload()).thenReturn("error-payload");
-
-        // Simula un errore nel setMdc tramite un mock statico se necessario
-        // oppure simula un errore nel message.getPayload()
-        Mockito.doThrow(new RuntimeException("Simulated error"))
-                .when(message).getPayload();
+    void pnDeliveryPushActionsInboundConsumer_handlesExceptionGracefully() {
+        Action action = Action.builder().iun("test_IUN").recipientIndex(0).build();
+        Message<Action> message = Mockito.mock(Message.class);
+        Mockito.when(message.getPayload()).thenReturn(action);
+        Mockito.when(message.getHeaders()).thenReturn(new MessageHeaders(Map.of("test", "headerValue")));
 
         assertThrows(RuntimeException.class, () -> actionConsumer.pnDeliveryPushActionsInboundConsumer(message));
+
+        Mockito.verify(eventRouter, Mockito.never()).route(Mockito.any(), Mockito.any());
     }
 
-    @Test
-    void pnDeliveryPushActionsInboundConsumer_handlesNullMessageGracefully() {
-        assertThrows(NullPointerException.class, () -> actionConsumer.pnDeliveryPushActionsInboundConsumer(null));
+
+    @NotNull
+    private static Message<Action> getActionMessage() {
+        return new Message<>() {
+            @Override
+            @NotNull
+            public Action getPayload() {
+                return Action.builder()
+                        .iun("test_IUN")
+                        .recipientIndex(0)
+                        .timelineId("testTimelineId")
+                        .notBefore(Instant.EPOCH)
+                        .build();
+            }
+
+            @Override
+            @NotNull
+            public MessageHeaders getHeaders() {
+                return new MessageHeaders(new HashMap<>());
+            }
+        };
     }
 
 }

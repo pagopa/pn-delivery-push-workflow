@@ -6,14 +6,10 @@ import it.pagopa.pn.deliverypushworkflow.middleware.dao.failednotificationdao.Pa
 import it.pagopa.pn.deliverypushworkflow.middleware.dao.failednotificationdao.PaperNotificationFailedEntityDao;
 import it.pagopa.pn.deliverypushworkflow.middleware.dao.failednotificationdao.dynamo.entity.PaperNotificationFailedEntity;
 import it.pagopa.pn.deliverypushworkflow.middleware.dao.failednotificationdao.dynamo.mapper.DtoToEntityNotificationFailedMapper;
-import it.pagopa.pn.deliverypushworkflow.middleware.dao.failednotificationdao.dynamo.mapper.EntityToDtoNotificationFailedMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
-
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Component
 @ConditionalOnProperty(name = PaperNotificationFailedDao.IMPLEMENTATION_TYPE_PROPERTY_NAME, havingValue = MiddlewareTypes.DYNAMO)
@@ -22,26 +18,17 @@ public class PaperNotificationFailedDaoDynamo implements PaperNotificationFailed
 
     private final PaperNotificationFailedEntityDao dao;
     private final DtoToEntityNotificationFailedMapper dtoToEntity;
-    private final EntityToDtoNotificationFailedMapper entityToDto;
 
     public PaperNotificationFailedDaoDynamo(PaperNotificationFailedEntityDao dao,
-                                            DtoToEntityNotificationFailedMapper dtoToEntity, EntityToDtoNotificationFailedMapper entityToDto) {
+                                            DtoToEntityNotificationFailedMapper dtoToEntity) {
         this.dao = dao;
         this.dtoToEntity = dtoToEntity;
-        this.entityToDto = entityToDto;
     }
 
     @Override
     public void addPaperNotificationFailed(PaperNotificationFailed paperNotificationFailed) {
         PaperNotificationFailedEntity entity = dtoToEntity.dto2Entity(paperNotificationFailed);
         dao.put(entity);
-    }
-
-    @Override
-    public Set<PaperNotificationFailed> getPaperNotificationFailedByRecipientId(String recipientId) {
-        return dao.findByRecipientId(recipientId)
-                .stream().map(entityToDto::entityToDto)
-                .collect(Collectors.toSet());
     }
 
     @Override

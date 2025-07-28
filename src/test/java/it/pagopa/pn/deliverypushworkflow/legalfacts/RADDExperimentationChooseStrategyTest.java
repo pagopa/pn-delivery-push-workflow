@@ -2,7 +2,7 @@ package it.pagopa.pn.deliverypushworkflow.legalfacts;
 
 
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
-import it.pagopa.pn.deliverypushworkflow.util.CheckRADDExperimentation;
+import it.pagopa.pn.deliverypushworkflow.utils.CheckRADDExperimentation;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
