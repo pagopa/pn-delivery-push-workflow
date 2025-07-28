@@ -122,11 +122,6 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
         //Viene verificato che NON sia avvenuto il perfezionamento
         TestUtils.checkIsNotPresentRefinement(iun, recIndex, timelineService);
 
-        //Viene verificato che lo stato della notifica sia RETURNED_TO_SENDER
-//        await().untilAsserted(() ->
-//                Assertions.assertEquals(NotificationStatusInt.RETURNED_TO_SENDER, TestUtils.getNotificationStatus(notification, timelineService, statusUtils))
-//        );
-
         //Viene effettuato il check dei legalFacts generati
         TestUtils.GeneratedLegalFactsInfo generatedLegalFactsInfo = TestUtils.GeneratedLegalFactsInfo.builder()
                 .notificationReceivedLegalFactGenerated(true)
@@ -233,17 +228,8 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
         //Viene verificato che NON sia avvenuto il perfezionamento
         TestUtils.checkIsNotPresentRefinement(iun, recIndex, timelineService);
 
-        //Viene verificato che lo stato della notifica sia RETURNED_TO_SENDER
-//        await().untilAsserted(() ->
-//                Assertions.assertEquals(NotificationStatusInt.RETURNED_TO_SENDER, TestUtils.getNotificationStatus(notification, timelineService, statusUtils))
-//        );
-
         // Viene atteso fino a che non viene persistito l'elemento NOTIFICATION_CANCELLED che implica il passaggio di stato della notifica in CANCELLED
         await().untilAsserted(() -> Assertions.assertTrue(TestUtils.isCancelledNotification(iun, timelineService)));
-
-//        await().untilAsserted(() ->
-//                Assertions.assertEquals(NotificationStatusInt.CANCELLED, TestUtils.getNotificationStatus(notification, timelineService, statusUtils))
-//        );
 
         //Viene effettuato il check dei legalFacts generati
         TestUtils.GeneratedLegalFactsInfo generatedLegalFactsInfo = TestUtils.GeneratedLegalFactsInfo.builder()
@@ -334,11 +320,6 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
         await().untilAsserted(() ->
                 Assertions.assertTrue(TestUtils.checkIsPresentRefinement(iun, recIndex1, timelineService))
         );
-
-        //Viene verificato lo stato della notifica che risulta perfezionata per decorrenza termini
-//        await().untilAsserted(() ->
-//                Assertions.assertEquals(NotificationStatusInt.EFFECTIVE_DATE, TestUtils.getNotificationStatus(notification, timelineService, statusUtils))
-//        );
 
         //Viene verificato che non sia presente un evento di deceduto
         await().untilAsserted(() ->
@@ -462,20 +443,10 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
         TestUtils.checkGetAddress(iun, recIndex2, false, DigitalAddressSourceInt.SPECIAL, ChooseDeliveryModeUtilsImpl.ZERO_SENT_ATTEMPT_NUMBER, timelineService);
         TestUtils.checkGetAddress(iun, recIndex2, false, DigitalAddressSourceInt.GENERAL, ChooseDeliveryModeUtilsImpl.ZERO_SENT_ATTEMPT_NUMBER, timelineService);
 
-        //Viene verificato che lo stato della notifica sia transitato in DELIVERED
-//        await().untilAsserted(() ->
-//                Assertions.assertTrue(TestUtils.checkNotificationStatusHistoryContainsDesiredStatus(notification, timelineService, statusUtils, NotificationStatusInt.DELIVERED))
-//        );
-
         //Viene verificato che sia avvenuto il perfezionamento per il primo recipient
         await().untilAsserted(() ->
                 Assertions.assertTrue(TestUtils.checkIsPresentRefinement(iun, recIndex1, timelineService))
         );
-
-        //Viene verificato lo stato della notifica che risulta perfezionata per decorrenza termini
-//        await().untilAsserted(() ->
-//                Assertions.assertEquals(NotificationStatusInt.EFFECTIVE_DATE, TestUtils.getNotificationStatus(notification, timelineService, statusUtils))
-//        );
 
         await().untilAsserted(() ->
                 Assertions.assertTrue(
@@ -687,20 +658,10 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
         // Viene verificato che sia inserito l'elemento di COMPLETELY_UNREACHABLE nella timeline per il primo destinatario.
         await().untilAsserted(() -> Assertions.assertTrue(TestUtils.isPresentUnreachable(iun, recIndex1, timelineService)));
 
-        //Viene verificato che lo stato della notifica sia transitato in irreperibile
-//        await().untilAsserted(() ->
-//                Assertions.assertTrue(TestUtils.checkNotificationStatusHistoryContainsDesiredStatus(notification, timelineService, statusUtils, NotificationStatusInt.UNREACHABLE))
-//        );
-
         //Viene verificato che sia avvenuto il perfezionamento per il primo recipient
         await().untilAsserted(() ->
                 Assertions.assertTrue(TestUtils.checkIsPresentRefinement(iun, recIndex1, timelineService))
         );
-
-        //Viene verificato lo stato della notifica che risulta perfezionata per decorrenza termini in seguito al refinement
-//        await().untilAsserted(() ->
-//                Assertions.assertEquals(NotificationStatusInt.EFFECTIVE_DATE, TestUtils.getNotificationStatus(notification, timelineService, statusUtils))
-//        );
 
         await().untilAsserted(() ->
                 Assertions.assertTrue(
@@ -849,11 +810,6 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
         await().untilAsserted(() -> Assertions.assertTrue(
                 TestUtils.checkIsPresentAnalogWorkflowRecipientDeceased(iun, recIndex2, timelineService)
         ));
-
-        //Viene verificato che lo stato della notifica sia transitato in RETURNED_TO_SENDER
-//        await().untilAsserted(() ->
-//                Assertions.assertEquals(NotificationStatusInt.RETURNED_TO_SENDER, TestUtils.getNotificationStatus(notification, timelineService, statusUtils))
-//        );
 
         //Viene verificato che non sia avvenuto il perfezionamento per entrambi i recipients
         TestUtils.checkIsNotPresentRefinement(iun, recIndex1, timelineService);
@@ -1016,20 +972,10 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
         TestUtils.checkGetAddress(iun, recIndex2, false, DigitalAddressSourceInt.SPECIAL, ChooseDeliveryModeUtilsImpl.ZERO_SENT_ATTEMPT_NUMBER, timelineService);
         TestUtils.checkGetAddress(iun, recIndex2, false, DigitalAddressSourceInt.GENERAL, ChooseDeliveryModeUtilsImpl.ZERO_SENT_ATTEMPT_NUMBER, timelineService);
 
-        //Viene verificato che lo stato della notifica sia transitato in DELIVERED
-//        await().untilAsserted(() ->
-//                Assertions.assertTrue(TestUtils.checkNotificationStatusHistoryContainsDesiredStatus(notification, timelineService, statusUtils, NotificationStatusInt.DELIVERED))
-//        );
-
         //Viene verificato che sia avvenuto il perfezionamento per il primo recipient
         await().untilAsserted(() ->
                 Assertions.assertTrue(TestUtils.checkIsPresentRefinement(iun, recIndex1, timelineService))
         );
-
-        //Viene verificato lo stato della notifica che risulta perfezionata per decorrenza termini
-//        await().untilAsserted(() ->
-//                Assertions.assertEquals(NotificationStatusInt.EFFECTIVE_DATE, TestUtils.getNotificationStatus(notification, timelineService, statusUtils))
-//        );
 
         await().untilAsserted(() ->
                 Assertions.assertTrue(
@@ -1044,12 +990,6 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
         await().untilAsserted(() ->
                 TestUtils.checkIsPresentViewed(iun, recIndex2, timelineService)
         );
-
-        //Viene verificato che non esista uno stato di VIEWED poichè la visualizzazione da parte di un deceduto non ha effetto
-        // !!! NON PIU' VERIFICABILE POICHÉ LA GESTIONE DELLO STATO  E' STATA SPOSTATA SU UN'ALTRO SERVIZIO
-//        await().untilAsserted(() ->
-//                Assertions.assertFalse(TestUtils.checkNotificationStatusHistoryContainsDesiredStatus(notification, timelineService, statusUtils, NotificationStatusInt.VIEWED))
-//        );
 
         //Viene verificata la presenza del primo invio verso external channel e che l'invio sia avvenuto con l'indirizzo fornito da pa
         TestUtils.checkSendPaperToExtChannel(iun, recIndex1, paPhysicalAddress1, 0, timelineService);

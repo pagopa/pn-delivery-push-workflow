@@ -124,11 +124,6 @@ class NotificationCancelledTestIT extends CommonTestConfiguration{
         // Viene atteso fino a che non viene persistito l'elemento NOTIFICATION_CANCELLED che implica il passaggio di stato della notifica in CANCELLED
         await().untilAsserted(() -> Assertions.assertTrue(isCancelledNotification(iun, timelineService)));
 
-//        await().untilAsserted(() ->
-//                Assertions.assertEquals(NotificationStatusInt.CANCELLED, TestUtils.getNotificationStatus(notification, timelineService, statusUtils))
-//        );
-
-
         commonChecks(notification, 0, TestUtils.GeneratedLegalFactsInfo.builder()
                 .notificationReceivedLegalFactGenerated(true)
                 .notificationAARGenerated(true)
@@ -233,11 +228,6 @@ class NotificationCancelledTestIT extends CommonTestConfiguration{
         // Viene atteso fino a che non viene persistito l'elemento NOTIFICATION_CANCELLED che implica il passaggio di stato della notifica in CANCELLED
         await().untilAsserted(() -> Assertions.assertTrue(TestUtils.isCancelledNotification(iun, timelineService)));
 
-        // Viene atteso fino a che lo stato non passi in CANCELLED
-//        await().untilAsserted(() ->
-//                Assertions.assertEquals(NotificationStatusInt.CANCELLED, TestUtils.getNotificationStatus(notification, timelineService, statusUtils))
-//        );
-
         checkNotificationCancelledTimelineElement(iun, notrefined);
         for(int kk = 0;kk<notrefined;kk++)
             checkNoSendXXX(iun, kk);
@@ -341,11 +331,6 @@ class NotificationCancelledTestIT extends CommonTestConfiguration{
 
         // Viene atteso fino a che non viene persistito l'elemento NOTIFICATION_CANCELLED che implica il passaggio di stato della notifica in CANCELLED
         await().untilAsserted(() -> Assertions.assertTrue(TestUtils.isCancelledNotification(iun, timelineService)));
-
-        // Viene atteso fino a che lo stato non passi in CANCELLED
-//        await().untilAsserted(() ->
-//                Assertions.assertEquals(NotificationStatusInt.CANCELLED, TestUtils.getNotificationStatus(notification, timelineService, statusUtils))
-//        );
 
         checkNotificationCancelledTimelineElement(iun, 2);
 

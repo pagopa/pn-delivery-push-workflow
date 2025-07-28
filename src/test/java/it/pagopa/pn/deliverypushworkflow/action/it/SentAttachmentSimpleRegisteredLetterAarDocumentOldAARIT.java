@@ -153,11 +153,6 @@ class SentAttachmentSimpleRegisteredLetterAarDocumentOldAARIT extends SendAarAtt
         // Viene atteso fino all'inserimento dell'elemento di REFINEMENT (che dovrebbe portare la notifica in EFFECTIVE DATE)
         await().untilAsserted(() -> Assertions.assertTrue(TestUtils.isRefinementPresent(iun, 0, timelineService)));
 
-        // Viene atteso fino a che lo stato non passi in EFFECTIVE DATE
-//        await().untilAsserted(() ->
-//                Assertions.assertEquals(NotificationStatusInt.EFFECTIVE_DATE, TestUtils.getNotificationStatus(notification, timelineService, statusUtils))
-//        );
-
         final List<String> listAttachmentExpectedToSend = getListAttachmentExpectedToSend(firstCurrentConf, notification, recIndex, notificationDocumentList, pagoPaAttachmentList);
 
         //Vengono ottenuti gli attachment inviati nella richiesta di PREPARE verso paperChannel

@@ -748,11 +748,6 @@ class DigitalTestWorkflowRepeatIT extends CommonTestConfiguration {
         // Viene atteso fino all'inserimento dell'elemento di REFINEMENT (che dovrebbe portare la notifica in EFFECTIVE DATE)
         await().untilAsserted(() -> Assertions.assertTrue(TestUtils.isRefinementPresent(iun, recIndex, timelineService)));
 
-        // Viene atteso fino a che lo stato non passi in EFFECTIVE DATE
-//        await().untilAsserted(() ->
-//                Assertions.assertEquals(NotificationStatusInt.EFFECTIVE_DATE, TestUtils.getNotificationStatus(notification, timelineService, statusUtils))
-//        );
-
         //Viene verificata la disponibilità degli indirizzi per il primo tentativo
         TestUtils.checkGetAddress(iun, recIndex, true, DigitalAddressSourceInt.PLATFORM, ChooseDeliveryModeUtilsImpl.ZERO_SENT_ATTEMPT_NUMBER, timelineService);
         TestUtils.checkGetAddress(iun, recIndex, true, DigitalAddressSourceInt.SPECIAL, ChooseDeliveryModeUtilsImpl.ZERO_SENT_ATTEMPT_NUMBER, timelineService);

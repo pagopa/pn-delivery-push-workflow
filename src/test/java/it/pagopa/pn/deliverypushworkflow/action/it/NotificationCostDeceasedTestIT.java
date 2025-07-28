@@ -90,11 +90,6 @@ class NotificationCostDeceasedTestIT extends CommonTestConfiguration {
                 )
         );
 
-        // Attesa fino a che lo stato della notifica non diventi RETURNED_TO_SENDER
-//        await().untilAsserted(() ->
-//                Assertions.assertEquals(NotificationStatusInt.RETURNED_TO_SENDER, TestUtils.getNotificationStatus(notification, timelineService, statusUtils))
-//        );
-
         // Simulazione della visualizzazione della notifica
         Instant notificationViewDate = Instant.now();
         notificationViewedRequestHandler.handleViewNotificationDelivery(NotificationViewedInt.builder()
@@ -110,11 +105,6 @@ class NotificationCostDeceasedTestIT extends CommonTestConfiguration {
                         TestUtils.checkIsPresentViewed(iun, recIndex, timelineService)
                 )
         );
-
-        // Verifica che lo stato della notifica resti RETURNED_TO_SENDER
-//        await().untilAsserted(() ->
-//                Assertions.assertEquals(NotificationStatusInt.RETURNED_TO_SENDER, TestUtils.getNotificationStatus(notification, timelineService, statusUtils))
-//        );
 
         // Verifica che il costo non sia stato aggiunto nella timeline di visualizzazione
         checkCostForDeceasedEvent(iun, recIndex, true);

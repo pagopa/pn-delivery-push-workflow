@@ -125,11 +125,6 @@ class NotificationViewedTestIT extends CommonTestConfiguration {
 
         // Viene atteso fino all'inserimento dell'elemento di REFINEMENT (che dovrebbe portare la notifica in EFFECTIVE DATE)
         await().untilAsserted(() -> Assertions.assertTrue(TestUtils.isRefinementPresent(iun, recIndex, timelineService)));
-
-        // Viene atteso fino a che lo stato non passi in EFFECTIVE DATE
-//        await().untilAsserted(() ->
-//                Assertions.assertEquals(NotificationStatusInt.EFFECTIVE_DATE, TestUtils.getNotificationStatus(notification, timelineService, statusUtils))
-//        );
         
         //Simulazione visualizzazione della notifica
         Instant notificationViewDate = Instant.now();
@@ -146,10 +141,6 @@ class NotificationViewedTestIT extends CommonTestConfiguration {
 
         // Viene atteso fino a che l'elemento di timeline di NOTIFICATION_VIEWED non viene inserito
         await().untilAsserted(() -> TestUtils.checkIsPresentViewed(iun, recIndex, timelineService));
-
-//        await().untilAsserted(() ->
-//                Assertions.assertEquals(NotificationStatusInt.VIEWED, TestUtils.getNotificationStatus(notification, timelineService, statusUtils))
-//        );
 
         await().until(
                 isPaperNotificationDeleted(iun, recipient)
@@ -254,21 +245,12 @@ class NotificationViewedTestIT extends CommonTestConfiguration {
         // Viene atteso fino all'inserimento dell'elemento di REFINEMENT (che dovrebbe portare la notifica in EFFECTIVE DATE)
         await().untilAsserted(() -> Assertions.assertTrue(TestUtils.isRefinementPresent(iun, recIndex, timelineService)));
 
-        // Viene atteso fino a che lo stato non passi in EFFECTIVE DATE
-//        await().untilAsserted(() ->
-//                Assertions.assertEquals(NotificationStatusInt.EFFECTIVE_DATE, TestUtils.getNotificationStatus(notification, timelineService, statusUtils))
-//        );
-
         //Simulazione visualizzazione della notifica
         Instant notificationViewDate = Instant.now();
         notificationViewedRequestHandler.handleViewNotificationDelivery(buildNotificationViewedInt(iun, recIndex, null, notificationViewDate));
 
         //Viene atteso fino a che l'elemento di timeline di NOTIFICATION_VIEWED non viene inserito
         await().untilAsserted(() -> TestUtils.checkIsPresentViewed(iun, recIndex, timelineService));
-
-//        await().untilAsserted(() ->
-//                Assertions.assertEquals(NotificationStatusInt.VIEWED, TestUtils.getNotificationStatus(notification, timelineService, statusUtils))
-//        );
         
         await().until(
                 isPaperNotificationDeleted(iun, recipient)
@@ -415,11 +397,6 @@ class NotificationViewedTestIT extends CommonTestConfiguration {
 
         //Start del workflow
         scheduleRecipientWorkflow.startScheduleRecipientWorkflow(iun);
-
-        // Viene atteso fino a che lo stato non passi in ACCEPTED
-//        await().untilAsserted(() ->
-//                Assertions.assertEquals(NotificationStatusInt.ACCEPTED, TestUtils.getNotificationStatus(notification, timelineService, statusUtils))
-//        );
         
         //Simulazione visualizzazione della notifica per il primo recipient
         Instant notificationViewDate1 = Instant.now();

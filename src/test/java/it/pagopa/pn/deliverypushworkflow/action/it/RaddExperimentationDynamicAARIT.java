@@ -150,12 +150,6 @@ class RaddExperimentationDynamicAARIT extends SendAarAttachment {
 
         // Viene atteso fino all'inserimento dell'elemento di REFINEMENT (che dovrebbe portare la notifica in EFFECTIVE DATE)
         await().untilAsserted(() -> Assertions.assertTrue(TestUtils.isRefinementPresent(iun, 0, timelineService)));
-
-
-        // Viene atteso fino a che lo stato non passi in EFFECTIVE DATE
-//        await().untilAsserted(() ->
-//                Assertions.assertEquals(NotificationStatusInt.EFFECTIVE_DATE, TestUtils.getNotificationStatus(notification, timelineService, statusUtils))
-//        );
         
         ArgumentCaptor<PaperChannelPrepareRequest> paperChannelPrepareRequestCaptor = ArgumentCaptor.forClass(PaperChannelPrepareRequest.class);
         Mockito.verify(paperChannelMock, Mockito.times(1)).prepare(paperChannelPrepareRequestCaptor.capture());
@@ -225,12 +219,6 @@ class RaddExperimentationDynamicAARIT extends SendAarAttachment {
 
         // Viene atteso fino all'inserimento dell'elemento di REFINEMENT (che dovrebbe portare la notifica in EFFECTIVE DATE)
         await().untilAsserted(() -> Assertions.assertTrue(TestUtils.isRefinementPresent(iun, 0, timelineService)));
-
-
-        // Viene atteso fino a che lo stato non passi in EFFECTIVE DATE
-//        await().untilAsserted(() ->
-//                Assertions.assertEquals(NotificationStatusInt.EFFECTIVE_DATE, TestUtils.getNotificationStatus(notification, timelineService, statusUtils))
-//        );
 
         ArgumentCaptor<PaperChannelPrepareRequest> paperChannelPrepareRequestCaptor = ArgumentCaptor.forClass(PaperChannelPrepareRequest.class);
         Mockito.verify(paperChannelMock, Mockito.times(1)).prepare(paperChannelPrepareRequestCaptor.capture());

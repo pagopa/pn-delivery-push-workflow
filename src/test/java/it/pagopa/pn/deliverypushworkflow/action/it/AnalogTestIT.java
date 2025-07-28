@@ -1262,10 +1262,6 @@ class AnalogTestIT extends CommonTestConfiguration {
                 Assertions.assertTrue(timelineService.getTimelineElement(iun, timelineId2).isPresent())
         );
 
-//        await().untilAsserted(() ->
-//                Assertions.assertEquals(NotificationStatusInt.EFFECTIVE_DATE, TestUtils.getNotificationStatus(notification, timelineService, statusUtils))
-//        );
-
         //Viene verificato che sia stato inviato un messaggio ad ogni indirizzo presente nei courtesyaddress
         TestUtils.checkSendCourtesyAddressFromTimeline(iun, rec1Index, listCourtesyAddressRecipient1, timelineService);
 
