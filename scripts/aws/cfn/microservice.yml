@@ -338,6 +338,10 @@ Parameters:
   NewWorkflowLambdasEnabledEnd:
     Type: String
     Description: 'End date in EPOCH millis format (important!) for lambdas enabled'
+
+  Version:
+    Type: String
+    Description: 'Keep track of used projects commitIds'
     
 Conditions:
     UseExternalChannelMock: !Equals [ !Ref ExternalChannelBaseUrl, "Mock" ]

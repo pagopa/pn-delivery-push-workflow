@@ -19,6 +19,10 @@ Parameters:
   AlarmSNSTopicName:
     Type: String
     Description: 'Topic alarm'
+
+  LogsKinesisSourceStreamArn:
+    Type: String
+    Description: 'Where to send Logs'
   
   LogRetention:
     Type: Number
