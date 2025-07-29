@@ -300,6 +300,16 @@ Parameters:
     Type: String
     Description: 'DLQ Alarm ARN for NotificationCancellationActionInsertLambda'
 
+  NotificationCancellationActionInsertLambdaMaximumBatchingWindowInSeconds:
+    Type: String
+    Default: "60"
+    Description: 'MaximumBatchingWindow asseveration event source mapping'
+
+  NotificationCancellationActionInsertLambdaBatchSize:
+    Type: String
+    Default: "20"
+    Description: 'BatchSize asseveration event source mapping'
+
   PaperEventsCostUpdateLambdaName:
     Type: String
 
@@ -636,7 +646,7 @@ Resources:
   NotificationCancellationActionInsertLambdaRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${ProjectName}-notificationCancellationActionInsertLambdaRole
+      RoleName: !Sub ${ProjectName}-notificationCancellationActionInsertWorkflowLambdaRole
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -654,7 +664,7 @@ Resources:
   NotificationCancellationActionInsertLambdaPolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: !Sub ${ProjectName}-NotificationCancellationActionInsertLambdaPolicy
+      PolicyName: !Sub ${ProjectName}-NotificationCancellationActionInsertWorkflowLambdaPolicy
       Roles:
         - !Ref NotificationCancellationActionInsertLambdaRole
       PolicyDocument:
@@ -744,7 +754,7 @@ Resources:
   PaperEventsCostUpdateLambdaRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${ProjectName}-paperEventsCostUpdateLambdaRole
+      RoleName: !Sub ${ProjectName}-paperEventsCostUpdateWorkflowLambdaRole
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -761,7 +771,7 @@ Resources:
   PaperEventsCostUpdateLambdaPolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: !Sub ${ProjectName}-PaperEventsCostUpdateLambdaPolicy
+      PolicyName: !Sub ${ProjectName}-PaperEventsCostUpdateWorkflowLambdaPolicy
       Roles:
         - !Ref PaperEventsCostUpdateLambdaRole
       PolicyDocument:
