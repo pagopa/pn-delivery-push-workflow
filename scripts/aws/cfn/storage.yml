@@ -67,7 +67,7 @@ Resources:
     Properties:
       TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/log-group.yaml"
       Parameters:
-        LogGroupName: !Sub "${ProjectName}-paperEventsCostUpdateLambda-workflow"
+        LogGroupName: !Sub "${ProjectName}-paperEventsCostUpdate-workflow"
         LogGroupRetention: !Ref LogRetention
         LogGroupPrefix: '/aws/lambda'
 
