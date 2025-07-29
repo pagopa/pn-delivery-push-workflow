@@ -446,6 +446,7 @@ Resources:
         TaskRoleManagedPolicyArn: !Ref DeliveryPushWorkflowServiceMicroserviceTaskManagedPolicy
         AlbSecurityGroup: !Ref AlbSecurityGroup
         EcsLogGroup: !Ref EcsWorkflowLogGroup
+        LogAlarmStrategyV1: !Ref LogAlarmStrategy
   
   ## Dashboard
   DeliveryPushWorkflowServiceMicroserviceCloudWatchDashboard:
