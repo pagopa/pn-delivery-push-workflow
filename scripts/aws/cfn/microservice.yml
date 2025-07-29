@@ -398,6 +398,7 @@ Resources:
         ContainerEnvEntry21: !Sub 'PN_CRON_ANALYZER=${PnCronAnalyzer}'
         ContainerEnvEntry22: !Sub 'WIRE_TAP_LOG=${WireTapLogActivation}'
         ApplicativeEnvFileChecksum: !Ref ApplicativeEnvFileChecksum
+        ParentMicroserviceName: !Sub '${ProjectName}-delivery-push-workflow'
         JavaToolOptions: '-Dreactor.netty.ioWorkerCount=50'
         MappedPaths: '/pn-delivery-push-workflow-service-not-available'
         ECSClusterName: !Ref ECSClusterName
@@ -410,7 +411,7 @@ Resources:
         AlbSecurityGroup: !Ref AlbSecurityGroup
         EcsLogGroup: !Ref EcsWorkflowLogGroup
         LogAlarmStrategyV1: !Ref LogAlarmStrategy
-  
+
   ## Dashboard
   DeliveryPushWorkflowServiceMicroserviceCloudWatchDashboard:
     Type: AWS::CloudFormation::Stack
