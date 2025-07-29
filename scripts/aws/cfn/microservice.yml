@@ -10,15 +10,7 @@ Parameters:
   AlarmSNSTopicArn:
     Type: String
     Description: ARN of alarm topic
-  
-  WebApiDnsName:
-    Type: String
-    Description: 'The DNS name used for WEB rest API.'
-  
-  CorsAllowedDomains:
-    Type: String
-    Description: 'Comma separated list of domains allowed to make cross origin request'
-  
+    
   ContainerImageUri:
     Type: String
     Description: 'Exact container image URI with full repository and image digest'
@@ -63,18 +55,6 @@ Parameters:
   AlbSecurityGroup:
     Type: String
     Description: 'Application load balancer security group'
-  
-  NetworkLoadBalancerLink:
-    Type: String
-    Description: 'network load balancer link for API-GW'
-  
-  LogsKinesisSourceStreamArn:
-    Type: String
-    Description: 'Kinesis stream that receive logs'
-  
-  Version:
-    Type: String
-    Description: 'keep track of used projects commitIds'
   
   # Instance parameters
   # 256 (.25 vCPU) - Available memory values: 0.5GB, 1GB, 2GB
@@ -351,17 +331,6 @@ Parameters:
     Description: "Kinesis source CDC stream crypto key ARN"
     Type: String
 
-  # --- FeatureFlags ---
-  WebhookFeatureFlags:
-    Type: CommaDelimitedList
-    Description: List containing in order StartReadStream, StopReadStream, StartWriteBusinessTimestamp, StopWriteBusinessTimestamp
-    Default: '1999-01-01T00:00:00Z,2099-02-01T00:00:00Z,2099-01-01T00:00:00Z,2099-02-01T00:00:00Z'
-
-  pfNewWorkflowFeatureFlag:
-    Type: CommaDelimitedList
-    Description: List containing in order pfNewWorkflowStart, pfNewWorkflowStop
-    Default: '2099-01-01T00:00:00Z,2099-02-01T00:00:00Z'
-
   NewWorkflowLambdasEnabledStart:
     Type: String
     Description: 'Start date in EPOCH millis format (important!) for lambdas enabled'
@@ -369,17 +338,7 @@ Parameters:
   NewWorkflowLambdasEnabledEnd:
     Type: String
     Description: 'End date in EPOCH millis format (important!) for lambdas enabled'
-  
-  PagoPaNotificationFee:
-    Type: String
-    Description: 'PagoPa notification fee per le notifiche create PRIMA della v2.1. Per le successive, il default viene impostato da pn-delivery e arriva nella notifica.'
-    Default: '100'
-  
-  PagoPaNotificationVat:
-    Type: String
-    Description: 'PagoPa notification vat per le notifiche create PRIMA della v2.1. Per le successive, il default viene impostato da pn-delivery e arriva nella notifica.'
-    Default: '22'
-  
+    
 Conditions:
     UseExternalChannelMock: !Equals [ !Ref ExternalChannelBaseUrl, "Mock" ]
 
