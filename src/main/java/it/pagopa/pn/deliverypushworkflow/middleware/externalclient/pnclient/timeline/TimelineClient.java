@@ -1,6 +1,10 @@
 package it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.timeline;
 
 import it.pagopa.pn.commons.log.PnLogger;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NewTimelineElement;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.TimelineCategory;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.TimelineElement;
@@ -18,18 +22,18 @@ public interface TimelineClient {
     String GET_TIMELINE_ELEMENT_FOR_SPECIFIC_RECIPIENT = "GET TIMELINE ELEMENT FOR SPECIFIC RECIPIENT";
     String GET_TIMELINE = "GET TIMELINE";
 
-    boolean addTimelineElement(NewTimelineElement newTimelineElement);
+    boolean addTimelineElement(TimelineElementInternal element, NotificationInt notification);
 
     Long retrieveAndIncrementCounterForTimelineEvent(String timelineId);
 
-    TimelineElement getTimelineElement(String iun, String timelineId, Boolean strongly);
+    TimelineElementInternal getTimelineElement(String iun, String timelineId, Boolean strongly);
 
-    TimelineElementDetails getTimelineElementDetails(String iun, String timelineId);
+    TimelineElementDetailsInt getTimelineElementDetails(String iun, String timelineId);
 
-    TimelineElementDetails getTimelineElementDetailForSpecificRecipient(String iun, Integer recIndex, Boolean confidentialInfoRequired, TimelineCategory category);
+    TimelineElementDetailsInt getTimelineElementDetailForSpecificRecipient(String iun, Integer recIndex, Boolean confidentialInfoRequired, TimelineElementCategoryInt category);
 
-    TimelineElement getTimelineElementForSpecificRecipient(String iun, Integer recIndex, TimelineCategory category);
+    TimelineElementInternal getTimelineElementForSpecificRecipient(String iun, Integer recIndex, TimelineElementCategoryInt category);
 
-    List<TimelineElement> getTimeline(String iun, Boolean confidentialInfoRequired, Boolean strongly, String timelineId);
+    List<TimelineElementInternal> getTimeline(String iun, Boolean confidentialInfoRequired, Boolean strongly, String timelineId);
 
 }

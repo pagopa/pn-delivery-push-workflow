@@ -1,16 +1,25 @@
 package it.pagopa.pn.deliverypushworkflow.service.mapper;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import it.pagopa.pn.commons.exceptions.PnInternalException;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ElementTimestampTimelineElementDetails;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.Converter;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
 
 
 @Slf4j
+@Component
+@RequiredArgsConstructor
 public class SmartMapper {
     private static ModelMapper modelMapper;
+    private final ObjectMapper objectMapper;
 
     static Converter<TimelineElementInternal, TimelineElementInternal> timelineElementInternalTimestampConverter =
             ctx -> {
@@ -43,6 +52,21 @@ public class SmartMapper {
         } else {
             result = null;
         }
+        return result;
+    }
+
+    public <S,T> T mapToClassWithObjectMapper(S source, Class<T> destinationClass )  {
+        T result;
+        try {
+            if( source != null) {
+                result = objectMapper.readValue(objectMapper.writeValueAsBytes(source), destinationClass);
+            } else {
+                result = null;
+            }
+        } catch (IOException e) {
+            throw new PnInternalException("Errore durante il mapping del dettaglio", "MAPPING_ERROR", e);
+        }
+
         return result;
     }
 

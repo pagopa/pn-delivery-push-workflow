@@ -8,10 +8,12 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.Notificat
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notificationviewed.NotificationViewedInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.EventId;
-import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NewTimelineElement;
-import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.TimelineCategory;
-import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.TimelineElement;
-import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.TimelineElementDetails;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationCancellationRequestDetailsInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.RecipientRelatedTimelineElementDetails;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementDetailsInt;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.*;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.timeline.TimelineClient;
 import it.pagopa.pn.deliverypushworkflow.service.NotificationCancellationService;
 import it.pagopa.pn.deliverypushworkflow.service.NotificationService;
@@ -36,7 +38,7 @@ public class TimelineClientMock implements TimelineClient {
     public static final String WAIT_SEPARATOR = "@@";
 
     private final NotificationViewedRequestHandler notificationViewedRequestHandler;
-    private CopyOnWriteArrayList<TimelineElement> timelineList;
+    private CopyOnWriteArrayList<TimelineElementInternal> timelineList;
     final HashMap<String, Long> counter = new HashMap<>();
     private final NotificationService notificationService;
     private final NotificationUtils notificationUtils;
@@ -57,11 +59,10 @@ public class TimelineClientMock implements TimelineClient {
     }
 
 
-    private void checkAndAddTimelineElement(NewTimelineElement newTimelineElement) {
-        log.debug("[TEST] Start checkAndAddTimelineElement {}", newTimelineElement);
-        TimelineElement dto = newTimelineElement.getTimelineElement();
+    private void checkAndAddTimelineElement(TimelineElementInternal dto) {
+        log.debug("[TEST] Start checkAndAddTimelineElement {}", dto);
 
-        if(dto.getDetails().getRecIndex() != null){
+        if( dto.getDetails() != null && dto.getDetails() instanceof RecipientRelatedTimelineElementDetails){
 
             log.debug("[TEST] Ok details is present {}", dto);
 
@@ -75,7 +76,7 @@ public class TimelineClientMock implements TimelineClient {
                 //Viene simulata la visualizzazione della notifica prima di uno specifico inserimento in timeline
                 NotificationViewedInt notificationViewedInt = NotificationViewedInt.builder()
                         .iun(dto.getIun())
-                        .recipientIndex(dto.getDetails().getRecIndex())
+                        .recipientIndex(((RecipientRelatedTimelineElementDetails) dto.getDetails()).getRecIndex())
                         .viewedDate(Instant.now())
                         .build();
                 notificationViewedRequestHandler.handleViewNotificationDelivery(notificationViewedInt);
@@ -105,7 +106,7 @@ public class TimelineClientMock implements TimelineClient {
         timelineList.add(dto);
 
 
-        if( dto.getDetails() != null && dto.getDetails().getRecIndex() != null) {
+        if( dto.getDetails() != null && dto.getDetails() instanceof RecipientRelatedTimelineElementDetails) {
 
             NotificationRecipientInt notificationRecipientInt = getRecipientInt(dto);
             String simulateAfterCancelNotificationString = dto.getElementId() + SIMULATE_AFTER_CANCEL_NOTIFICATION ;
@@ -118,7 +119,7 @@ public class TimelineClientMock implements TimelineClient {
         }
     }
 
-    private void simulateCancellation(TimelineElement dto) {
+    private void simulateCancellation(TimelineElementInternal dto) {
         //Viene simulata la cancellazione della notifica prima di uno specifico inserimento in timeline
 
         //Popolo in anticipo la timeline con un elemento di cancellazione scatenato da flusso HTTP (Che in questo dominio non è implemenato)
@@ -128,37 +129,37 @@ public class TimelineClientMock implements TimelineClient {
         notificationCancellationService.continueCancellationProcess( dto.getIun() );
     }
 
-    private TimelineElement buildMockedCancellationRequest(String iun) {
+    private TimelineElementInternal buildMockedCancellationRequest(String iun) {
         String elementId = NOTIFICATION_CANCELLATION_REQUEST.buildEventId(
                 EventId.builder()
                         .iun(iun)
                         .build());
 
-        TimelineElementDetails details = new TimelineElementDetails();
+        NotificationCancellationRequestDetailsInt details = new NotificationCancellationRequestDetailsInt();
         details.setCancellationRequestId("cancellation-request-id-" + iun);
 
-        TimelineElement timelineElement = new TimelineElement();
+        TimelineElementInternal timelineElement = new TimelineElementInternal();
         timelineElement.setIun(iun);
         timelineElement.setElementId(elementId);
-        timelineElement.setCategory(TimelineCategory.NOTIFICATION_CANCELLATION_REQUEST);
+        timelineElement.setCategory(TimelineElementCategoryInt.NOTIFICATION_CANCELLATION_REQUEST);
         timelineElement.setDetails(details);
         timelineElement.setLegalFactsIds(Collections.emptyList());
         timelineElement.setTimestamp(Instant.now());
         return timelineElement;
     }
 
-    private NotificationRecipientInt getRecipientInt(TimelineElement row) {
-        if(row.getDetails().getRecIndex() != null){
+    private NotificationRecipientInt getRecipientInt(TimelineElementInternal row) {
+        if(row.getDetails() instanceof RecipientRelatedTimelineElementDetails){
             NotificationInt notificationInt = this.notificationService.getNotificationByIun(row.getIun());
-            return notificationUtils.getRecipientFromIndex(notificationInt, row.getDetails().getRecIndex());
+            return notificationUtils.getRecipientFromIndex(notificationInt, ((RecipientRelatedTimelineElementDetails) row.getDetails()).getRecIndex());
         }else {
             throw new PnInternalException("There isn't recipient index for timeline element", "test");
         }
     }
 
     @Override
-    public boolean addTimelineElement(NewTimelineElement newTimelineElement) {
-        checkAndAddTimelineElement(newTimelineElement);
+    public boolean addTimelineElement(TimelineElementInternal timelineElementInternal, NotificationInt notificationInt) {
+        checkAndAddTimelineElement(timelineElementInternal);
         return false;
     }
 
@@ -177,14 +178,14 @@ public class TimelineClientMock implements TimelineClient {
     }
 
     @Override
-    public TimelineElement getTimelineElement(String iun, String timelineId, Boolean strongly) {
-        log.debug("[TEST] Start getTimelineElement iun={} timelineId={} in timelineIds={}", iun, timelineId, timelineList.stream().map(TimelineElement::getElementId).toList());
+    public TimelineElementInternal getTimelineElement(String iun, String timelineId, Boolean strongly) {
+        log.debug("[TEST] Start getTimelineElement iun={} timelineId={} in timelineIds={}", iun, timelineId, timelineList.stream().map(TimelineElementInternal::getElementId).toList());
         return timelineList.stream().filter(timelineElement -> timelineId.equals(timelineElement.getElementId()) && iun.equals(timelineElement.getIun())).findFirst().orElse(null);
     }
 
     @Override
-    public TimelineElementDetails getTimelineElementDetails(String iun, String timelineId) {
-        TimelineElement timelineElement = getTimelineElement(iun, timelineId, false);
+    public TimelineElementDetailsInt getTimelineElementDetails(String iun, String timelineId) {
+        TimelineElementInternal timelineElement = getTimelineElement(iun, timelineId, false);
         if (timelineElement != null) {
             return timelineElement.getDetails();
         } else {
@@ -194,8 +195,8 @@ public class TimelineClientMock implements TimelineClient {
     }
 
     @Override
-    public TimelineElementDetails getTimelineElementDetailForSpecificRecipient(String iun, Integer recIndex, Boolean confidentialInfoRequired, TimelineCategory category) {
-        TimelineElement timelineElement = getTimelineElementForSpecificRecipient(iun, recIndex, category);
+    public TimelineElementDetailsInt getTimelineElementDetailForSpecificRecipient(String iun, Integer recIndex, Boolean confidentialInfoRequired, TimelineElementCategoryInt category) {
+        TimelineElementInternal timelineElement = getTimelineElementForSpecificRecipient(iun, recIndex, category);
         if (timelineElement != null) {
             return timelineElement.getDetails();
         } else {
@@ -205,17 +206,17 @@ public class TimelineClientMock implements TimelineClient {
     }
 
     @Override
-    public TimelineElement getTimelineElementForSpecificRecipient(String iun, Integer recIndex, TimelineCategory category) {
+    public TimelineElementInternal getTimelineElementForSpecificRecipient(String iun, Integer recIndex, TimelineElementCategoryInt category) {
         return timelineList.stream()
                 .filter(timelineElement -> iun.equals(timelineElement.getIun()) &&
                         timelineElement.getCategory() == category &&
-                        timelineElement.getDetails().getRecIndex().equals(recIndex)
+                        ((RecipientRelatedTimelineElementDetails) timelineElement.getDetails()).getRecIndex() == recIndex
                 ).findFirst()
                 .orElse(null);
     }
 
     @Override
-    public List<TimelineElement> getTimeline(String iun, Boolean confidentialInfoRequired, Boolean strongly, String timelineId) {
+    public List<TimelineElementInternal> getTimeline(String iun, Boolean confidentialInfoRequired, Boolean strongly, String timelineId) {
         return timelineList.stream()
                 .filter(timelineElement ->
                     iun.equals(timelineElement.getIun()) &&

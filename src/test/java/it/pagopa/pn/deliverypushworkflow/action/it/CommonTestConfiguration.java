@@ -1,5 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.action.it;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import it.pagopa.pn.deliverypushworkflow.action.analogworkflow.*;
 import it.pagopa.pn.deliverypushworkflow.action.cancellation.NotificationCancellationActionHandler;
@@ -123,6 +124,7 @@ import static org.awaitility.Awaitility.setDefaultTimeout;
         CommonTestConfiguration.SpringTestConfiguration.class,
         PnExternalRegistriesClientReactiveMock.class,
         PaperChannelMock.class,
+        ObjectMapper.class,
         NotificationPaidHandler.class,
         NotificationCancellationServiceImpl.class,
         NotificationCancellationActionHandler.class,
