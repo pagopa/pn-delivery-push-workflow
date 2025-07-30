@@ -2,15 +2,16 @@ package it.pagopa.pn.deliverypushworkflow.dto.timeline.details;
 
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder(toBuilder = true)
-@EqualsAndHashCode
+@SuperBuilder(toBuilder = true)
+@EqualsAndHashCode(callSuper = true)
 @Getter
 @Setter
 @ToString
-public class PrepareAnalogDomicileFailureDetailsInt implements RecipientRelatedTimelineElementDetails, PhysicalAddressRelatedTimelineElement {
+public class PrepareAnalogDomicileFailureDetailsInt extends CategoryTypeTimelineElementDetailsInt implements RecipientRelatedTimelineElementDetails, PhysicalAddressRelatedTimelineElement {
 
     private int recIndex;
     private PhysicalAddressInt foundAddress;

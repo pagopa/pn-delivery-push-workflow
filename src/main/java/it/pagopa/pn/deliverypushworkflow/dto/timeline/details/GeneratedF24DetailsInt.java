@@ -10,9 +10,9 @@ import java.util.List;
 @Getter
 @Setter
 @SuperBuilder( toBuilder = true )
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true )
 @ToString
-public class GeneratedF24DetailsInt implements RecipientRelatedTimelineElementDetails {
+public class GeneratedF24DetailsInt extends CategoryTypeTimelineElementDetailsInt implements RecipientRelatedTimelineElementDetails {
     private int recIndex;
     private List<String> f24Attachments;
 

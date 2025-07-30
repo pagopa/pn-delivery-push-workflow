@@ -1,6 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.dto.timeline.details;
 
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.Instant;
 
@@ -8,10 +9,10 @@ import java.time.Instant;
 @AllArgsConstructor
 @Getter
 @Setter
-@Builder(toBuilder = true)
-@EqualsAndHashCode
+@SuperBuilder(toBuilder = true)
+@EqualsAndHashCode(callSuper = true)
 @ToString
-public class NotificationPaidDetailsInt implements RecipientRelatedTimelineElementDetails, ElementTimestampTimelineElementDetails {
+public class NotificationPaidDetailsInt extends CategoryTypeTimelineElementDetailsInt implements RecipientRelatedTimelineElementDetails, ElementTimestampTimelineElementDetails {
     private int recIndex;
     private String recipientType;
     private Integer amount;
