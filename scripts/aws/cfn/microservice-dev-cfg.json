@@ -31,7 +31,7 @@
     "MountEfs": "false",
     "NotificationCancellationActionInsertLambdaMaximumBatchingWindowInSeconds": "60",
     "NotificationCancellationActionInsertLambdaBatchSize": "20",
-    "NewWorkflowLambdasEnabledStart": "1756512000000",
+    "NewWorkflowLambdasEnabledStart": "1753881000000",
     "NewWorkflowLambdasEnabledEnd": "4070908800000"
   }
 }
