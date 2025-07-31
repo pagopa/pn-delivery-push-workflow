@@ -188,7 +188,7 @@
 						</goals>
 						<phase>generate-resources</phase>
 						<configuration>
-							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ss/a897235516b6878bb335b82e2582ec1e4fdb589e/docs/openapi/pn-safestorage-v1-api.yaml</inputSpec>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-ss/a897235516b6878bb335b82e2582ec1e4fdb589e/docs/openapi/pn-safestorage-v1.1-api.yaml</inputSpec>
 							<generatorName>java</generatorName>
 							<library>webclient</library>
 							<generateApiDocumentation>false</generateApiDocumentation>

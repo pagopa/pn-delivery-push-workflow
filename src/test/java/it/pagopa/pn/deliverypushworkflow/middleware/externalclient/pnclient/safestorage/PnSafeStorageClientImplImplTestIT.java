@@ -68,8 +68,6 @@ class PnSafeStorageClientImplImplTestIT extends MockAWSObjectsTest {
         fileCreationRequestExpected.setStatus("SAVED");
         fileCreationRequestExpected.setDocumentType("PN_AAR");
         fileCreationRequestExpected.setContentType("application/pdf");
-        fileCreationRequestExpected.setChecksumValue("testSha");
-
         String requestJson = mapper.writeValueAsString(fileCreationRequestExpected);
 
         FileCreationResponse fileCreationResponse = new FileCreationResponse();
