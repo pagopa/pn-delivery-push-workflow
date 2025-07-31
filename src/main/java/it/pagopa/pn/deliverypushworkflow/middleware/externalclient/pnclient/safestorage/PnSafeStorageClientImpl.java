@@ -56,7 +56,7 @@ public class PnSafeStorageClientImpl extends CommonBaseClient implements PnSafeS
         fileCreationRequest.setDocumentType(fileCreationRequestWithContent.getDocumentType());
         fileCreationRequest.setStatus(fileCreationRequestWithContent.getStatus());
 
-        return fileUploadApi.createFile( this.cfg.getSafeStorageCxId(), "SHA-256", sha256, fileCreationRequest )
+        return fileUploadApi.createFile( this.cfg.getSafeStorageCxId(), sha256, "SHA-256", fileCreationRequest )
                 .doOnError( res -> log.error("File creation error - documentType={} filesize={} sha256={}", fileCreationRequest.getDocumentType(), fileCreationRequestWithContent.getContent().length, sha256));
     }
 
