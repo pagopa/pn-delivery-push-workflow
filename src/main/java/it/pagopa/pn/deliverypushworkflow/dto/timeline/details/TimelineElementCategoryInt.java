@@ -4,7 +4,6 @@ import lombok.Getter;
 
 @Getter
 public enum TimelineElementCategoryInt {
-    REQUEST_ACCEPTED(NotificationRequestAcceptedDetailsInt.class, TimelineElementCategoryInt.VERSION_10),
     GENERATED_F24(GeneratedF24DetailsInt.class, TimelineElementCategoryInt.VERSION_23),
     SEND_COURTESY_MESSAGE(SendCourtesyMessageDetailsInt.class, TimelineElementCategoryInt.VERSION_10),
     GET_ADDRESS(GetAddressInfoDetailsInt.class, TimelineElementCategoryInt.VERSION_10),

@@ -1,6 +1,5 @@
 package it.pagopa.pn.deliverypushworkflow.action.choosedeliverymode;
 
-import it.pagopa.pn.deliverypushworkflow.action.utils.CourtesyMessageUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.NotificationUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.deliverypushworkflow.dto.address.DigitalAddressSourceInt;
@@ -61,7 +60,7 @@ class ChooseDeliveryModeUtilsTest {
         TimelineElementInternal timelineElementInternal = TimelineElementInternal.builder()
                 .elementId("el1")
                 .timestamp((Instant.parse("2021-09-16T15:24:00.00Z")))
-                .category(TimelineElementCategoryInt.REQUEST_ACCEPTED)
+                .category(TimelineElementCategoryInt.SCHEDULE_ANALOG_WORKFLOW)
                 .build();
 
         NotificationInt notificationInt = buildNotification();

@@ -69,11 +69,11 @@ class TimelineUtilsTest {
         NotificationViewedDetailsInt detailsInt = new NotificationViewedDetailsInt();
         detailsInt.setRecIndex(0);
         detailsInt.setNotificationCost(100);
-        TimelineElementInternal actual = timelineUtils.buildTimeline(buildNotificationInt(), TimelineElementCategoryInt.REQUEST_ACCEPTED, "001", detailsInt);
+        TimelineElementInternal actual = timelineUtils.buildTimeline(buildNotificationInt(), TimelineElementCategoryInt.NOTIFICATION_VIEWED, "001", detailsInt);
         Assertions.assertEquals("001", actual.getIun());
         Assertions.assertEquals("001", actual.getElementId());
         Assertions.assertEquals("pa_02", actual.getPaId());
-        Assertions.assertEquals(TimelineElementCategoryInt.REQUEST_ACCEPTED, actual.getCategory());
+        Assertions.assertEquals(TimelineElementCategoryInt.NOTIFICATION_VIEWED, actual.getCategory());
         Assertions.assertEquals(detailsInt, actual.getDetails());
     }
 

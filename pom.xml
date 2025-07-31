@@ -720,6 +720,45 @@
 							<modelPackage>${project.groupId}.deliverypushworkflow.generated.openapi.msclient.userattributes.model</modelPackage>
 						</configuration>
 					</execution>
+					<!-- OPEN API CLIENT DELIVERY-PUSH REACTIVE private -->
+					<execution>
+						<id>generate-client-delivery-push-private</id>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+						<phase>generate-resources</phase>
+						<configuration>
+							<inputSpec>
+								https://raw.githubusercontent.com/pagopa/pn-delivery-push/f9c976b1d3f2f83526ec24178a34c58dacf17d73/docs/openapi/api-private.yaml
+							</inputSpec>
+							<skipValidateSpec>true</skipValidateSpec>
+							<generatorName>java</generatorName>
+							<library>webclient</library>
+							<generateApiDocumentation>false</generateApiDocumentation>
+							<generateApiTests>false</generateApiTests>
+							<generateModelTests>false</generateModelTests>
+							<additionalProperties>removeEnumValuePrefix=false</additionalProperties>
+							<typeMappings>
+								<typeMapping>OffsetDateTime=java.time.Instant</typeMapping>
+								<typeMapping>file=byte[]</typeMapping>
+							</typeMappings>
+							<configOptions>
+								<useJakartaEe>true</useJakartaEe>
+								<swaggerAnnotations>false</swaggerAnnotations>
+								<openApiNullable>false</openApiNullable>
+								<dateLibrary>java8</dateLibrary>
+								<delegatePattern>true</delegatePattern>
+								<annotationLibrary>none</annotationLibrary>
+								<documentationProvider>source</documentationProvider>
+								<openApiNullable>false</openApiNullable>
+								<skipDefaultInterface>false</skipDefaultInterface>
+								<useTags>true</useTags>
+								<reactive>true</reactive>
+							</configOptions>
+							<modelPackage>${project.groupId}.deliverypushworkflow.generated.openapi.msclient.deliverypush.model</modelPackage>
+							<apiPackage>${project.groupId}.deliverypushworkflow.generated.openapi.msclient.deliverypush.api</apiPackage>
+						</configuration>
+					</execution>
 				</executions>
 			</plugin>			 		 
 		</plugins>

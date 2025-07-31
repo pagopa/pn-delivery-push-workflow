@@ -6,10 +6,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.Notificat
 import it.pagopa.pn.deliverypushworkflow.dto.legalfacts.LegalFactCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.dto.legalfacts.LegalFactsIdInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationRequestAcceptedDetailsInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationViewedDetailsInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementDetailsInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.*;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.*;
 import org.junit.jupiter.api.Test;
 
@@ -20,7 +17,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TimelineServiceMapperTest {
-    private TimelineServiceMapper timelineServiceMapper;
+    private final TimelineServiceMapper timelineServiceMapper;
 
     public TimelineServiceMapperTest() {
         SmartMapper smartMapper = new SmartMapper(new ObjectMapper());
@@ -131,25 +128,23 @@ class TimelineServiceMapperTest {
 
     @Test
     void toTimelineElementDetailsInt_mapsFieldsCorrectly() {
-        TimelineElementDetails details = new NotificationRequestAcceptedDetails()
-                .categoryType("REQUEST_ACCEPTED")
-                .notificationRequestId("requestId")
-                .idempotenceToken("idempotenceToken");
+        TimelineElementDetails details = new AnalogSuccessWorkflowDetails()
+                .categoryType("ANALOG_SUCCESS_WORKFLOW")
+                .recIndex(0);
 
         TimelineElement timelineElement = new TimelineElement()
                 .details(details)
-                .category(TimelineCategory.REQUEST_ACCEPTED);
+                .category(TimelineCategory.ANALOG_SUCCESS_WORKFLOW);
 
-        TimelineElementCategoryInt category = TimelineElementCategoryInt.REQUEST_ACCEPTED;
+        TimelineElementCategoryInt category = TimelineElementCategoryInt.ANALOG_SUCCESS_WORKFLOW;
 
         Object result = timelineServiceMapper.toTimelineElementDetailsInt(timelineElement.getDetails(), category);
 
         assertNotNull(result);
-        assertInstanceOf(NotificationRequestAcceptedDetailsInt.class, result);
-        NotificationRequestAcceptedDetailsInt requestAcceptedDetailsInt = (NotificationRequestAcceptedDetailsInt) result;
-        assertEquals("REQUEST_ACCEPTED", requestAcceptedDetailsInt.getCategoryType());
-        assertEquals("requestId", requestAcceptedDetailsInt.getNotificationRequestId());
-        assertEquals("idempotenceToken", requestAcceptedDetailsInt.getIdempotenceToken());
+        assertInstanceOf(AnalogSuccessWorkflowDetailsInt.class, result);
+        AnalogSuccessWorkflowDetailsInt analogSuccessWorkflowDetailsInt = (AnalogSuccessWorkflowDetailsInt) result;
+        assertEquals("ANALOG_SUCCESS_WORKFLOW", analogSuccessWorkflowDetailsInt.getCategoryType());
+        assertEquals(0, analogSuccessWorkflowDetailsInt.getRecIndex());
     }
 
     @Test
