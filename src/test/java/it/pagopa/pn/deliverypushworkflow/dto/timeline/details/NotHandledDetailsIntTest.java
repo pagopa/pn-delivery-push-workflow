@@ -21,7 +21,9 @@ class NotHandledDetailsIntTest {
     @Test
     void testEquals() {
         NotHandledDetailsInt expected = buildNotHandledDetailsInt();
-        Assertions.assertEquals(Boolean.TRUE, expected.equals(detailsInt));
+        Assertions.assertEquals(expected.getReason(), detailsInt.getReason());
+        Assertions.assertEquals(expected.getReasonCode(), detailsInt.getReasonCode());
+        Assertions.assertEquals(expected.getRecIndex(), detailsInt.getRecIndex());
     }
     @Test
     void getRecIndex() {

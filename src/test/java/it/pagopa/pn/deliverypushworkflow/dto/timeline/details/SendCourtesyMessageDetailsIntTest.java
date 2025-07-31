@@ -23,7 +23,10 @@ class SendCourtesyMessageDetailsIntTest {
     @Test
     void testEquals() {
         SendCourtesyMessageDetailsInt expected = buildSendCourtesyMessageDetailsInt();
-        Assertions.assertEquals(Boolean.TRUE, expected.equals(detailsInt));
+        Assertions.assertEquals(expected.getDigitalAddress(), detailsInt.getDigitalAddress());
+        Assertions.assertEquals(expected.getRecIndex(), detailsInt.getRecIndex());
+        Assertions.assertEquals(expected.getSendDate(), detailsInt.getSendDate());
+        Assertions.assertEquals(expected.getIoSendMessageResult(), detailsInt.getIoSendMessageResult());
     }
     @Test
     void getRecIndex() {

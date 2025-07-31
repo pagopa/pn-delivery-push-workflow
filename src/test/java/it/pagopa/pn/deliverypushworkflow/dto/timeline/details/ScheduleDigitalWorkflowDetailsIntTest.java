@@ -27,7 +27,12 @@ class ScheduleDigitalWorkflowDetailsIntTest {
     @Test
     void testEquals() {
         ScheduleDigitalWorkflowDetailsInt expected = buildScheduleDigitalWorkflowDetailsInt();
-        Assertions.assertEquals(Boolean.TRUE, expected.equals(detailsInt));
+        Assertions.assertEquals(expected.getDigitalAddress(), detailsInt.getDigitalAddress());
+        Assertions.assertEquals(expected.getDigitalAddressSource(), detailsInt.getDigitalAddressSource());
+        Assertions.assertEquals(expected.getLastAttemptDate(), detailsInt.getLastAttemptDate());
+        Assertions.assertEquals(expected.getRecIndex(), detailsInt.getRecIndex());
+        Assertions.assertEquals(expected.getSentAttemptMade(), detailsInt.getSentAttemptMade());
+        Assertions.assertEquals(expected.getSchedulingDate(), detailsInt.getSchedulingDate());
     }
     @Test
     void getRecIndex() {

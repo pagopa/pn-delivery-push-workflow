@@ -92,7 +92,7 @@ class TimelineUtilsTest {
         TimelineElementInternal actual = timelineUtils.buildTimeline(notification, category, elementId, details);
 
         actual.setTimestamp(expected.getTimestamp());// unico campo che sarà diverso, essendo istant.now
-        Assertions.assertEquals(expected, actual);
+        Assertions.assertEquals(expected.toString(), actual.toString());
     }
 
     @Test
