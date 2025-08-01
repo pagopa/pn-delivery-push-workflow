@@ -1,90 +1,40 @@
 package it.pagopa.pn.deliverypushworkflow.service.mapper;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
 import it.pagopa.pn.deliverypushworkflow.dto.legalfacts.LegalFactCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.dto.legalfacts.LegalFactsIdInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationViewedDetailsInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementDetailsInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.*;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.*;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class TimelineServiceMapperTest {
+    private final TimelineServiceMapper timelineServiceMapper;
+
+    public TimelineServiceMapperTest() {
+        SmartMapper smartMapper = new SmartMapper(new ObjectMapper());
+        this.timelineServiceMapper = new TimelineServiceMapper(smartMapper);
+    }
 
     @Test
     void toTimelineElementDetailsInt() {
-        TimelineElementDetails details = new TimelineElementDetails()
-                .categoryType("TEST_CATEGORY")
-                .legalFactId("LF123")
+        NotificationViewedDetails details = new NotificationViewedDetails()
+                .categoryType("NOTIFICATION_VIEWED")
                 .recIndex(5)
-                .notificationRequestId("REQ123")
-                .paProtocolNumber("PROT456")
-                .idempotenceToken("TOKEN789")
-                .generatedAarUrl("http://test/aar")
-                .completionWorkflowDate(Instant.now())
-                .legalFactGenerationDate(Instant.now())
-                .isAvailable(true)
-                .attemptDate(Instant.now())
                 .eventTimestamp(Instant.now())
                 .raddType("FSU")
                 .raddTransactionId("RADD123")
-                .sourceChannel("WEB")
-                .sourceChannelDetails("Dettagli")
-                .notificationCost(1000L)
-                .sentAttemptMade(2)
-                .sendDate(Instant.now())
-                .relatedFeedbackTimelineId("FB123")
-                .requestTimelineId("REQTL123")
-                .numberOfRecipients(3)
-                .schedulingDate(Instant.now())
-                .lastAttemptDate(Instant.now())
-                .retryNumber(1)
-                .nextSourceAttemptsMade(1)
-                .nextLastAttemptMadeForSource(Instant.now())
-                .isFirstSendRetry(false)
-                .notificationDate(Instant.now())
-                .deliveryFailureCause("Nessuna")
-                .deliveryDetailCode("D01")
-                .sendingReceipts(new ArrayList<>())
-                .shouldRetry(false)
-                .relatedRequestId("RELREQ123")
-                .productType("RS")
-                .analogCost(500)
-                .numberOfPages(10)
-                .envelopeWeight(20)
-                .prepareRequestId("PREP123")
-                .f24Attachments(new ArrayList<>())
-                .vat(22)
-                .attachments(new ArrayList<>())
-                .sendRequestId("SENDREQ123")
-                .registeredLetterCode("RL123")
-                .foreignState("IT")
-                .aarKey("AARKEY123")
-                .reasonCode("RC01")
-                .reason("Test Reason")
-                .amount(1500)
-                .creditorTaxId("77777777777")
-                .noticeCode("302000100000019421")
-                .paymentSourceChannel("WEB")
-                .uncertainPaymentDate(false)
-                .schedulingAnalogDate(Instant.now())
-                .cancellationRequestId("CANC123")
-                .notRefinedRecipientIndexes(Arrays.asList(1, 2, 3))
-                .failureCause("D00")
-                .recIndexes(Arrays.asList(1, 2, 3))
-                .registry("ANPR")
-                .status("OK");
+                .notificationCost(1000L);
 
-        TimelineElementDetailsInt result = TimelineServiceMapper.toTimelineElementDetailsInt(details, TimelineElementCategoryInt.NOTIFICATION_VIEWED);
+        TimelineElementDetailsInt result = timelineServiceMapper.toTimelineElementDetailsInt(details, TimelineElementCategoryInt.NOTIFICATION_VIEWED);
         NotificationViewedDetailsInt notificationViewedDetailsInt = (NotificationViewedDetailsInt) result;
 
         assertNotNull(notificationViewedDetailsInt);
@@ -101,14 +51,14 @@ class TimelineServiceMapperTest {
                 .paId("PA_TEST")
                 .legalFactsIds(new ArrayList<>())
                 .category(TimelineCategory.NOTIFICATION_VIEWED)
-                .details(new TimelineElementDetails().categoryType("TEST").legalFactId("LFID001"))
+                .details(new NotificationViewedDetails().categoryType("TEST").recIndex(0))
                 .statusInfo(new StatusInfo().actual("DELIVERED").statusChangeTimestamp(Instant.now()).statusChanged(true))
                 .notificationSentAt(Instant.now())
                 .ingestionTimestamp(Instant.now())
                 .eventTimestamp(Instant.now());
 
         TimelineElementCategoryInt category = TimelineElementCategoryInt.NOTIFICATION_VIEWED;
-        TimelineElementDetailsInt result = TimelineServiceMapper.toTimelineElementDetailsInt(timelineElement.getDetails(), category);
+        TimelineElementDetailsInt result = timelineServiceMapper.toTimelineElementDetailsInt(timelineElement.getDetails(), category);
         assertNotNull(result);
     }
 
@@ -132,7 +82,7 @@ class TimelineServiceMapperTest {
                 .build();
 
         // Act
-        NewTimelineElement result = TimelineServiceMapper.getNewTimelineElement(timelineElementInternal, notificationInt);
+        NewTimelineElement result = timelineServiceMapper.getNewTimelineElement(timelineElementInternal, notificationInt);
 
         // Assert
         assertNotNull(result);
@@ -164,7 +114,7 @@ class TimelineServiceMapperTest {
                 .build();
 
         // Act
-        NewTimelineElement result = TimelineServiceMapper.getNewTimelineElement(timelineElementInternal, notificationInt);
+        NewTimelineElement result = timelineServiceMapper.getNewTimelineElement(timelineElementInternal, notificationInt);
 
         // Assert
         assertNotNull(result);
@@ -178,27 +128,28 @@ class TimelineServiceMapperTest {
 
     @Test
     void toTimelineElementDetailsInt_mapsFieldsCorrectly() {
-        TimelineElementDetails details = new TimelineElementDetails()
-                .categoryType("TEST_CATEGORY")
-                .recIndex(5);
+        TimelineElementDetails details = new AnalogSuccessWorkflowDetails()
+                .categoryType("ANALOG_SUCCESS_WORKFLOW")
+                .recIndex(0);
 
         TimelineElement timelineElement = new TimelineElement()
                 .details(details)
-                .category(TimelineCategory.NOTIFICATION_VIEWED);
+                .category(TimelineCategory.ANALOG_SUCCESS_WORKFLOW);
 
-        TimelineElementCategoryInt category = TimelineElementCategoryInt.NOTIFICATION_VIEWED;
+        TimelineElementCategoryInt category = TimelineElementCategoryInt.ANALOG_SUCCESS_WORKFLOW;
 
-        Object result = TimelineServiceMapper.toTimelineElementDetailsInt(timelineElement.getDetails(), category);
+        Object result = timelineServiceMapper.toTimelineElementDetailsInt(timelineElement.getDetails(), category);
 
         assertNotNull(result);
-        assertInstanceOf(NotificationViewedDetailsInt.class, result);
-        NotificationViewedDetailsInt viewedDetails = (NotificationViewedDetailsInt) result;
-        assertEquals(5, viewedDetails.getRecIndex());
+        assertInstanceOf(AnalogSuccessWorkflowDetailsInt.class, result);
+        AnalogSuccessWorkflowDetailsInt analogSuccessWorkflowDetailsInt = (AnalogSuccessWorkflowDetailsInt) result;
+        assertEquals("ANALOG_SUCCESS_WORKFLOW", analogSuccessWorkflowDetailsInt.getCategoryType());
+        assertEquals(0, analogSuccessWorkflowDetailsInt.getRecIndex());
     }
 
     @Test
     void toTimelineElementInternal_mapsFieldsCorrectly() {
-        TimelineElementDetails details = new TimelineElementDetails().categoryType("NOTIFICATION_VIEWED").recIndex(1);
+        TimelineElementDetails details = new NotificationViewedDetails().categoryType("NOTIFICATION_VIEWED").recIndex(1);
         StatusInfo statusInfo = new StatusInfo().actual("DELIVERED").statusChangeTimestamp(Instant.now()).statusChanged(true);
         LegalFactsId legalFactsId = new LegalFactsId().category(LegalFactsId.CategoryEnum.ANALOG_DELIVERY);
         TimelineElement timelineElement = new TimelineElement()
@@ -214,7 +165,7 @@ class TimelineServiceMapperTest {
                 .ingestionTimestamp(Instant.now())
                 .eventTimestamp(Instant.now());
 
-        TimelineElementInternal result = TimelineServiceMapper.toTimelineElementInternal(timelineElement);
+        TimelineElementInternal result = timelineServiceMapper.toTimelineElementInternal(timelineElement);
 
         assertNotNull(result);
         assertEquals("IUN_TEST", result.getIun());

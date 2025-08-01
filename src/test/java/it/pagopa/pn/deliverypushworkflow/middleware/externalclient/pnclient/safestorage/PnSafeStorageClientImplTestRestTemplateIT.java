@@ -68,7 +68,6 @@ class PnSafeStorageClientImplTestRestTemplateIT {
         fileCreationRequest.setDocumentType("PN_AAR");
         fileCreationRequest.setContentType("application/pdf");
         fileCreationRequest.setContent(new byte[0]);
-        fileCreationRequest.setChecksumValue("sha");
 
         FileCreationResponse fileCreationResponse = new FileCreationResponse();
         fileCreationResponse.setSecret("secret");

@@ -8,25 +8,27 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.*;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.List;
 
 @Slf4j
+@Component
+@RequiredArgsConstructor
 public class TimelineServiceMapper {
+    private final SmartMapper smartMapper;
 
-    private TimelineServiceMapper() {
-    }
-
-    public static NewTimelineElement getNewTimelineElement(TimelineElementInternal timelineElementInternal,
+    public NewTimelineElement getNewTimelineElement(TimelineElementInternal timelineElementInternal,
                                                NotificationInt notificationInt) {
         return new NewTimelineElement()
                 .timelineElement(toTimelineElement(timelineElementInternal))
                 .notificationInfo(toNotificationInfo(notificationInt));
     }
 
-    public static TimelineElementInternal toTimelineElementInternal(TimelineElement timelineElement) {
+    public TimelineElementInternal toTimelineElementInternal(TimelineElement timelineElement) {
         if (timelineElement == null) {
             return null;
         }
@@ -47,7 +49,7 @@ public class TimelineServiceMapper {
                 .build();
     }
 
-    private static NotificationInfo toNotificationInfo(NotificationInt notificationInt) {
+    private NotificationInfo toNotificationInfo(NotificationInt notificationInt) {
         return new NotificationInfo()
                 .iun(notificationInt.getIun())
                 .paProtocolNumber(notificationInt.getPaProtocolNumber())
@@ -55,7 +57,7 @@ public class TimelineServiceMapper {
                 .numberOfRecipients(notificationInt.getRecipients() != null ? notificationInt.getRecipients().size() : null);
     }
 
-    private static TimelineElement toTimelineElement(TimelineElementInternal timelineElementInternal) {
+    private TimelineElement toTimelineElement(TimelineElementInternal timelineElementInternal) {
         return new TimelineElement()
                 .iun(timelineElementInternal.getIun())
                 .elementId(timelineElementInternal.getElementId())
@@ -67,7 +69,7 @@ public class TimelineServiceMapper {
                 .notificationSentAt(timelineElementInternal.getNotificationSentAt());
     }
 
-    private static List<LegalFactsId> toLegalFactsIdList(List<LegalFactsIdInt> legalFactsIdIntList) {
+    private List<LegalFactsId> toLegalFactsIdList(List<LegalFactsIdInt> legalFactsIdIntList) {
         if (legalFactsIdIntList.isEmpty()) {
             return Collections.emptyList();
         }
@@ -79,7 +81,7 @@ public class TimelineServiceMapper {
                 .toList();
     }
 
-    private static List<LegalFactsIdInt> toLegalFactsIdIntList(List<LegalFactsId> legalFactsIdList) {
+    private List<LegalFactsIdInt> toLegalFactsIdIntList(List<LegalFactsId> legalFactsIdList) {
         if (legalFactsIdList.isEmpty()) {
             return Collections.emptyList();
         }
@@ -94,21 +96,20 @@ public class TimelineServiceMapper {
                 .toList();
     }
 
-    private static TimelineElementDetails toTimelineElementDetails(TimelineElementDetailsInt detailsInt, String category) {
+    private TimelineElementDetails toTimelineElementDetails(TimelineElementDetailsInt detailsInt, String category) {
         if (detailsInt == null) {
             return null;
         }
 
-        TimelineElementDetails details = SmartMapper.mapToClass(detailsInt, TimelineElementDetails.class);
-        details.setCategoryType(category);
-        return details;
+        detailsInt.setCategoryType(category);
+        return smartMapper.mapToClassWithObjectMapper(detailsInt, TimelineElementDetails.class);
     }
 
-    public static TimelineElementDetailsInt toTimelineElementDetailsInt(TimelineElementDetails details, TimelineElementCategoryInt category) {
+    public TimelineElementDetailsInt toTimelineElementDetailsInt(TimelineElementDetails details, TimelineElementCategoryInt category) {
         return SmartMapper.mapToClass(details, category.getDetailsJavaClass());
     }
 
-    private static StatusInfoInternal toStatusInfoInternal(StatusInfo statusInfo) {
+    private StatusInfoInternal toStatusInfoInternal(StatusInfo statusInfo) {
         if (statusInfo == null) return null;
 
         return StatusInfoInternal.builder()

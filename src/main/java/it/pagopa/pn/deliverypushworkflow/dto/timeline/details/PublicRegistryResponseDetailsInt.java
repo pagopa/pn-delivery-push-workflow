@@ -11,9 +11,9 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @Setter
 @SuperBuilder(toBuilder = true)
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
 @ToString
-public class PublicRegistryResponseDetailsInt implements RecipientRelatedTimelineElementDetails, DigitalAddressRelatedTimelineElement {
+public class PublicRegistryResponseDetailsInt extends CategoryTypeTimelineElementDetailsInt implements RecipientRelatedTimelineElementDetails, DigitalAddressRelatedTimelineElement {
     protected int recIndex;
     protected LegalDigitalAddressInt digitalAddress;
     protected PhysicalAddressInt physicalAddress;

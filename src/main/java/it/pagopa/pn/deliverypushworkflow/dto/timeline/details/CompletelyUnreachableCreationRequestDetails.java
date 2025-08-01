@@ -2,6 +2,7 @@ package it.pagopa.pn.deliverypushworkflow.dto.timeline.details;
 
 import it.pagopa.pn.deliverypushworkflow.action.utils.EndWorkflowStatus;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.Instant;
 
@@ -9,10 +10,10 @@ import java.time.Instant;
 @AllArgsConstructor
 @Getter
 @Setter
-@Builder(toBuilder = true)
-@EqualsAndHashCode
+@SuperBuilder(toBuilder = true)
+@EqualsAndHashCode(callSuper = true)
 @ToString
-public class CompletelyUnreachableCreationRequestDetails implements RecipientRelatedTimelineElementDetails {
+public class CompletelyUnreachableCreationRequestDetails extends CategoryTypeTimelineElementDetailsInt implements RecipientRelatedTimelineElementDetails {
     private int recIndex;
     private String legalFactId;
     private Instant completionWorkflowDate;

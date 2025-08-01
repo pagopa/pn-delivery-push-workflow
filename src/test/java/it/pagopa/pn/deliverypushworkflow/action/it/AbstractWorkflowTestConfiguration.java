@@ -11,6 +11,7 @@ import it.pagopa.pn.deliverypushworkflow.legalfacts.LegalFactGeneratorTemplates;
 import it.pagopa.pn.deliverypushworkflow.legalfacts.PhysicalAddressWriter;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.datavault.PnDataVaultClientReactive;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.delivery.PnDeliveryClient;
+import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.deliverypush.PnDeliveryPushClientReactive;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.externalregistry.PnExternalRegistriesClientReactive;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.externalregistry.PnExternalRegistryClient;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.externalregistry.PnExternalRegistryClientImpl;
@@ -50,10 +51,10 @@ public class AbstractWorkflowTestConfiguration {
     }
 
     @Bean
-    public NotificationProcessCostService notificationProcessCostService(@Lazy TimelineService timelineService,
-                                                                         @Lazy PnExternalRegistriesClientReactive pnExternalRegistriesClientReactive,
+    public NotificationProcessCostService notificationProcessCostService(@Lazy PnExternalRegistriesClientReactive pnExternalRegistriesClientReactive,
+                                                                         @Lazy PnDeliveryPushClientReactive pnDeliveryPushClientReactive,
                                                                          @Lazy PnDeliveryPushWorkflowConfigs cfg) {
-        return new NotificationProcessCostServiceImpl(timelineService, pnExternalRegistriesClientReactive, cfg);
+        return new NotificationProcessCostServiceImpl(pnExternalRegistriesClientReactive, cfg, pnDeliveryPushClientReactive);
     }
 
     @Bean

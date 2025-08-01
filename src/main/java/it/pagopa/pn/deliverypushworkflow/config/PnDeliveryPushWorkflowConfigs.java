@@ -51,6 +51,8 @@ public class PnDeliveryPushWorkflowConfigs {
 
     private String timelineClientBaseUrl;
 
+    private String deliveryPushBaseUrl;
+
     private String templateURLforPEC;
 
     private String externalchannelCxId;
@@ -92,10 +94,6 @@ public class PnDeliveryPushWorkflowConfigs {
     private String activationDeceasedWorkflowDate;
 
     private int pagoPaNotificationBaseCost;
-
-    private int pagoPaNotificationFee;
-
-    private int pagoPaNotificationVat;
 
     private PaperChannel paperChannel;
 

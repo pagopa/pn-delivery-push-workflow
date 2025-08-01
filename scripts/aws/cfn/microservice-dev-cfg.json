@@ -26,12 +26,11 @@
     "NationalRegistries2DeliveryPushQueueARN": "arn:aws:sqs:eu-south-1:830192246553:pn-nationalregistries_to_deliverypush",
     "NationalRegistries2DeliveryPushQueueAlarmARN": "arn:aws:cloudwatch:eu-south-1:830192246553:alarm:pn-nationalregistries_to_deliverypush-DLQ-HasMessage",
     "NationalRegistries2DeliveryPushQueueAgeAlarmARN": "arn:aws:cloudwatch:eu-south-1:830192246553:alarm:pn-nationalregistries_to_deliverypush-HasOldMessage",
-    "EcsWorkflowLogGroup": "/aws/ecs/pn-delivery-push-workflow",
     "WireTapLogActivation": "false",
     "MountEfs": "false",
     "NotificationCancellationActionInsertLambdaMaximumBatchingWindowInSeconds": "60",
     "NotificationCancellationActionInsertLambdaBatchSize": "20",
-    "NewWorkflowLambdasEnabledStart": "1756512000000",
+    "NewWorkflowLambdasEnabledStart": "1753881000000",
     "NewWorkflowLambdasEnabledEnd": "4070908800000"
   }
 }

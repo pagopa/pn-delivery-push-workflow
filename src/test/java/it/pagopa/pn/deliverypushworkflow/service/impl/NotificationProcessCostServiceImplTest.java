@@ -1,42 +1,39 @@
 package it.pagopa.pn.deliverypushworkflow.service.impl;
 
+import it.pagopa.pn.commons.exceptions.PnInternalException;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.cost.PaymentsInfoForRecipientInt;
 import it.pagopa.pn.deliverypushworkflow.dto.cost.UpdateCostPhaseInt;
 import it.pagopa.pn.deliverypushworkflow.dto.cost.UpdateNotificationCostResponseInt;
 import it.pagopa.pn.deliverypushworkflow.dto.cost.UpdateNotificationCostResultInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationRequestAcceptedDetailsInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SimpleRegisteredLetterDetailsInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.NotificationFeePolicy;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.deliverypush.model.NotificationProcessCostResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregistry_reactive.model.UpdateNotificationCostRequest;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregistry_reactive.model.UpdateNotificationCostResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregistry_reactive.model.UpdateNotificationCostResult;
+import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.deliverypush.PnDeliveryPushClientReactive;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.externalregistry.PnExternalRegistriesClientReactive;
 import it.pagopa.pn.deliverypushworkflow.service.NotificationProcessCostService;
-import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
 
 class NotificationProcessCostServiceImplTest {
-    @Mock
-    private TimelineService timelineService;
-    @Mock
     private PnExternalRegistriesClientReactive pnExternalRegistriesClientReactive;
-    @Mock
     private PnDeliveryPushWorkflowConfigs cfg;
-    
+    private PnDeliveryPushClientReactive pnDeliveryPushClientReactive;
     private NotificationProcessCostService service;
 
     Integer notificationCost = 100;
@@ -44,11 +41,13 @@ class NotificationProcessCostServiceImplTest {
     Integer notificationVat = 22;
     @BeforeEach
     void setUp() {
-        Mockito.when(cfg.getPagoPaNotificationBaseCost()).thenReturn(notificationCost);
-        Mockito.when(cfg.getPagoPaNotificationFee()).thenReturn(notificationFee);
-        Mockito.when(cfg.getPagoPaNotificationVat()).thenReturn(notificationVat);
+        this.pnExternalRegistriesClientReactive = Mockito.mock(PnExternalRegistriesClientReactive.class);
+        this.pnDeliveryPushClientReactive = Mockito.mock(PnDeliveryPushClientReactive.class);
+        this.cfg = Mockito.mock(PnDeliveryPushWorkflowConfigs.class);
 
-        service = new NotificationProcessCostServiceImpl(timelineService, pnExternalRegistriesClientReactive, cfg);
+        Mockito.when(cfg.getPagoPaNotificationBaseCost()).thenReturn(notificationCost);
+
+        service = new NotificationProcessCostServiceImpl(pnExternalRegistriesClientReactive, cfg, pnDeliveryPushClientReactive);
     }
     
     @Test
@@ -103,43 +102,22 @@ class NotificationProcessCostServiceImplTest {
         Assertions.assertEquals(updateNotificationCostResponseExpected.getCreditorTaxId(), updateNotificationCostResultInt.getPaymentsInfoForRecipient().getCreditorTaxId());
         Assertions.assertEquals(updateNotificationCostResponseExpected.getRecIndex(), updateNotificationCostResultInt.getPaymentsInfoForRecipient().getRecIndex());
     }
-    
+
     @Test
     @ExtendWith(SpringExtension.class)
-    void notificationProcessCostF24_vat_paFee_version23() {
+    void notificationProcessCostF24_vat_paFee_version23_withTotalCost() {
         //GIVEN
-
-        // notifica singolo recipient
-        // invio raccomandata semplice
-        // nessun perfezionamento
-        // DELIVERY_MODE
-
         String iun = "testIun";
         int recIndex = 0;
-
-        TimelineElementInternal requestAccepted = TimelineElementInternal.builder()
-                .category(TimelineElementCategoryInt.REQUEST_ACCEPTED)
-                .details(new NotificationRequestAcceptedDetailsInt())
-                .build();
-
-        final int simpleRegisteredLetterCost = 1400;
-
-        TimelineElementInternal sendSimpleRegisteredLetter = TimelineElementInternal.builder()
-                .category(TimelineElementCategoryInt.SEND_SIMPLE_REGISTERED_LETTER)
-                .details(SimpleRegisteredLetterDetailsInt.builder()
-                        .analogCost(simpleRegisteredLetterCost)
-                        .recIndex(recIndex)
-                        .build())
-                .build();
-
-        Set<TimelineElementInternal> timelineElements = new HashSet<>(Arrays.asList(requestAccepted, sendSimpleRegisteredLetter));
-
-        Mockito.when(timelineService.getTimeline(iun, false))
-                .thenReturn(timelineElements);
-
         int paFee = 0;
         int vat = 22;
         String version = "2.3";
+        int notificationProcessTotalCostExpected = 100;
+        NotificationProcessCostResponse notificationProcessCostResponse = new NotificationProcessCostResponse();
+        notificationProcessCostResponse.setTotalCost(notificationProcessTotalCostExpected);
+
+        Mockito.when(pnDeliveryPushClientReactive.getNotificationProcessCost(any(), any(), any(), any(), any(), any()))
+                .thenReturn(Mono.just(notificationProcessCostResponse));
 
         //WHEN
         Integer notificationCost = service.notificationProcessCostF24(
@@ -152,173 +130,25 @@ class NotificationProcessCostServiceImplTest {
         ).block();
 
         //THEN
-        int notificationProcessTotalCostExpected = getNotificationProcessTotalCostExpected(
-                service.getSendFee(),
-                simpleRegisteredLetterCost,
-                paFee,
-                vat
-        );
-
         Assertions.assertNotNull(notificationCost);
-        Assertions.assertEquals(notificationCost, notificationProcessTotalCostExpected);
+        Assertions.assertEquals(notificationProcessTotalCostExpected, notificationCost);
     }
 
     @Test
     @ExtendWith(SpringExtension.class)
-    void notificationProcessCostF24_notVat_paFee_version23() {
+    void notificationProcessCostF24_vat_paFee_version22_withPartialCost() {
         //GIVEN
-
-        // notifica singolo recipient
-        // invio raccomandata semplice
-        // nessun perfezionamento
-        // DELIVERY_MODE
-
         String iun = "testIun";
         int recIndex = 0;
-
-        TimelineElementInternal requestAccepted = TimelineElementInternal.builder()
-                .category(TimelineElementCategoryInt.REQUEST_ACCEPTED)
-                .details(new NotificationRequestAcceptedDetailsInt())
-                .build();
-
-        final int simpleRegisteredLetterCost = 1400;
-
-        TimelineElementInternal sendSimpleRegisteredLetter = TimelineElementInternal.builder()
-                .category(TimelineElementCategoryInt.SEND_SIMPLE_REGISTERED_LETTER)
-                .details(SimpleRegisteredLetterDetailsInt.builder()
-                        .analogCost(simpleRegisteredLetterCost)
-                        .recIndex(recIndex)
-                        .build())
-                .build();
-
-        Set<TimelineElementInternal> timelineElements = new HashSet<>(Arrays.asList(requestAccepted, sendSimpleRegisteredLetter));
-
-        Mockito.when(timelineService.getTimeline(iun, false))
-                .thenReturn(timelineElements);
-
         int paFee = 0;
-        Integer vat = null;
-        String version = "2.3";
+        int vat = 22;
+        String version = "2.2";
+        int notificationProcessTotalCostExpected = 50;
+        NotificationProcessCostResponse notificationProcessCostResponse = new NotificationProcessCostResponse();
+        notificationProcessCostResponse.setPartialCost(notificationProcessTotalCostExpected);
 
-        //WHEN
-        final Mono<Integer> notificationProcessCostMono = service.notificationProcessCostF24(
-                iun,
-                recIndex,
-                NotificationFeePolicy.DELIVERY_MODE,
-                paFee,
-                vat,
-                version
-        );
-
-        Integer notificationCost  = notificationProcessCostMono.block();
-
-        int notificationProcessPartialCostExpected = getNotificationProcessTotalCostExpected(
-                service.getSendFee(),
-                simpleRegisteredLetterCost,
-                paFee,
-                notificationVat
-        );
-
-        Assertions.assertNotNull(notificationCost);
-        Assertions.assertEquals(notificationCost, notificationProcessPartialCostExpected);
-    }
-
-    @Test
-    @ExtendWith(SpringExtension.class)
-    void notificationProcessCostF24_notVat_paFee_version21() {
-        //GIVEN
-
-        // notifica singolo recipient
-        // invio raccomandata semplice
-        // nessun perfezionamento
-        // DELIVERY_MODE
-
-        String iun = "testIun";
-        int recIndex = 0;
-
-        TimelineElementInternal requestAccepted = TimelineElementInternal.builder()
-                .category(TimelineElementCategoryInt.REQUEST_ACCEPTED)
-                .details(new NotificationRequestAcceptedDetailsInt())
-                .build();
-
-        final int simpleRegisteredLetterCost = 1400;
-
-        TimelineElementInternal sendSimpleRegisteredLetter = TimelineElementInternal.builder()
-                .category(TimelineElementCategoryInt.SEND_SIMPLE_REGISTERED_LETTER)
-                .details(SimpleRegisteredLetterDetailsInt.builder()
-                        .analogCost(simpleRegisteredLetterCost)
-                        .recIndex(recIndex)
-                        .build())
-                .build();
-
-        Set<TimelineElementInternal> timelineElements = new HashSet<>(Arrays.asList(requestAccepted, sendSimpleRegisteredLetter));
-
-        Mockito.when(timelineService.getTimeline(iun, false))
-                .thenReturn(timelineElements);
-
-        int paFee = 0;
-        Integer vat = null;
-        String version = "2.1";
-
-        //WHEN
-        Integer notificationCost = service.notificationProcessCostF24(
-                        iun,
-                        recIndex,
-                        NotificationFeePolicy.DELIVERY_MODE,
-                        paFee,
-                        vat,
-                        version
-                ).block();
-
-
-        //THEN
-        int notificationProcessPartialCostExpected = getNotificationProcessTotalCostExpected(
-                service.getSendFee(),
-                simpleRegisteredLetterCost,
-                paFee,
-                notificationVat
-        );
-
-        Assertions.assertNotNull(notificationCost);
-        Assertions.assertEquals(notificationCost, notificationProcessPartialCostExpected);
-    }
-
-    @Test
-    @ExtendWith(SpringExtension.class)
-    void notificationProcessCostF24_notVat_paFee_notVersion() {
-        //GIVEN
-
-        // notifica singolo recipient
-        // invio raccomandata semplice
-        // nessun perfezionamento
-        // DELIVERY_MODE
-
-        String iun = "testIun";
-        int recIndex = 0;
-
-        TimelineElementInternal requestAccepted = TimelineElementInternal.builder()
-                .category(TimelineElementCategoryInt.REQUEST_ACCEPTED)
-                .details(new NotificationRequestAcceptedDetailsInt())
-                .build();
-
-        final int simpleRegisteredLetterCost = 1400;
-
-        TimelineElementInternal sendSimpleRegisteredLetter = TimelineElementInternal.builder()
-                .category(TimelineElementCategoryInt.SEND_SIMPLE_REGISTERED_LETTER)
-                .details(SimpleRegisteredLetterDetailsInt.builder()
-                        .analogCost(simpleRegisteredLetterCost)
-                        .recIndex(recIndex)
-                        .build())
-                .build();
-
-        Set<TimelineElementInternal> timelineElements = new HashSet<>(Arrays.asList(requestAccepted, sendSimpleRegisteredLetter));
-
-        Mockito.when(timelineService.getTimeline(iun, false))
-                .thenReturn(timelineElements);
-
-        int paFee = 0;
-        Integer vat = null;
-        String version = null;
+        Mockito.when(pnDeliveryPushClientReactive.getNotificationProcessCost(iun, recIndex, NotificationFeePolicy.DELIVERY_MODE, true, paFee, vat))
+                .thenReturn(Mono.just(notificationProcessCostResponse));
 
         //WHEN
         Integer notificationCost = service.notificationProcessCostF24(
@@ -330,58 +160,28 @@ class NotificationProcessCostServiceImplTest {
                 version
         ).block();
 
-
         //THEN
-        int notificationProcessPartialCostExpected = getNotificationProcessTotalCostExpected(
-                service.getSendFee(),
-                simpleRegisteredLetterCost,
-                paFee,
-                notificationVat
-        );
-
         Assertions.assertNotNull(notificationCost);
-        Assertions.assertEquals(notificationCost, notificationProcessPartialCostExpected);
+        Assertions.assertEquals(notificationProcessTotalCostExpected, notificationCost);
     }
 
     @Test
     @ExtendWith(SpringExtension.class)
-    void notificationProcessCostF24_vat_notPaFee_version23() {
+    void notificationProcessCostF24_vat_paFee_version23_withPartialCost() {
         //GIVEN
-
-        // notifica singolo recipient
-        // invio raccomandata semplice
-        // nessun perfezionamento
-        // DELIVERY_MODE
-
         String iun = "testIun";
         int recIndex = 0;
-
-        TimelineElementInternal requestAccepted = TimelineElementInternal.builder()
-                .category(TimelineElementCategoryInt.REQUEST_ACCEPTED)
-                .details(new NotificationRequestAcceptedDetailsInt())
-                .build();
-
-        final int simpleRegisteredLetterCost = 1400;
-
-        TimelineElementInternal sendSimpleRegisteredLetter = TimelineElementInternal.builder()
-                .category(TimelineElementCategoryInt.SEND_SIMPLE_REGISTERED_LETTER)
-                .details(SimpleRegisteredLetterDetailsInt.builder()
-                        .analogCost(simpleRegisteredLetterCost)
-                        .recIndex(recIndex)
-                        .build())
-                .build();
-
-        Set<TimelineElementInternal> timelineElements = new HashSet<>(Arrays.asList(requestAccepted, sendSimpleRegisteredLetter));
-
-        Mockito.when(timelineService.getTimeline(iun, false))
-                .thenReturn(timelineElements);
-
-        Integer paFee = null;
-        Integer vat = 22;
+        int paFee = 0;
+        int vat = 22;
         String version = "2.3";
+        int notificationProcessTotalCostExpected = 50;
+        NotificationProcessCostResponse notificationProcessCostResponse = new NotificationProcessCostResponse();
+        notificationProcessCostResponse.setPartialCost(notificationProcessTotalCostExpected);
 
-        //WHEN
-        final Mono<Integer> notificationProcessCostMono = service.notificationProcessCostF24(
+        Mockito.when(pnDeliveryPushClientReactive.getNotificationProcessCost(any(), any(), any(), any(), any(), any()))
+                .thenReturn(Mono.just(notificationProcessCostResponse));
+
+        Mono<Integer> response = service.notificationProcessCostF24(
                 iun,
                 recIndex,
                 NotificationFeePolicy.DELIVERY_MODE,
@@ -389,29 +189,10 @@ class NotificationProcessCostServiceImplTest {
                 vat,
                 version
         );
-
-        Integer notificationCost  = notificationProcessCostMono.block();
-
-        int notificationProcessPartialCostExpected = getNotificationProcessTotalCostExpected(
-                service.getSendFee(),
-                simpleRegisteredLetterCost,
-                notificationFee,
-                notificationVat
-        );
-
-        Assertions.assertNotNull(notificationCost);
-        Assertions.assertEquals(notificationCost, notificationProcessPartialCostExpected);
+        //WHEN
+        StepVerifier.create(response)
+                .expectError(PnInternalException.class)
+                .verify();
     }
-
-    private static Integer getNotificationProcessTotalCostExpected(int pagoPaBaseCost, int analogCost, Integer paFee, Integer vat) {
-        if (paFee != null && vat != null){
-            int analogCostWithVat = getAnalogCostWithVat(vat, analogCost);
-            return pagoPaBaseCost + analogCostWithVat + paFee;
-        }
-        return null;
-    }
-
-    private static Integer getAnalogCostWithVat(Integer vat, Integer analogCost) {
-        return vat != null ? analogCost + (analogCost * vat / 100) : null;
-    }
+    
 }

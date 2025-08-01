@@ -1,15 +1,16 @@
 package it.pagopa.pn.deliverypushworkflow.dto.timeline.details;
 
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
-@Builder(toBuilder = true)
-@EqualsAndHashCode
+@SuperBuilder(toBuilder = true)
+@EqualsAndHashCode(callSuper = true)
 @ToString
-public class AnalogFailureWorkflowDetailsInt implements RecipientRelatedTimelineElementDetails {
+public class AnalogFailureWorkflowDetailsInt extends CategoryTypeTimelineElementDetailsInt implements RecipientRelatedTimelineElementDetails {
     private int recIndex;
     private String generatedAarUrl;
 
