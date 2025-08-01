@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 class TimelineClientImplTest {
@@ -141,6 +142,21 @@ class TimelineClientImplTest {
     }
 
     @Test
+    void getTimelineElementDetails_handlesNullDetails() {
+        String iun = "iun123";
+        String timelineId = "timeline123";
+
+        Mockito.when(timelineControllerApi.getTimelineElementDetails(iun, timelineId))
+                .thenReturn(null);
+
+        TimelineElementDetailsInt result = timelineServiceClient.getTimelineElementDetails(iun, timelineId);
+
+        assertNull(result);
+        Mockito.verify(timelineControllerApi).getTimelineElementDetails(iun, timelineId);
+        Mockito.verify(timelineServiceMapper, never()).toTimelineElementDetailsInt(Mockito.any(), Mockito.any());
+    }
+
+    @Test
     void getTimelineElementDetailForSpecificRecipient_returnsExpectedDetails() {
         String iun = "iun123";
         Integer recIndex = 1;
@@ -231,7 +247,7 @@ class TimelineClientImplTest {
         List<TimelineElementInternal> result = timelineServiceClient.getTimeline(iun, confidentialInfoRequired, strongly, timelineId);
 
         assertEquals(1, result.size()); // Only one known category should be returned
-        assertEquals(expectedElement, result.get(0));
+        assertEquals(expectedElement, result.getFirst());
         Mockito.verify(timelineControllerApi).getTimeline(iun, confidentialInfoRequired, strongly, timelineId);
     }
 
