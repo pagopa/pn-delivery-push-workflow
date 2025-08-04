@@ -2,6 +2,9 @@ package it.pagopa.pn.deliverypushworkflow.legalfacts;
 
 import it.pagopa.pn.api.dto.events.EndWorkflowStatus;
 import it.pagopa.pn.commons.exceptions.PnInternalException;
+import it.pagopa.pn.commons.utils.qr.QrUrlCodecService;
+import it.pagopa.pn.commons.utils.qr.models.QrUrlConfigs;
+import it.pagopa.pn.commons.utils.qr.models.UrlData;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.datavault.RecipientTypeInt;
 import it.pagopa.pn.deliverypushworkflow.dto.delivery.notification.NotificationInt;
@@ -42,7 +45,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
     private final PnSendModeUtils pnSendModeUtils;
     private final TemplatesClient templatesClient;
     private final TemplatesClientPec templatesClientPec;
-
+    private QrUrlCodecService qrUrlCodecService;
 
     /**
      * Generates the legal fact for a received notification.
@@ -427,9 +430,10 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      * @return a {@link String} representing the full quick access URL, including the token as a query parameter.
      */
     private String getQuickAccessLink(NotificationRecipientInt recipient, String quickAccessToken) {
-        String templateUrl = getAccessUrl(recipient) + pnDeliveryPushConfigs.getWebapp().getQuickAccessUrlAarDetailSuffix();
-        log.debug("getQrCodeQuickAccessUrlAarDetail templateUrl {} quickAccessLink {}", templateUrl, quickAccessToken);
-        return templateUrl + '=' + quickAccessToken;
+        UrlData urlData = new UrlData();
+        urlData.setRecipientType(it.pagopa.pn.commons.utils.qr.models.RecipientTypeInt.valueOf(recipient.getRecipientType().name()));
+        log.debug("getQrCodeQuickAccessUrlAarDetail quickAccessToken {}", quickAccessToken);
+        return qrUrlCodecService.encode(quickAccessToken,urlData);
     }
 
     /**
