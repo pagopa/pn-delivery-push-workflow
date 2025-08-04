@@ -29,7 +29,7 @@ public class RefinementHandler {
     private final NotificationService notificationService;
     private final NotificationProcessCostService notificationProcessCostService;
     private final AttachmentUtils attachmentUtils;
-    private final PnDeliveryPushWorkflowConfigs PnDeliveryPushWorkflowConfigs;
+    private final PnDeliveryPushWorkflowConfigs pnDeliveryPushWorkflowConfigs;
 
 
     public void handleRefinement(String iun, Integer recIndex) {
@@ -41,7 +41,7 @@ public class RefinementHandler {
         if( !isNotificationViewed ) {
             Instant refinementDate = retrieveRefinementDate(iun, recIndex);
 
-            addRefinementElement(iun, recIndex, PnDeliveryPushWorkflowConfigs.getRetentionAttachmentDaysAfterRefinement(),true, refinementDate);
+            addRefinementElement(iun, recIndex, pnDeliveryPushWorkflowConfigs.getRetentionAttachmentDaysAfterRefinement(),true, refinementDate);
         } else {
 
             Instant viewedDate = retrieveViewedDate(iun, recIndex);

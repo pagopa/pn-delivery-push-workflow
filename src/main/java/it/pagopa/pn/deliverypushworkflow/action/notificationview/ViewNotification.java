@@ -28,7 +28,7 @@ public class ViewNotification {
     private final TimelineUtils timelineUtils;
     private final TimelineService timelineService;
     private final AttachmentUtils attachmentUtils;
-    private final PnDeliveryPushWorkflowConfigs PnDeliveryPushWorkflowConfigs;
+    private final PnDeliveryPushWorkflowConfigs pnDeliveryPushWorkflowConfigs;
     private final ConfidentialInformationService confidentialInformationService;
 
     public Mono<Void> startVewNotificationProcess(NotificationInt notification,
@@ -54,7 +54,7 @@ public class ViewNotification {
             return Mono.empty();
         }
 
-        return attachmentUtils.changeAttachmentsRetention(notification, PnDeliveryPushWorkflowConfigs.getRetentionAttachmentDaysAfterRefinement()).collectList().then();
+        return attachmentUtils.changeAttachmentsRetention(notification, pnDeliveryPushWorkflowConfigs.getRetentionAttachmentDaysAfterRefinement()).collectList().then();
     }
 
     private Mono<Void> getDelegateInfoAndHandleLegalFactCreation(NotificationInt notification, NotificationRecipientInt recipient, NotificationViewedInt notificationViewed) {
