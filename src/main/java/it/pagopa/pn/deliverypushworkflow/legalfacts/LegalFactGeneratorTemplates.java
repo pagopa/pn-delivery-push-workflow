@@ -409,7 +409,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
     private String getQuickAccessLink(NotificationRecipientInt recipient, String processed) {
         UrlData urlData = new UrlData();
         urlData.setRecipientType(it.pagopa.pn.commons.utils.qr.models.RecipientTypeInt.valueOf(recipient.getRecipientType().name()));
-        log.debug("getQrCodeQuickAccessUrlAarDetail: {}", processed);
+        log.debug("getQrCodeQuickAccessUrlAarDetail");
         return qrUrlCodecService.encode(processed,urlData);
     }
 
