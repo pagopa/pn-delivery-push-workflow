@@ -1081,8 +1081,11 @@ public class TimelineUtils {
                 .build());
     }
 
-    public boolean checkNotificationIsViewedOrRefinedOrDeceasedOrCancelled(String iun, Integer recIndex) {
-        log.debug("checkNotificationIsViewedOrRefinedOrDeceasedOrCancelled - iun={} recIndex={}", iun, recIndex);
+    /**
+     * Metodo che verifica se per un dato destinatario esistono elementi di Timeline che abbiano prodotto aggiornamenti della retention degli allegati.
+     * */
+    public boolean hasTimelineTriggeredAttachmentRetentionUpdate(String iun, Integer recIndex) {
+        log.debug("hasTimelineTriggeredAttachmentRetentionUpdate - iun={} recIndex={}", iun, recIndex);
 
         if (checkIsNotificationViewed(iun, recIndex)) {
             return true;
@@ -1097,7 +1100,12 @@ public class TimelineUtils {
         if (checkIsRecipientDeceased(iun, recIndex)) {
             return true;
         }
-        log.debug("Notification is not deceased need to check if it is cancelled - iun={} recIndex={}", iun, recIndex);
+        log.debug("Notification is not deceased need to check if it is in a failure timeout - iun={} recIndex={}", iun, recIndex);
+
+        if (checkIsNotificationFailureTimeout(iun, recIndex)) {
+            return true;
+        }
+        log.debug("Notification is not failed for timeout need to check if it is cancelled - iun={} recIndex={}", iun, recIndex);
 
         return checkIsNotificationCancellationRequested(iun);
     }
@@ -1211,6 +1219,15 @@ public class TimelineUtils {
                 }
             }
 
+            //If there is no notificationCost on Deceased we check the Failure Timeout
+            if (notificationCost == 0) {
+                notificationOpt = getNotificationFailureTimeout(notification.getIun(), recIndex);
+                if (notificationOpt.isPresent()) {
+                    AnalogFailureWorkflowTimeoutDetailsInt failureWorkflowTimeoutDetailsInt = ((AnalogFailureWorkflowTimeoutDetailsInt) notificationOpt.get().getDetails());
+                    notificationCost = Optional.ofNullable(failureWorkflowTimeoutDetailsInt.getNotificationCost()).orElse(0);
+                }
+            }
+
             if (notificationCost == 0) {
                 notRefinedRecipientList.add(recIndex);
             }
@@ -1275,6 +1292,106 @@ public class TimelineUtils {
                         .iun(iun)
                         .recIndex(recIndex)
                         .build());
+        return timelineService.getTimelineElement(iun, elementId);
+    }
+
+    public TimelineElementInternal buildSendAnalogTimeoutCreationRequest(NotificationInt notification,
+                                                                         int recIndex,
+                                                                         Instant timeoutDate,
+                                                                         int sentAttemptMade,
+                                                                         String relatedRequestId,
+                                                                         String legalFactId) {
+        log.debug("buildSendAnalogTimeoutCreationRequest - IUN={} and id={} relatedRequestId={}", notification.getIun(), recIndex, relatedRequestId);
+        String elementId = TimelineEventId.SEND_ANALOG_TIMEOUT_CREATION_REQUEST.buildEventId(
+                EventId.builder()
+                        .iun(notification.getIun())
+                        .recIndex(recIndex)
+                        .sentAttemptMade(sentAttemptMade)
+                        .build());
+
+        SendAnalogTimeoutCreationRequestDetailsInt details = SendAnalogTimeoutCreationRequestDetailsInt.builder()
+                .timeoutDate(timeoutDate)
+                .recIndex(recIndex)
+                .sentAttemptMade(sentAttemptMade)
+                .relatedRequestId(relatedRequestId)
+                .legalFactId(legalFactId)
+                .build();
+
+        return buildTimeline(notification, TimelineElementCategoryInt.SEND_ANALOG_TIMEOUT_CREATION_REQUEST, elementId, details);
+    }
+
+    public TimelineElementInternal buildSendAnalogTimeout(NotificationInt notification,
+                                                          SendAnalogDetailsInt sendAnalogDetailsInt,
+                                                          Instant timeoutDate,
+                                                          String legalFactId) {
+        Integer recIndex = sendAnalogDetailsInt.getRecIndex();
+        String relatedRequestId = sendAnalogDetailsInt.getRelatedRequestId();
+        log.debug("buildSendAnalogTimeout - IUN={} and id={} relatedRequestId={}", notification.getIun(), recIndex, relatedRequestId);
+
+        String elementId = TimelineEventId.SEND_ANALOG_TIMEOUT.buildEventId(
+                EventId.builder()
+                        .iun(notification.getIun())
+                        .recIndex(recIndex)
+                        .sentAttemptMade(sendAnalogDetailsInt.getSentAttemptMade())
+                        .build());
+
+        SendAnalogTimeoutDetailsInt details = SendAnalogTimeoutDetailsInt.builder()
+                .timeoutDate(timeoutDate)
+                .recIndex(recIndex)
+                .sentAttemptMade(sendAnalogDetailsInt.getSentAttemptMade())
+                .relatedRequestId(relatedRequestId)
+                .serviceLevel(sendAnalogDetailsInt.getServiceLevel())
+                .physicalAddress(sendAnalogDetailsInt.getPhysicalAddress())
+                .build();
+
+        TimelineElementInternal.TimelineElementInternalBuilder timelineBuilder = TimelineElementInternal.builder()
+                .legalFactsIds(singleLegalFactId(legalFactId, LegalFactCategoryInt.ANALOG_DELIVERY_TIMEOUT));
+
+        return buildTimeline(notification, TimelineElementCategoryInt.SEND_ANALOG_TIMEOUT, elementId, details, timelineBuilder);
+    }
+
+    public TimelineElementInternal buildAnalogFailureWorkflowTimeout(NotificationInt notification,
+                                                                     int recIndex,
+                                                                     String generatedAarUrl,
+                                                                     int notificationCost,
+                                                                     Instant timeoutDate,
+                                                                     Boolean addNotificationCost) {
+        log.debug("buildAnalogFailureWorkflowTimeout - IUN={} and id={} timeoutDate={}", notification.getIun(), recIndex, timeoutDate);
+        String elementId = TimelineEventId.ANALOG_FAILURE_WORKFLOW_TIMEOUT.buildEventId(
+                EventId.builder()
+                        .iun(notification.getIun())
+                        .recIndex(recIndex)
+                        .build());
+
+        AnalogFailureWorkflowTimeoutDetailsInt details = AnalogFailureWorkflowTimeoutDetailsInt.builder()
+                .timeoutDate(timeoutDate)
+                .recIndex(recIndex)
+                .notificationCost(notificationCost)
+                .generatedAarUrl(generatedAarUrl)
+                .build();
+
+        if (Boolean.TRUE.equals(addNotificationCost)) {
+            details.setNotificationCost(notificationCost);
+        }
+
+        return buildTimeline(notification, TimelineElementCategoryInt.ANALOG_FAILURE_WORKFLOW_TIMEOUT, elementId, details);
+    }
+
+    public boolean checkIsNotificationFailureTimeout(String iun, Integer recIndex) {
+        log.debug("checkIsNotificationFailureTimeout - iun={} recIndex={}", iun, recIndex);
+        Optional<TimelineElementInternal> elementInternalOptional = getNotificationFailureTimeout(iun, recIndex);
+
+        log.debug("check notification failure timeout is {} - iun={} recIndex={}", elementInternalOptional.isPresent(), iun, recIndex);
+        return elementInternalOptional.isPresent();
+    }
+
+    private Optional<TimelineElementInternal> getNotificationFailureTimeout(String iun, Integer recIndex) {
+        String elementId = TimelineEventId.ANALOG_FAILURE_WORKFLOW_TIMEOUT.buildEventId(
+                EventId.builder()
+                        .iun(iun)
+                        .recIndex(recIndex)
+                        .build());
+
         return timelineService.getTimelineElement(iun, elementId);
     }
 

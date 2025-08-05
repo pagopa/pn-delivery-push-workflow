@@ -227,6 +227,32 @@ class SaveLegalFactsServiceImplTest {
         Assertions.assertEquals("safestorage://001", actualMono.block());
     }
 
+    @Test
+    void SendCreationRequestForAnalogDeliveryWorkflowTimeoutLegalFact() throws IOException {
+        NotificationInt notification = Mockito.mock(NotificationInt.class);
+        NotificationRecipientInt recipient = Mockito.mock(NotificationRecipientInt.class);
+        String iun = "test-iun";
+        String legalFact = "legal-fact";
+        FileCreationResponseInt file = buildFileCreationResponseInt();
+
+        PhysicalAddressInt physicalAddress = PhysicalAddressInt.builder()
+                .address("address")
+                .zip("00000")
+                .build();
+
+        Mockito.when(notification.getIun()).thenReturn(iun);
+        Mockito.when(legalFactBuilder.generateAnalogDeliveryWorkflowTimeoutLegalFact(
+                Mockito.eq(notification), Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any()
+        )).thenReturn(legalFact.getBytes());
+        Mockito.when(safeStorageService.createAndUploadContent(Mockito.any())).thenReturn(Mono.just(file));
+
+        String result = saveLegalFactsService.sendCreationRequestForAnalogDeliveryWorkflowTimeoutLegalFact(
+                notification, recipient, physicalAddress,  "1", Instant.now()
+        );
+
+        Assertions.assertEquals("safestorage://001", result);
+    }
+
     private SendDigitalFeedbackDetailsInt buildSendDigitalFeedbackDetailsInt() {
         return SendDigitalFeedbackDetailsInt.builder()
                 .recIndex(0)

@@ -3,6 +3,7 @@ package it.pagopa.pn.deliverypushworkflow.legalfacts;
 import it.pagopa.pn.deliverypushworkflow.action.utils.EndWorkflowStatus;
 import it.pagopa.pn.commons.exceptions.PnInternalException;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
+import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.datavault.RecipientTypeInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
@@ -492,6 +493,25 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
     private String buildAarSenderLogo(String paId) {
         String aarUrlTemplate = pnDeliveryPushWorkflowConfigs.getWebapp().getAarSenderLogoUrlTemplate();
         return aarUrlTemplate.replace("<PA_ID>", paId);
+    }
+
+    @Override
+    public byte[] generateAnalogDeliveryWorkflowTimeoutLegalFact(NotificationInt notification,
+                                                                 NotificationRecipientInt recipient,
+                                                                 PhysicalAddressInt physicalAddress,
+                                                                 String sentAttemptMade,
+                                                                 Instant timeoutDate) {
+        log.info("retrieve AnalogDeliveryWorkflowTimeoutLegalFact template for iun {}", notification.getIun());
+        AnalogDeliveryWorkflowTimeoutLegalFact analogDeliveryWorkflowTimeoutLegalFact =
+                analogDeliveryWorkflowTimeoutLegalFact(
+                        notification.getIun(),
+                        timeoutDate,
+                        instantWriter,
+                        recipient,
+                        sentAttemptMade,
+                        physicalAddressWriter);
+        LanguageEnum language = getLanguage(notification.getAdditionalLanguages());
+        return templatesClient.analogDeliveryWorkflowTimeoutLegalFact(language, analogDeliveryWorkflowTimeoutLegalFact);
     }
 
 
