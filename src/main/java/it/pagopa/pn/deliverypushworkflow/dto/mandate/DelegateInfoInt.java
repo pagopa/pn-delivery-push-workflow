@@ -2,7 +2,7 @@ package it.pagopa.pn.deliverypushworkflow.dto.mandate;
 
 
 
-import it.pagopa.pn.deliverypushworkflow.dto.datavault.RecipientTypeInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.datavault.RecipientTypeInt;
 import lombok.*;
 
 @Getter

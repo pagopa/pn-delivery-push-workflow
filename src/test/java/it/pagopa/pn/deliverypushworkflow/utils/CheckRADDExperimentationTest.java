@@ -4,7 +4,6 @@ import it.pagopa.pn.commons.abstractions.ParameterConsumer;
 
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
-import it.pagopa.pn.deliverypushworkflow.util.CheckRADDExperimentation;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,13 +16,13 @@ import java.util.*;
 
 class CheckRADDExperimentationTest {
     private final static String[] PARAMETER_STORES_MAP_ZIP_EXPERIMENTATION_LIST = {"radd-expeAAArimentation-zip-1", "radd-experimentation-zip-2", "radd-experimentation-zip-3", "radd-experimentation-zip-4", "radd-experimentation-zip-5"};
-    private final PnDeliveryPushWorkflowConfigs pnDeliveryPushConfigs = pnDeliveryPushConfigs();
+    private final PnDeliveryPushWorkflowConfigs PnDeliveryPushWorkflowConfigs = PnDeliveryPushWorkflowConfigs();
     @Mock
     private ParameterConsumer parameterConsumer;
     private CheckRADDExperimentation checker;
 
-    public PnDeliveryPushWorkflowConfigs pnDeliveryPushConfigs() {
-        PnDeliveryPushWorkflowConfigs pnDeliveryPushConfigs = Mockito.mock(PnDeliveryPushWorkflowConfigs.class);
+    public PnDeliveryPushWorkflowConfigs PnDeliveryPushWorkflowConfigs() {
+        PnDeliveryPushWorkflowConfigs PnDeliveryPushWorkflowConfigs = Mockito.mock(PnDeliveryPushWorkflowConfigs.class);
 
         // Base configuration
         List<String> pnRaddExperimentationStore = new ArrayList<>();
@@ -32,14 +31,14 @@ class CheckRADDExperimentationTest {
         pnRaddExperimentationStore.add(PARAMETER_STORES_MAP_ZIP_EXPERIMENTATION_LIST[2]);
         pnRaddExperimentationStore.add(PARAMETER_STORES_MAP_ZIP_EXPERIMENTATION_LIST[3]);
         pnRaddExperimentationStore.add(PARAMETER_STORES_MAP_ZIP_EXPERIMENTATION_LIST[4]);
-        Mockito.when(pnDeliveryPushConfigs.getRaddExperimentationStoresName()).thenReturn(pnRaddExperimentationStore);
+        Mockito.when(PnDeliveryPushWorkflowConfigs.getRaddExperimentationStoresName()).thenReturn(pnRaddExperimentationStore);
 
-        return pnDeliveryPushConfigs;
+        return PnDeliveryPushWorkflowConfigs;
     }
 
     @BeforeEach
     void setup() {
-        checker = new CheckRADDExperimentation(parameterConsumer, pnDeliveryPushConfigs);
+        checker = new CheckRADDExperimentation(parameterConsumer, PnDeliveryPushWorkflowConfigs);
     }
 
     @ExtendWith(MockitoExtension.class)

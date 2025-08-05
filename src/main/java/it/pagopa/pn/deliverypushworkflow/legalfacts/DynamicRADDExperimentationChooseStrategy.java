@@ -1,7 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.legalfacts;
 
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
-import it.pagopa.pn.deliverypushworkflow.util.CheckRADDExperimentation;
+import it.pagopa.pn.deliverypushworkflow.utils.CheckRADDExperimentation;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
