@@ -2,6 +2,7 @@ package it.pagopa.pn.deliverypushworkflow.action.it;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.commons.abstractions.ParameterConsumer;
+import it.pagopa.pn.commons.utils.qr.QrUrlCodecService;
 import it.pagopa.pn.deliverypushworkflow.action.it.mockbean.*;
 import it.pagopa.pn.deliverypushworkflow.action.utils.InstantNowSupplier;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
@@ -32,6 +33,7 @@ import org.springframework.context.annotation.Lazy;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class AbstractWorkflowTestConfiguration {
     static final int SEND_FEE = 100;
@@ -86,7 +88,7 @@ public class AbstractWorkflowTestConfiguration {
     public LegalFactGenerator legalFactGeneratorTemplatesClient(@Lazy PnSendModeUtils pnSendModeUtils, PnDeliveryPushWorkflowConfigs pnDeliveryPushConfigs) {
         CustomInstantWriter instantWriter = new CustomInstantWriter();
         PhysicalAddressWriter physicalAddressWriter = new PhysicalAddressWriter();
-        return new LegalFactGeneratorTemplates(instantWriter, physicalAddressWriter, pnDeliveryPushConfigs, pnSendModeUtils, templatesClient(), templatesClientPec());
+        return new LegalFactGeneratorTemplates(instantWriter, physicalAddressWriter, pnDeliveryPushConfigs, pnSendModeUtils, templatesClient(), templatesClientPec(), qrUrlCodecService());
     }
 
     @Bean
@@ -97,6 +99,14 @@ public class AbstractWorkflowTestConfiguration {
     @Bean
     public TemplatesClientPec templatesClientPec() {
         return new TemplatesClientMockPec();
+    }
+
+    @Bean
+    public QrUrlCodecService qrUrlCodecService() {
+        ParameterConsumer parameterConsumer = Mockito.mock(ParameterConsumer.class);
+        ObjectMapper objectMapper = Mockito.mock(ObjectMapper.class);
+        Mockito.when(parameterConsumer.getParameterValue(Mockito.any(), Mockito.any())).thenReturn(Optional.of("https://example.com/qr-code"));//to use new common method
+        return new QrUrlCodecService(parameterConsumer, objectMapper);
     }
 
     @Bean
