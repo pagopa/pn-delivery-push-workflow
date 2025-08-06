@@ -1,4 +1,4 @@
-package it.pagopa.pn.deliverypush.config.springbootcfg;
+package it.pagopa.pn.deliverypushworkflow.config.springbootcfg;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.commons.abstractions.impl.AbstractCachedSsmParameterConsumer;
