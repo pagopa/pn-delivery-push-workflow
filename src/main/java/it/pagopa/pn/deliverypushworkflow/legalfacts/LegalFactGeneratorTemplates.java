@@ -288,7 +288,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      *                          including its unique identifier (IUN).
      * @param recipient         the {@link NotificationRecipientInt} object representing the recipient of the notification,
      *                          including relevant details such as contact information.
-     * @param quickAccessToken  a {@link String} representing the token used to generate the quick access URL
+     * @param quickAccess  a {@link String} representing the token used to generate the quick access URL
      *                          for the notification details.
      * @return a {@link String} representing the body of the AAR email for the notification.
      *
@@ -299,13 +299,13 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      * {@link NotificationAarForEmail} object and return the expected email body string.
      */
     @Override
-    public String generateNotificationAARBody(NotificationInt notification, NotificationRecipientInt recipient, String quickAccessToken) {
+    public String generateNotificationAARBody(NotificationInt notification, NotificationRecipientInt recipient, String quickAccess) {
         log.info("retrieve NotificationAARBody template for iun {}", notification.getIun());
         NotificationAarForEmail notificationAAR =
                 notificationAarForEmail(
                         notification,
                         this.getPerfezionamentoLink(),
-                        this.getQuickAccessLink(recipient, quickAccessToken),
+                        this.getQuickAccessLink(recipient, quickAccess),
                         this.getFAQSendURL(),
                         this.getAccessUrl(recipient));
         LanguageEnum language = getLanguage(notification.getAdditionalLanguages());
