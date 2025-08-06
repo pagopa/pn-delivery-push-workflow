@@ -403,14 +403,14 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      *
      * @param recipient the {@link NotificationRecipientInt} object representing the recipient of the notification,
      *                  used to retrieve the base access URL.
-     * @param quickAccessToken the token used to generate the quick access link, typically used for secure access.
+     * @param quickAccess the token used to generate the quick access link, typically used for secure access.
      * @return a {@link String} representing the full quick access URL, including the token as a query parameter.
      */
-    private String getQuickAccessLink(NotificationRecipientInt recipient, String quickAccessToken) {
+    private String getQuickAccessLink(NotificationRecipientInt recipient, String quickAccess) {
         UrlData urlData = new UrlData();
         urlData.setRecipientType(it.pagopa.pn.commons.utils.qr.models.RecipientTypeInt.valueOf(recipient.getRecipientType().name()));
-        log.debug("getQrCodeQuickAccessUrlAarDetail: {}", quickAccessToken);
-        return qrUrlCodecService.encode(quickAccessToken, urlData);
+        log.debug("getQrCodeQuickAccessUrlAarDetail: {}", quickAccess);
+        return qrUrlCodecService.encode(quickAccess, urlData);
     }
 
     /**
