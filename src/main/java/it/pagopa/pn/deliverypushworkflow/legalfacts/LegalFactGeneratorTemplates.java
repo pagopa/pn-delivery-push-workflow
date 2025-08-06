@@ -288,7 +288,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      *                          including its unique identifier (IUN).
      * @param recipient         the {@link NotificationRecipientInt} object representing the recipient of the notification,
      *                          including relevant details such as contact information.
-     * @param quickAccess  a {@link String} representing the token used to generate the quick access URL
+     * @param quickAccess  a {@link String} representing the value used to generate the quick access URL
      *                          for the notification details.
      * @return a {@link String} representing the body of the AAR email for the notification.
      *
@@ -403,7 +403,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      *
      * @param recipient the {@link NotificationRecipientInt} object representing the recipient of the notification,
      *                  used to retrieve the base access URL.
-     * @param quickAccess the token used to generate the quick access link, typically used for secure access.
+     * @param quickAccess the value used to generate the quick access link, typically used for secure access.
      * @return a {@link String} representing the full quick access URL, including the token as a query parameter.
      */
     private String getQuickAccessLink(NotificationRecipientInt recipient, String quickAccess) {
