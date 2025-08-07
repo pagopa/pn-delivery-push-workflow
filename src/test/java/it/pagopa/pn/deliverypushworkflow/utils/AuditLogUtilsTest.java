@@ -35,7 +35,7 @@ class AuditLogUtilsTest {
 
     @Test
     void getAuditLogEventTypeMandate() {
-        String iun_01 = "IUN_01";
+        String iun01 = "IUN_01";
         String taxId = "TaxId";
         
         NotificationRecipientInt recipient = NotificationRecipientTestBuilder.builder()
@@ -44,7 +44,7 @@ class AuditLogUtilsTest {
                 .build();
 
         NotificationInt notification = NotificationTestBuilder.builder()
-                .withIun(iun_01)
+                .withIun(iun01)
                 .withNotificationRecipient(recipient)
                 .build();
 
@@ -55,7 +55,7 @@ class AuditLogUtilsTest {
 
     @Test
     void getAuditLogEventTypeRecipient() {
-        String iun_01 = "IUN_01";
+        String iun01 = "IUN_01";
         String taxId = "TaxId";
 
         NotificationRecipientInt recipient = NotificationRecipientTestBuilder.builder()
@@ -64,7 +64,7 @@ class AuditLogUtilsTest {
                 .build();
 
         NotificationInt notification = NotificationTestBuilder.builder()
-                .withIun(iun_01)
+                .withIun(iun01)
                 .withNotificationRecipient(recipient)
                 .build();
 
@@ -75,7 +75,7 @@ class AuditLogUtilsTest {
 
     @Test
     void getAuditLogEventTypeRecipientSender() {
-        String iun_01 = "IUN_01";
+        String iun01 = "IUN_01";
         String taxId = "TaxId";
 
         NotificationRecipientInt recipient = NotificationRecipientTestBuilder.builder()
@@ -84,7 +84,7 @@ class AuditLogUtilsTest {
                 .build();
 
         NotificationInt notification = NotificationTestBuilder.builder()
-                .withIun(iun_01)
+                .withIun(iun01)
                 .withPaId("paMilano")
                 .withNotificationRecipient(recipient)
                 .build();
@@ -96,7 +96,7 @@ class AuditLogUtilsTest {
 
     @Test
     void getAuditLogEventTypeRecipientError() {
-        String iun_01 = "IUN_01";
+        String iun01 = "IUN_01";
         String taxId = "TaxId";
 
         NotificationRecipientInt recipient = NotificationRecipientTestBuilder.builder()
@@ -105,7 +105,7 @@ class AuditLogUtilsTest {
                 .build();
 
         NotificationInt notification = NotificationTestBuilder.builder()
-                .withIun(iun_01)
+                .withIun(iun01)
                 .withPaId("paMilano")
                 .withNotificationRecipient(recipient)
                 .build();
