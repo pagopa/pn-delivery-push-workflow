@@ -114,8 +114,10 @@ class SaveLegalFactsServiceImplTest {
         String denomination = "<h1>SSRF WITH IMAGE POC</h1> <img src='https://prova.it'></img>";
         NotificationInt notification = buildNotification(denomination);
 
-        PnInternalException pnInternalException = Assertions.assertThrows(PnInternalException.class, () -> saveLegalFactsService.sendCreationRequestForNotificationCancelledLegalFact(notification, Instant.now()));
-
+        PnInternalException pnInternalException = Assertions.assertThrows(
+                PnInternalException.class,
+                () -> saveLegalFactsService.sendCreationRequestForNotificationCancelledLegalFact(notification, Instant.now())
+        );
         String expectErrorMsg = "PN_DELIVERYPUSH_SAVELEGALFACTSFAILED";
 
         Assertions.assertEquals(expectErrorMsg, pnInternalException.getProblem().getErrors().getFirst().getCode());

@@ -117,7 +117,7 @@ class NotificationProcessCostServiceImplTest {
                 .thenReturn(Mono.just(notificationProcessCostResponse));
 
         //WHEN
-        Integer notificationCostNumber = service.notificationProcessCostF24(
+        Integer notificationProcessCostValue = service.notificationProcessCostF24(
                 iun,
                 recIndex,
                 NotificationFeePolicy.DELIVERY_MODE,
@@ -127,8 +127,8 @@ class NotificationProcessCostServiceImplTest {
         ).block();
 
         //THEN
-        Assertions.assertNotNull(notificationCostNumber);
-        Assertions.assertEquals(notificationProcessTotalCostExpected, notificationCostNumber);
+        Assertions.assertNotNull(notificationProcessCostValue);
+        Assertions.assertEquals(notificationProcessTotalCostExpected, notificationProcessCostValue);
     }
 
     @Test
@@ -148,7 +148,7 @@ class NotificationProcessCostServiceImplTest {
                 .thenReturn(Mono.just(notificationProcessCostResponse));
 
         //WHEN
-        Integer notificationCostNumber = service.notificationProcessCostF24(
+        Integer notificationProcessCostValue = service.notificationProcessCostF24(
                 iun,
                 recIndex,
                 NotificationFeePolicy.DELIVERY_MODE,
@@ -158,8 +158,8 @@ class NotificationProcessCostServiceImplTest {
         ).block();
 
         //THEN
-        Assertions.assertNotNull(notificationCostNumber);
-        Assertions.assertEquals(notificationProcessTotalCostExpected, notificationCostNumber);
+        Assertions.assertNotNull(notificationProcessCostValue);
+        Assertions.assertEquals(notificationProcessTotalCostExpected, notificationProcessCostValue);
     }
 
     @Test
