@@ -1,7 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.exceptions;
 
 import it.pagopa.pn.commons.exceptions.PnExceptionsCodes;
-import lombok.Getter;
 
 public class PnDeliveryPushExceptionCodes extends PnExceptionsCodes {
 
@@ -23,9 +22,7 @@ public class PnDeliveryPushExceptionCodes extends PnExceptionsCodes {
     public static final String ERROR_CODE_DELIVERYPUSH_ERRORCOURTESYIO = "PN_DELIVERYPUSH_ERRORCOURTESYIO";
     public static final String ERROR_CODE_DELIVERYPUSH_INVALIDRECEIVEDPAPERSTATUS = "PN_DELIVERYPUSH_INVALIDRECEIVEDPAPERSTATUS";
     public static final String ERROR_CODE_DELIVERYPUSH_STATUSNOTFOUND = "PN_DELIVERYPUSH_STATUSNOTFOUND";
-    public static final String ERROR_CODE_DELIVERYPUSH_FEEDBACKNOTFOUND = "PN_DELIVERYPUSH_FEEDBACKNOTFOUND";
     public static final String ERROR_CODE_DELIVERYPUSH_TIMELINENOTFOUND = "PN_DELIVERYPUSH_TIMELINENOTFOUND";
-    public static final String ERROR_CODE_DELIVERYPUSH_ROOTIDNOTFOUND = "PN_DELIVERYPUSH_ROOTIDNOTFOUND";
     public static final String ERROR_CODE_DELIVERYPUSH_CONTACTPHASENOTFOUND = "PN_DELIVERYPUSH_CONTACTPHASENOTFOUND";
     public static final String ERROR_CODE_DELIVERYPUSH_DELIVERYNOTFOUND = "PN_DELIVERYPUSH_DELIVERYNOTFOUND";
     public static final String ERROR_CODE_DELIVERYPUSH_SAVELEGALFACTSFAILED = "PN_DELIVERYPUSH_SAVELEGALFACTSFAILED";

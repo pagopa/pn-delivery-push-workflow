@@ -39,7 +39,7 @@ class ChannelUtilsTest {
        assertEquals("aws-id-789", MDC.get(MDCUtils.MDC_PN_CTX_MESSAGE_ID));
        String traceId = MDC.get(MDCUtils.MDC_TRACE_ID_KEY);
        assertNotNull(traceId);
-       assertTrue(traceId.length() > 0);
+       assertFalse(traceId.isEmpty());
    }
 
    @Test

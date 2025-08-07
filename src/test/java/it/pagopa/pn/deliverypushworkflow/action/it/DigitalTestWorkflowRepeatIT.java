@@ -147,12 +147,10 @@ class DigitalTestWorkflowRepeatIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient,
-                recIndex,
                 sentPecAttemptNumber,
                 generatedLegalFactsInfo,
                 endWorkflowStatus,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 
@@ -295,12 +293,10 @@ class DigitalTestWorkflowRepeatIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient,
-                recIndex,
                 sentPecAttemptNumber,
                 generatedLegalFactsInfo,
                 endWorkflowStatus,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 
@@ -443,12 +439,10 @@ class DigitalTestWorkflowRepeatIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient,
-                recIndex,
                 sentPecAttemptNumber,
                 generatedLegalFactsInfo,
                 endWorkflowStatus,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 
@@ -609,12 +603,10 @@ class DigitalTestWorkflowRepeatIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient,
-                recIndex,
                 sentPecAttemptNumber,
                 generatedLegalFactsInfo,
                 endWorkflowStatus,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 
@@ -786,12 +778,10 @@ class DigitalTestWorkflowRepeatIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient,
-                recIndex,
                 sentPecAttemptNumber,
                 generatedLegalFactsInfo,
                 endWorkflowStatus,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 

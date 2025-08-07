@@ -56,32 +56,33 @@ public class SafeStorageClientMock implements PnSafeStorageClient {
         
         savedFileMap.put(key,fileCreationRequest);
 
-        ThreadPool.start( new Thread(() -> {
-            Assertions.assertDoesNotThrow(() -> {
-                String keyWithPrefix = FileUtils.getKeyWithStoragePrefix(key);
+        ThreadPool.start( new Thread(() -> Assertions.assertDoesNotThrow(() -> {
+            String keyWithPrefix = FileUtils.getKeyWithStoragePrefix(key);
 
-                log.info("[TEST] Start wait for createFile documentType={} keyWithPrefix={}",fileCreationRequest.getDocumentType(), keyWithPrefix);
+            log.info("[TEST] Start wait for createFile documentType={} keyWithPrefix={}",fileCreationRequest.getDocumentType(), keyWithPrefix);
 
-                if(! TestUtils.PN_NOTIFICATION_ATTACHMENT.equals(fileCreationRequest.getDocumentType())){
-                    log.info("[TEST] Start wait for createFile in IF documentType={} keyWithPrefix={}",fileCreationRequest.getDocumentType(), keyWithPrefix);
+            if(! TestUtils.PN_NOTIFICATION_ATTACHMENT.equals(fileCreationRequest.getDocumentType())){
+                log.info("[TEST] Start wait for createFile in IF documentType={} keyWithPrefix={}",fileCreationRequest.getDocumentType(), keyWithPrefix);
 
-                    MethodExecutor.waitForExecution(
-                            () -> documentCreationRequestDaoMock.getDocumentCreationRequest(keyWithPrefix)
-                    );
-                    log.info("[TEST] Ended waitForExecution");
+                MethodExecutor.waitForExecution(
+                        () -> documentCreationRequestDaoMock.getDocumentCreationRequest(keyWithPrefix)
+                );
+                log.info("[TEST] Ended waitForExecution");
 
-                    Optional<DocumentCreationRequest> documentCreationRequestOptional = documentCreationRequestDaoMock.getDocumentCreationRequest(keyWithPrefix);
+                Optional<DocumentCreationRequest> documentCreationRequestOptional = documentCreationRequestDaoMock.getDocumentCreationRequest(keyWithPrefix);
+                if (documentCreationRequestOptional.isPresent()) {
                     DocumentCreationRequest documentCreationRequest = documentCreationRequestOptional.get();
-
                     scheduleHandleDocumentCreationResponse(documentCreationRequest);
-
-                    log.info("[TEST] END wait for createFile documentType={} keyWithPrefix={}",fileCreationRequest.getDocumentType(), keyWithPrefix);
-
-                } else{
-                    log.info("[TEST] No need to wait response for PN_NOTIFICATION_ATTACHMENT");
+                } else {
+                    log.warn("[TEST] DocumentCreationRequest non trovato per keyWithPrefix={}", keyWithPrefix);
                 }
-            });
-        }));
+
+                log.info("[TEST] END wait for createFile documentType={} keyWithPrefix={}",fileCreationRequest.getDocumentType(), keyWithPrefix);
+
+            } else{
+                log.info("[TEST] No need to wait response for PN_NOTIFICATION_ATTACHMENT");
+            }
+        })));
         
         FileCreationResponse fileCreationResponse = new FileCreationResponse();
         fileCreationResponse.setKey(key);
@@ -125,19 +126,19 @@ public class SafeStorageClientMock implements PnSafeStorageClient {
         FileCreationWithContentRequest fileCreationRequest = savedFileMap.get(fileKey);
 
         String ext = getExtensionFromContentType(fileCreationRequest.getContentType());
-        String TEST_DIR_NAME = "target" + File.separator + "generated-test-PDF-IT";
-        Path TEST_DIR_PATH = Paths.get(TEST_DIR_NAME);
+        String testDirName = "target" + File.separator + "generated-test-PDF-IT";
+        Path testDirPath = Paths.get(testDirName);
 
         //create target test folder, if not exists
-        if (Files.notExists(TEST_DIR_PATH)) {
+        if (Files.notExists(testDirPath)) {
             try {
-                Files.createDirectory(TEST_DIR_PATH);
+                Files.createDirectory(testDirPath);
             } catch (IOException e) {
                 System.out.println("Exception in uploadContent " + e);
             }
         }
 
-        Path filePath = Paths.get(TEST_DIR_NAME + File.separator + testName+ "-"+ legalFactCategory.getValue() + "." + ext);
+        Path filePath = Paths.get(testDirName + File.separator + testName+ "-"+ legalFactCategory.getValue() + "." + ext);
         try {
             Files.write(filePath, fileCreationRequest.getContent());
         } catch (IOException e) {

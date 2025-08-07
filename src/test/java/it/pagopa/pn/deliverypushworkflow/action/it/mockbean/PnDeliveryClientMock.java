@@ -17,13 +17,6 @@ import java.util.stream.Collectors;
 public class PnDeliveryClientMock implements PnDeliveryClient {
     private CopyOnWriteArrayList<SentNotificationV25> notifications;
 
-    public SentNotificationV25 getNotification(String iun) {
-        return this.notifications.stream()
-                .filter(notification -> iun.equals(notification.getIun()))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Test error, iun is not present in getNotification IUN:" + iun));
-    }
-
     public void clear() {
         this.notifications = new CopyOnWriteArrayList<>();
     }
@@ -49,6 +42,6 @@ public class PnDeliveryClientMock implements PnDeliveryClient {
         .filter(n->n.getIun().equals(iun))
         .map(SentNotificationV25::getRecipients)
         .flatMap(List::stream)
-        .collect(Collectors.toMap(NotificationRecipientV24::getInternalId, (n) -> "test"));
+        .collect(Collectors.toMap(NotificationRecipientV24::getInternalId, n -> "test"));
     }
 }

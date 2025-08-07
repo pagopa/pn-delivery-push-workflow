@@ -27,18 +27,15 @@ import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 
 class SaveLegalFactsServiceImplTest {
 
-    private static final String SAVE_LEGAL_FACT_EXCEPTION_MESSAGE = "Generating %s legal fact for IUN=%s and recipientId=%s";
     public static final String LEGALFACTS_MEDIATYPE_STRING = "application/pdf";
     public static final String PN_LEGAL_FACTS = "PN_LEGAL_FACTS";
     public static final String SAVED = "SAVED";
-    public static final String PN_AAR = "PN_AAR";
 
     @Mock
     private LegalFactGenerator legalFactBuilder;
@@ -66,6 +63,7 @@ class SaveLegalFactsServiceImplTest {
             FileCreationResponseInt file = buildFileCreationResponseInt();
             String quickAccessToken = "test";
 
+            Assertions.assertNotNull(result);
             AARInfo aarInfo = AARInfo.builder()
                     .bytesArrayGeneratedAar(result.readAllBytes())
                     .build();
@@ -87,13 +85,11 @@ class SaveLegalFactsServiceImplTest {
         NotificationRecipientInt recipient = buildRecipient(denomination);
         String quickAccessToken = "test";
 
-        PnInternalException pnInternalException = Assertions.assertThrows(PnInternalException.class, () -> {
-            saveLegalFactsService.sendCreationRequestForAAR(notification, recipient, quickAccessToken);
-        });
+        PnInternalException pnInternalException = Assertions.assertThrows(PnInternalException.class, () -> saveLegalFactsService.sendCreationRequestForAAR(notification, recipient, quickAccessToken));
 
         String expectErrorMsg = "PN_DELIVERYPUSH_SAVELEGALFACTSFAILED";
 
-        Assertions.assertEquals(expectErrorMsg, pnInternalException.getProblem().getErrors().get(0).getCode());
+        Assertions.assertEquals(expectErrorMsg, pnInternalException.getProblem().getErrors().getFirst().getCode());
 
     }
 
@@ -101,7 +97,7 @@ class SaveLegalFactsServiceImplTest {
     void saveNotificationCancelledLegalFact() throws IOException {
         String denomination = "<h1>SSRF WITH IMAGE POC</h1> <img src='https://prova.it'></img>";
         NotificationInt notification = buildNotification(denomination);
-        FileCreationWithContentRequest fileCreation = buildFileCreationWithContentRequest(PN_LEGAL_FACTS);
+        FileCreationWithContentRequest fileCreation = buildFileCreationWithContentRequest();
         FileCreationResponseInt file = buildFileCreationResponseInt();
         Instant notificationCancellationRequestDate = Instant.now();
 
@@ -118,32 +114,28 @@ class SaveLegalFactsServiceImplTest {
         String denomination = "<h1>SSRF WITH IMAGE POC</h1> <img src='https://prova.it'></img>";
         NotificationInt notification = buildNotification(denomination);
 
-        PnInternalException pnInternalException = Assertions.assertThrows(PnInternalException.class, () -> {
-            saveLegalFactsService.sendCreationRequestForNotificationCancelledLegalFact(notification, Instant.now());
-        });
+        PnInternalException pnInternalException = Assertions.assertThrows(PnInternalException.class, () -> saveLegalFactsService.sendCreationRequestForNotificationCancelledLegalFact(notification, Instant.now()));
 
         String expectErrorMsg = "PN_DELIVERYPUSH_SAVELEGALFACTSFAILED";
 
-        Assertions.assertEquals(expectErrorMsg, pnInternalException.getProblem().getErrors().get(0).getCode());
+        Assertions.assertEquals(expectErrorMsg, pnInternalException.getProblem().getErrors().getFirst().getCode());
     }
 
     @Test
     void sendCreationRequestForAnalogDeliveryFailureWorkflowLegalFactFailed() {
-        SendDigitalFeedbackDetailsInt sdf = buildSendDigitalFeedbackDetailsInt();
+        buildSendDigitalFeedbackDetailsInt();
         String denomination = "<h1>SSRF WITH IMAGE POC</h1> <img src='https://prova.it'></img>";
         NotificationInt notification = buildNotification(denomination);
         NotificationRecipientInt recipient = buildRecipient(denomination);
         EndWorkflowStatus status = EndWorkflowStatus.SUCCESS;
         Instant completionWorkflowDate = Instant.parse("2021-09-16T15:24:00.00Z");
 
-        PnInternalException pnInternalException = Assertions.assertThrows(PnInternalException.class, () -> {
-            saveLegalFactsService.sendCreationRequestForAnalogDeliveryFailureWorkflowLegalFact(
-                    notification, recipient, status, completionWorkflowDate);
-        });
+        PnInternalException pnInternalException = Assertions.assertThrows(PnInternalException.class, () -> saveLegalFactsService.sendCreationRequestForAnalogDeliveryFailureWorkflowLegalFact(
+                notification, recipient, status, completionWorkflowDate));
 
         String expectErrorMsg = "PN_DELIVERYPUSH_SAVELEGALFACTSFAILED";
 
-        Assertions.assertEquals(expectErrorMsg, pnInternalException.getProblem().getErrors().get(0).getCode());
+        Assertions.assertEquals(expectErrorMsg, pnInternalException.getProblem().getErrors().getFirst().getCode());
     }
 
     @Test
@@ -155,7 +147,7 @@ class SaveLegalFactsServiceImplTest {
         NotificationRecipientInt recipient = buildRecipient(denomination);
         EndWorkflowStatus status = EndWorkflowStatus.SUCCESS;
         Instant completionWorkflowDate = Instant.parse("2021-09-16T15:24:00.00Z");
-        FileCreationWithContentRequest fileCreation = buildFileCreationWithContentRequest(PN_LEGAL_FACTS);
+        FileCreationWithContentRequest fileCreation = buildFileCreationWithContentRequest();
         FileCreationResponseInt file = buildFileCreationResponseInt();
 
         Mockito.when(legalFactBuilder.generatePecDeliveryWorkflowLegalFact(
@@ -177,14 +169,12 @@ class SaveLegalFactsServiceImplTest {
         NotificationRecipientInt recipient = buildRecipient(denomination);
         EndWorkflowStatus status = EndWorkflowStatus.SUCCESS;
         Instant completionWorkflowDate = Instant.parse("2021-09-16T15:24:00.00Z");
-        PnInternalException pnInternalException = Assertions.assertThrows(PnInternalException.class, () -> {
-            saveLegalFactsService.sendCreationRequestForPecDeliveryWorkflowLegalFact(listFeedbackFromExtChannel,
-                    notification, recipient, status, completionWorkflowDate);
-        });
+        PnInternalException pnInternalException = Assertions.assertThrows(PnInternalException.class, () -> saveLegalFactsService.sendCreationRequestForPecDeliveryWorkflowLegalFact(listFeedbackFromExtChannel,
+                notification, recipient, status, completionWorkflowDate));
 
         String expectErrorMsg = "PN_DELIVERYPUSH_SAVELEGALFACTSFAILED";
 
-        Assertions.assertEquals(expectErrorMsg, pnInternalException.getProblem().getErrors().get(0).getCode());
+        Assertions.assertEquals(expectErrorMsg, pnInternalException.getProblem().getErrors().getFirst().getCode());
     }
 
     @Test
@@ -193,7 +183,7 @@ class SaveLegalFactsServiceImplTest {
         NotificationInt notification = buildNotification(denomination);
         NotificationRecipientInt recipient = buildRecipient(denomination);
         Instant timeStamp = Instant.parse("2021-09-16T15:24:00.00Z");
-        FileCreationWithContentRequest fileCreation = buildFileCreationWithContentRequest(PN_LEGAL_FACTS);
+        FileCreationWithContentRequest fileCreation = buildFileCreationWithContentRequest();
         FileCreationResponseInt file = buildFileCreationResponseInt();
 
         Mockito.when(legalFactBuilder.generateNotificationViewedLegalFact(
@@ -215,7 +205,7 @@ class SaveLegalFactsServiceImplTest {
                 .taxId("RSSMRA80A01H501U")
                 .build();
         Instant timeStamp = Instant.parse("2021-09-16T15:24:00.00Z");
-        FileCreationWithContentRequest fileCreation = buildFileCreationWithContentRequest(PN_LEGAL_FACTS);
+        FileCreationWithContentRequest fileCreation = buildFileCreationWithContentRequest();
         FileCreationResponseInt file = buildFileCreationResponseInt();
 
         Mockito.when(legalFactBuilder.generateNotificationViewedLegalFact(
@@ -239,12 +229,12 @@ class SaveLegalFactsServiceImplTest {
                 .build();
     }
 
-    private FileCreationWithContentRequest buildFileCreationWithContentRequest(String type) {
+    private FileCreationWithContentRequest buildFileCreationWithContentRequest() {
         String denomination = "<h1>SSRF WITH IMAGE POC</h1> <img src='https://prova.it'></img>";
 
         FileCreationWithContentRequest fileCreationRequest = new FileCreationWithContentRequest();
         fileCreationRequest.setContentType(LEGALFACTS_MEDIATYPE_STRING);
-        fileCreationRequest.setDocumentType(type);
+        fileCreationRequest.setDocumentType(SaveLegalFactsServiceImplTest.PN_LEGAL_FACTS);
         fileCreationRequest.setStatus(SAVED);
         fileCreationRequest.setContent(denomination.getBytes());
         return fileCreationRequest;
@@ -262,7 +252,7 @@ class SaveLegalFactsServiceImplTest {
                 .sentAt(Instant.now())
                 .iun("Example_IUN_1234_Test")
                 .subject("notification test subject")
-                .documents(Arrays.asList(
+                .documents(Collections.singletonList(
                                 NotificationDocumentInt.builder()
                                         .ref(NotificationDocumentInt.Ref.builder()
                                                 .key("doc00")
@@ -282,7 +272,8 @@ class SaveLegalFactsServiceImplTest {
 
     private NotificationRecipientInt buildRecipient(String denomination) {
         String defaultDenomination = StringUtils.hasText(denomination) ? denomination : "Galileo Bruno";
-        NotificationRecipientInt rec1 = NotificationRecipientInt.builder()
+
+        return NotificationRecipientInt.builder()
                 .taxId("CDCFSC11R99X001Z")
                 .denomination(defaultDenomination)
                 .digitalDomicile(LegalDigitalAddressInt.builder()
@@ -291,8 +282,6 @@ class SaveLegalFactsServiceImplTest {
                         .build())
                 .physicalAddress(buildPhysicalAddressInt())
                 .build();
-
-        return rec1;
     }
 
     private PhysicalAddressInt buildPhysicalAddressInt() {

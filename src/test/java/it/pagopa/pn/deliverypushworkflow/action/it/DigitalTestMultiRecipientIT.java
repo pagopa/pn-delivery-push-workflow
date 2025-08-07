@@ -271,12 +271,10 @@ class DigitalTestMultiRecipientIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient1,
-                recIndex1,
                 i,
                 generatedLegalFactsInfo,
                 endWorkflowStatus,
                 legalFactGenerator,
-                timelineService,
                 null
         );
     }

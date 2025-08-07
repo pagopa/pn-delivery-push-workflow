@@ -16,8 +16,8 @@ public class NotificationRecipientTestBuilder {
     private String internalId;
     private LegalDigitalAddressInt digitalDomicile;
     private List<NotificationPaymentInfoInt> payments;
-    private RecipientTypeInt recipientType;
-    private String denomination;
+    RecipientTypeInt recipientType;
+    String denomination;
     
     public static NotificationRecipientTestBuilder builder() {
         return new NotificationRecipientTestBuilder();
@@ -83,16 +83,16 @@ public class NotificationRecipientTestBuilder {
                     .build();
         }
         
-        String denomination = "Name_and_surname_of_" + taxId;
+        String denominationPerson = "Name_and_surname_of_" + taxId;
         if(physicalAddress != null){
-            physicalAddress.setFullname(denomination);
+            physicalAddress.setFullname(denominationPerson);
         }
         
         return NotificationRecipientInt.builder()
                 .recipientType(RecipientTypeInt.PF)
                 .taxId(taxId)
                 .internalId(internalId)
-                .denomination(denomination)
+                .denomination(denominationPerson)
                 .physicalAddress(physicalAddress)
                 .digitalDomicile(digitalDomicile)
                 .payments(payments)

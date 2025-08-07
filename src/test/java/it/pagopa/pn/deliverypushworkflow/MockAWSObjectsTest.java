@@ -10,9 +10,6 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 @EnableAutoConfiguration(exclude= {SqsAutoConfiguration.class, ContextFunctionCatalogAutoConfiguration.class})
 public abstract class MockAWSObjectsTest extends MockActionPoolTest {
 
-//    @MockBean
-//    private AmazonSQSAsync amazonSQS;
-
     @MockitoBean
     private DynamoDbClient dynamoDbClient;
 }
