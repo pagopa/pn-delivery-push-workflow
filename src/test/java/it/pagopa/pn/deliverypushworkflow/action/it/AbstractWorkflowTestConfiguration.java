@@ -2,6 +2,7 @@ package it.pagopa.pn.deliverypushworkflow.action.it;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.commons.abstractions.ParameterConsumer;
+import it.pagopa.pn.commons.utils.qr.QrUrlCodec;
 import it.pagopa.pn.commons.utils.qr.QrUrlCodecService;
 import it.pagopa.pn.deliverypushworkflow.action.it.mockbean.*;
 import it.pagopa.pn.deliverypushworkflow.action.utils.InstantNowSupplier;
@@ -37,6 +38,15 @@ import java.util.Optional;
 
 public class AbstractWorkflowTestConfiguration {
     static final int SEND_FEE = 100;
+    private final String qrUrlParameterJson = """
+        {
+          "1.0.0": {
+            "directAccessUrlTemplatePhysical": "http://physical",
+            "directAccessUrlTemplateLegal": "http://legal",
+            "quickAccessUrlAarDetailSuffix": "/detail?token"
+          }
+        }
+        """;
 
     @Bean
     public PnDeliveryPushWorkflowConfigs pnDeliveryPushConfigs() {
@@ -85,10 +95,10 @@ public class AbstractWorkflowTestConfiguration {
     }
 
     @Bean
-    public LegalFactGenerator legalFactGeneratorTemplatesClient(@Lazy PnSendModeUtils pnSendModeUtils, PnDeliveryPushWorkflowConfigs pnDeliveryPushConfigs) {
+    public LegalFactGenerator legalFactGeneratorTemplatesClient(@Lazy PnSendModeUtils pnSendModeUtils, PnDeliveryPushWorkflowConfigs pnDeliveryPushConfigs, @Lazy QrUrlCodecService qrUrlCodecService) {
         CustomInstantWriter instantWriter = new CustomInstantWriter();
         PhysicalAddressWriter physicalAddressWriter = new PhysicalAddressWriter();
-        return new LegalFactGeneratorTemplates(instantWriter, physicalAddressWriter, pnDeliveryPushConfigs, pnSendModeUtils, templatesClient(), templatesClientPec(), qrUrlCodecService());
+        return new LegalFactGeneratorTemplates(instantWriter, physicalAddressWriter, pnDeliveryPushConfigs, pnSendModeUtils, templatesClient(), templatesClientPec(), qrUrlCodecService);
     }
 
     @Bean
@@ -102,10 +112,9 @@ public class AbstractWorkflowTestConfiguration {
     }
 
     @Bean
-    public QrUrlCodecService qrUrlCodecService() {
+    public QrUrlCodecService qrUrlCodecService(@Lazy ObjectMapper objectMapper) {
         ParameterConsumer parameterConsumer = Mockito.mock(ParameterConsumer.class);
-        ObjectMapper objectMapper = Mockito.mock(ObjectMapper.class);
-        Mockito.when(parameterConsumer.getParameterValue(Mockito.any(), Mockito.any())).thenReturn(Optional.of("https://example.com/qr-code"));//to use new common method
+        Mockito.when(parameterConsumer.getParameterValue(Mockito.any(), Mockito.any())).thenReturn(Optional.of(qrUrlParameterJson));
         return new QrUrlCodecService(parameterConsumer, objectMapper);
     }
 

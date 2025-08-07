@@ -1,6 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.service.impl;
 
 import it.pagopa.pn.commons.exceptions.PnInternalException;
+import it.pagopa.pn.commons.utils.qr.QrUrlCodecService;
 import it.pagopa.pn.deliverypushworkflow.action.utils.EndWorkflowStatus;
 import it.pagopa.pn.deliverypushworkflow.dto.address.LegalDigitalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
@@ -32,6 +33,8 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
+
 class SaveLegalFactsServiceImplTest {
 
     private static final String SAVE_LEGAL_FACT_EXCEPTION_MESSAGE = "Generating %s legal fact for IUN=%s and recipientId=%s";
@@ -53,7 +56,6 @@ class SaveLegalFactsServiceImplTest {
 
         legalFactBuilder = Mockito.mock(LegalFactGenerator.class);
         safeStorageService = Mockito.mock(SafeStorageService.class);
-
         saveLegalFactsService = new SaveLegalFactsServiceImpl(legalFactBuilder, safeStorageService);
     }
 
@@ -69,8 +71,9 @@ class SaveLegalFactsServiceImplTest {
             AARInfo aarInfo = AARInfo.builder()
                     .bytesArrayGeneratedAar(result.readAllBytes())
                     .build();
+
             Mockito.when(legalFactBuilder.generateNotificationAAR(notification, recipient, quickAccessToken)).thenReturn(aarInfo);
-            Mockito.when(safeStorageService.createAndUploadContent(Mockito.any())).thenReturn(Mono.just(file));
+            Mockito.when(safeStorageService.createAndUploadContent(any())).thenReturn(Mono.just(file));
             PdfInfo actual = saveLegalFactsService.sendCreationRequestForAAR(notification, recipient, quickAccessToken);
 
             Assertions.assertAll(
