@@ -77,7 +77,8 @@ class AddressBookServiceImplTest {
 
         //THEN
         Assertions.assertEquals(2, listCourtesyAddress.size()); // 1 Email e 1 TPP (presente di default)
-        Assertions.assertEquals(courtesyDigitalAddress.getValue(), listCourtesyAddress.get(0).getAddress());
+        Assertions.assertEquals(courtesyDigitalAddress.getValue(), listCourtesyAddress.getFirst().getAddress());
+        Assertions.assertEquals("APP", listCourtesyAddress.getLast().getAddress());
     }
 
     @Test
