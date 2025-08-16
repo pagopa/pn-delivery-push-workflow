@@ -507,6 +507,28 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
     @Test
     @Disabled("Test disabilitato perché fallisce a causa di condizioni di race tra eventi di visualizzazione e deceduto.")
     void multiRecipientWithFirstUnreachableAndSecondDeceased() {
+  /*
+       PRIMO RECIPIENT
+       - Platform address vuoto (Ottenuto non valorizzando il platformAddress in addressBookEntry)
+       - Special address vuoto (Ottenuto non valorizzando il digitalDomicile del recipient)
+       - General address vuoto (Ottenuto non valorizzando nessun digital address per il recipient in PUB_REGISTRY_DIGITAL)
+
+       - Indirizzo courtesy message presente, dunque inviato (Ottenuto valorizzando il courtesyAddress del addressBookEntry)
+       - Pa physical address presente con struttura indirizzo che porta al fallimento dell'invio tramite external channel (Ottenuto inserendo nell'indirizzo ExternalChannelMock.EXT_CHANNEL_SEND_NEW_ADDR)
+         e invio di una seconda notifica (all'indirizzo ottenuto dall'investigazione) con successivo fallimento (ottenuto concatenando all'indirizzo ExternalChannelMock.EXTCHANNEL_SEND_FAIL)
+       - Public Registry Indirizzo fisico non trovato (Ottenuto non valorizzando nessun indirizzo fisico per il recipient in PUB_REGISTRY_PHYSICAL)
+
+       SECONDO RECIPIENT
+       - Platform address vuoto (Ottenuto non valorizzando il platformAddress in addressBookEntry)
+       - Special address vuoto (Ottenuto non valorizzando il digitalDomicile del recipient)
+       - General address vuoto (Ottenuto non valorizzando nessun digital address per il recipient in PUB_REGISTRY_DIGITAL)
+
+       - Pa physical address presente (Ottenuto valorizzando physicalAddress del recipient della notifica)
+       - Public Registry indirizzo trovato ma restituisce un feedback per una consegna fallita a causa di destinatario deceduto
+       (Ottenuto inserendo nell'indirizzo ExternalChannelMock.EXTCHANNEL_SEND_DECEASED)
+
+       Ci aspettiamo che la notifica sia comunque perfezionata a causa della riuscita del workflow per il primo recipient.
+    */
         Mockito.when(cfg.getActivationDeceasedWorkflowDate()).thenReturn("2021-09-01T00:00:00Z");
 
         PhysicalAddressInt paPhysicalAddress1 = PhysicalAddressBuilder.builder()
@@ -555,65 +577,93 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
         Integer recIndex1 = NotificationUtils.getRecipientIndexFromTaxId(notification, recipient1.getTaxId());
         Integer recIndex2 = NotificationUtils.getRecipientIndexFromTaxId(notification, recipient2.getTaxId());
 
+        //Start del workflow
         scheduleRecipientWorkflow.startScheduleRecipientWorkflow(notification.getIun());
 
+        // Viene atteso fino a che per i due recipient non si vada in refinement
         await().untilAsserted(() ->
                 Assertions.assertTrue(
                         TestUtils.checkIsPresentAnalogFailureWorkflowAndRefinement(iun, recIndex1, timelineService)
                 )
         );
+
         await().untilAsserted(() ->
                 Assertions.assertTrue(timelineService.getTimelineElement(
                         iun,
                         TimelineEventId.REFINEMENT.buildEventId(
-                                EventId.builder().iun(iun).recIndex(recIndex1).build())).isPresent())
+                                EventId.builder()
+                                        .iun(iun)
+                                        .recIndex(recIndex1)
+                                        .build())).isPresent())
         );
 
-        // Raggruppamento asserzioni per recipient1
-        Assertions.assertAll("Recipient1 checks",
-                () -> TestUtils.checkSendCourtesyAddressFromTimeline(iun, recIndex1, listCourtesyAddressRecipient1, timelineService),
-                () -> Mockito.verify(externalChannelMock, Mockito.times(listCourtesyAddressRecipient1.size()))
-                        .sendCourtesyNotification(
-                                Mockito.any(NotificationInt.class),
-                                Mockito.any(NotificationRecipientInt.class),
-                                Mockito.any(CourtesyDigitalAddressInt.class),
-                                Mockito.anyString(),
-                                Mockito.anyString(),
-                                Mockito.anyString()
-                        ),
-                () -> TestUtils.checkGetAddress(iun, recIndex1, false, DigitalAddressSourceInt.PLATFORM, ChooseDeliveryModeUtilsImpl.ZERO_SENT_ATTEMPT_NUMBER, timelineService),
-                () -> TestUtils.checkGetAddress(iun, recIndex1, false, DigitalAddressSourceInt.SPECIAL, ChooseDeliveryModeUtilsImpl.ZERO_SENT_ATTEMPT_NUMBER, timelineService),
-                () -> TestUtils.checkGetAddress(iun, recIndex1, false, DigitalAddressSourceInt.GENERAL, ChooseDeliveryModeUtilsImpl.ZERO_SENT_ATTEMPT_NUMBER, timelineService),
-                () -> TestUtils.checkSendPaperToExtChannel(iun, recIndex1, paPhysicalAddress1, 0, timelineService),
-                () -> Assertions.assertTrue(timelineService.getTimelineElement(
-                        iun,
-                        TimelineEventId.ANALOG_FAILURE_WORKFLOW.buildEventId(
-                                EventId.builder().iun(iun).recIndex(recIndex1).build())).isPresent()),
-                () -> Assertions.assertTrue(timelineService.getTimelineElement(
-                        iun,
-                        TimelineEventId.COMPLETELY_UNREACHABLE.buildEventId(
-                                EventId.builder().iun(iun).recIndex(recIndex1).build())).isPresent()),
-                () -> await().untilAsserted(() -> Assertions.assertTrue(TestUtils.isPresentUnreachable(iun, recIndex1, timelineService))),
-                () -> await().untilAsserted(() -> Assertions.assertTrue(TestUtils.checkIsPresentRefinement(iun, recIndex1, timelineService)))
+
+        //Viene verificato che sia stato inviato un messaggio ad ogni indirizzo presente nei courtesyaddress per il recipient1
+        TestUtils.checkSendCourtesyAddressFromTimeline(iun, recIndex1, listCourtesyAddressRecipient1, timelineService);
+
+        //Viene verificato l'effettivo invio del messaggio di cortesia verso external channel
+        Mockito.verify(externalChannelMock, Mockito.times(listCourtesyAddressRecipient1.size()))
+                .sendCourtesyNotification(
+                        Mockito.any(NotificationInt.class),
+                        Mockito.any(NotificationRecipientInt.class),
+                        Mockito.any(CourtesyDigitalAddressInt.class),
+                        Mockito.anyString(),
+                        Mockito.anyString(),
+                        Mockito.anyString()
+                );
+
+        //Viene verificata la presenza degli indirizzi per il primo recipient
+        TestUtils.checkGetAddress(iun, recIndex1, false, DigitalAddressSourceInt.PLATFORM, ChooseDeliveryModeUtilsImpl.ZERO_SENT_ATTEMPT_NUMBER, timelineService);
+        TestUtils.checkGetAddress(iun, recIndex1, false, DigitalAddressSourceInt.SPECIAL, ChooseDeliveryModeUtilsImpl.ZERO_SENT_ATTEMPT_NUMBER, timelineService);
+        TestUtils.checkGetAddress(iun, recIndex1, false, DigitalAddressSourceInt.GENERAL, ChooseDeliveryModeUtilsImpl.ZERO_SENT_ATTEMPT_NUMBER, timelineService);
+
+        //Viene verificato che gli indirizzi PLATFORM SPECIAL E GENERAL non siano presenti per il secondo
+        TestUtils.checkGetAddress(iun, recIndex2, false, DigitalAddressSourceInt.PLATFORM, ChooseDeliveryModeUtilsImpl.ZERO_SENT_ATTEMPT_NUMBER, timelineService);
+        TestUtils.checkGetAddress(iun, recIndex2, false, DigitalAddressSourceInt.SPECIAL, ChooseDeliveryModeUtilsImpl.ZERO_SENT_ATTEMPT_NUMBER, timelineService);
+        TestUtils.checkGetAddress(iun, recIndex2, false, DigitalAddressSourceInt.GENERAL, ChooseDeliveryModeUtilsImpl.ZERO_SENT_ATTEMPT_NUMBER, timelineService);
+
+        //Viene verificata la presenza del primo invio verso external channel e che l'invio sia avvenuto con l'indirizzo fornito dalla PA per il rec1
+        TestUtils.checkSendPaperToExtChannel(iun, recIndex1, paPhysicalAddress1, 0, timelineService);
+
+        //Viene verificato che il workflow sia fallito
+        Assertions.assertTrue(timelineService.getTimelineElement(
+                iun,
+                TimelineEventId.ANALOG_FAILURE_WORKFLOW.buildEventId(
+                        EventId.builder()
+                                .iun(iun)
+                                .recIndex(recIndex1)
+                                .build())).isPresent());
+
+        //Viene verificato che il destinatario risulti completamente irraggiungibile
+        Assertions.assertTrue(timelineService.getTimelineElement(
+                iun,
+                TimelineEventId.COMPLETELY_UNREACHABLE.buildEventId(
+                        EventId.builder()
+                                .iun(iun)
+                                .recIndex(recIndex1)
+                                .build())).isPresent());
+
+        // Viene verificato che sia inserito l'elemento di COMPLETELY_UNREACHABLE nella timeline per il primo destinatario.
+        await().untilAsserted(() -> Assertions.assertTrue(TestUtils.isPresentUnreachable(iun, recIndex1, timelineService)));
+
+        //Viene verificato che sia avvenuto il perfezionamento per il primo recipient
+        await().untilAsserted(() ->
+                Assertions.assertTrue(TestUtils.checkIsPresentRefinement(iun, recIndex1, timelineService))
         );
 
-        // Raggruppamento asserzioni per recipient2
-        Assertions.assertAll("Recipient2 checks",
-                () -> TestUtils.checkGetAddress(iun, recIndex2, false, DigitalAddressSourceInt.PLATFORM, ChooseDeliveryModeUtilsImpl.ZERO_SENT_ATTEMPT_NUMBER, timelineService),
-                () -> TestUtils.checkGetAddress(iun, recIndex2, false, DigitalAddressSourceInt.SPECIAL, ChooseDeliveryModeUtilsImpl.ZERO_SENT_ATTEMPT_NUMBER, timelineService),
-                () -> TestUtils.checkGetAddress(iun, recIndex2, false, DigitalAddressSourceInt.GENERAL, ChooseDeliveryModeUtilsImpl.ZERO_SENT_ATTEMPT_NUMBER, timelineService),
-                () -> await().untilAsserted(() -> Assertions.assertTrue(
+        await().untilAsserted(() ->
+                Assertions.assertTrue(
                         TestUtils.checkIsPresentAnalogWorkflowRecipientDeceased(iun, recIndex2, timelineService)
-                )),
-                () -> TestUtils.checkAnalogWorkflowRecipientDeceased(iun, recIndex2, timelineService, completionWorkflow),
-                () -> TestUtils.checkSendPaperToExtChannel(iun, recIndex2, paPhysicalAddress2, 0, timelineService)
+                )
         );
 
-        // Verifica chiamate mock
-        Mockito.verify(paperChannelMock, Mockito.times(2)).prepare(Mockito.any(PaperChannelPrepareRequest.class));
-        Mockito.verify(paperChannelMock, Mockito.times(2)).send(Mockito.any(PaperChannelSendRequest.class));
+        //Viene verificato che esista un evento di deceduto per il secondo recipient
+        TestUtils.checkAnalogWorkflowRecipientDeceased(iun, recIndex2, timelineService, completionWorkflow);
 
-        // Legal facts recipient1
+        //Viene verificata la presenza del primo invio verso external channel e che l'invio sia avvenuto con l'indirizzo fornito da pa
+        TestUtils.checkSendPaperToExtChannel(iun, recIndex2, paPhysicalAddress2, 0, timelineService);
+
+        //Viene effettuato il check dei legalFacts generati per il primo recipient
         TestUtils.GeneratedLegalFactsInfo generatedLegalFactsInfo1 = TestUtils.GeneratedLegalFactsInfo.builder()
                 .notificationReceivedLegalFactGenerated(true)
                 .notificationAARGenerated(true)
@@ -631,7 +681,7 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
                 null
         );
 
-        // Legal facts recipient2
+        //Viene effettuato il check dei legalFacts generati per il secondo recipient
         TestUtils.GeneratedLegalFactsInfo generatedLegalFactsInfo2 = TestUtils.GeneratedLegalFactsInfo.builder()
                 .notificationReceivedLegalFactGenerated(true)
                 .notificationAARGenerated(true)
@@ -649,6 +699,7 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
                 null
         );
 
+        //Vengono stampati tutti i legalFacts generati
         String className = this.getClass().getSimpleName();
         TestUtils.writeAllGeneratedLegalFacts(iun, className, timelineService, safeStorageClientMock);
 
@@ -805,7 +856,7 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
     }
 
     @Test
-    @Disabled("Test disabilitato perché fallisce a causa di condizioni di race tra eventi di visualizzazione e deceduto.")
+    @Disabled("Test fail sometimes")
     void multiRecipientWithFirstAnalogOkAndSecondDeceasedWhichVisualizesTheNotification() {
   /*
        PRIMO RECIPIENT
