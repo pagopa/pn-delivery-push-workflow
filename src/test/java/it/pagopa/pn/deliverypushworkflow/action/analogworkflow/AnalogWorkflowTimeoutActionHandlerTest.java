@@ -2,6 +2,7 @@ package it.pagopa.pn.deliverypushworkflow.action.analogworkflow;
 
 import it.pagopa.pn.deliverypushworkflow.action.details.AnalogWorkflowTimeoutDetails;
 import it.pagopa.pn.deliverypushworkflow.action.utils.AnalogDeliveryTimeoutUtils;
+import it.pagopa.pn.deliverypushworkflow.action.utils.PaperChannelUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.documentcreation.DocumentCreationTypeInt;
@@ -42,6 +43,8 @@ public class AnalogWorkflowTimeoutActionHandlerTest {
     private DocumentCreationRequestService documentCreationRequestService;
     @Mock
     private AnalogDeliveryTimeoutUtils analogDeliveryTimeoutUtils;
+    @Mock
+    private PaperChannelUtils paperChannelUtils;
 
     @InjectMocks
     private AnalogWorkflowTimeoutActionHandler handler;
@@ -57,7 +60,8 @@ public class AnalogWorkflowTimeoutActionHandlerTest {
                 saveLegalFactsService,
                 timelineUtils,
                 documentCreationRequestService,
-                analogDeliveryTimeoutUtils
+                analogDeliveryTimeoutUtils,
+                paperChannelUtils
         );
     }
 
@@ -91,18 +95,26 @@ public class AnalogWorkflowTimeoutActionHandlerTest {
     @Test
     void shouldSkipWhenDematPresent() {
         String iun = "IUN3";
+        int recIndex = 0;
+        int sentAttemptMade = 0;
+
+        AnalogWorkflowTimeoutDetails details = mock(AnalogWorkflowTimeoutDetails.class);
+        when(details.getSentAttemptMade()).thenReturn(sentAttemptMade);
+
         NotificationInt notification = mock(NotificationInt.class);
         when(notificationService.getNotificationByIun(iun)).thenReturn(notification);
         when(notification.getSentAt()).thenReturn(Instant.now());
         when(featureEnabledUtils.isAnalogWorkflowTimeoutFeatureEnabled(any())).thenReturn(true);
 
+        String prepareRequestId = "PREP_REQ_ID";
+        when(paperChannelUtils.buildPrepareAnalogDomicileEventId(notification, recIndex, sentAttemptMade)).thenReturn(prepareRequestId);
+        when(paperTrackerService.isPresentDematForPrepareRequest(prepareRequestId)).thenReturn(true);
         SendAnalogDetailsInt sendAnalogDetails = mock(SendAnalogDetailsInt.class);
-        when(sendAnalogDetails.getPrepareRequestId()).thenReturn("PREP_REQ_ID");
         when(timelineService.getTimelineElementDetails(eq(iun), any(), eq(SendAnalogDetailsInt.class)))
                 .thenReturn(Optional.of(sendAnalogDetails));
         when(paperTrackerService.isPresentDematForPrepareRequest("PREP_REQ_ID")).thenReturn(true);
 
-        handler.handleAnalogWorkflowTimeout(iun, "timelineId", 0, mock(AnalogWorkflowTimeoutDetails.class), Instant.now());
+        handler.handleAnalogWorkflowTimeout(iun, "timelineId", recIndex, mock(AnalogWorkflowTimeoutDetails.class), Instant.now());
 
         verifyNoInteractions(saveLegalFactsService, timelineUtils, documentCreationRequestService);
     }
@@ -114,7 +126,6 @@ public class AnalogWorkflowTimeoutActionHandlerTest {
         when(notificationService.getNotificationByIun(iun)).thenReturn(notification);
         when(notification.getSentAt()).thenReturn(Instant.now());
         when(featureEnabledUtils.isAnalogWorkflowTimeoutFeatureEnabled(any())).thenReturn(true);
-        TimelineElementInternal timelineElementInternal = mock(TimelineElementInternal.class);
 
         SendAnalogDetailsInt sendAnalogDetails = mock(SendAnalogDetailsInt.class);
         when(sendAnalogDetails.getPrepareRequestId()).thenReturn("PREP_REQ_ID");
@@ -136,7 +147,7 @@ public class AnalogWorkflowTimeoutActionHandlerTest {
         int sentAttemptMade = 2;
         String legalFactId = "LEGAL_FACT_ID";
         String prepareRequestId = "PREP_REQ_ID";
-        String relatedRequestId = "REL_REQ_ID";
+        String sendAnalogDomicileTimelineId = "SEND_ANALOG_DOMICILE_TIMELINE_ID";
         Instant timeoutDate = Instant.now();
 
         NotificationInt notification = mock(NotificationInt.class);
@@ -147,11 +158,10 @@ public class AnalogWorkflowTimeoutActionHandlerTest {
         when(featureEnabledUtils.isAnalogWorkflowTimeoutFeatureEnabled(any())).thenReturn(true);
 
         SendAnalogDetailsInt sendAnalogDetails = mock(SendAnalogDetailsInt.class);
-        when(sendAnalogDetails.getPrepareRequestId()).thenReturn(prepareRequestId);
         when(sendAnalogDetails.getPhysicalAddress()).thenReturn(getPhysicalAddress());
-        when(sendAnalogDetails.getRelatedRequestId()).thenReturn(relatedRequestId);
         when(timelineService.getTimelineElementDetails(eq(iun), any(), eq(SendAnalogDetailsInt.class)))
                 .thenReturn(Optional.of(sendAnalogDetails));
+        when(paperChannelUtils.buildPrepareAnalogDomicileEventId(notification, recIndex, sentAttemptMade)).thenReturn(prepareRequestId);
         when(paperTrackerService.isPresentDematForPrepareRequest(prepareRequestId)).thenReturn(false);
 
         AnalogWorkflowTimeoutDetails details = mock(AnalogWorkflowTimeoutDetails.class);
@@ -162,11 +172,11 @@ public class AnalogWorkflowTimeoutActionHandlerTest {
                 .thenReturn(legalFactId);
         TimelineElementInternal timelineElement = mock(TimelineElementInternal.class);
         when(timelineUtils.buildSendAnalogTimeoutCreationRequest(
-                eq(notification), eq(recIndex), eq(timeoutDate), eq(sentAttemptMade), eq(relatedRequestId), eq(legalFactId)))
+                notification, recIndex, timeoutDate, sentAttemptMade, sendAnalogDomicileTimelineId, legalFactId))
                 .thenReturn(timelineElement);
         when(timelineElement.getElementId()).thenReturn("TIMELINE_ID");
 
-        handler.handleAnalogWorkflowTimeout(iun, "timelineId", recIndex, details, timeoutDate);
+        handler.handleAnalogWorkflowTimeout(iun, sendAnalogDomicileTimelineId, recIndex, details, timeoutDate);
 
         verify(saveLegalFactsService).sendCreationRequestForAnalogDeliveryWorkflowTimeoutLegalFact(
                 eq(notification), eq(recipient), eq(getPhysicalAddress()), eq(String.valueOf(sentAttemptMade)), eq(timeoutDate));
