@@ -49,24 +49,26 @@ class AnalogWorkflowDeliveryTimeoutHandlerTest {
     void handleDeliveryTimeout_firstAttempt_notificationNotViewed() {
         String iun = "testIun";
         int recIndex = 0;
-        String timelineId = "timelineId";
+        String sendAnalogTimeoutCreationRequestId = "sendAnalogTimeoutCreationRequestId";
         DocumentCreationResponseActionDetails actionDetails = mock(DocumentCreationResponseActionDetails.class);
         when(actionDetails.getKey()).thenReturn("key");
-        when(actionDetails.getTimelineId()).thenReturn(timelineId);
+        when(actionDetails.getTimelineId()).thenReturn(sendAnalogTimeoutCreationRequestId);
 
         NotificationInt notification = mock(NotificationInt.class);
+        when(notification.getIun()).thenReturn(iun);
         when(notificationService.getNotificationByIun(iun)).thenReturn(notification);
 
         SendAnalogTimeoutCreationRequestDetailsInt details = mock(SendAnalogTimeoutCreationRequestDetailsInt.class);
         when(details.getSentAttemptMade()).thenReturn(0);
-        when(details.getRelatedRequestId()).thenReturn("relatedId");
+        String sendAnalogDomicileCreationRequestId = "sendAnalogDomicileCreationRequestId";
+        when(details.getRelatedRequestId()).thenReturn(sendAnalogDomicileCreationRequestId);
         when(details.getTimeoutDate()).thenReturn(Instant.now());
         when(details.getLegalFactId()).thenReturn("legalFactId");
-        when(timelineService.getTimelineElementDetails(eq(iun), eq(timelineId), eq(SendAnalogTimeoutCreationRequestDetailsInt.class)))
+        when(timelineService.getTimelineElementDetails(eq(iun), eq(sendAnalogTimeoutCreationRequestId), eq(SendAnalogTimeoutCreationRequestDetailsInt.class)))
                 .thenReturn(Optional.of(details));
 
         SendAnalogDetailsInt sendAnalogDetails = mock(SendAnalogDetailsInt.class);
-        when(timelineService.getTimelineElementDetails(eq(iun), eq("relatedId"), eq(SendAnalogDetailsInt.class)))
+        when(timelineService.getTimelineElementDetails(eq(iun), eq(sendAnalogDomicileCreationRequestId), eq(SendAnalogDetailsInt.class)))
                 .thenReturn(Optional.of(sendAnalogDetails));
         TimelineElementInternal timelineElement = mock(TimelineElementInternal.class);
         when(timelineUtils.buildSendAnalogTimeout(any(), any(), any(), any())).thenReturn(timelineElement);
@@ -82,24 +84,26 @@ class AnalogWorkflowDeliveryTimeoutHandlerTest {
     void handleDeliveryTimeout_firstAttempt_notificationViewed() {
         String iun = "testIun";
         int recIndex = 0;
-        String timelineId = "timelineId";
+        String sendAnalogTimeoutCreationRequestId = "sendAnalogTimeoutCreationRequestId";
         DocumentCreationResponseActionDetails actionDetails = mock(DocumentCreationResponseActionDetails.class);
         when(actionDetails.getKey()).thenReturn("key");
-        when(actionDetails.getTimelineId()).thenReturn(timelineId);
+        when(actionDetails.getTimelineId()).thenReturn(sendAnalogTimeoutCreationRequestId);
 
         NotificationInt notification = mock(NotificationInt.class);
+        when(notification.getIun()).thenReturn(iun);
         when(notificationService.getNotificationByIun(iun)).thenReturn(notification);
 
         SendAnalogTimeoutCreationRequestDetailsInt details = mock(SendAnalogTimeoutCreationRequestDetailsInt.class);
         when(details.getSentAttemptMade()).thenReturn(0);
-        when(details.getRelatedRequestId()).thenReturn("relatedId");
+        String sendAnalogDomicileCreationRequestId = "sendAnalogDomicileCreationRequestId";
+        when(details.getRelatedRequestId()).thenReturn(sendAnalogDomicileCreationRequestId);
         when(details.getTimeoutDate()).thenReturn(Instant.now());
         when(details.getLegalFactId()).thenReturn("legalFactId");
-        when(timelineService.getTimelineElementDetails(eq(iun), eq(timelineId), eq(SendAnalogTimeoutCreationRequestDetailsInt.class)))
+        when(timelineService.getTimelineElementDetails(eq(iun), eq(sendAnalogTimeoutCreationRequestId), eq(SendAnalogTimeoutCreationRequestDetailsInt.class)))
                 .thenReturn(Optional.of(details));
 
         SendAnalogDetailsInt sendAnalogDetails = mock(SendAnalogDetailsInt.class);
-        when(timelineService.getTimelineElementDetails(eq(iun), eq(timelineId), eq(SendAnalogDetailsInt.class)))
+        when(timelineService.getTimelineElementDetails(eq(iun), eq(sendAnalogDomicileCreationRequestId), eq(SendAnalogDetailsInt.class)))
                 .thenReturn(Optional.of(sendAnalogDetails));
         TimelineElementInternal timelineElement = mock(TimelineElementInternal.class);
         when(timelineUtils.buildSendAnalogTimeout(any(), any(), any(), any())).thenReturn(timelineElement);
@@ -109,29 +113,32 @@ class AnalogWorkflowDeliveryTimeoutHandlerTest {
         handler.handleDeliveryTimeout(iun, recIndex, actionDetails);
 
         verify(analogWorkflowHandler, never()).nextWorkflowStep(notification, recIndex, 0, null);
-        verify(timelineService, never()).addTimelineElement(timelineElement, notification);
     }
 
     @Test
     void testHandleDeliveryTimeout_SecondAttempt() {
         String iun = "iun";
         int recIndex = 0;
-        String timelineId = "timelineId";
+        String sendAnalogTimeoutCreationRequestId = "sendAnalogTimeoutCreationRequestId";
         String key = "key";
         DocumentCreationResponseActionDetails actionDetails = mock(DocumentCreationResponseActionDetails.class);
         NotificationInt notification = mock(NotificationInt.class);
-        SendAnalogTimeoutCreationRequestDetailsInt timeoutDetails = mock(SendAnalogTimeoutCreationRequestDetailsInt.class);
         SendAnalogDetailsInt sendAnalogDetails = mock(SendAnalogDetailsInt.class);
 
         when(actionDetails.getKey()).thenReturn(key);
-        when(actionDetails.getTimelineId()).thenReturn(timelineId);
+        when(actionDetails.getTimelineId()).thenReturn(sendAnalogTimeoutCreationRequestId);
         when(notificationService.getNotificationByIun(iun)).thenReturn(notification);
         when(notification.getIun()).thenReturn(iun);
-        when(timelineService.getTimelineElementDetails(eq(iun), eq(timelineId), eq(SendAnalogTimeoutCreationRequestDetailsInt.class)))
-                .thenReturn(Optional.of(timeoutDetails));
+
+        SendAnalogTimeoutCreationRequestDetailsInt timeoutDetails = mock(SendAnalogTimeoutCreationRequestDetailsInt.class);
         when(timeoutDetails.getSentAttemptMade()).thenReturn(1);
         when(timeoutDetails.getTimeoutDate()).thenReturn(Instant.now());
-        when(timelineService.getTimelineElementDetails(eq(iun), eq(timelineId), eq(SendAnalogDetailsInt.class)))
+        String sendAnalogDomicileCreationRequestId = "sendAnalogDomicileCreationRequestId";
+        when(timeoutDetails.getRelatedRequestId()).thenReturn(sendAnalogDomicileCreationRequestId);
+        when(timelineService.getTimelineElementDetails(eq(iun), eq(sendAnalogTimeoutCreationRequestId), eq(SendAnalogTimeoutCreationRequestDetailsInt.class)))
+                .thenReturn(Optional.of(timeoutDetails));
+
+        when(timelineService.getTimelineElementDetails(eq(iun), eq(sendAnalogDomicileCreationRequestId), eq(SendAnalogDetailsInt.class)))
                 .thenReturn(Optional.of(sendAnalogDetails));
 
         handler.handleDeliveryTimeout(iun, recIndex, actionDetails);
@@ -143,31 +150,25 @@ class AnalogWorkflowDeliveryTimeoutHandlerTest {
     void testHandleSecondAttemptThrowsException() {
         String iun = "iun";
         int recIndex = 0;
-        TimelineService timelineService = mock(TimelineService.class);
-        TimelineUtils timelineUtils = mock(TimelineUtils.class);
-        NotificationService notificationService = mock(NotificationService.class);
-        AnalogWorkflowHandler analogWorkflowHandler = mock(AnalogWorkflowHandler.class);
-        AnalogDeliveryTimeoutUtils analogDeliveryTimeoutUtils = mock(AnalogDeliveryTimeoutUtils.class);
-
-        AnalogWorkflowDeliveryTimeoutHandler handler = new AnalogWorkflowDeliveryTimeoutHandler(
-                timelineService, timelineUtils, notificationService, analogWorkflowHandler, analogDeliveryTimeoutUtils
-        );
+        String sendAnalogTimeoutCreationRequestId = "sendAnalogTimeoutCreationRequestId";
 
         DocumentCreationResponseActionDetails actionDetails = mock(DocumentCreationResponseActionDetails.class);
+        when(actionDetails.getTimelineId()).thenReturn(sendAnalogTimeoutCreationRequestId);
+
         NotificationInt notification = mock(NotificationInt.class);
-        when(notification.getIun()).thenReturn("testIun");
+        when(notification.getIun()).thenReturn(iun);
         when(notificationService.getNotificationByIun(iun)).thenReturn(notification);
 
-        SendAnalogTimeoutCreationRequestDetailsInt details = mock(SendAnalogTimeoutCreationRequestDetailsInt.class);
-        when(details.getSentAttemptMade()).thenReturn(1);
+        SendAnalogTimeoutCreationRequestDetailsInt sendAnalogTimeoutCreationRequestDetails = mock(SendAnalogTimeoutCreationRequestDetailsInt.class);
+        when(sendAnalogTimeoutCreationRequestDetails.getSentAttemptMade()).thenReturn(1);
         Instant timeoutDate = Instant.now();
-        when(details.getTimeoutDate()).thenReturn(timeoutDate);
-        when(timelineService.getTimelineElementDetails(eq(iun), any(), eq(SendAnalogTimeoutCreationRequestDetailsInt.class)))
-                .thenReturn(Optional.of(details));
+        when(sendAnalogTimeoutCreationRequestDetails.getTimeoutDate()).thenReturn(timeoutDate);
+        when(timelineService.getTimelineElementDetails(eq(iun), eq(sendAnalogTimeoutCreationRequestId), eq(SendAnalogTimeoutCreationRequestDetailsInt.class)))
+                .thenReturn(Optional.of(sendAnalogTimeoutCreationRequestDetails));
 
         PnAuditLogEvent auditLogEvent = mock(PnAuditLogEvent.class);
 
-        PnInternalException ex = new PnInternalException("Simulated exception");
+        PnInternalException ex = new PnInternalException("Simulated exception", "test");
         doThrow(ex)
                 .when(analogDeliveryTimeoutUtils).buildAnalogFailureWorkflowTimeoutElement(notification, recIndex, timeoutDate);
         when(auditLogEvent.generateFailure(anyString(), any())).thenReturn(auditLogEvent);
@@ -175,67 +176,6 @@ class AnalogWorkflowDeliveryTimeoutHandlerTest {
         Assertions.assertThrows(PnInternalException.class, () ->
                 handler.handleDeliveryTimeout(iun, recIndex, actionDetails)
         );
-    }
-
-    @Test
-    void testHandleTimeout_SecondAttempt_notificationNotViewed() {
-        String iun = "testIun";
-        int recIndex = 1;
-        Instant timeoutDate = Instant.now();
-        String legalFactId = "legalFactId";
-
-        DocumentCreationResponseActionDetails actionDetails = mock(DocumentCreationResponseActionDetails.class);
-        NotificationInt notification = mock(NotificationInt.class);
-        when(notificationService.getNotificationByIun(iun)).thenReturn(notification);
-        handler.handleDeliveryTimeout(iun, recIndex, actionDetails);
-
-        TimelineElementInternal timelineElement = mock(TimelineElementInternal.class);
-
-        SendAnalogTimeoutCreationRequestDetailsInt timeoutDetails = mock(SendAnalogTimeoutCreationRequestDetailsInt.class);
-        when(timeoutDetails.getSentAttemptMade()).thenReturn(1);
-        when(timeoutDetails.getRelatedRequestId()).thenReturn("relatedRequestId");
-        when(timeoutDetails.getTimeoutDate()).thenReturn(timeoutDate);
-        when(timeoutDetails.getLegalFactId()).thenReturn(legalFactId);
-
-        when(timelineService.getTimelineElementDetails(eq(iun), any(), eq(SendAnalogTimeoutCreationRequestDetailsInt.class)))
-                .thenReturn(Optional.of(timeoutDetails));
-
-        when(timelineUtils.buildSendAnalogTimeout(any(), any(), any(), any())).thenReturn(timelineElement);
-        analogDeliveryTimeoutUtils.buildAnalogFailureWorkflowTimeoutElement(notification, recIndex, timeoutDate);
-        when(timelineUtils.checkIsNotificationViewed(iun, recIndex)).thenReturn(false);
-
-        verify(analogDeliveryTimeoutUtils).buildAnalogFailureWorkflowTimeoutElement(eq(notification), anyInt(), any());
-    }
-
-    @Test
-    void testHandleTimeout_SecondAttempt_notificationViewed() {
-        String iun = "testIun";
-        int recIndex = 1;
-        Instant timeoutDate = Instant.now();
-        String legalFactId = "legalFactId";
-
-        DocumentCreationResponseActionDetails actionDetails = mock(DocumentCreationResponseActionDetails.class);
-        NotificationInt notification = mock(NotificationInt.class);
-        when(notificationService.getNotificationByIun(iun)).thenReturn(notification);
-        handler.handleDeliveryTimeout(iun, recIndex, actionDetails);
-
-        TimelineElementInternal timelineElement = mock(TimelineElementInternal.class);
-
-        SendAnalogTimeoutCreationRequestDetailsInt timeoutDetails = mock(SendAnalogTimeoutCreationRequestDetailsInt.class);
-        when(timeoutDetails.getSentAttemptMade()).thenReturn(1);
-        when(timeoutDetails.getRelatedRequestId()).thenReturn("relatedRequestId");
-        when(timeoutDetails.getTimeoutDate()).thenReturn(timeoutDate);
-        when(timeoutDetails.getLegalFactId()).thenReturn(legalFactId);
-
-        when(timelineService.getTimelineElementDetails(eq(iun), any(), eq(SendAnalogTimeoutCreationRequestDetailsInt.class)))
-                .thenReturn(Optional.of(timeoutDetails));
-
-        when(timelineUtils.buildSendAnalogTimeout(any(), any(), any(), any())).thenReturn(timelineElement);
-        analogDeliveryTimeoutUtils.buildAnalogFailureWorkflowTimeoutElement(notification, recIndex, timeoutDate);
-
-        when(timelineUtils.checkIsNotificationViewed(iun, recIndex)).thenReturn(true);
-
-        verify(analogDeliveryTimeoutUtils).buildAnalogFailureWorkflowTimeoutElement(eq(notification), anyInt(), any());
     }
 
     @Test
@@ -253,33 +193,35 @@ class AnalogWorkflowDeliveryTimeoutHandlerTest {
         when(timelineService.getTimelineElementDetails(eq(iun), eq(timelineId), eq(SendAnalogTimeoutCreationRequestDetailsInt.class)))
                 .thenThrow(new RuntimeException("Timeline not found"));
 
-        Assertions.assertThrows(PnInternalException.class, () -> {
-            handler.handleDeliveryTimeout(iun, recIndex, actionDetails);
-        });
+        Assertions.assertThrows(PnInternalException.class, () -> handler.handleDeliveryTimeout(iun, recIndex, actionDetails));
     }
 
     @Test
     void testBuildSendAnalogTimeoutElement_sendAnalogDetailsNotFound() {
         String iun = "iun";
         int recIndex = 0;
-        String timelineId = "timelineId";
+        String sendAnalogTimeoutCreationRequestId = "sendAnalogTimeoutCreationRequestId";
         String key = "key";
         DocumentCreationResponseActionDetails actionDetails = mock(DocumentCreationResponseActionDetails.class);
         when(actionDetails.getKey()).thenReturn(key);
-        when(actionDetails.getTimelineId()).thenReturn(timelineId);
+        when(actionDetails.getTimelineId()).thenReturn(sendAnalogTimeoutCreationRequestId);
 
         NotificationInt notification = mock(NotificationInt.class);
         when(notification.getIun()).thenReturn(iun);
 
-        when(timelineService.getTimelineElementDetails(eq(iun), eq(timelineId), eq(SendAnalogDetailsInt.class)))
-                .thenReturn(Optional.empty());
+
 
         when(notificationService.getNotificationByIun(iun)).thenReturn(notification);
         SendAnalogTimeoutCreationRequestDetailsInt details = mock(SendAnalogTimeoutCreationRequestDetailsInt.class);
         when(details.getSentAttemptMade()).thenReturn(0);
         when(details.getTimeoutDate()).thenReturn(Instant.now());
-        when(timelineService.getTimelineElementDetails(eq(iun), eq(timelineId), eq(SendAnalogTimeoutCreationRequestDetailsInt.class)))
+        String sendAnalogDomicileCreationRequestId = "sendAnalogDomicileCreationRequestId";
+        when(details.getRelatedRequestId()).thenReturn(sendAnalogDomicileCreationRequestId);
+        when(timelineService.getTimelineElementDetails(eq(iun), eq(sendAnalogTimeoutCreationRequestId), eq(SendAnalogTimeoutCreationRequestDetailsInt.class)))
                 .thenReturn(Optional.of(details));
+        when(timelineService.getTimelineElementDetails(eq(iun), eq(sendAnalogDomicileCreationRequestId), eq(SendAnalogDetailsInt.class)))
+                .thenReturn(Optional.empty());
+
         when(timelineUtils.checkIsNotificationViewed(iun, recIndex)).thenReturn(true);
 
         handler.handleDeliveryTimeout(iun, recIndex, actionDetails);

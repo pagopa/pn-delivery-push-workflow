@@ -43,14 +43,12 @@ public class AnalogWorkflowDeliveryTimeoutHandler {
             Optional<SendAnalogTimeoutCreationRequestDetailsInt> sendAnalogTimeoutCreationRequestDetailsOpt = timelineService.getTimelineElementDetails(iun, actionDetails.getTimelineId(), SendAnalogTimeoutCreationRequestDetailsInt.class);
             if (sendAnalogTimeoutCreationRequestDetailsOpt.isPresent()) {
                 SendAnalogTimeoutCreationRequestDetailsInt timelineDetails = sendAnalogTimeoutCreationRequestDetailsOpt.get();
-                Integer sentAttemptMade = timelineDetails.getSentAttemptMade();
-                Instant timeoutDate = timelineDetails.getTimeoutDate();
-                switch (sentAttemptMade) {
+                switch (timelineDetails.getSentAttemptMade()) {
                     case 0:
-                        handleFirstAttempt(actionDetails, notification, recIndex, timeoutDate, sentAttemptMade, auditLogEvent);
+                        handleFirstAttempt(timelineDetails, notification, recIndex, auditLogEvent);
                         break;
                     case 1:
-                        handleSecondAttempt(actionDetails, notification, recIndex, timeoutDate, auditLogEvent);
+                        handleSecondAttempt(timelineDetails, notification, recIndex, auditLogEvent);
                 }
             }
         } catch (Exception ex) {
@@ -58,15 +56,14 @@ public class AnalogWorkflowDeliveryTimeoutHandler {
         }
     }
 
-    private void handleFirstAttempt(DocumentCreationResponseActionDetails actionDetails,
+    private void handleFirstAttempt(SendAnalogTimeoutCreationRequestDetailsInt sendAnalogTimeoutCreationRequestDetailsInt,
                                     NotificationInt notification,
                                     int recIndex,
-                                    Instant timeoutDate,
-                                    Integer sentAttemptMade,
                                     PnAuditLogEvent auditLogEvent){
         String iun = notification.getIun();
         log.info("First sent attempt - iun={} id={}", iun, recIndex);
-        buildSendAnalogTimeoutElement(actionDetails, notification, recIndex, timeoutDate, auditLogEvent);
+        int sentAttemptMade = sendAnalogTimeoutCreationRequestDetailsInt.getSentAttemptMade();
+        buildSendAnalogTimeoutElement(sendAnalogTimeoutCreationRequestDetailsInt, notification, recIndex, auditLogEvent);
 
         if (timelineUtils.checkIsNotificationViewed(iun, recIndex)) {
             log.info("Notification with iun={} viewed by recipient with index={}, second attempt will not be scheduled", iun, recIndex);
@@ -77,32 +74,37 @@ public class AnalogWorkflowDeliveryTimeoutHandler {
         }
     }
 
-    private void buildSendAnalogTimeoutElement(DocumentCreationResponseActionDetails actionDetails,
+    private void buildSendAnalogTimeoutElement(SendAnalogTimeoutCreationRequestDetailsInt sendAnalogTimeoutCreationRequestDetailsInt,
                                                NotificationInt notification,
                                                int recIndex,
-                                               Instant timeoutDate,
                                                PnAuditLogEvent auditLogEvent){
         String iun = notification.getIun();
+        /*
+        Recupero l'elemento di timeline con category SEND_ANALOG_DOMICILE legato all'elemento di timeline con category SEND_ANALOG_TIMEOUT_CREATION_REQUEST
+        Poichè nel dettaglio contiene una serie di informazioni relative all'affido dell'invio analogico, che devono essere riportate nell'elemento di timeline SEND_ANALOG_TIMEOUT
+         */
         Optional<SendAnalogDetailsInt> sendAnalogDetailsOpt =
-                timelineService.getTimelineElementDetails(iun, actionDetails.getTimelineId(), SendAnalogDetailsInt.class);
+                timelineService.getTimelineElementDetails(iun, sendAnalogTimeoutCreationRequestDetailsInt.getRelatedRequestId(), SendAnalogDetailsInt.class);
         if (sendAnalogDetailsOpt.isPresent()) {
             SendAnalogDetailsInt sendAnalogDetails = sendAnalogDetailsOpt.get();
-            TimelineElementInternal sendAnalogTimeoutElementInternal = timelineUtils.buildSendAnalogTimeout(notification, sendAnalogDetails, timeoutDate, actionDetails.getKey());
+            String legalFactId = sendAnalogTimeoutCreationRequestDetailsInt.getLegalFactId();
+            Instant timeoutDate = sendAnalogTimeoutCreationRequestDetailsInt.getTimeoutDate();
+            TimelineElementInternal sendAnalogTimeoutElementInternal = timelineUtils.buildSendAnalogTimeout(notification, sendAnalogDetails, timeoutDate, legalFactId);
             timelineService.addTimelineElement(sendAnalogTimeoutElementInternal, notification);
-            auditLogEvent.generateSuccess("SEND_ANALOG_TIMEOUT successfully added for recIndex={}", recIndex).log();
+            auditLogEvent.generateSuccess("SEND_ANALOG_TIMEOUT successfully added for recIndex={} and sentAttempt={}", recIndex, sendAnalogDetails.getSentAttemptMade()).log();
         } else {
-            log.error("SendAnalogDetails not found for iun={} and timelineId={}", iun, actionDetails.getTimelineId());
+            log.error("SendAnalogDetails not found for iun={} and timelineId={}", iun, sendAnalogTimeoutCreationRequestDetailsInt.getRelatedRequestId());
         }
     }
 
-    private void handleSecondAttempt(DocumentCreationResponseActionDetails actionDetails,
+    private void handleSecondAttempt(SendAnalogTimeoutCreationRequestDetailsInt sendAnalogTimeoutCreationRequestDetailsInt,
                                      NotificationInt notification,
                                      int recIndex,
-                                     Instant timeoutDate,
                                      PnAuditLogEvent auditLogEvent){
         log.info("Second sent attempt - iun={} id={}", notification.getIun(), recIndex);
         try {
-            buildSendAnalogTimeoutElement(actionDetails, notification, recIndex, timeoutDate, auditLogEvent);
+            Instant timeoutDate = sendAnalogTimeoutCreationRequestDetailsInt.getTimeoutDate();
+            buildSendAnalogTimeoutElement(sendAnalogTimeoutCreationRequestDetailsInt, notification, recIndex, auditLogEvent);
             analogDeliveryTimeoutUtils.buildAnalogFailureWorkflowTimeoutElement(notification, recIndex, timeoutDate);
             auditLogEvent.generateSuccess("ANALOG_FAILURE_WORKFLOW_TIMEOUT successfully added for recIndex={}", recIndex).log();
         } catch (Exception exc) {
