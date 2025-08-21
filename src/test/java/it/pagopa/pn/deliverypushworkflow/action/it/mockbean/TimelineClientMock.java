@@ -13,12 +13,10 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationCancel
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.RecipientRelatedTimelineElementDetails;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementDetailsInt;
-import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.*;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.timeline.TimelineClient;
 import it.pagopa.pn.deliverypushworkflow.service.NotificationCancellationService;
 import it.pagopa.pn.deliverypushworkflow.service.NotificationService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -44,8 +42,8 @@ public class TimelineClientMock implements TimelineClient {
     private final NotificationUtils notificationUtils;
     private final NotificationCancellationService notificationCancellationService;
 
-    public TimelineClientMock(@Lazy NotificationViewedRequestHandler notificationViewedRequestHandler, @Lazy NotificationService notificationService,
-                              @Lazy NotificationUtils notificationUtils, @Lazy NotificationCancellationService notificationCancellationService) {
+    public TimelineClientMock(NotificationViewedRequestHandler notificationViewedRequestHandler, NotificationService notificationService,
+                              NotificationUtils notificationUtils, NotificationCancellationService notificationCancellationService) {
         this.notificationViewedRequestHandler = notificationViewedRequestHandler;
         timelineList = new CopyOnWriteArrayList<>();
         this.notificationService = notificationService;

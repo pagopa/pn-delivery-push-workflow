@@ -3,7 +3,10 @@ package it.pagopa.pn.deliverypushworkflow.action.it;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.commons.abstractions.ParameterConsumer;
 import it.pagopa.pn.deliverypushworkflow.action.it.mockbean.*;
+import it.pagopa.pn.deliverypushworkflow.action.notificationview.NotificationViewedRequestHandler;
 import it.pagopa.pn.deliverypushworkflow.action.utils.InstantNowSupplier;
+import it.pagopa.pn.deliverypushworkflow.action.utils.NotificationUtils;
+import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.legalfacts.CustomInstantWriter;
 import it.pagopa.pn.deliverypushworkflow.legalfacts.LegalFactGenerator;
@@ -138,6 +141,17 @@ public class AbstractWorkflowTestConfiguration {
     @Bean("jsonRouterDeserializer")
     public RouterDeserializer routerDeserializer() {
         return new JsonRouterDeserializer(new ObjectMapper());
+    }
+
+    @Bean
+    public TimelineClientMock timelineClientMock(@Lazy NotificationViewedRequestHandler notificationViewedRequestHandler, @Lazy NotificationService notificationService,
+                                                 @Lazy NotificationUtils notificationUtils, @Lazy NotificationCancellationService notificationCancellationService) {
+        return new TimelineClientMock(notificationViewedRequestHandler, notificationService, notificationUtils, notificationCancellationService);
+    }
+
+    @Bean
+    public PaperTrackerClientMock paperTrackerClientMock(@Lazy TimelineClientMock timelineClientMock, TimelineUtils timelineUtils) {
+        return new PaperTrackerClientMock(timelineClientMock, timelineUtils);
     }
 
 }

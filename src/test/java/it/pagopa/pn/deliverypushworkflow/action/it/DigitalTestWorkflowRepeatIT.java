@@ -144,17 +144,18 @@ class DigitalTestWorkflowRepeatIT extends CommonTestConfiguration {
 
         EndWorkflowStatus endWorkflowStatus = EndWorkflowStatus.SUCCESS;
 
-        TestUtils.checkGeneratedLegalFacts(
-                notification,
-                recipient,
-                recIndex,
-                sentPecAttemptNumber,
-                generatedLegalFactsInfo,
-                endWorkflowStatus,
-                legalFactGenerator,
-                timelineService,
-                null
-        );
+        TestUtils.GeneratedLegalFactsPayload generatedLegalFactsPayload = TestUtils.GeneratedLegalFactsPayload.builder()
+                .notification(notification)
+                .recipient(recipient)
+                .recIndex(recIndex)
+                .generatedLegalFactsInfo(generatedLegalFactsInfo)
+                .endWorkflowStatus(endWorkflowStatus)
+                .legalFactGenerator(legalFactGenerator)
+                .timelineService(timelineService)
+                .sentPecAttemptNumber(sentPecAttemptNumber)
+                .delegateInfo(null)
+                .build();
+        TestUtils.checkGeneratedLegalFacts(generatedLegalFactsPayload);
 
         //Vengono stampati tutti i legalFacts generati
         String className = this.getClass().getSimpleName();
@@ -292,17 +293,18 @@ class DigitalTestWorkflowRepeatIT extends CommonTestConfiguration {
 
         EndWorkflowStatus endWorkflowStatus = EndWorkflowStatus.SUCCESS;
 
-        TestUtils.checkGeneratedLegalFacts(
-                notification,
-                recipient,
-                recIndex,
-                sentPecAttemptNumber,
-                generatedLegalFactsInfo,
-                endWorkflowStatus,
-                legalFactGenerator,
-                timelineService,
-                null
-        );
+        TestUtils.GeneratedLegalFactsPayload generatedLegalFactsPayload = TestUtils.GeneratedLegalFactsPayload.builder()
+                .notification(notification)
+                .recipient(recipient)
+                .recIndex(recIndex)
+                .generatedLegalFactsInfo(generatedLegalFactsInfo)
+                .endWorkflowStatus(endWorkflowStatus)
+                .legalFactGenerator(legalFactGenerator)
+                .timelineService(timelineService)
+                .sentPecAttemptNumber(sentPecAttemptNumber)
+                .delegateInfo(null)
+                .build();
+        TestUtils.checkGeneratedLegalFacts(generatedLegalFactsPayload);
 
         //Vengono stampati tutti i legalFacts generati
         String className = this.getClass().getSimpleName();
@@ -440,17 +442,18 @@ class DigitalTestWorkflowRepeatIT extends CommonTestConfiguration {
 
         EndWorkflowStatus endWorkflowStatus = EndWorkflowStatus.SUCCESS;
 
-        TestUtils.checkGeneratedLegalFacts(
-                notification,
-                recipient,
-                recIndex,
-                sentPecAttemptNumber,
-                generatedLegalFactsInfo,
-                endWorkflowStatus,
-                legalFactGenerator,
-                timelineService,
-                null
-        );
+        TestUtils.GeneratedLegalFactsPayload generatedLegalFactsPayload = TestUtils.GeneratedLegalFactsPayload.builder()
+                .notification(notification)
+                .recipient(recipient)
+                .recIndex(recIndex)
+                .generatedLegalFactsInfo(generatedLegalFactsInfo)
+                .endWorkflowStatus(endWorkflowStatus)
+                .legalFactGenerator(legalFactGenerator)
+                .timelineService(timelineService)
+                .sentPecAttemptNumber(sentPecAttemptNumber)
+                .delegateInfo(null)
+                .build();
+        TestUtils.checkGeneratedLegalFacts(generatedLegalFactsPayload);
 
         //Vengono stampati tutti i legalFacts generati
         String className = this.getClass().getSimpleName();
@@ -606,17 +609,18 @@ class DigitalTestWorkflowRepeatIT extends CommonTestConfiguration {
 
         EndWorkflowStatus endWorkflowStatus = EndWorkflowStatus.SUCCESS;
 
-        TestUtils.checkGeneratedLegalFacts(
-                notification,
-                recipient,
-                recIndex,
-                sentPecAttemptNumber,
-                generatedLegalFactsInfo,
-                endWorkflowStatus,
-                legalFactGenerator,
-                timelineService,
-                null
-        );
+        TestUtils.GeneratedLegalFactsPayload generatedLegalFactsPayload = TestUtils.GeneratedLegalFactsPayload.builder()
+                .notification(notification)
+                .recipient(recipient)
+                .recIndex(recIndex)
+                .generatedLegalFactsInfo(generatedLegalFactsInfo)
+                .endWorkflowStatus(endWorkflowStatus)
+                .legalFactGenerator(legalFactGenerator)
+                .timelineService(timelineService)
+                .sentPecAttemptNumber(sentPecAttemptNumber)
+                .delegateInfo(null)
+                .build();
+        TestUtils.checkGeneratedLegalFacts(generatedLegalFactsPayload);
 
         //Vengono stampati tutti i legalFacts generati
         String className = this.getClass().getSimpleName();
@@ -783,17 +787,18 @@ class DigitalTestWorkflowRepeatIT extends CommonTestConfiguration {
 
         EndWorkflowStatus endWorkflowStatus = EndWorkflowStatus.FAILURE;
 
-        TestUtils.checkGeneratedLegalFacts(
-                notification,
-                recipient,
-                recIndex,
-                sentPecAttemptNumber,
-                generatedLegalFactsInfo,
-                endWorkflowStatus,
-                legalFactGenerator,
-                timelineService,
-                null
-        );
+        TestUtils.GeneratedLegalFactsPayload generatedLegalFactsPayload = TestUtils.GeneratedLegalFactsPayload.builder()
+                .notification(notification)
+                .recipient(recipient)
+                .recIndex(recIndex)
+                .generatedLegalFactsInfo(generatedLegalFactsInfo)
+                .endWorkflowStatus(endWorkflowStatus)
+                .legalFactGenerator(legalFactGenerator)
+                .timelineService(timelineService)
+                .sentPecAttemptNumber(sentPecAttemptNumber)
+                .delegateInfo(null)
+                .build();
+        TestUtils.checkGeneratedLegalFacts(generatedLegalFactsPayload);
 
         //Vengono stampati tutti i legalFacts generati
         String className = this.getClass().getSimpleName();

@@ -169,17 +169,18 @@ class NotificationViewedTestIT extends CommonTestConfiguration {
                 .pecDeliveryWorkflowLegalFactsGenerated(true)
                 .build();
 
-        TestUtils.checkGeneratedLegalFacts(
-                notification,
-                recipient,
-                recIndex,
-                6,
-                generatedLegalFactsInfo,
-                EndWorkflowStatus.FAILURE,
-                legalFactGenerator,
-                timelineService,
-                delegateInfoInt
-        );
+        TestUtils.GeneratedLegalFactsPayload generatedLegalFactsPayload = TestUtils.GeneratedLegalFactsPayload.builder()
+                .notification(notification)
+                .recipient(recipient)
+                .recIndex(recIndex)
+                .generatedLegalFactsInfo(generatedLegalFactsInfo)
+                .endWorkflowStatus(EndWorkflowStatus.FAILURE)
+                .legalFactGenerator(legalFactGenerator)
+                .timelineService(timelineService)
+                .sentPecAttemptNumber(6)
+                .delegateInfo(delegateInfoInt)
+                .build();
+        TestUtils.checkGeneratedLegalFacts(generatedLegalFactsPayload);
 
         //Vengono stampati tutti i legalFacts generati
         String className = this.getClass().getSimpleName();
@@ -278,17 +279,18 @@ class NotificationViewedTestIT extends CommonTestConfiguration {
                 .pecDeliveryWorkflowLegalFactsGenerated(true)
                 .build();
 
-        TestUtils.checkGeneratedLegalFacts(
-                notification,
-                recipient,
-                recIndex,
-                6,
-                generatedLegalFactsInfo,
-                EndWorkflowStatus.FAILURE,
-                legalFactGenerator,
-                timelineService,
-                null
-        );
+        TestUtils.GeneratedLegalFactsPayload generatedLegalFactsPayload = TestUtils.GeneratedLegalFactsPayload.builder()
+                .notification(notification)
+                .recipient(recipient)
+                .recIndex(recIndex)
+                .generatedLegalFactsInfo(generatedLegalFactsInfo)
+                .endWorkflowStatus(EndWorkflowStatus.FAILURE)
+                .legalFactGenerator(legalFactGenerator)
+                .timelineService(timelineService)
+                .sentPecAttemptNumber(6)
+                .delegateInfo(null)
+                .build();
+        TestUtils.checkGeneratedLegalFacts(generatedLegalFactsPayload);
         
         //Vengono stampati tutti i legalFacts generati
         String className = this.getClass().getSimpleName();

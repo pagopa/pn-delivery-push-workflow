@@ -131,17 +131,18 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
                 .notificationCompletelyUnreachableLegalFactGenerated(false)
                 .build();
 
-        TestUtils.checkGeneratedLegalFacts(
-                notification,
-                recipient,
-                recIndex,
-                0,
-                generatedLegalFactsInfo,
-                EndWorkflowStatus.SUCCESS,
-                legalFactGenerator,
-                timelineService,
-                null
-        );
+        TestUtils.GeneratedLegalFactsPayload generatedLegalFactsPayload = TestUtils.GeneratedLegalFactsPayload.builder()
+                .notification(notification)
+                .recipient(recipient)
+                .recIndex(recIndex)
+                .generatedLegalFactsInfo(generatedLegalFactsInfo)
+                .endWorkflowStatus(EndWorkflowStatus.SUCCESS)
+                .legalFactGenerator(legalFactGenerator)
+                .timelineService(timelineService)
+                .sentPecAttemptNumber(0)
+                .delegateInfo(null)
+                .build();
+        TestUtils.checkGeneratedLegalFacts(generatedLegalFactsPayload);
 
         //Vengono stampati tutti i legalFacts generati
         String className = this.getClass().getSimpleName();
@@ -241,17 +242,18 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
                 .notificationCancelled(true)
                 .build();
 
-        TestUtils.checkGeneratedLegalFacts(
-                notification,
-                recipient,
-                recIndex,
-                0,
-                generatedLegalFactsInfo,
-                EndWorkflowStatus.SUCCESS,
-                legalFactGenerator,
-                timelineService,
-                null
-        );
+        TestUtils.GeneratedLegalFactsPayload generatedLegalFactsPayload = TestUtils.GeneratedLegalFactsPayload.builder()
+                .notification(notification)
+                .recipient(recipient)
+                .recIndex(recIndex)
+                .generatedLegalFactsInfo(generatedLegalFactsInfo)
+                .endWorkflowStatus(EndWorkflowStatus.SUCCESS)
+                .legalFactGenerator(legalFactGenerator)
+                .timelineService(timelineService)
+                .sentPecAttemptNumber(0)
+                .delegateInfo(null)
+                .build();
+        TestUtils.checkGeneratedLegalFacts(generatedLegalFactsPayload);
 
         //Vengono stampati tutti i legalFacts generati
         String className = this.getClass().getSimpleName();
@@ -344,17 +346,18 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
                 .notificationCompletelyUnreachableLegalFactGenerated(false)
                 .build();
 
-        TestUtils.checkGeneratedLegalFacts(
-                notification,
-                recipient,
-                recIndex1,
-                0,
-                generatedLegalFactsInfo1,
-                EndWorkflowStatus.SUCCESS,
-                legalFactGenerator,
-                timelineService,
-                null
-        );
+        TestUtils.GeneratedLegalFactsPayload generatedLegalFactsPayload = TestUtils.GeneratedLegalFactsPayload.builder()
+                .notification(notification)
+                .recipient(recipient)
+                .recIndex(recIndex1)
+                .generatedLegalFactsInfo(generatedLegalFactsInfo1)
+                .endWorkflowStatus(EndWorkflowStatus.SUCCESS)
+                .legalFactGenerator(legalFactGenerator)
+                .timelineService(timelineService)
+                .sentPecAttemptNumber(0)
+                .delegateInfo(null)
+                .build();
+        TestUtils.checkGeneratedLegalFacts(generatedLegalFactsPayload);
 
         //Vengono stampati tutti i legalFacts generati
         String className = this.getClass().getSimpleName();
@@ -474,17 +477,18 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
                 .notificationCompletelyUnreachableLegalFactGenerated(false)
                 .build();
 
-        TestUtils.checkGeneratedLegalFacts(
-                notification,
-                recipient1,
-                recIndex1,
-                0,
-                generatedLegalFactsInfo1,
-                EndWorkflowStatus.SUCCESS,
-                legalFactGenerator,
-                timelineService,
-                null
-        );
+        TestUtils.GeneratedLegalFactsPayload generatedLegalFactsPayload = TestUtils.GeneratedLegalFactsPayload.builder()
+                .notification(notification)
+                .recipient(recipient1)
+                .recIndex(recIndex1)
+                .generatedLegalFactsInfo(generatedLegalFactsInfo1)
+                .endWorkflowStatus(EndWorkflowStatus.SUCCESS)
+                .legalFactGenerator(legalFactGenerator)
+                .timelineService(timelineService)
+                .sentPecAttemptNumber(0)
+                .delegateInfo(null)
+                .build();
+        TestUtils.checkGeneratedLegalFacts(generatedLegalFactsPayload);
 
         //Viene effettuato il check dei legalFacts generati per il secondo recipient
         TestUtils.GeneratedLegalFactsInfo generatedLegalFactsInfo2 = TestUtils.GeneratedLegalFactsInfo.builder()
@@ -495,17 +499,18 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
                 .notificationCompletelyUnreachableLegalFactGenerated(false)
                 .build();
 
-        TestUtils.checkGeneratedLegalFacts(
-                notification,
-                recipient2,
-                recIndex2,
-                0,
-                generatedLegalFactsInfo2,
-                EndWorkflowStatus.SUCCESS,
-                legalFactGenerator,
-                timelineService,
-                null
-        );
+        TestUtils.GeneratedLegalFactsPayload generatedLegalFactsPayload2 = TestUtils.GeneratedLegalFactsPayload.builder()
+                .notification(notification)
+                .recipient(recipient2)
+                .recIndex(recIndex2)
+                .generatedLegalFactsInfo(generatedLegalFactsInfo2)
+                .endWorkflowStatus(EndWorkflowStatus.SUCCESS)
+                .legalFactGenerator(legalFactGenerator)
+                .timelineService(timelineService)
+                .sentPecAttemptNumber(0)
+                .delegateInfo(null)
+                .build();
+        TestUtils.checkGeneratedLegalFacts(generatedLegalFactsPayload2);
 
         //Vengono stampati tutti i legalFacts generati
         String className = this.getClass().getSimpleName();
@@ -684,17 +689,18 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
                 .notificationCompletelyUnreachableLegalFactGenerated(true)
                 .build();
 
-        TestUtils.checkGeneratedLegalFacts(
-                notification,
-                recipient1,
-                recIndex1,
-                0,
-                generatedLegalFactsInfo1,
-                EndWorkflowStatus.FAILURE,
-                legalFactGenerator,
-                timelineService,
-                null
-        );
+        TestUtils.GeneratedLegalFactsPayload generatedLegalFactsPayload1 = TestUtils.GeneratedLegalFactsPayload.builder()
+                .notification(notification)
+                .recipient(recipient1)
+                .recIndex(recIndex1)
+                .generatedLegalFactsInfo(generatedLegalFactsInfo1)
+                .endWorkflowStatus(EndWorkflowStatus.FAILURE)
+                .legalFactGenerator(legalFactGenerator)
+                .timelineService(timelineService)
+                .sentPecAttemptNumber(0)
+                .delegateInfo(null)
+                .build();
+        TestUtils.checkGeneratedLegalFacts(generatedLegalFactsPayload1);
 
         //Viene effettuato il check dei legalFacts generati per il secondo recipient
         TestUtils.GeneratedLegalFactsInfo generatedLegalFactsInfo2 = TestUtils.GeneratedLegalFactsInfo.builder()
@@ -705,17 +711,18 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
                 .notificationCompletelyUnreachableLegalFactGenerated(false)
                 .build();
 
-        TestUtils.checkGeneratedLegalFacts(
-                notification,
-                recipient2,
-                recIndex2,
-                0,
-                generatedLegalFactsInfo2,
-                EndWorkflowStatus.SUCCESS,
-                legalFactGenerator,
-                timelineService,
-                null
-        );
+        TestUtils.GeneratedLegalFactsPayload generatedLegalFactsPayload2 = TestUtils.GeneratedLegalFactsPayload.builder()
+                .notification(notification)
+                .recipient(recipient2)
+                .recIndex(recIndex2)
+                .generatedLegalFactsInfo(generatedLegalFactsInfo2)
+                .endWorkflowStatus(EndWorkflowStatus.SUCCESS)
+                .legalFactGenerator(legalFactGenerator)
+                .timelineService(timelineService)
+                .sentPecAttemptNumber(0)
+                .delegateInfo(null)
+                .build();
+        TestUtils.checkGeneratedLegalFacts(generatedLegalFactsPayload2);
 
         //Vengono stampati tutti i legalFacts generati
         String className = this.getClass().getSimpleName();
@@ -837,17 +844,18 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
                 .notificationCompletelyUnreachableLegalFactGenerated(false)
                 .build();
 
-        TestUtils.checkGeneratedLegalFacts(
-                notification,
-                recipient1,
-                recIndex1,
-                0,
-                generatedLegalFactsInfo1,
-                EndWorkflowStatus.SUCCESS,
-                legalFactGenerator,
-                timelineService,
-                null
-        );
+        TestUtils.GeneratedLegalFactsPayload generatedLegalFactsPayload1 = TestUtils.GeneratedLegalFactsPayload.builder()
+                .notification(notification)
+                .recipient(recipient1)
+                .recIndex(recIndex1)
+                .generatedLegalFactsInfo(generatedLegalFactsInfo1)
+                .endWorkflowStatus(EndWorkflowStatus.SUCCESS)
+                .legalFactGenerator(legalFactGenerator)
+                .timelineService(timelineService)
+                .sentPecAttemptNumber(0)
+                .delegateInfo(null)
+                .build();
+        TestUtils.checkGeneratedLegalFacts(generatedLegalFactsPayload1);
 
         //Viene effettuato il check dei legalFacts generati per il secondo recipient
         TestUtils.GeneratedLegalFactsInfo generatedLegalFactsInfo2 = TestUtils.GeneratedLegalFactsInfo.builder()
@@ -858,17 +866,18 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
                 .notificationCompletelyUnreachableLegalFactGenerated(false)
                 .build();
 
-        TestUtils.checkGeneratedLegalFacts(
-                notification,
-                recipient2,
-                recIndex2,
-                0,
-                generatedLegalFactsInfo2,
-                EndWorkflowStatus.SUCCESS,
-                legalFactGenerator,
-                timelineService,
-                null
-        );
+        TestUtils.GeneratedLegalFactsPayload generatedLegalFactsPayload2 = TestUtils.GeneratedLegalFactsPayload.builder()
+                .notification(notification)
+                .recipient(recipient2)
+                .recIndex(recIndex2)
+                .generatedLegalFactsInfo(generatedLegalFactsInfo2)
+                .endWorkflowStatus(EndWorkflowStatus.SUCCESS)
+                .legalFactGenerator(legalFactGenerator)
+                .timelineService(timelineService)
+                .sentPecAttemptNumber(0)
+                .delegateInfo(null)
+                .build();
+        TestUtils.checkGeneratedLegalFacts(generatedLegalFactsPayload2);
 
         //Vengono stampati tutti i legalFacts generati
         String className = this.getClass().getSimpleName();
@@ -1008,17 +1017,18 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
                 .notificationCompletelyUnreachableLegalFactGenerated(false)
                 .build();
 
-        TestUtils.checkGeneratedLegalFacts(
-                notification,
-                recipient1,
-                recIndex1,
-                0,
-                generatedLegalFactsInfo1,
-                EndWorkflowStatus.SUCCESS,
-                legalFactGenerator,
-                timelineService,
-                null
-        );
+        TestUtils.GeneratedLegalFactsPayload generatedLegalFactsPayload1 = TestUtils.GeneratedLegalFactsPayload.builder()
+                .notification(notification)
+                .recipient(recipient1)
+                .recIndex(recIndex1)
+                .generatedLegalFactsInfo(generatedLegalFactsInfo1)
+                .endWorkflowStatus(EndWorkflowStatus.SUCCESS)
+                .legalFactGenerator(legalFactGenerator)
+                .timelineService(timelineService)
+                .sentPecAttemptNumber(0)
+                .delegateInfo(null)
+                .build();
+        TestUtils.checkGeneratedLegalFacts(generatedLegalFactsPayload1);
 
         //Viene effettuato il check dei legalFacts generati per il secondo recipient
         TestUtils.GeneratedLegalFactsInfo generatedLegalFactsInfo2 = TestUtils.GeneratedLegalFactsInfo.builder()
@@ -1029,17 +1039,18 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
                 .notificationCompletelyUnreachableLegalFactGenerated(false)
                 .build();
 
-        TestUtils.checkGeneratedLegalFacts(
-                notification,
-                recipient2,
-                recIndex2,
-                0,
-                generatedLegalFactsInfo2,
-                EndWorkflowStatus.SUCCESS,
-                legalFactGenerator,
-                timelineService,
-                null
-        );
+        TestUtils.GeneratedLegalFactsPayload generatedLegalFactsPayload2 = TestUtils.GeneratedLegalFactsPayload.builder()
+                .notification(notification)
+                .recipient(recipient2)
+                .recIndex(recIndex2)
+                .generatedLegalFactsInfo(generatedLegalFactsInfo2)
+                .endWorkflowStatus(EndWorkflowStatus.SUCCESS)
+                .legalFactGenerator(legalFactGenerator)
+                .timelineService(timelineService)
+                .sentPecAttemptNumber(0)
+                .delegateInfo(null)
+                .build();
+        TestUtils.checkGeneratedLegalFacts(generatedLegalFactsPayload2);
 
         //Vengono stampati tutti i legalFacts generati
         String className = this.getClass().getSimpleName();

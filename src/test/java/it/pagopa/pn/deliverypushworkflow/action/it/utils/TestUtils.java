@@ -42,6 +42,7 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
 @Slf4j
@@ -56,10 +57,10 @@ public class TestUtils {
         checkSendCourtesyAddressFromTimeline(iun, recIndex, courtesyAddresses, timelineService);
         //Viene verificato l'effettivo invio del messaggio di cortesia verso external channel
         Mockito.verify(externalChannelMock, Mockito.times(courtesyAddresses.size())).sendCourtesyNotification(
-                Mockito.any(NotificationInt.class),
-                Mockito.any(NotificationRecipientInt.class),
-                Mockito.any(CourtesyDigitalAddressInt.class),
-                Mockito.any(String.class),
+                any(NotificationInt.class),
+                any(NotificationRecipientInt.class),
+                any(CourtesyDigitalAddressInt.class),
+                any(String.class),
                 Mockito.anyString(),
                 Mockito.anyString()
         );
@@ -141,7 +142,7 @@ public class TestUtils {
         ArgumentCaptor<NotificationInt> notificationCaptor = ArgumentCaptor.forClass(NotificationInt.class);
 
         Mockito.verify(completionWorkflow, Mockito.times(1)).completionAnalogWorkflow(
-                notificationCaptor.capture(), recIndexCaptor.capture(), Mockito.any(Instant.class), Mockito.any(PhysicalAddressInt.class), endWorkflowStatusArgumentCaptor.capture()
+                notificationCaptor.capture(), recIndexCaptor.capture(), any(Instant.class), any(PhysicalAddressInt.class), endWorkflowStatusArgumentCaptor.capture()
         );
         Assertions.assertEquals(recIndex, recIndexCaptor.getValue());
         Assertions.assertEquals(iun, notificationCaptor.getValue().getIun());
@@ -159,7 +160,7 @@ public class TestUtils {
         ArgumentCaptor<LegalDigitalAddressInt> addressCaptor = ArgumentCaptor.forClass(LegalDigitalAddressInt.class);
 
         Mockito.verify(completionWorkflow, Mockito.times(invocationsNumber)).completionSuccessDigitalWorkflow(
-                notificationCaptor.capture(), recIndexCaptor.capture(), Mockito.any(Instant.class), addressCaptor.capture());
+                notificationCaptor.capture(), recIndexCaptor.capture(), any(Instant.class), addressCaptor.capture());
 
         List<Integer> recIndexCaptorValue = recIndexCaptor.getAllValues();
         List<NotificationInt> notificationCaptorValue = notificationCaptor.getAllValues();
@@ -244,8 +245,8 @@ public class TestUtils {
         Mockito.verify(completionWorkflow, Mockito.atLeastOnce()).completionAnalogWorkflow(
                 Mockito.argThat(notification -> notification.getIun().equals(iun)),
                 Mockito.eq(recIndex),
-                Mockito.any(Instant.class),
-                Mockito.any(PhysicalAddressInt.class),
+                any(Instant.class),
+                any(PhysicalAddressInt.class),
                 Mockito.eq(EndWorkflowStatus.DECEASED)
         );
     }
@@ -561,7 +562,7 @@ public class TestUtils {
                                               PnDeliveryPushWorkflowConfigs pnDeliveryPushConfigs) {
         ArgumentCaptor<Instant> instantArgumentCaptor = ArgumentCaptor.forClass(Instant.class);
 
-        Mockito.verify(scheduler, Mockito.times(refinementNumberOfInvocation)).scheduleEvent(eq(iun), eq(recIndex), instantArgumentCaptor.capture(), Mockito.any(ActionType.class));
+        Mockito.verify(scheduler, Mockito.times(refinementNumberOfInvocation)).scheduleEvent(eq(iun), eq(recIndex), instantArgumentCaptor.capture(), any(ActionType.class));
         List<Instant> instantArgumentCaptorList = instantArgumentCaptor.getAllValues();
         //Viene ottenuta la data di perfezionamento (Valutare se inserire la data di scheduling come campo del timeline element details)
         Instant refinementDate = instantArgumentCaptorList.getLast();
@@ -699,51 +700,49 @@ public class TestUtils {
         );
     }
 
-    public static void checkGeneratedLegalFacts(NotificationInt notification,
-                                                NotificationRecipientInt recipient,
-                                                Integer recIndex,
-                                                int sentPecAttemptNumber,
-                                                GeneratedLegalFactsInfo generatedLegalFactsInfo,
-                                                EndWorkflowStatus endWorkflowStatus,
-                                                LegalFactGenerator legalFactGenerator,
-                                                TimelineService timelineService,
-                                                DelegateInfoInt delegateInfo
-    ) {
+    public static void checkGeneratedLegalFacts(GeneratedLegalFactsPayload payload) {
 
         TestUtils.generateNotificationAAR(
-                notification,
-                recipient,
-                legalFactGenerator,
-                generatedLegalFactsInfo.isNotificationAARGenerated()
+                payload.notification,
+                payload.recipient,
+                payload.legalFactGenerator,
+                payload.generatedLegalFactsInfo.isNotificationAARGenerated()
         );
 
         TestUtils.checkNotificationViewedLegalFact(
-                notification.getIun(),
-                recipient,
-                legalFactGenerator,
-                delegateInfo,
-                generatedLegalFactsInfo.isNotificationViewedLegalFactGenerated(),
-                notification
+                payload.notification.getIun(),
+                payload.recipient,
+                payload.legalFactGenerator,
+                payload.delegateInfo,
+                payload.generatedLegalFactsInfo.isNotificationViewedLegalFactGenerated(),
+                payload.notification
         );
 
         TestUtils.checkPecDeliveryWorkflowLegalFactsGeneration(
-                notification,
-                recipient,
-                sentPecAttemptNumber,
-                endWorkflowStatus,
-                legalFactGenerator,
-                generatedLegalFactsInfo.isPecDeliveryWorkflowLegalFactsGenerated()
+                payload.notification,
+                payload.recipient,
+                payload.sentPecAttemptNumber,
+                payload.endWorkflowStatus,
+                payload.legalFactGenerator,
+                payload.generatedLegalFactsInfo.isPecDeliveryWorkflowLegalFactsGenerated()
         );
 
-        TestUtils.checkCompletelyUnreachableLegalFactsGeneration(notification,
-                recipient,
-                endWorkflowStatus,
-                legalFactGenerator,
-                generatedLegalFactsInfo.isNotificationCompletelyUnreachableLegalFactGenerated());
+        TestUtils.checkCompletelyUnreachableLegalFactsGeneration(payload.notification,
+                payload.recipient,
+                payload.endWorkflowStatus,
+                payload.legalFactGenerator,
+                payload.generatedLegalFactsInfo.isNotificationCompletelyUnreachableLegalFactGenerated());
 
-        TestUtils.checkGenerateNotificationCancelledLegalFact(notification,
-                legalFactGenerator,
-                generatedLegalFactsInfo.notificationCancelled);
+        TestUtils.checkGenerateNotificationCancelledLegalFact(payload.notification,
+                payload.legalFactGenerator,
+                payload.generatedLegalFactsInfo.isNotificationCancelled());
+
+        TestUtils.checkDeliveryTimeoutLegalFactGenerated(payload.notification,
+                payload.recipient,
+                payload.sentAttemptMade,
+                payload.timeoutDate,
+                payload.legalFactGenerator,
+                payload.generatedLegalFactsInfo.isDeliveryTimeoutLegalFactGenerated());
     }
 
     private static int getTimes(boolean itWasGenerated) {
@@ -759,7 +758,7 @@ public class TestUtils {
         int times = getTimes(itWasGenerated);
 
         try {
-            Mockito.verify(legalFactGenerator, Mockito.times(times)).generateNotificationViewedLegalFact(eq(iun), eq(recipient), eq(delegateInfo), Mockito.any(Instant.class), eq(notification));
+            Mockito.verify(legalFactGenerator, Mockito.times(times)).generateNotificationViewedLegalFact(eq(iun), eq(recipient), eq(delegateInfo), any(Instant.class), eq(notification));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -792,7 +791,7 @@ public class TestUtils {
 
         try {
             Mockito.verify(legalFactGenerator, Mockito.times(times)).generatePecDeliveryWorkflowLegalFact(sendDigitalFeedbackCaptor.capture(), eq(notification),
-                    eq(recipient), eq(endWorkflowStatus), Mockito.any(Instant.class));
+                    eq(recipient), eq(endWorkflowStatus), any(Instant.class));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -816,7 +815,7 @@ public class TestUtils {
 
         try {
             Mockito.verify(legalFactGenerator, Mockito.times(times)).generateAnalogDeliveryFailureWorkflowLegalFact(eq(notification),
-                    eq(recipient), eq(endWorkflowStatus), Mockito.any(Instant.class));
+                    eq(recipient), eq(endWorkflowStatus), any(Instant.class));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -830,7 +829,22 @@ public class TestUtils {
     ) {
         int times = getTimes(itWasGenerated);
         try {
-            Mockito.verify(legalFactGenerator, Mockito.times(times)).generateNotificationCancelledLegalFact(eq(notification), Mockito.any(Instant.class));
+            Mockito.verify(legalFactGenerator, Mockito.times(times)).generateNotificationCancelledLegalFact(eq(notification), any(Instant.class));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void checkDeliveryTimeoutLegalFactGenerated(NotificationInt notification,
+                                                               NotificationRecipientInt recipient,
+                                                               String sentAttemptMade,
+                                                               Instant timeoutDate,
+                                                               LegalFactGenerator legalFactGenerator,
+                                                               boolean itWasGenerated
+    ) {
+        int times = getTimes(itWasGenerated);
+        try {
+            Mockito.verify(legalFactGenerator, Mockito.times(times)).generateAnalogDeliveryWorkflowTimeoutLegalFact(eq(notification), eq(recipient), any(), eq(sentAttemptMade), eq(timeoutDate));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -1204,6 +1218,7 @@ public class TestUtils {
         boolean pecDeliveryWorkflowLegalFactsGenerated;
         boolean notificationCompletelyUnreachableLegalFactGenerated;
         boolean notificationCancelled;
+        boolean deliveryTimeoutLegalFactGenerated;
     }
 
     @Builder
@@ -1212,4 +1227,22 @@ public class TestUtils {
         String content;
         NotificationDocumentInt document;
     }
+
+    @Builder
+    @Getter
+    public static class GeneratedLegalFactsPayload {
+        NotificationInt notification;
+        NotificationRecipientInt recipient;
+        Integer recIndex;
+        int sentPecAttemptNumber;
+        TestUtils.GeneratedLegalFactsInfo generatedLegalFactsInfo;
+        EndWorkflowStatus endWorkflowStatus;
+        LegalFactGenerator legalFactGenerator;
+        TimelineService timelineService;
+        DelegateInfoInt delegateInfo;
+        Instant timeoutDate;
+        String sentAttemptMade;
+    }
 }
+
+

@@ -268,17 +268,18 @@ class DigitalTestMultiRecipientIT extends CommonTestConfiguration {
                 .pecDeliveryWorkflowLegalFactsGenerated(isPecDeliveryWorkflowLegalFactsGenerated)
                 .build();
 
-        TestUtils.checkGeneratedLegalFacts(
-                notification,
-                recipient1,
-                recIndex1,
-                i,
-                generatedLegalFactsInfo,
-                endWorkflowStatus,
-                legalFactGenerator,
-                timelineService,
-                null
-        );
+        TestUtils.GeneratedLegalFactsPayload generatedLegalFactsPayload = TestUtils.GeneratedLegalFactsPayload.builder()
+                .notification(notification)
+                .recipient(recipient1)
+                .recIndex(recIndex1)
+                .generatedLegalFactsInfo(generatedLegalFactsInfo)
+                .endWorkflowStatus(endWorkflowStatus)
+                .legalFactGenerator(legalFactGenerator)
+                .timelineService(timelineService)
+                .sentPecAttemptNumber(i)
+                .delegateInfo(null)
+                .build();
+        TestUtils.checkGeneratedLegalFacts(generatedLegalFactsPayload);
     }
 
     private void checkPecSendAndDeliveryAttachment(LegalDigitalAddressInt platformAddress1, String iun, int recIndex1, int sendAttemptMade, DigitalAddressSourceInt platform, ResponseStatusInt ko) {

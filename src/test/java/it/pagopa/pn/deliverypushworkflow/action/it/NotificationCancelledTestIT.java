@@ -240,17 +240,18 @@ class NotificationCancelledTestIT extends CommonTestConfiguration{
 
         //Viene effettuato il check dei legalFacts generati
 
-        TestUtils.checkGeneratedLegalFacts(
-                notification,
-                notification.getRecipients().get(recIndex),
-                recIndex,
-                0,
-                generatedLegalFactsInfo,
-                EndWorkflowStatus.FAILURE,
-                legalFactGenerator,
-                timelineService,
-                null
-        );
+        TestUtils.GeneratedLegalFactsPayload generatedLegalFactsPayload = TestUtils.GeneratedLegalFactsPayload.builder()
+                .notification(notification)
+                .recipient(notification.getRecipients().get(recIndex))
+                .recIndex(recIndex)
+                .generatedLegalFactsInfo(generatedLegalFactsInfo)
+                .endWorkflowStatus(EndWorkflowStatus.FAILURE)
+                .legalFactGenerator(legalFactGenerator)
+                .timelineService(timelineService)
+                .sentPecAttemptNumber(0)
+                .delegateInfo(null)
+                .build();
+        TestUtils.checkGeneratedLegalFacts(generatedLegalFactsPayload);
 
         //Vengono stampati tutti i legalFacts generati
         String className = this.getClass().getSimpleName();
