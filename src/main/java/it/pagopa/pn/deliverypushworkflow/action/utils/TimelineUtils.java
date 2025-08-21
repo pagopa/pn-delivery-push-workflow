@@ -1366,7 +1366,6 @@ public class TimelineUtils {
         AnalogFailureWorkflowTimeoutDetailsInt details = AnalogFailureWorkflowTimeoutDetailsInt.builder()
                 .timeoutDate(timeoutDate)
                 .recIndex(recIndex)
-                .notificationCost(notificationCost)
                 .generatedAarUrl(generatedAarUrl)
                 .build();
 
