@@ -19,6 +19,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCat
 import it.pagopa.pn.deliverypushworkflow.service.DocumentCreationRequestService;
 import it.pagopa.pn.deliverypushworkflow.service.NotificationProcessCostService;
 import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,14 +55,11 @@ class CompletionWorkFlowHandlerTest {
     private AttachmentUtils attachmentUtils;
     @Mock
     private PnDeliveryPushWorkflowConfigs pnDeliveryPushConfigs;
-    
+
     private CompletionWorkFlowHandler handler;
 
-    private NotificationUtils notificationUtils;
-    
     @BeforeEach
-    public void setup() {
-        notificationUtils = new NotificationUtils();
+    void setup() {
         handler = new CompletionWorkFlowHandler(
                 timelineUtils,
                 attachmentUtils,
@@ -74,7 +72,7 @@ class CompletionWorkFlowHandlerTest {
                 notificationProcessCostService,
                 pnDeliveryPushConfigs);
     }
-    
+
     @ExtendWith(MockitoExtension.class)
     @Test
     void completionDigitalWorkflow() {
@@ -83,23 +81,23 @@ class CompletionWorkFlowHandlerTest {
         NotificationInt notification = NotificationTestBuilder.builder()
                 .withNotificationRecipient(recipient)
                 .build();
-        
-        Integer recIndex = notificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
+
+        Integer recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
 
         Instant notificationDate = Instant.now();
         final EndWorkflowStatus endWorkflowStatus = EndWorkflowStatus.SUCCESS;
 
         String legalFactId = "legalFactsId";
-        Mockito.when( pecDeliveryWorkflowLegalFactsGenerator.generateAndSendCreationRequestForPecDeliveryWorkflowLegalFact(notification, recIndex, endWorkflowStatus, notificationDate ) ).thenReturn(legalFactId);
+        Mockito.when(pecDeliveryWorkflowLegalFactsGenerator.generateAndSendCreationRequestForPecDeliveryWorkflowLegalFact(notification, recIndex, endWorkflowStatus, notificationDate)).thenReturn(legalFactId);
         final TimelineElementInternal timelineElementInternal = TimelineElementInternal.builder().elementId("test").build();
         Mockito.when(timelineUtils.buildDigitalDeliveryLegalFactCreationRequestTimelineElement(notification, recIndex, endWorkflowStatus, notificationDate, recipient.getDigitalDomicile(), legalFactId)).thenReturn(timelineElementInternal);
 
         //WHEN
         handler.completionSuccessDigitalWorkflow(notification, recIndex, notificationDate, recipient.getDigitalDomicile());
-         
+
         //THEN
         Mockito.verify(timelineUtils).buildDigitalDeliveryLegalFactCreationRequestTimelineElement(
-               notification, recIndex, endWorkflowStatus, notificationDate, recipient.getDigitalDomicile(), legalFactId);
+                notification, recIndex, endWorkflowStatus, notificationDate, recipient.getDigitalDomicile(), legalFactId);
         Mockito.verify(documentCreationRequestService).addDocumentCreationRequest(
                 legalFactId, notification.getIun(), recIndex, DocumentCreationTypeInt.DIGITAL_DELIVERY, timelineElementInternal.getElementId());
 
@@ -117,14 +115,14 @@ class CompletionWorkFlowHandlerTest {
         NotificationInt notification = NotificationTestBuilder.builder()
                 .withNotificationRecipient(recipient)
                 .build();
-        Integer recIndex = notificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
+        Integer recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
 
         Instant notificationDate = Instant.now();
 
         EndWorkflowStatus endWorkflowStatus = EndWorkflowStatus.SUCCESS;
         //WHEN
         handler.completionAnalogWorkflow(notification, recIndex, notificationDate, recipient.getPhysicalAddress(), endWorkflowStatus);
-        
+
         //THEN
         Mockito.verify(timelineUtils).buildSuccessAnalogWorkflowTimelineElement(Mockito.any(NotificationInt.class), Mockito.anyInt(), Mockito.any(PhysicalAddressInt.class));
         Mockito.verify(refinementScheduler).scheduleAnalogRefinement(notification, recIndex, notificationDate, endWorkflowStatus);
@@ -142,7 +140,7 @@ class CompletionWorkFlowHandlerTest {
         NotificationInt notification = NotificationTestBuilder.builder()
                 .withNotificationRecipient(recipient)
                 .build();
-        int recIndex = notificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
+        int recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
 
         Instant notificationDate = Instant.now();
         Instant aarDate = Instant.now().minusSeconds(3600);
@@ -159,7 +157,7 @@ class CompletionWorkFlowHandlerTest {
         final TimelineElementInternal timelineElementInternalAAR1 = TimelineElementInternal.builder()
                 .category(TimelineElementCategoryInt.AAR_GENERATION)
                 .details(AarGenerationDetailsInt.builder()
-                        .recIndex(recIndex+1)
+                        .recIndex(recIndex + 1)
                         .build())
                 .timestamp(aarDate)
                 .elementId("test1").build();
@@ -179,15 +177,15 @@ class CompletionWorkFlowHandlerTest {
 
         EndWorkflowStatus endWorkflowStatus = EndWorkflowStatus.FAILURE;
         String legalFactId = "legalFactsId";
-        Mockito.when( analogDeliveryFailureWorkflowLegalFactsGenerator.generateAndSendCreationRequestForAnalogDeliveryFailureWorkflowLegalFact(notification, recIndex, endWorkflowStatus, notificationDate ) ).thenReturn(legalFactId);
-        
+        Mockito.when(analogDeliveryFailureWorkflowLegalFactsGenerator.generateAndSendCreationRequestForAnalogDeliveryFailureWorkflowLegalFact(notification, recIndex, endWorkflowStatus, notificationDate)).thenReturn(legalFactId);
+
         AarGenerationDetailsInt aarGenerationDetailsInt = AarGenerationDetailsInt.builder()
                 .recIndex(recIndex)
                 .generatedAarUrl("testAArUrl")
                 .build();
-        Mockito.when( timelineService.getTimelineElementDetailForSpecificRecipient(notification.getIun(), recIndex, false, TimelineElementCategoryInt.AAR_GENERATION, AarGenerationDetailsInt.class ) )
+        Mockito.when(timelineService.getTimelineElementDetailForSpecificRecipient(notification.getIun(), recIndex, false, TimelineElementCategoryInt.AAR_GENERATION, AarGenerationDetailsInt.class))
                 .thenReturn(Optional.of(aarGenerationDetailsInt));
-        
+
         final TimelineElementInternal timelineElementInternal = TimelineElementInternal.builder().elementId("test")
                 .timestamp(notificationDate)
                 .build();
@@ -197,9 +195,10 @@ class CompletionWorkFlowHandlerTest {
 
         //WHEN
         handler.completionAnalogWorkflow(notification, recIndex, notificationDate, recipient.getPhysicalAddress(), endWorkflowStatus);
-    
+
         //THEN
         Mockito.verify(documentCreationRequestService).addDocumentCreationRequest(legalFactId, notification.getIun(), recIndex, DocumentCreationTypeInt.ANALOG_FAILURE_DELIVERY, timelineElementInternal.getElementId());
+        Assertions.assertNotNull(timelineElementInternalList);
     }
 
     @ExtendWith(MockitoExtension.class)
@@ -214,7 +213,7 @@ class CompletionWorkFlowHandlerTest {
         NotificationInt notification = NotificationTestBuilder.builder()
                 .withNotificationRecipient(recipient)
                 .build();
-        Integer recIndex = notificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
+        Integer recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
 
         Instant notificationDate = Instant.now();
 
@@ -253,7 +252,7 @@ class CompletionWorkFlowHandlerTest {
         NotificationInt notification = NotificationTestBuilder.builder()
                 .withNotificationRecipient(recipient)
                 .build();
-        Integer recIndex = notificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
+        Integer recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
 
         Instant notificationDate = Instant.now();
 
@@ -282,5 +281,5 @@ class CompletionWorkFlowHandlerTest {
         Mockito.verify(timelineService).addTimelineElement(Mockito.any(TimelineElementInternal.class), Mockito.any(NotificationInt.class));
 
     }
-    
+
 }

@@ -55,6 +55,7 @@ class DigitalTestMultiRecipientIT extends CommonTestConfiguration {
     @Autowired
     TimelineService timelineService;
     @Autowired
+    @SuppressWarnings("unused")
     NotificationUtils notificationUtils;
 
     @AfterEach
@@ -217,11 +218,11 @@ class DigitalTestMultiRecipientIT extends CommonTestConfiguration {
 
         //Viene effettuato il check dei legalFacts generati per il primo recipient
         EndWorkflowStatus endWorkflowStatus = EndWorkflowStatus.FAILURE;
-        checkGeneratedLegalFacts(recipient1, notification, recIndex1, true, true, false, true, endWorkflowStatus, 4);
+        checkGeneratedLegalFacts(recipient1, notification, false, endWorkflowStatus, 4);
 
         //Viene effettuato il check dei legalFacts generati per il secondo recipient
         EndWorkflowStatus endWorkflowStatus2 = EndWorkflowStatus.SUCCESS;
-        checkGeneratedLegalFacts(recipient2, notification, recIndex2, true, true, false, true, endWorkflowStatus2, 6);
+        checkGeneratedLegalFacts(recipient2, notification, false, endWorkflowStatus2, 6);
 
         //Vengono stampati tutti i legalFacts generati
         String className = this.getClass().getSimpleName();
@@ -260,23 +261,21 @@ class DigitalTestMultiRecipientIT extends CommonTestConfiguration {
         await().atLeast(Duration.ofSeconds(1));
     }
 
-    private void checkGeneratedLegalFacts(NotificationRecipientInt recipient1, NotificationInt notification, int recIndex1, boolean isNotificationReceivedLegalFactsGenerated, boolean isNotificationAARGenerated, boolean isNotificationViewedLegalFactGenerated, boolean isPecDeliveryWorkflowLegalFactsGenerated, EndWorkflowStatus endWorkflowStatus, int i) {
+    private void checkGeneratedLegalFacts(NotificationRecipientInt recipient1, NotificationInt notification, boolean isNotificationViewedLegalFactGenerated, EndWorkflowStatus endWorkflowStatus, int i) {
         TestUtils.GeneratedLegalFactsInfo generatedLegalFactsInfo = TestUtils.GeneratedLegalFactsInfo.builder()
-                .notificationReceivedLegalFactGenerated(isNotificationReceivedLegalFactsGenerated)
-                .notificationAARGenerated(isNotificationAARGenerated)
+                .notificationReceivedLegalFactGenerated(true)
+                .notificationAARGenerated(true)
                 .notificationViewedLegalFactGenerated(isNotificationViewedLegalFactGenerated)
-                .pecDeliveryWorkflowLegalFactsGenerated(isPecDeliveryWorkflowLegalFactsGenerated)
+                .pecDeliveryWorkflowLegalFactsGenerated(true)
                 .build();
 
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient1,
-                recIndex1,
                 i,
                 generatedLegalFactsInfo,
                 endWorkflowStatus,
                 legalFactGenerator,
-                timelineService,
                 null
         );
     }
@@ -452,11 +451,11 @@ class DigitalTestMultiRecipientIT extends CommonTestConfiguration {
         
         //Viene effettuato il check dei legalFacts generati per il primo recipient
         EndWorkflowStatus endWorkflowStatus = EndWorkflowStatus.FAILURE;
-        checkGeneratedLegalFacts(recipient1, notification, recIndex1, true, true, true, true, endWorkflowStatus, 4);
+        checkGeneratedLegalFacts(recipient1, notification, true, endWorkflowStatus, 4);
 
         //Viene effettuato il check dei legalFacts generati per il secondo recipient
         EndWorkflowStatus endWorkflowStatus2 = EndWorkflowStatus.SUCCESS;
-        checkGeneratedLegalFacts(recipient2, notification, recIndex2, true, true, false, true, endWorkflowStatus2, 6);
+        checkGeneratedLegalFacts(recipient2, notification, false, endWorkflowStatus2, 6);
 
         //Vengono stampati tutti i legalFacts generati
         String className = this.getClass().getSimpleName();
@@ -613,11 +612,11 @@ class DigitalTestMultiRecipientIT extends CommonTestConfiguration {
         
         //Viene effettuato il check dei legalFacts generati per il primo recipient
         EndWorkflowStatus endWorkflowStatus = EndWorkflowStatus.SUCCESS;
-        checkGeneratedLegalFacts(recipient1, notification, recIndex1, true, true, false, true, endWorkflowStatus, 2);
+        checkGeneratedLegalFacts(recipient1, notification, false, endWorkflowStatus, 2);
 
         //Viene effettuato il check dei legalFacts generati per il secondo recipient
         EndWorkflowStatus endWorkflowStatus2 = EndWorkflowStatus.FAILURE;
-        checkGeneratedLegalFacts(recipient2, notification, recIndex2, true, true, false, true, endWorkflowStatus2, 4);
+        checkGeneratedLegalFacts(recipient2, notification, false, endWorkflowStatus2, 4);
 
         //Vengono stampati tutti i legalFacts generati
         String className = this.getClass().getSimpleName();
@@ -764,11 +763,11 @@ class DigitalTestMultiRecipientIT extends CommonTestConfiguration {
 
         //Viene effettuato il check dei legalFacts generati per il primo recipient
         EndWorkflowStatus endWorkflowStatus = EndWorkflowStatus.FAILURE;
-        checkGeneratedLegalFacts(recipient1, notification, recIndex1, true, true, false, true, endWorkflowStatus, 4);
+        checkGeneratedLegalFacts(recipient1, notification, false, endWorkflowStatus, 4);
 
         //Viene effettuato il check dei legalFacts generati per il secondo recipient
         EndWorkflowStatus endWorkflowStatus2 = EndWorkflowStatus.FAILURE;
-        checkGeneratedLegalFacts(recipient2, notification, recIndex2, true, true, false, true, endWorkflowStatus2, 4);
+        checkGeneratedLegalFacts(recipient2, notification, false, endWorkflowStatus2, 4);
 
         //Vengono stampati tutti i legalFacts generati
         String className = this.getClass().getSimpleName();
@@ -935,11 +934,11 @@ class DigitalTestMultiRecipientIT extends CommonTestConfiguration {
 
         //Viene effettuato il check dei legalFacts generati per il primo recipient
         EndWorkflowStatus endWorkflowStatus = EndWorkflowStatus.FAILURE;
-        checkGeneratedLegalFacts(recipient1, notification, recIndex1, true, true, true, true, endWorkflowStatus, 4);
+        checkGeneratedLegalFacts(recipient1, notification, true, endWorkflowStatus, 4);
 
         //Viene effettuato il check dei legalFacts generati per il secondo recipient
         EndWorkflowStatus endWorkflowStatus2 = EndWorkflowStatus.FAILURE;
-        checkGeneratedLegalFacts(recipient2, notification, recIndex2, true, true, false, true, endWorkflowStatus2, 4);
+        checkGeneratedLegalFacts(recipient2, notification, false, endWorkflowStatus2, 4);
 
         //Vengono stampati tutti i legalFacts generati
         String className = this.getClass().getSimpleName();
@@ -1105,11 +1104,11 @@ class DigitalTestMultiRecipientIT extends CommonTestConfiguration {
 
         //Viene effettuato il check dei legalFacts generati per il primo recipient
         EndWorkflowStatus endWorkflowStatus = EndWorkflowStatus.FAILURE;
-        checkGeneratedLegalFacts(recipient1, notification, recIndex1, true, true, true, true, endWorkflowStatus, 4);
+        checkGeneratedLegalFacts(recipient1, notification, true, endWorkflowStatus, 4);
 
         //Viene effettuato il check dei legalFacts generati per il secondo recipient
         EndWorkflowStatus endWorkflowStatus2 = EndWorkflowStatus.FAILURE;
-        checkGeneratedLegalFacts(recipient2, notification, recIndex2, true, true, false, true, endWorkflowStatus2, 4);
+        checkGeneratedLegalFacts(recipient2, notification, false, endWorkflowStatus2, 4);
 
         //Vengono stampati tutti i legalFacts generati
         String className = this.getClass().getSimpleName();
@@ -1245,11 +1244,11 @@ class DigitalTestMultiRecipientIT extends CommonTestConfiguration {
 
         //Viene effettuato il check dei legalFacts generati per il primo recipient
         EndWorkflowStatus endWorkflowStatus = EndWorkflowStatus.SUCCESS;
-        checkGeneratedLegalFacts(recipient1, notification, recIndex1, true, true, true, true, endWorkflowStatus, 1);
+        checkGeneratedLegalFacts(recipient1, notification, true, endWorkflowStatus, 1);
 
         //Viene effettuato il check dei legalFacts generati per il secondo recipient
         EndWorkflowStatus endWorkflowStatus2 = EndWorkflowStatus.SUCCESS;
-        checkGeneratedLegalFacts(recipient2, notification, recIndex2, true, true, true, true, endWorkflowStatus2, 1);
+        checkGeneratedLegalFacts(recipient2, notification, true, endWorkflowStatus2, 1);
 
         //Vengono stampati tutti i legalFacts generati
         String className = this.getClass().getSimpleName();
@@ -1357,11 +1356,11 @@ class DigitalTestMultiRecipientIT extends CommonTestConfiguration {
 
         //Viene effettuato il check dei legalFacts generati per il primo recipient
         EndWorkflowStatus endWorkflowStatus = EndWorkflowStatus.SUCCESS;
-        checkGeneratedLegalFacts(recipient1, notification, recIndex1, true, true, false, true, endWorkflowStatus, 1);
+        checkGeneratedLegalFacts(recipient1, notification, false, endWorkflowStatus, 1);
 
         //Viene effettuato il check dei legalFacts generati per il secondo recipient
         EndWorkflowStatus endWorkflowStatus2 = EndWorkflowStatus.SUCCESS;
-        checkGeneratedLegalFacts(recipient2, notification, recIndex2, true, true, false, true, endWorkflowStatus2, 1);
+        checkGeneratedLegalFacts(recipient2, notification, false, endWorkflowStatus2, 1);
 
         //Vengono stampati tutti i legalFacts generati
         String className = this.getClass().getSimpleName();

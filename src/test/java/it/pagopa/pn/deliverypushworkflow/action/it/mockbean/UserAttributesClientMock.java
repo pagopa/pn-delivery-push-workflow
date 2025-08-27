@@ -9,7 +9,6 @@ import it.pagopa.pn.deliverypushworkflow.service.mapper.CourtesyCourtesyDigitalA
 import it.pagopa.pn.deliverypushworkflow.service.mapper.LegalLegalDigitalAddressMapper;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class UserAttributesClientMock implements UserAttributesClient {
     private int getLegalAddressCalledTimes = 0;
@@ -29,9 +28,9 @@ public class UserAttributesClientMock implements UserAttributesClient {
                                  String senderId, 
                                  List<LegalDigitalAddressInt> listDigitalAddresses, 
                                  Map<String, Collection<LegalDigitalAddress>> mapToAdd) {
-        List<LegalDigitalAddress> legalDigitalAddressList = listDigitalAddresses.stream().map(
-                LegalLegalDigitalAddressMapper::internalToExternal
-        ).collect(Collectors.toList());
+        List<LegalDigitalAddress> legalDigitalAddressList = listDigitalAddresses.stream()
+            .map(LegalLegalDigitalAddressMapper::internalToExternal)
+            .toList();
 
         String id = getId(taxId, senderId);
 
@@ -50,9 +49,9 @@ public class UserAttributesClientMock implements UserAttributesClient {
     }
 
     public void addCourtesyDigitalAddresses(String taxId, String senderId, List<CourtesyDigitalAddressInt> courtesyDigitalAddresses) {
-        List<CourtesyDigitalAddress> legalDigitalAddressList = courtesyDigitalAddresses.stream().map(
-                CourtesyCourtesyDigitalAddressMapper::internalToExternal
-        ).collect(Collectors.toList());
+        List<CourtesyDigitalAddress> legalDigitalAddressList = courtesyDigitalAddresses.stream()
+                .map(CourtesyCourtesyDigitalAddressMapper::internalToExternal)
+                .toList();
 
         String id = getId(taxId, senderId);
 

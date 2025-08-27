@@ -70,7 +70,7 @@ class PaperChannelServiceImplTest {
     @Test
     void prepareAnalogNotificationForSimpleRegisteredLetterWithAarAndDocument() {
         //GIVEN
-        NotificationInt notificationInt = newNotificationWithPayments("taxid");
+        NotificationInt notificationInt = newNotificationWithPayments();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
         Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
@@ -78,7 +78,7 @@ class PaperChannelServiceImplTest {
         PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
         Mockito.when(auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_PD_PREPARE), Mockito.anyString(), any(), any(), any())).thenReturn(auditLogEvent);
         Mockito.when(auditLogEvent.generateSuccess(Mockito.anyString(), any())).thenReturn(auditLogEvent);
-        Mockito.when(notificationUtils.getRecipientFromIndex(any(), anyInt())).thenReturn(notificationInt.getRecipients().get(0));
+        Mockito.when(notificationUtils.getRecipientFromIndex(any(), anyInt())).thenReturn(notificationInt.getRecipients().getFirst());
 
         Mockito.when(attachmentUtils.retrieveSendAttachmentMode(Mockito.any(), Mockito.any())).thenReturn(SendAttachmentMode.AAR_DOCUMENTS);
 
@@ -97,14 +97,14 @@ class PaperChannelServiceImplTest {
     @Test
     void prepareAnalogNotificationForSimpleRegisteredLetterWithAarDocumentAndPayments() {
         //GIVEN
-        NotificationInt notificationInt = newNotificationWithPayments("taxid");
+        NotificationInt notificationInt = newNotificationWithPayments();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
         Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
         PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
         Mockito.when(auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_PD_PREPARE), Mockito.anyString(), any(), any(), any())).thenReturn(auditLogEvent);
         Mockito.when(auditLogEvent.generateSuccess(Mockito.anyString(), any())).thenReturn(auditLogEvent);
-        Mockito.when(notificationUtils.getRecipientFromIndex(any(), anyInt())).thenReturn(notificationInt.getRecipients().get(0));
+        Mockito.when(notificationUtils.getRecipientFromIndex(any(), anyInt())).thenReturn(notificationInt.getRecipients().getFirst());
 
 
         Mockito.when(attachmentUtils.retrieveSendAttachmentMode(Mockito.any(), Mockito.any())).thenReturn(SendAttachmentMode.AAR_DOCUMENTS_PAYMENTS);
@@ -124,7 +124,7 @@ class PaperChannelServiceImplTest {
     @Test
     void prepareAnalogNotificationWithAarAndDocument() {
         //GIVEN
-        NotificationInt notificationInt = newNotificationWithPayments("taxid");
+        NotificationInt notificationInt = newNotificationWithPayments();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
         Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
@@ -132,7 +132,7 @@ class PaperChannelServiceImplTest {
         PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
         Mockito.when(auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_PD_PREPARE), Mockito.anyString(), any(), any(), any())).thenReturn(auditLogEvent);
         Mockito.when(auditLogEvent.generateSuccess(Mockito.anyString(), any())).thenReturn(auditLogEvent);
-        Mockito.when(notificationUtils.getRecipientFromIndex(any(), anyInt())).thenReturn(notificationInt.getRecipients().get(0));
+        Mockito.when(notificationUtils.getRecipientFromIndex(any(), anyInt())).thenReturn(notificationInt.getRecipients().getFirst());
 
         Mockito.when(attachmentUtils.retrieveSendAttachmentMode(Mockito.any(), Mockito.any())).thenReturn(SendAttachmentMode.AAR_DOCUMENTS);
 
@@ -151,7 +151,7 @@ class PaperChannelServiceImplTest {
     @Test
     void prepareAnalogNotificationWithAarDocumentAndPayments() {
         //GIVEN
-        NotificationInt notificationInt = newNotificationWithPayments("taxid");
+        NotificationInt notificationInt = newNotificationWithPayments();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
         Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
@@ -159,7 +159,7 @@ class PaperChannelServiceImplTest {
         PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
         Mockito.when(auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_PD_PREPARE), Mockito.anyString(), any(), any(), any())).thenReturn(auditLogEvent);
         Mockito.when(auditLogEvent.generateSuccess(Mockito.anyString(), any())).thenReturn(auditLogEvent);
-        Mockito.when(notificationUtils.getRecipientFromIndex(any(), anyInt())).thenReturn(notificationInt.getRecipients().get(0));
+        Mockito.when(notificationUtils.getRecipientFromIndex(any(), anyInt())).thenReturn(notificationInt.getRecipients().getFirst());
 
         Mockito.when(attachmentUtils.retrieveSendAttachmentMode(Mockito.any(), Mockito.any())).thenReturn(SendAttachmentMode.AAR_DOCUMENTS_PAYMENTS);
 
@@ -178,7 +178,7 @@ class PaperChannelServiceImplTest {
     @Test
     void prepareAnalogNotificationForSimpleRegisteredLetterAlreadyviewed() {
         //GIVEN
-        NotificationInt notificationInt = newNotification("taxid");
+        NotificationInt notificationInt = newNotification();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(true);
 
@@ -194,7 +194,7 @@ class PaperChannelServiceImplTest {
     @Test
     void prepareAnalogNotificationForSimpleRegisteredLetterAlreadyPaid() {
         //GIVEN
-        NotificationInt notificationInt = newNotification("taxid");
+        NotificationInt notificationInt = newNotification();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
         Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(true);
@@ -210,7 +210,7 @@ class PaperChannelServiceImplTest {
     @Test
     void prepareAnalogNotificationForSimpleRegisteredLetterCancelled() {
         //GIVEN
-        NotificationInt notificationInt = newNotification("taxid");
+        NotificationInt notificationInt = newNotification();
 
         Mockito.when(timelineUtils.checkIsNotificationCancellationRequested(Mockito.anyString())).thenReturn(true);
 
@@ -226,7 +226,7 @@ class PaperChannelServiceImplTest {
     @Test
     void prepareAnalogNotificationAlreadyviewed() {
         //GIVEN
-        NotificationInt notificationInt = newNotification("taxid");
+        NotificationInt notificationInt = newNotification();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(true);
 
@@ -242,7 +242,7 @@ class PaperChannelServiceImplTest {
     @Test
     void prepareAnalogNotificationAlreadyPaid() {
         //GIVEN
-        NotificationInt notificationInt = newNotification("taxid");
+        NotificationInt notificationInt = newNotification();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
         Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(true);
@@ -258,7 +258,7 @@ class PaperChannelServiceImplTest {
     @Test
     void prepareAnalogNotificationCancelled() {
         //GIVEN
-        NotificationInt notificationInt = newNotification("taxid");
+        NotificationInt notificationInt = newNotification();
 
         Mockito.when(timelineUtils.checkIsNotificationCancellationRequested(Mockito.anyString())).thenReturn(true);
 
@@ -275,7 +275,7 @@ class PaperChannelServiceImplTest {
         //GIVEN
         PhysicalAddressInt physicalAddressInt = PhysicalAddressInt.builder().address("via casa").fullname("full name").build();
 
-        NotificationInt notificationInt = newNotificationWithPayments("taxid");
+        NotificationInt notificationInt = newNotificationWithPayments();
 
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = CategorizedAttachmentsResultInt.builder().acceptedAttachments(new ArrayList<>()).discardedAttachments(new ArrayList<>()).build();
 
@@ -307,7 +307,7 @@ class PaperChannelServiceImplTest {
         //GIVEN
         PhysicalAddressInt physicalAddressInt = PhysicalAddressInt.builder().address("via casa").fullname("full name").build();
 
-        NotificationInt notificationInt = newNotification("taxid");
+        NotificationInt notificationInt = newNotification();
 
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = CategorizedAttachmentsResultInt.builder().acceptedAttachments(new ArrayList<>()).discardedAttachments(new ArrayList<>()).build();
 
@@ -326,7 +326,7 @@ class PaperChannelServiceImplTest {
         //GIVEN
         PhysicalAddressInt physicalAddressInt = PhysicalAddressInt.builder().address("via casa").fullname("full name").build();
 
-        NotificationInt notificationInt = newNotification("taxid");
+        NotificationInt notificationInt = newNotification();
 
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = CategorizedAttachmentsResultInt.builder().acceptedAttachments(new ArrayList<>()).discardedAttachments(new ArrayList<>()).build();
 
@@ -345,7 +345,7 @@ class PaperChannelServiceImplTest {
         //GIVEN
         PhysicalAddressInt physicalAddressInt = PhysicalAddressInt.builder().address("via casa").fullname("full name").build();
 
-        NotificationInt notificationInt = newNotification("taxid");
+        NotificationInt notificationInt = newNotification();
 
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = CategorizedAttachmentsResultInt.builder().acceptedAttachments(new ArrayList<>()).discardedAttachments(new ArrayList<>()).build();
 
@@ -365,7 +365,7 @@ class PaperChannelServiceImplTest {
         //GIVEN
         PhysicalAddressInt physicalAddressInt = PhysicalAddressInt.builder().address("via casa").fullname("full name").build();
 
-        NotificationInt notificationInt = newNotification("taxid");
+        NotificationInt notificationInt = newNotification();
 
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = CategorizedAttachmentsResultInt.builder().acceptedAttachments(new ArrayList<>()).discardedAttachments(new ArrayList<>()).build();
 
@@ -398,7 +398,7 @@ class PaperChannelServiceImplTest {
         //GIVEN
         PhysicalAddressInt physicalAddressInt = PhysicalAddressInt.builder().address("via casa").fullname("full name").build();
 
-        NotificationInt notificationInt = newNotification("taxid");
+        NotificationInt notificationInt = newNotification();
 
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = CategorizedAttachmentsResultInt.builder().acceptedAttachments(new ArrayList<>()).discardedAttachments(new ArrayList<>()).build();
 
@@ -418,7 +418,7 @@ class PaperChannelServiceImplTest {
         //GIVEN
         PhysicalAddressInt physicalAddressInt = PhysicalAddressInt.builder().address("via casa").fullname("full name").build();
 
-        NotificationInt notificationInt = newNotification("taxid");
+        NotificationInt notificationInt = newNotification();
 
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = CategorizedAttachmentsResultInt.builder().acceptedAttachments(new ArrayList<>()).discardedAttachments(new ArrayList<>()).build();
 
@@ -438,7 +438,7 @@ class PaperChannelServiceImplTest {
         //GIVEN
         PhysicalAddressInt physicalAddressInt = PhysicalAddressInt.builder().address("via casa").fullname("full name").build();
 
-        NotificationInt notificationInt = newNotification("taxid");
+        NotificationInt notificationInt = newNotification();
 
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = CategorizedAttachmentsResultInt.builder().acceptedAttachments(new ArrayList<>()).discardedAttachments(new ArrayList<>()).build();
 
@@ -457,7 +457,7 @@ class PaperChannelServiceImplTest {
         //GIVEN
         PhysicalAddressInt physicalAddressInt = PhysicalAddressInt.builder().address("via casa").fullname("full name").build();
 
-        NotificationInt notificationInt = newNotification("taxid");
+        NotificationInt notificationInt = newNotification();
 
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = CategorizedAttachmentsResultInt.builder().acceptedAttachments(new ArrayList<>()).discardedAttachments(new ArrayList<>()).build();
 
@@ -483,7 +483,7 @@ class PaperChannelServiceImplTest {
         //GIVEN
         PhysicalAddressInt physicalAddressInt = PhysicalAddressInt.builder().address("via casa").fullname("full name").build();
 
-        NotificationInt notificationInt = newNotificationWithPayments("taxid");
+        NotificationInt notificationInt = newNotificationWithPayments();
 
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = CategorizedAttachmentsResultInt.builder().acceptedAttachments(new ArrayList<>()).discardedAttachments(new ArrayList<>()).build();
 
@@ -491,7 +491,7 @@ class PaperChannelServiceImplTest {
         Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
 
         PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
-        Mockito.when(notificationUtils.getRecipientFromIndex(any(), anyInt())).thenReturn(notificationInt.getRecipients().get(0));
+        Mockito.when(notificationUtils.getRecipientFromIndex(any(), anyInt())).thenReturn(notificationInt.getRecipients().getFirst());
         Mockito.when(auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_PD_EXECUTE), Mockito.anyString(), any(), any(), any())).thenReturn(auditLogEvent);
         Mockito.when(auditLogEvent.generateSuccess(any(), (Integer) any(), any())).thenReturn(auditLogEvent);
         Mockito.when(paperChannelSendClient.send(any(PaperChannelSendRequest.class))).thenReturn(new SendResponse());
@@ -511,13 +511,13 @@ class PaperChannelServiceImplTest {
         //GIVEN
         PhysicalAddressInt physicalAddressInt = PhysicalAddressInt.builder().address("via casa").fullname("full name").build();
 
-        NotificationInt notificationInt = newNotificationWithPayments("taxid");
+        NotificationInt notificationInt = newNotificationWithPayments();
 
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = CategorizedAttachmentsResultInt.builder().acceptedAttachments(new ArrayList<>()).discardedAttachments(new ArrayList<>()).build();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
         Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
-        Mockito.when(notificationUtils.getRecipientFromIndex(any(), anyInt())).thenReturn(notificationInt.getRecipients().get(0));
+        Mockito.when(notificationUtils.getRecipientFromIndex(any(), anyInt())).thenReturn(notificationInt.getRecipients().getFirst());
 
         PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
         Mockito.when(auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_PD_EXECUTE), Mockito.anyString(), any(), any(), any())).thenReturn(auditLogEvent);
@@ -540,7 +540,7 @@ class PaperChannelServiceImplTest {
         //GIVEN
         PhysicalAddressInt physicalAddressInt = PhysicalAddressInt.builder().address("via casa").fullname("full name").build();
 
-        NotificationInt notificationInt = newNotification("taxid");
+        NotificationInt notificationInt = newNotification();
 
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = CategorizedAttachmentsResultInt.builder().acceptedAttachments(new ArrayList<>()).discardedAttachments(new ArrayList<>()).build();
 
@@ -568,7 +568,7 @@ class PaperChannelServiceImplTest {
         //GIVEN
         PhysicalAddressInt physicalAddressInt = PhysicalAddressInt.builder().address("via casa").fullname("full name").build();
 
-        NotificationInt notificationInt = newNotification("taxid");
+        NotificationInt notificationInt = newNotification();
 
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = CategorizedAttachmentsResultInt.builder().acceptedAttachments(new ArrayList<>()).discardedAttachments(new ArrayList<>()).build();
 
@@ -597,7 +597,7 @@ class PaperChannelServiceImplTest {
         //GIVEN
         PhysicalAddressInt physicalAddressInt = PhysicalAddressInt.builder().address("via casa").fullname("full name").build();
 
-        NotificationInt notificationInt = newNotification("taxid");
+        NotificationInt notificationInt = newNotification();
 
         ResultFilterInt acceptedAttachments = ResultFilterInt.builder().fileKey("filekey").result(ResultFilterEnum.SUCCESS).reasonCode("reasonCode").reasonDescription("reasonDescription").build();
 
@@ -619,7 +619,7 @@ class PaperChannelServiceImplTest {
         Mockito.verify(attachmentUtils, Mockito.never()).retrieveAttachments(any(),any(),any(SendAttachmentMode.class), eq(F24ResolutionMode.RESOLVE_WITH_REPLACED_LIST),any(),any());
     }
 
-    private NotificationInt newNotification(String TAX_ID) {
+    private NotificationInt newNotification() {
         return NotificationInt.builder()
                 .iun("IUN_01")
                 .paProtocolNumber("protocol_01")
@@ -629,8 +629,8 @@ class PaperChannelServiceImplTest {
                 )
                 .recipients(Collections.singletonList(
                         NotificationRecipientInt.builder()
-                                .taxId(TAX_ID)
-                                .internalId(TAX_ID + "ANON")
+                                .taxId("taxid")
+                                .internalId("taxid" + "ANON")
                                 .denomination("Nome Cognome/Ragione Sociale")
                                 .digitalDomicile(LegalDigitalAddressInt.builder()
                                         .type(LegalDigitalAddressInt.LEGAL_DIGITAL_ADDRESS_TYPE.PEC)
@@ -641,7 +641,7 @@ class PaperChannelServiceImplTest {
                 .build();
     }
 
-    private NotificationInt newNotificationWithPayments(String TAX_ID) {
+    private NotificationInt newNotificationWithPayments() {
         return NotificationInt.builder()
                 .iun("IUN_01")
                 .paProtocolNumber("protocol_01")
@@ -655,8 +655,8 @@ class PaperChannelServiceImplTest {
                         .build()))
                 .recipients(Collections.singletonList(
                         NotificationRecipientInt.builder()
-                                .taxId(TAX_ID)
-                                .internalId(TAX_ID + "ANON")
+                                .taxId("taxid")
+                                .internalId("taxid" + "ANON")
                                 .denomination("Nome Cognome/Ragione Sociale")
                                 .digitalDomicile(LegalDigitalAddressInt.builder()
                                         .type(LegalDigitalAddressInt.LEGAL_DIGITAL_ADDRESS_TYPE.PEC)
@@ -678,7 +678,7 @@ class PaperChannelServiceImplTest {
                                                                 .ref(NotificationDocumentInt.Ref.builder().key("PagoPaKey").build())
                                                                 .digests(NotificationDocumentInt.Digests.builder().sha256("PagoPaSha256").build())
                                                                 .build()))
-                                                        .creditorTaxId(TAX_ID)
+                                                        .creditorTaxId("taxid")
                                                         .noticeCode("noticeCode")
                                                         .build())
                                                 .build()

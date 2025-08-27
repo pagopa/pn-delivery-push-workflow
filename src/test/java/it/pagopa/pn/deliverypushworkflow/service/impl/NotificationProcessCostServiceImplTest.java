@@ -32,20 +32,17 @@ import static org.mockito.ArgumentMatchers.any;
 
 class NotificationProcessCostServiceImplTest {
     private PnExternalRegistriesClientReactive pnExternalRegistriesClientReactive;
-    private PnDeliveryPushWorkflowConfigs cfg;
     private PnDeliveryPushClientReactive pnDeliveryPushClientReactive;
     private NotificationProcessCostService service;
 
-    Integer notificationCost = 100;
-    Integer notificationFee = 99;
-    Integer notificationVat = 22;
+    Integer notificationCostNumber = 100;
     @BeforeEach
     void setUp() {
         this.pnExternalRegistriesClientReactive = Mockito.mock(PnExternalRegistriesClientReactive.class);
         this.pnDeliveryPushClientReactive = Mockito.mock(PnDeliveryPushClientReactive.class);
-        this.cfg = Mockito.mock(PnDeliveryPushWorkflowConfigs.class);
+        PnDeliveryPushWorkflowConfigs cfg = Mockito.mock(PnDeliveryPushWorkflowConfigs.class);
 
-        Mockito.when(cfg.getPagoPaNotificationBaseCost()).thenReturn(notificationCost);
+        Mockito.when(cfg.getPagoPaNotificationBaseCost()).thenReturn(notificationCostNumber);
 
         service = new NotificationProcessCostServiceImpl(pnExternalRegistriesClientReactive, cfg, pnDeliveryPushClientReactive);
     }
@@ -55,7 +52,7 @@ class NotificationProcessCostServiceImplTest {
     void getPagoPaNotificationBaseCost() {
         Integer pagoPaBaseCost = service.getSendFeeAsync().block();
 
-        Assertions.assertEquals(notificationCost, pagoPaBaseCost);
+        Assertions.assertEquals(notificationCostNumber, pagoPaBaseCost);
     }
 
     @Test
@@ -92,10 +89,10 @@ class NotificationProcessCostServiceImplTest {
         //THEN
         Assertions.assertNotNull(updateNotificationCostResponseInt);
         Assertions.assertNotNull(updateNotificationCostResponseInt.getUpdateResults());
-        Assertions.assertNotNull(updateNotificationCostResponseInt.getUpdateResults().get(0));
+        Assertions.assertNotNull(updateNotificationCostResponseInt.getUpdateResults().getFirst());
         
-        UpdateNotificationCostResultInt updateNotificationCostResultInt = updateNotificationCostResponseInt.getUpdateResults().get(0);
-        final UpdateNotificationCostResult updateNotificationCostResponseExpected = updateNotificationCostResponse.getUpdateResults().get(0);
+        UpdateNotificationCostResultInt updateNotificationCostResultInt = updateNotificationCostResponseInt.getUpdateResults().getFirst();
+        final UpdateNotificationCostResult updateNotificationCostResponseExpected = updateNotificationCostResponse.getUpdateResults().getFirst();
 
         Assertions.assertEquals(updateNotificationCostResponseExpected.getResult().getValue(), updateNotificationCostResultInt.getResult().getValue());
         Assertions.assertEquals(updateNotificationCostResponseExpected.getNoticeCode(), updateNotificationCostResultInt.getPaymentsInfoForRecipient().getNoticeCode());
@@ -120,7 +117,7 @@ class NotificationProcessCostServiceImplTest {
                 .thenReturn(Mono.just(notificationProcessCostResponse));
 
         //WHEN
-        Integer notificationCost = service.notificationProcessCostF24(
+        Integer notificationProcessCostValue = service.notificationProcessCostF24(
                 iun,
                 recIndex,
                 NotificationFeePolicy.DELIVERY_MODE,
@@ -130,8 +127,8 @@ class NotificationProcessCostServiceImplTest {
         ).block();
 
         //THEN
-        Assertions.assertNotNull(notificationCost);
-        Assertions.assertEquals(notificationProcessTotalCostExpected, notificationCost);
+        Assertions.assertNotNull(notificationProcessCostValue);
+        Assertions.assertEquals(notificationProcessTotalCostExpected, notificationProcessCostValue);
     }
 
     @Test
@@ -151,7 +148,7 @@ class NotificationProcessCostServiceImplTest {
                 .thenReturn(Mono.just(notificationProcessCostResponse));
 
         //WHEN
-        Integer notificationCost = service.notificationProcessCostF24(
+        Integer notificationProcessCostValue = service.notificationProcessCostF24(
                 iun,
                 recIndex,
                 NotificationFeePolicy.DELIVERY_MODE,
@@ -161,8 +158,8 @@ class NotificationProcessCostServiceImplTest {
         ).block();
 
         //THEN
-        Assertions.assertNotNull(notificationCost);
-        Assertions.assertEquals(notificationProcessTotalCostExpected, notificationCost);
+        Assertions.assertNotNull(notificationProcessCostValue);
+        Assertions.assertEquals(notificationProcessTotalCostExpected, notificationProcessCostValue);
     }
 
     @Test

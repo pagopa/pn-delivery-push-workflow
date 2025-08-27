@@ -31,6 +31,7 @@ import java.util.Optional;
 
 import static it.pagopa.pn.deliverypushworkflow.exceptions.PnDeliveryPushExceptionCodes.ERROR_CODE_DELIVERYPUSH_NO_RECIPIENT_IN_NOTIFICATION;
 
+@ExtendWith(MockitoExtension.class)
 class NotificationViewLegalFactCreationResponseHandlerTest {
     @Mock
     private NotificationService notificationService;
@@ -40,8 +41,6 @@ class NotificationViewLegalFactCreationResponseHandlerTest {
     private NotificationCost notificationCost;
     @Mock
     private PaperNotificationFailedService paperNotificationFailedService;
-    @Mock
-    private NotificationUtils notificationUtils;
     @Mock
     private TimelineUtils timelineUtils;
 
@@ -61,14 +60,13 @@ class NotificationViewLegalFactCreationResponseHandlerTest {
     }
     
     @Test
-    @ExtendWith(MockitoExtension.class)
     void handleLegalFactCreationResponseWithDelegateInfo() {
         //GIVEN
         NotificationRecipientInt recipient = NotificationRecipientTestBuilder.builder().build();
         NotificationInt notification = NotificationTestBuilder.builder()
                 .withNotificationRecipient(recipient)
                 .build();
-        int recIndex = notificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
+        int recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
 
         String legalFactId = "fileKey";
         DocumentCreationResponseActionDetails actionDetails = DocumentCreationResponseActionDetails.builder()
@@ -98,9 +96,9 @@ class NotificationViewLegalFactCreationResponseHandlerTest {
                 .build();
         Mockito.when( timelineService.getTimelineElementDetails(Mockito.anyString(), Mockito.anyString(), Mockito.any())).thenReturn(Optional.of(timelineDetails));
         
-        int notificationCost = 10;
+        int notificationCostNumber = 10;
 
-        Mockito.when(this.notificationCost.getNotificationCostForViewed(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(Mono.just(Optional.of(notificationCost)));
+        Mockito.when(this.notificationCost.getNotificationCostForViewed(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(Mono.just(Optional.of(notificationCostNumber)));
         TimelineElementInternal timelineElement = TimelineElementInternal.builder().build();
         Mockito.when(timelineUtils.buildNotificationViewedTimelineElement(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(timelineElement);
@@ -110,7 +108,7 @@ class NotificationViewLegalFactCreationResponseHandlerTest {
 
         //THEN
         
-        Mockito.verify(timelineUtils).buildNotificationViewedTimelineElement(notification, recIndex, legalFactId, notificationCost,
+        Mockito.verify(timelineUtils).buildNotificationViewedTimelineElement(notification, recIndex, legalFactId, notificationCostNumber,
                         null, delegateInfo, timelineDetails.getEventTimestamp());
 
         Mockito.verify(paperNotificationFailedService).deleteNotificationFailed(recipient.getInternalId(), notification.getIun());
@@ -118,14 +116,13 @@ class NotificationViewLegalFactCreationResponseHandlerTest {
     }
 
     @Test
-    @ExtendWith(MockitoExtension.class)
     void handleLegalFactCreationResponseWithRaddInfo() {
         //GIVEN
         NotificationRecipientInt recipient = NotificationRecipientTestBuilder.builder().build();
         NotificationInt notification = NotificationTestBuilder.builder()
                 .withNotificationRecipient(recipient)
                 .build();
-        int recIndex = notificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
+        int recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
 
         String legalFactId = "fileKey";
         DocumentCreationResponseActionDetails actionDetails = DocumentCreationResponseActionDetails.builder()
@@ -147,12 +144,12 @@ class NotificationViewLegalFactCreationResponseHandlerTest {
         
         Mockito.when( timelineService.getTimelineElementDetails(Mockito.anyString(), Mockito.anyString(), Mockito.any())).thenReturn(Optional.of(timelineDetails));
 
-        int notificationCost = 10;
+        int notificationCostNumber = 10;
 
-        Mockito.when(this.notificationCost.getNotificationCostForViewed(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(Mono.just(Optional.of(notificationCost)));
+        Mockito.when(this.notificationCost.getNotificationCostForViewed(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(Mono.just(Optional.of(notificationCostNumber)));
         
         TimelineElementInternal timelineElement = TimelineElementInternal.builder().build();
-        Mockito.when(timelineUtils.buildNotificationViewedTimelineElement(Mockito.eq(notification), Mockito.eq(recIndex), Mockito.eq(legalFactId), Mockito.eq(notificationCost),
+        Mockito.when(timelineUtils.buildNotificationViewedTimelineElement(Mockito.eq(notification), Mockito.eq(recIndex), Mockito.eq(legalFactId), Mockito.eq(notificationCostNumber),
                         Mockito.any(RaddInfo.class), Mockito.isNull(), Mockito.eq(timelineDetails.getEventTimestamp())))
                 .thenReturn(timelineElement);
 
@@ -165,14 +162,13 @@ class NotificationViewLegalFactCreationResponseHandlerTest {
     }
 
     @Test
-    @ExtendWith(MockitoExtension.class)
     void handleLegalFactCreationResponseWithoutDelegateInfoAndRaddInfo() {
         //GIVEN
         NotificationRecipientInt recipient = NotificationRecipientTestBuilder.builder().build();
         NotificationInt notification = NotificationTestBuilder.builder()
                 .withNotificationRecipient(recipient)
                 .build();
-        int recIndex = notificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
+        int recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
 
         String legalFactId = "fileKey";
         DocumentCreationResponseActionDetails actionDetails = DocumentCreationResponseActionDetails.builder()
@@ -190,11 +186,11 @@ class NotificationViewLegalFactCreationResponseHandlerTest {
                 .build();
         Mockito.when( timelineService.getTimelineElementDetails(Mockito.anyString(), Mockito.anyString(), Mockito.any())).thenReturn(Optional.of(timelineDetails));
 
-        int notificationCost = 10;
+        int notificationCostNumber = 10;
 
-        Mockito.when(this.notificationCost.getNotificationCostForViewed(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(Mono.just(Optional.of(notificationCost)));
+        Mockito.when(this.notificationCost.getNotificationCostForViewed(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(Mono.just(Optional.of(notificationCostNumber)));
         TimelineElementInternal timelineElement = TimelineElementInternal.builder().build();
-        Mockito.when(timelineUtils.buildNotificationViewedTimelineElement(Mockito.eq(notification), Mockito.eq(recIndex), Mockito.eq(legalFactId), Mockito.eq(notificationCost),
+        Mockito.when(timelineUtils.buildNotificationViewedTimelineElement(Mockito.eq(notification), Mockito.eq(recIndex), Mockito.eq(legalFactId), Mockito.eq(notificationCostNumber),
                         Mockito.isNull(), Mockito.isNull(), Mockito.eq(timelineDetails.getEventTimestamp())))
                 .thenReturn(timelineElement);
 
@@ -207,14 +203,13 @@ class NotificationViewLegalFactCreationResponseHandlerTest {
     }
     
     @Test
-    @ExtendWith(MockitoExtension.class)
     void handleLegalFactCreationResponseErrorAuditLogNotAlreadyCreated() {
         //GIVEN
         NotificationRecipientInt recipient = NotificationRecipientTestBuilder.builder().build();
         NotificationInt notification = NotificationTestBuilder.builder()
                 .withNotificationRecipient(recipient)
                 .build();
-        int recIndex = notificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
+        int recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
 
         String legalFactId = "fileKey";
         DocumentCreationResponseActionDetails actionDetails = DocumentCreationResponseActionDetails.builder()
@@ -235,14 +230,13 @@ class NotificationViewLegalFactCreationResponseHandlerTest {
     }
 
     @Test
-    @ExtendWith(MockitoExtension.class)
     void handleLegalFactCreationResponseErrorAuditLogAlreadyCreated() {
         //GIVEN
         NotificationRecipientInt recipient = NotificationRecipientTestBuilder.builder().build();
         NotificationInt notification = NotificationTestBuilder.builder()
                 .withNotificationRecipient(recipient)
                 .build();
-        int recIndex = notificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
+        int recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
 
         String legalFactId = "fileKey";
         DocumentCreationResponseActionDetails actionDetails = DocumentCreationResponseActionDetails.builder()

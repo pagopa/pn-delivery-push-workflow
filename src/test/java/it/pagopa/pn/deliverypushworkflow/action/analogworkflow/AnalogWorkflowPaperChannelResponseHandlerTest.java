@@ -52,7 +52,7 @@ class AnalogWorkflowPaperChannelResponseHandlerTest {
     private SchedulerService schedulerService;
     
     @BeforeEach
-    public void setup() {
+    void setup() {
         analogWorkflowPaperChannelResponseHandler = new AnalogWorkflowPaperChannelResponseHandler(notificationService,
                 paperChannelService,
                 analogWorkflowUtils,

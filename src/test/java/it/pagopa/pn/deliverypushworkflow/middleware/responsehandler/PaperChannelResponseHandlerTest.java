@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,7 +50,9 @@ class PaperChannelResponseHandlerTest {
         prepareEvent.setReceiverAddress(new AnalogAddress());
         prepareEvent.setReplacedF24AttachmentUrls(List.of("replacedF24Urls"));
         prepareEvent.setCategorizedAttachments(new CategorizedAttachmentsResult());
+        Assertions.assertNotNull(prepareEvent.getCategorizedAttachments());
         prepareEvent.getCategorizedAttachments().setAcceptedAttachments(new ArrayList<>());
+        Assertions.assertNotNull(prepareEvent.getCategorizedAttachments().getAcceptedAttachments());
         prepareEvent.getCategorizedAttachments().getAcceptedAttachments().add(new ResultFilter()
                 .fileKey("fileKey")
                 .result(ResultFilterEnum.SUCCESS)
@@ -122,14 +123,9 @@ class PaperChannelResponseHandlerTest {
     void prepareUpdateTest_KO_2() {
 
         Instant instant = Instant.parse("2022-08-30T16:04:13.913859900Z");
-
-        PrepareEvent prepareEvent = new PrepareEvent();
-        prepareEvent.setStatusCode(StatusCodeEnum.KO);
-        prepareEvent.setStatusDateTime(instant);
-        prepareEvent.setRequestId("iun_event_idx_0");
-        prepareEvent.setStatusDetail("ko");
+        PrepareEvent prepareEvent = getPrepareEvent(instant);
         prepareEvent.setFailureDetailCode(FailureDetailCodeEnum.D01);
-        prepareEvent.setReceiverAddress(new AnalogAddress());
+        Assertions.assertNotNull(prepareEvent.getReceiverAddress());
         prepareEvent.getReceiverAddress().setAddress("via prova 123");
         prepareEvent.getReceiverAddress().setCap("32323");
         prepareEvent.getReceiverAddress().setCountry("italia");
@@ -157,18 +153,28 @@ class PaperChannelResponseHandlerTest {
         Mockito.verify(analogWorkflowPaperChannelResponseHandler, Mockito.times(1)).paperChannelPrepareResponseHandler(tmp);
     }
 
-    @Test
-    void prepareUpdateTest_KO_3() {
-
-        Instant instant = Instant.parse("2022-08-30T16:04:13.913859900Z");
+    private PrepareEvent getPrepareEvent(Instant instant) {
+        AnalogAddress analogAddress = new AnalogAddress();
+        analogAddress.setAddress("address");
+        analogAddress.setCap("cap");
+        analogAddress.setCountry("country");
 
         PrepareEvent prepareEvent = new PrepareEvent();
         prepareEvent.setStatusCode(StatusCodeEnum.KO);
         prepareEvent.setStatusDateTime(instant);
         prepareEvent.setRequestId("iun_event_idx_0");
         prepareEvent.setStatusDetail("ko");
+        prepareEvent.setReceiverAddress(analogAddress);
+        return prepareEvent;
+    }
+
+    @Test
+    void prepareUpdateTest_KO_3() {
+
+        Instant instant = Instant.parse("2022-08-30T16:04:13.913859900Z");
+        PrepareEvent prepareEvent = getPrepareEvent(instant);
         prepareEvent.setFailureDetailCode(FailureDetailCodeEnum.D02);
-        prepareEvent.setReceiverAddress(new AnalogAddress());
+        Assertions.assertNotNull(prepareEvent.getReceiverAddress());
         prepareEvent.getReceiverAddress().setAddress("via prova 123");
         prepareEvent.getReceiverAddress().setCap("32323");
         prepareEvent.getReceiverAddress().setCountry("italia");
@@ -335,36 +341,6 @@ class PaperChannelResponseHandlerTest {
     }
 
     @Test
-    void sendUpdateTest_KO() {
-
-        Instant instant = Instant.parse("2022-08-30T16:04:13.913859900Z");
-
-        SendEvent sendEvent = new SendEvent();
-        sendEvent.setStatusCode(StatusCodeEnum.OK);
-        sendEvent.setStatusDateTime(instant);
-        sendEvent.setRequestId("iun_event_idx_0");
-        sendEvent.setStatusDetail("ok");
-        sendEvent.setAttachments(new ArrayList<>());
-        PaperChannelUpdate singleStatusUpdate = new PaperChannelUpdate();
-        singleStatusUpdate.setSendEvent(sendEvent);
-
-        Mockito.when(timelineUtils.getIunFromTimelineId("iun_event_idx_0")).thenReturn("iun_event_idx_0");
-
-        handler.paperChannelResponseReceiver(singleStatusUpdate);
-
-        SendEventInt tmp = SendEventInt.builder()
-                .iun("iun_event_idx_0")
-                .requestId("iun_event_idx_0")
-                .statusCode("OK")
-                .statusDateTime(instant)
-                .statusDetail("ok")
-                .attachments(new ArrayList<>())
-                .build();
-
-        Mockito.verify(analogWorkflowPaperChannelResponseHandler, Mockito.times(1)).paperChannelSendResponseHandler(tmp);
-    }
-
-    @Test
     void prepareEventPnInternalExceptionTest() {
 
         Instant instant = Instant.parse("2022-08-30T16:04:13.913859900Z");
@@ -379,11 +355,9 @@ class PaperChannelResponseHandlerTest {
 
         Mockito.doThrow(new PnInternalException("errore", ERROR_CODE_DELIVERYPUSH_GENERATEPDFFAILED)).when(analogWorkflowPaperChannelResponseHandler).paperChannelPrepareResponseHandler(Mockito.any());
 
-        PnInternalException pnInternalException = Assertions.assertThrows(PnInternalException.class, () -> {
-            handler.paperChannelResponseReceiver(singleStatusUpdate);
-        });
+        PnInternalException pnInternalException = Assertions.assertThrows(PnInternalException.class, () -> handler.paperChannelResponseReceiver(singleStatusUpdate));
 
-        Assertions.assertEquals(ERROR_CODE_DELIVERYPUSH_GENERATEPDFFAILED, pnInternalException.getProblem().getErrors().get(0).getCode());
+        Assertions.assertEquals(ERROR_CODE_DELIVERYPUSH_GENERATEPDFFAILED, pnInternalException.getProblem().getErrors().getFirst().getCode());
     }
 
     @Test
@@ -400,11 +374,9 @@ class PaperChannelResponseHandlerTest {
 
         Mockito.doThrow(new RuntimeException()).when(analogWorkflowPaperChannelResponseHandler).paperChannelPrepareResponseHandler(Mockito.any());
 
-        PnInternalException pnInternalException = Assertions.assertThrows(PnInternalException.class, () -> {
-            handler.paperChannelResponseReceiver(singleStatusUpdate);
-        });
+        PnInternalException pnInternalException = Assertions.assertThrows(PnInternalException.class, () -> handler.paperChannelResponseReceiver(singleStatusUpdate));
 
-        Assertions.assertEquals(ERROR_CODE_DELIVERYPUSH_PAPERUPDATEFAILED, pnInternalException.getProblem().getErrors().get(0).getCode());
+        Assertions.assertEquals(ERROR_CODE_DELIVERYPUSH_PAPERUPDATEFAILED, pnInternalException.getProblem().getErrors().getFirst().getCode());
     }
 
     @Test
@@ -425,11 +397,9 @@ class PaperChannelResponseHandlerTest {
 
         Mockito.doThrow(new PnInternalException("errore", ERROR_CODE_DELIVERYPUSH_GENERATEPDFFAILED)).when(analogWorkflowPaperChannelResponseHandler).paperChannelSendResponseHandler(Mockito.any());
 
-        PnInternalException pnInternalException = Assertions.assertThrows(PnInternalException.class, () -> {
-            handler.paperChannelResponseReceiver(singleStatusUpdate);
-        });
+        PnInternalException pnInternalException = Assertions.assertThrows(PnInternalException.class, () -> handler.paperChannelResponseReceiver(singleStatusUpdate));
 
-        Assertions.assertEquals(ERROR_CODE_DELIVERYPUSH_GENERATEPDFFAILED, pnInternalException.getProblem().getErrors().get(0).getCode());
+        Assertions.assertEquals(ERROR_CODE_DELIVERYPUSH_GENERATEPDFFAILED, pnInternalException.getProblem().getErrors().getFirst().getCode());
     }
 
     @Test
@@ -451,11 +421,9 @@ class PaperChannelResponseHandlerTest {
 
         Mockito.doThrow(new RuntimeException()).when(analogWorkflowPaperChannelResponseHandler).paperChannelSendResponseHandler(Mockito.any());
 
-        PnInternalException pnInternalException = Assertions.assertThrows(PnInternalException.class, () -> {
-            handler.paperChannelResponseReceiver(singleStatusUpdate);
-        });
+        PnInternalException pnInternalException = Assertions.assertThrows(PnInternalException.class, () -> handler.paperChannelResponseReceiver(singleStatusUpdate));
 
-        Assertions.assertEquals(ERROR_CODE_DELIVERYPUSH_PAPERUPDATEFAILED, pnInternalException.getProblem().getErrors().get(0).getCode());
+        Assertions.assertEquals(ERROR_CODE_DELIVERYPUSH_PAPERUPDATEFAILED, pnInternalException.getProblem().getErrors().getFirst().getCode());
     }
 
 

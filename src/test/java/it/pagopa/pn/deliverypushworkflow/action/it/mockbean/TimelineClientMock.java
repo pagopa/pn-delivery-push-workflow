@@ -13,7 +13,6 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationCancel
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.RecipientRelatedTimelineElementDetails;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementDetailsInt;
-import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.*;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.timeline.TimelineClient;
 import it.pagopa.pn.deliverypushworkflow.service.NotificationCancellationService;
 import it.pagopa.pn.deliverypushworkflow.service.NotificationService;
@@ -98,13 +97,7 @@ public class TimelineClientMock implements TimelineClient {
 
         log.debug("[TEST] Add timeline element {}", dto);
 
-/*        if(getTimelineElement(dto.getIun(), dto.getElementId()).isPresent()){
-            log.error("TimelineElement is already present timelineElementId={}",dto.getElementId());
-            throw new RuntimeException("TimelineElement is already present");
-        }*/
-
         timelineList.add(dto);
-
 
         if( dto.getDetails() != null && dto.getDetails() instanceof RecipientRelatedTimelineElementDetails) {
 
