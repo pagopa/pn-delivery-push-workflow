@@ -26,11 +26,11 @@ import static org.mockserver.model.HttpResponse.response;
 @SpringBootTest
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
-        "pn.delivery-push-workflow.data-vault-base-url=http://localhost:9998",
-//        "spring.cloud.stream.default.consumer.autoStartup=false"
+        "pn.delivery-push-workflow.data-vault-base-url=http://localhost:9998"
 })
 class PnDataVaultClientReactiveImplTestIT extends MockAWSObjectsTest {
     @Autowired
+    @SuppressWarnings("unused")
     private PnDataVaultClientReactiveImpl client;
     
     private static ClientAndServer mockServer;
@@ -74,7 +74,7 @@ class PnDataVaultClientReactiveImplTestIT extends MockAWSObjectsTest {
     }
 
     @Test
-    void getRecipientDenominationByInternalIdKo() throws JsonProcessingException {
+    void getRecipientDenominationByInternalIdKo() {
         mockServer = startClientAndServer(9998);
 
         //Given

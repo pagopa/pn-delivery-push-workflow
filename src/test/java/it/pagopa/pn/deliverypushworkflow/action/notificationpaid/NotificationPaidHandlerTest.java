@@ -1,7 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.action.notificationpaid;
 
 import it.pagopa.pn.api.dto.events.PnDeliveryPaymentEvent;
-import it.pagopa.pn.deliverypushworkflow.action.notificationpaid.NotificationPaidHandler;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationSenderInt;
@@ -31,7 +30,7 @@ class NotificationPaidHandlerTest {
     private NotificationPaidHandler handler;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         timelineService = Mockito.mock(TimelineService.class);
         timelineUtils = Mockito.mock(TimelineUtils.class);
         notificationService = Mockito.mock(NotificationService.class);

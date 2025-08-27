@@ -1,7 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.action.it.mockbean;
 
 import it.pagopa.pn.deliverypushworkflow.action.it.utils.MethodExecutor;
-import it.pagopa.pn.deliverypushworkflow.action.utils.InstantNowSupplier;
 import it.pagopa.pn.deliverypushworkflow.dto.address.CourtesyDigitalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.address.LegalDigitalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
@@ -26,7 +25,6 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 @Slf4j
 public class ExternalChannelMock implements ExternalChannelSendClient {
@@ -41,24 +39,15 @@ public class ExternalChannelMock implements ExternalChannelSendClient {
     public static final String EXTCHANNEL_SEND_SUCCESS = "OK"; //Invio notifica ok
     public static final String EXTCHANNEL_SEND_FAIL = "FAIL"; //Invio notifica fallita
     public static final String EXT_CHANNEL_SEND_NEW_ADDR = "NEW_ADDR:"; //Invio notifica fallita con nuovo indirizzo da investigazione
-    //Esempio: La combinazione di EXT_CHANNEL_SEND_NEW_ADDR + EXTCHANNEL_SEND_OK ad esempio significa -> Invio notifica fallito ma con nuovo indirizzo trovato e l'invio a tale indirzzo avrà successo
-
-    public static final int WAITING_TIME = 100;
-    private static final Pattern NEW_ADDRESS_INPUT_PATTERN = Pattern.compile("^" + EXT_CHANNEL_SEND_NEW_ADDR + "(.*)$");
+    //Esempio: La combinazione di EXT_CHANNEL_SEND_NEW_ADDR + EXTCHANNEL_SEND_OK ad esempio significa -> Invio notifica fallito ma con nuovo indirizzo trovato e l'invio a tale indirizzo avrà successo
 
     private final ExternalChannelResponseHandler externalChannelHandler;
     private final TimelineService timelineService;
-    private final InstantNowSupplier instantNowSupplier;
-    private final PnDeliveryClientMock pnDeliveryClientMock;
 
     public ExternalChannelMock(@Lazy ExternalChannelResponseHandler externalChannelHandler,
-                               @Lazy TimelineService timelineService,
-                               @Lazy InstantNowSupplier instantNowSupplier,
-                               @Lazy PnDeliveryClientMock pnDeliveryClientMock) {
+                               @Lazy TimelineService timelineService) {
         this.externalChannelHandler = externalChannelHandler;
         this.timelineService = timelineService;
-        this.instantNowSupplier = instantNowSupplier;
-        this.pnDeliveryClientMock = pnDeliveryClientMock;
     }
 
     @Override
@@ -80,32 +69,29 @@ public class ExternalChannelMock implements ExternalChannelSendClient {
                                          String aarKey,
                                          String quickAccessToken) {
         //Invio messaggio di cortesia non necessità di risposta da external channel
-        //sendDigitalNotification(digitalAddress.getAddress(), notificationInt, timelineEventId, false);
     }
 
     private void sendDigitalNotification(String address, NotificationInt notification, String timelineEventId){
         log.info("[TEST] sendDigitalNotification address:{} requestId:{}", address, timelineEventId);
 
-        ThreadPool.start(new Thread(() -> {
-            Assertions.assertDoesNotThrow(() -> {
-                // Viene atteso fino a che l'elemento di timeline relativo all'invio verso extChannel sia stato inserito
-                MethodExecutor.waitForExecution(
-                        () ->timelineService.getTimelineElement(notification.getIun(), timelineEventId)
-                );
-                
-                simulateExternalChannelDigitalProgressResponse(timelineEventId);
-                
-                Optional<SendDigitalDetailsInt> sendDigitalDetailsOpt = timelineService.getTimelineElementDetails(notification.getIun(), timelineEventId, SendDigitalDetailsInt.class);
-                if(sendDigitalDetailsOpt.isPresent()){
-                    waitForProgressTimelineElement(notification, sendDigitalDetailsOpt.get());
+        ThreadPool.start(new Thread(() -> Assertions.assertDoesNotThrow(() -> {
+            // Viene atteso fino a che l'elemento di timeline relativo all'invio verso extChannel sia stato inserito
+            MethodExecutor.waitForExecution(
+                    () ->timelineService.getTimelineElement(notification.getIun(), timelineEventId)
+            );
 
-                    simulateExternalChannelDigitalResponse(address, timelineEventId);
+            simulateExternalChannelDigitalProgressResponse(timelineEventId);
 
-                }else {
-                    log.error("[TEST] SendDigitalDetails is not present");
-                }
-            });
-        }));
+            Optional<SendDigitalDetailsInt> sendDigitalDetailsOpt = timelineService.getTimelineElementDetails(notification.getIun(), timelineEventId, SendDigitalDetailsInt.class);
+            if(sendDigitalDetailsOpt.isPresent()){
+                waitForProgressTimelineElement(notification, sendDigitalDetailsOpt.get());
+
+                simulateExternalChannelDigitalResponse(address, timelineEventId);
+
+            }else {
+                log.error("[TEST] SendDigitalDetails is not present");
+            }
+        })));
     }
 
     private void waitForProgressTimelineElement(NotificationInt notification, SendDigitalDetailsInt sendDigitalDetails) {
@@ -120,7 +106,7 @@ public class ExternalChannelMock implements ExternalChannelSendClient {
                         .progressIndex(1)
                         .build()
         );
-        
+
         //Viene atteso finchè l'elemento di timeline relativo al progress non sia stato inserito
         MethodExecutor.waitForExecution(
                 () ->timelineService.getTimelineElement(notification.getIun(), elementId)
@@ -142,19 +128,18 @@ public class ExternalChannelMock implements ExternalChannelSendClient {
         );
 
         singleStatusUpdate.setDigitalLegal(extChannelResponse);
-        
+
         externalChannelHandler.extChannelResponseReceiver(singleStatusUpdate);
     }
 
-    private void simulateExternalChannelDigitalResponse(String address, String timelineEventId) {
+    private void simulateExternalChannelDigitalResponse(String address, String eventId) {
 
         ProgressEventCategory status;
 
-        String eventId = timelineEventId;
         String retryNumberPart = eventId.replaceFirst(".*([0-9]+)$", "$1");
-        
-        LegalMessageSentDetails.EventCodeEnum eventCode = null;
-        
+
+        LegalMessageSentDetails.EventCodeEnum eventCode;
+
         if (address != null) {
             String domainPart = address.replaceFirst(".*@", "");
 
@@ -177,7 +162,7 @@ public class ExternalChannelMock implements ExternalChannelSendClient {
         LegalMessageSentDetails extChannelResponse = new LegalMessageSentDetails();
         extChannelResponse.setStatus(status);
         extChannelResponse.setEventTimestamp(ZonedDateTime.ofInstant(Instant.now(), ZoneOffset.UTC).toOffsetDateTime());
-        extChannelResponse.setRequestId(timelineEventId);
+        extChannelResponse.setRequestId(eventId);
         extChannelResponse.setEventCode(eventCode); //AVVENUTA CONSEGNA
         extChannelResponse.setGeneratedMessage(
                 new DigitalMessageReference()
@@ -185,7 +170,7 @@ public class ExternalChannelMock implements ExternalChannelSendClient {
                         .location("safestorage://urlditest")
                         .system("test_system")
         );
-        
+
         singleStatusUpdate.setDigitalLegal(extChannelResponse);
 
         externalChannelHandler.extChannelResponseReceiver(singleStatusUpdate);

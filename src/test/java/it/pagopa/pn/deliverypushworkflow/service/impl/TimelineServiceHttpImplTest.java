@@ -6,14 +6,11 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendAnalogFeedbackDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementDetailsInt;
-import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.*;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.timeline.TimelineClient;
-import it.pagopa.pn.deliverypushworkflow.service.mapper.TimelineServiceMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 

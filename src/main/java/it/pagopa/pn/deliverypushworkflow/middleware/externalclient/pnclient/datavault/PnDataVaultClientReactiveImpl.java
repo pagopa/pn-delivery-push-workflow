@@ -23,8 +23,7 @@ public class PnDataVaultClientReactiveImpl extends CommonBaseClient implements P
 
     @Override
     @Retryable(
-            value = {PnInternalException.class},
-            maxAttempts = 3,
+            retryFor = {PnInternalException.class},
             backoff = @Backoff(random = true, delay = 500, maxDelay = 1000, multiplier = 2)
     )
     public Flux<BaseRecipientDto> getRecipientsDenominationByInternalId(List<String> listInternalId) {

@@ -5,7 +5,6 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import it.pagopa.pn.deliverypushworkflow.exceptions.PnEventRouterException;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.handler.EventHandler;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,9 +38,9 @@ class EventHandlerRegistryTest {
         // Verify log warning (use a logging framework test utility if available)
         // JUnit assertions
         List<ILoggingEvent> logsList = listAppender.list;
-        assertEquals("No event handlers found. Please ensure that event handlers are properly configured.", logsList.get(0)
+        assertEquals("No event handlers found. Please ensure that event handlers are properly configured.", logsList.getFirst()
                 .getFormattedMessage());
-        assertEquals(Level.WARN, logsList.get(0)
+        assertEquals(Level.WARN, logsList.getFirst()
                 .getLevel());
     }
 
@@ -98,6 +97,6 @@ class EventHandlerRegistryTest {
     }
 
     private void inspectErrorCode(String expectedErrorCode, PnEventRouterException exception) {
-        assertEquals(expectedErrorCode, exception.getProblem().getErrors().get(0).getCode());
+        assertEquals(expectedErrorCode, exception.getProblem().getErrors().getFirst().getCode());
     }
 }

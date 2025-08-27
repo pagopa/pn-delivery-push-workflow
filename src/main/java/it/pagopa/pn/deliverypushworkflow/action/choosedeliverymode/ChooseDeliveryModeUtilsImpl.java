@@ -1,6 +1,5 @@
 package it.pagopa.pn.deliverypushworkflow.action.choosedeliverymode;
 
-import it.pagopa.pn.deliverypushworkflow.action.utils.CourtesyMessageUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.NotificationUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.deliverypushworkflow.dto.address.DigitalAddressSourceInt;
@@ -8,7 +7,6 @@ import it.pagopa.pn.deliverypushworkflow.dto.address.LegalDigitalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendCourtesyMessageDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.service.AddressBookService;
 import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +14,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.Optional;
 
 @Component
@@ -30,7 +27,7 @@ public class ChooseDeliveryModeUtilsImpl implements ChooseDeliveryModeUtils{
     private final AddressBookService addressBookService;
     private final NotificationUtils notificationUtils;
 
-    public ChooseDeliveryModeUtilsImpl(TimelineService timelineService, TimelineUtils timelineUtils, CourtesyMessageUtils courtesyMessageUtils,
+    public ChooseDeliveryModeUtilsImpl(TimelineService timelineService, TimelineUtils timelineUtils,
                                        AddressBookService addressBookService, NotificationUtils notificationUtils) {
         this.timelineService = timelineService;
         this.timelineUtils = timelineUtils;

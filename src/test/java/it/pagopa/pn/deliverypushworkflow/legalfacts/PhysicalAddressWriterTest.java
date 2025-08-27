@@ -15,7 +15,7 @@ class PhysicalAddressWriterTest {
 	private PhysicalAddressWriter physicalAddressWriter;
 
 	@BeforeEach
-	public void setup() {
+    void setup() {
 		physicalAddressWriter = new PhysicalAddressWriter();
 	}
 
@@ -42,7 +42,7 @@ class PhysicalAddressWriterTest {
 
 
 		// WHEN
-		NotificationRecipientInt recipient = notification.getRecipients().get( 0 );
+		NotificationRecipientInt recipient = notification.getRecipients().getFirst();
 		String output = physicalAddressWriter.nullSafePhysicalAddressToString( recipient.getPhysicalAddress(), recipient.getDenomination(), ";" );
 
 		// THEN
@@ -69,7 +69,7 @@ class PhysicalAddressWriterTest {
 
 
 		// WHEN
-		NotificationRecipientInt recipient = notification.getRecipients().get( 0 );
+		NotificationRecipientInt recipient = notification.getRecipients().getFirst();
 		String output = physicalAddressWriter.nullSafePhysicalAddressToString( recipient.getPhysicalAddress(), recipient.getDenomination(), ";" );
 
 		// THEN
@@ -77,58 +77,61 @@ class PhysicalAddressWriterTest {
 	}
 
 
-	@Test
-	void successNullSafePhysicalAddressToString_nullat() {
-		// GIVEN
-		NotificationInt notification = NotificationInt.builder()
-				.recipients( Collections.singletonList(
-								NotificationRecipientInt.builder()
-										.denomination( "denomination" )
-										.physicalAddress(PhysicalAddressInt.builder()
-												.address( "address" )
-												.municipality( "municipality" )
-												.municipalityDetails("mundetails")
-												.addressDetails( "addressDetail" )
-												.zip( "zip" )
-												.build()
-										).build()
-						)
-				).build();
+    @Test
+    void successNullSafePhysicalAddressToString_nullat() {
+        // GIVEN
+        NotificationInt notification = NotificationInt.builder()
+                .recipients( Collections.singletonList(
+                                NotificationRecipientInt.builder()
+                                        .denomination( "denomination" )
+                                        .physicalAddress(PhysicalAddressInt.builder()
+                                                .address( "address" )
+                                                .municipality( "municipality" )
+                                                .municipalityDetails("mundetails")
+                                                .addressDetails( "addressDetail" )
+                                                .zip( "zip" )
+                                                .at(null)
+                                                .build()
+                                        ).build()
+                        )
+                ).build();
 
 
-		// WHEN
-		NotificationRecipientInt recipient = notification.getRecipients().get( 0 );
-		String output = physicalAddressWriter.nullSafePhysicalAddressToString( recipient.getPhysicalAddress(), recipient.getDenomination(), ";" );
+        // WHEN
+        NotificationRecipientInt recipient = notification.getRecipients().getFirst();
+        String output = physicalAddressWriter.nullSafePhysicalAddressToString( recipient.getPhysicalAddress(), recipient.getDenomination(), ";" );
 
-		// THEN
-		Assertions.assertEquals("denomination;addressDetail;address;zip municipality mundetails", output, "Different notification data");
-	}
-
-
-	@Test
-	void successNullSafePhysicalAddressToString_nullforeing() {
-		// GIVEN
-		NotificationInt notification = NotificationInt.builder()
-				.recipients( Collections.singletonList(
-								NotificationRecipientInt.builder()
-										.denomination( "denomination" )
-										.physicalAddress(PhysicalAddressInt.builder()
-												.address( "address" )
-												.municipality( "municipality" )
-												.municipalityDetails("mundetails")
-												.addressDetails( "addressDetail" )
-												.zip( "zip" )
-												.build()
-										).build()
-						)
-				).build();
+        // THEN
+        Assertions.assertEquals("denomination;addressDetail;address;zip municipality mundetails", output, "Different notification data");
+    }
 
 
-		// WHEN
-		NotificationRecipientInt recipient = notification.getRecipients().get( 0 );
-		String output = physicalAddressWriter.nullSafePhysicalAddressToString( recipient.getPhysicalAddress(), recipient.getDenomination(), ";" );
+    @Test
+    void successNullSafePhysicalAddressToString_nullforeing() {
+        NotificationInt notification = NotificationInt.builder()
+                .recipients( Collections.singletonList(
+                                NotificationRecipientInt.builder()
+                                        .denomination( "denomination" )
+                                        .physicalAddress(PhysicalAddressInt.builder()
+                                                .address( "address" )
+                                                .municipality( "municipality" )
+                                                .municipalityDetails("mundetails")
+                                                .addressDetails( "addressDetail" )
+                                                .zip( "zip" )
+                                                .at("at")
+                                                .foreignState(null)
+                                                .build()
+                                        ).build()
+                        )
+                ).build();
 
-		// THEN
-		Assertions.assertEquals("denomination;addressDetail;address;zip municipality mundetails", output, "Different notification data");
-	}
+
+        // WHEN
+        NotificationRecipientInt recipient = notification.getRecipients().getFirst();
+        String output = physicalAddressWriter.nullSafePhysicalAddressToString( recipient.getPhysicalAddress(), recipient.getDenomination(), ";" );
+
+        // THEN
+        Assertions.assertEquals("denomination;at;addressDetail;address;zip municipality mundetails", output, "Different notification data");
+        Assertions.assertNull(recipient.getPhysicalAddress().getForeignState());
+    }
 }

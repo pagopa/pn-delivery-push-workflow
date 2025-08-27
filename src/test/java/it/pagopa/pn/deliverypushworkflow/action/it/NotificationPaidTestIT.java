@@ -148,12 +148,10 @@ class NotificationPaidTestIT extends CommonTestConfiguration{
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient,
-                recIndex,
                 0,
                 generatedLegalFactsInfo,
                 EndWorkflowStatus.SUCCESS,
                 legalFactGenerator,
-                timelineService,
                 null
         );
         
@@ -242,12 +240,10 @@ class NotificationPaidTestIT extends CommonTestConfiguration{
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient,
-                recIndex,
                 sentPecAttemptNumber,
                 generatedLegalFactsInfo,
                 endWorkflowStatus,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 

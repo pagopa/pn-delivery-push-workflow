@@ -24,9 +24,9 @@ public class PnSendModeUtils {
     private final List<PnSendMode> pnSendModesList;
     private final AarTemplateStrategyFactory aarTemplateStrategyFactory;
     
-    public PnSendModeUtils(PnDeliveryPushWorkflowConfigs PnDeliveryPushWorkflowConfigs, AarTemplateStrategyFactory aarTemplateStrategyFactory){
+    public PnSendModeUtils(PnDeliveryPushWorkflowConfigs pnDeliveryPushWorkflowConfigs, AarTemplateStrategyFactory aarTemplateStrategyFactory){
         this.aarTemplateStrategyFactory = aarTemplateStrategyFactory;
-        List<PnSendMode> pnSendModesListNotSorted = getPnSendModeFromString(PnDeliveryPushWorkflowConfigs.getPnSendMode());
+        List<PnSendMode> pnSendModesListNotSorted = getPnSendModeFromString(pnDeliveryPushWorkflowConfigs.getPnSendMode());
         pnSendModesList = getSortedList(pnSendModesListNotSorted);
     }
     
