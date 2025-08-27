@@ -445,7 +445,7 @@ class ViewNotificationTest {
 
         //THEN
         Mockito.verify(legalFactStore).sendCreationRequestForNotificationViewedLegalFact(notification, recipient, null, viewDate);
-        Mockito.verify(attachmentUtils, never()).changeAttachmentsRetention(notification, PnDeliveryPushWorkflowConfigs.getRetentionAttachmentDaysAfterRefinement());
+        Mockito.verify(attachmentUtils, never()).changeAttachmentsRetention(notification, pnDeliveryPushWorkflowConfigs.getRetentionAttachmentDaysAfterRefinement());
 
 
         Mockito.verify(timelineUtils).buildNotificationViewedLegalFactCreationRequestTimelineElement(
