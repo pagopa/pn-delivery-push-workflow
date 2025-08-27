@@ -12,7 +12,6 @@ import it.pagopa.pn.deliverypushworkflow.action.startworkflow.notificationvalida
 import it.pagopa.pn.deliverypushworkflow.action.utils.ExternalChannelUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.NotificationUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
-import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.address.CourtesyDigitalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.address.DigitalAddressSourceInt;
 import it.pagopa.pn.deliverypushworkflow.dto.address.LegalDigitalAddressInt;
@@ -44,10 +43,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertThrows;
@@ -1079,7 +1075,7 @@ class ExternalChannelServiceImplTest {
                 eq(recipient),
                 captor.capture(),
                 eq(eventIdExpected),
-                eq(Arrays.asList(aarKey)),
+                eq(List.of(aarKey)),
                 eq(quickAccessToken));
         Assertions.assertEquals(SERCQ_ADDRESS, captor.getValue().getAddress());
         Mockito.verify(externalChannelUtils).addSendDigitalNotificationToTimeline(notification, recIndex, sendInformation, eventIdExpected);

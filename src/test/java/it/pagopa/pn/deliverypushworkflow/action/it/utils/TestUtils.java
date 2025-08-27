@@ -40,7 +40,6 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -48,19 +47,16 @@ import static org.mockito.ArgumentMatchers.eq;
 @Slf4j
 public class TestUtils {
     public static final String PN_NOTIFICATION_ATTACHMENT = "PN_NOTIFICATION_ATTACHMENT";
-    public static final String TOO_BIG = "TOO_BIG";
-    public static final String NOT_A_PDF = "NOT_A_PDF";
-
 
     public static void checkSendCourtesyAddresses(String iun, Integer recIndex, List<CourtesyDigitalAddressInt> courtesyAddresses, TimelineService timelineService, ExternalChannelMock externalChannelMock) {
 
         checkSendCourtesyAddressFromTimeline(iun, recIndex, courtesyAddresses, timelineService);
         //Viene verificato l'effettivo invio del messaggio di cortesia verso external channel
         Mockito.verify(externalChannelMock, Mockito.times(courtesyAddresses.size())).sendCourtesyNotification(
-                any(NotificationInt.class),
-                any(NotificationRecipientInt.class),
-                any(CourtesyDigitalAddressInt.class),
-                any(String.class),
+                Mockito.any(NotificationInt.class),
+                Mockito.any(NotificationRecipientInt.class),
+                Mockito.any(CourtesyDigitalAddressInt.class),
+                Mockito.any(String.class),
                 Mockito.anyString(),
                 Mockito.anyString()
         );
@@ -142,7 +138,7 @@ public class TestUtils {
         ArgumentCaptor<NotificationInt> notificationCaptor = ArgumentCaptor.forClass(NotificationInt.class);
 
         Mockito.verify(completionWorkflow, Mockito.times(1)).completionAnalogWorkflow(
-                notificationCaptor.capture(), recIndexCaptor.capture(), any(Instant.class), any(PhysicalAddressInt.class), endWorkflowStatusArgumentCaptor.capture()
+                notificationCaptor.capture(), recIndexCaptor.capture(), Mockito.any(Instant.class), Mockito.any(PhysicalAddressInt.class), endWorkflowStatusArgumentCaptor.capture()
         );
         Assertions.assertEquals(recIndex, recIndexCaptor.getValue());
         Assertions.assertEquals(iun, notificationCaptor.getValue().getIun());
@@ -160,7 +156,7 @@ public class TestUtils {
         ArgumentCaptor<LegalDigitalAddressInt> addressCaptor = ArgumentCaptor.forClass(LegalDigitalAddressInt.class);
 
         Mockito.verify(completionWorkflow, Mockito.times(invocationsNumber)).completionSuccessDigitalWorkflow(
-                notificationCaptor.capture(), recIndexCaptor.capture(), any(Instant.class), addressCaptor.capture());
+                notificationCaptor.capture(), recIndexCaptor.capture(), Mockito.any(Instant.class), addressCaptor.capture());
 
         List<Integer> recIndexCaptorValue = recIndexCaptor.getAllValues();
         List<NotificationInt> notificationCaptorValue = notificationCaptor.getAllValues();
@@ -188,7 +184,7 @@ public class TestUtils {
 
     public static void checkFailDigitalWorkflow(String iun, Integer recIndex, TimelineService timelineService, CompletionWorkFlowHandler completionWorkflow) {
         //Viene verificato che il workflow sia fallito
-        checkInTimlineIsFailedDigitalWorkflow(iun, recIndex, timelineService);
+        checkInTimelineIsFailedDigitalWorkflow(iun, recIndex, timelineService);
 
         ArgumentCaptor<NotificationInt> notificationCaptor = ArgumentCaptor.forClass(NotificationInt.class);
         ArgumentCaptor<Integer> recIndexCaptor = ArgumentCaptor.forClass(Integer.class);
@@ -202,7 +198,7 @@ public class TestUtils {
 
     public static void checkFailDigitalWorkflowMultiRec(String iun, Integer recIndex, int numberOfCompletedWorkflow, TimelineService timelineService, CompletionWorkFlowHandler completionWorkflow) {
         //Viene verificato che il workflow sia fallito
-        checkInTimlineIsFailedDigitalWorkflow(iun, recIndex, timelineService);
+        checkInTimelineIsFailedDigitalWorkflow(iun, recIndex, timelineService);
 
         ArgumentCaptor<NotificationInt> notificationCaptor = ArgumentCaptor.forClass(NotificationInt.class);
         ArgumentCaptor<Integer> recIndexCaptor = ArgumentCaptor.forClass(Integer.class);
@@ -212,7 +208,7 @@ public class TestUtils {
         );
     }
 
-    private static void checkInTimlineIsFailedDigitalWorkflow(String iun, Integer recIndex, TimelineService timelineService) {
+    private static void checkInTimelineIsFailedDigitalWorkflow(String iun, Integer recIndex, TimelineService timelineService) {
         Optional<TimelineElementInternal> failDigitalWorkflowOpt = timelineService.getTimelineElement(
                 iun,
                 TimelineEventId.DIGITAL_FAILURE_WORKFLOW.buildEventId(
@@ -245,8 +241,8 @@ public class TestUtils {
         Mockito.verify(completionWorkflow, Mockito.atLeastOnce()).completionAnalogWorkflow(
                 Mockito.argThat(notification -> notification.getIun().equals(iun)),
                 Mockito.eq(recIndex),
-                any(Instant.class),
-                any(PhysicalAddressInt.class),
+                Mockito.any(Instant.class),
+                Mockito.any(PhysicalAddressInt.class),
                 Mockito.eq(EndWorkflowStatus.DECEASED)
         );
     }
@@ -562,14 +558,15 @@ public class TestUtils {
                                               PnDeliveryPushWorkflowConfigs pnDeliveryPushConfigs) {
         ArgumentCaptor<Instant> instantArgumentCaptor = ArgumentCaptor.forClass(Instant.class);
 
-        Mockito.verify(scheduler, Mockito.times(refinementNumberOfInvocation)).scheduleEvent(eq(iun), eq(recIndex), instantArgumentCaptor.capture(), any(ActionType.class));
+        Mockito.verify(scheduler, Mockito.times(refinementNumberOfInvocation)).scheduleEvent(eq(iun), eq(recIndex), instantArgumentCaptor.capture(), Mockito.any(ActionType.class));
         List<Instant> instantArgumentCaptorList = instantArgumentCaptor.getAllValues();
         //Viene ottenuta la data di perfezionamento (Valutare se inserire la data di scheduling come campo del timeline element details)
         Instant refinementDate = instantArgumentCaptorList.getLast();
 
         List<TimelineElementInternal> lastSendDigitalElementList = timelineService.getTimeline(iun, false).stream()
-                .filter(element -> TimelineElementCategoryInt.SEND_DIGITAL_DOMICILE.equals(element.getCategory()))
-                .sorted(Comparator.comparing(TimelineElementInternal::getTimestamp)).collect(Collectors.toList());
+            .filter(element -> TimelineElementCategoryInt.SEND_DIGITAL_DOMICILE.equals(element.getCategory()))
+            .sorted(Comparator.comparing(TimelineElementInternal::getTimestamp))
+            .toList();
 
         Instant lastSendDigitalDate = lastSendDigitalElementList.getLast().getTimestamp();
         //Viene ottenuta la data dell'ultimo invio verso externalChannel
@@ -633,7 +630,7 @@ public class TestUtils {
                                     NotificationDocumentInt.Ref actualRefWithoutKey = doc.getRef();
                                     return doc.toBuilder()
                                             .ref(actualRefWithoutKey.toBuilder()
-                                                    .key(response.getKey())
+                                                    .key(Objects.requireNonNull(response).getKey())
                                                     .build())
                                             .build();
                         }).toList();
@@ -643,7 +640,7 @@ public class TestUtils {
     public static List<DocumentWithContent> getDocumentWithContents(String fileDoc, List<NotificationDocumentInt> notificationDocumentList) {
         DocumentWithContent documentWithContent = DocumentWithContent.builder()
                 .content(fileDoc)
-                .document(notificationDocumentList.get(0))
+                .document(notificationDocumentList.getFirst())
                 .build();
         return Collections.singletonList(documentWithContent);
     }
@@ -665,20 +662,6 @@ public class TestUtils {
         );
     }
 
-    public static List<NotificationPaymentInfoInt> getPaymentWithF24(NotificationDocumentInt paymentDocumentInt) {
-        return List.of(
-                NotificationPaymentInfoInt.builder()
-                        .f24(F24Int.builder()
-                                .applyCost(true)
-                                .title("payment_f24_1")
-                                .metadataAttachment(paymentDocumentInt)
-                                .build()
-                        )
-                        .pagoPA(null)
-                        .build()
-        );
-    }
-
     public static void writeAllGeneratedLegalFacts(String iun, String className, TimelineService timelineService, SafeStorageClientMock safeStorageClientMock) {
         writeAllGeneratedLegalFacts(iun, className, timelineService, safeStorageClientMock, 3);
     }
@@ -689,7 +672,7 @@ public class TestUtils {
         timelineService.getTimeline(iun, true).forEach(
                 elem -> {
                     if (!elem.getLegalFactsIds().isEmpty()) {
-                        LegalFactsIdInt legalFactsId = elem.getLegalFactsIds().get(0);
+                        LegalFactsIdInt legalFactsId = elem.getLegalFactsIds().getFirst();
                         if (!LegalFactCategoryInt.PEC_RECEIPT.equals(legalFactsId.getCategory()) && !LegalFactCategoryInt.ANALOG_DELIVERY.equals(legalFactsId.getCategory())) {
                             String key = legalFactsId.getKey().replace("safestorage://", "");
                             log.info("[TEST] writing safestoragemock key={} testName={} cat={}", key, testName, legalFactsId.getCategory());
@@ -758,7 +741,7 @@ public class TestUtils {
         int times = getTimes(itWasGenerated);
 
         try {
-            Mockito.verify(legalFactGenerator, Mockito.times(times)).generateNotificationViewedLegalFact(eq(iun), eq(recipient), eq(delegateInfo), any(Instant.class), eq(notification));
+            Mockito.verify(legalFactGenerator, Mockito.times(times)).generateNotificationViewedLegalFact(eq(iun), eq(recipient), eq(delegateInfo), Mockito.any(Instant.class), eq(notification));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -791,7 +774,7 @@ public class TestUtils {
 
         try {
             Mockito.verify(legalFactGenerator, Mockito.times(times)).generatePecDeliveryWorkflowLegalFact(sendDigitalFeedbackCaptor.capture(), eq(notification),
-                    eq(recipient), eq(endWorkflowStatus), any(Instant.class));
+                    eq(recipient), eq(endWorkflowStatus), Mockito.any(Instant.class));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -815,7 +798,7 @@ public class TestUtils {
 
         try {
             Mockito.verify(legalFactGenerator, Mockito.times(times)).generateAnalogDeliveryFailureWorkflowLegalFact(eq(notification),
-                    eq(recipient), eq(endWorkflowStatus), any(Instant.class));
+                    eq(recipient), eq(endWorkflowStatus), Mockito.any(Instant.class));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -953,44 +936,6 @@ public class TestUtils {
                 .build();
     }
 
-    public static NotificationInt getNotificationV2WithDocument(LegalDigitalAddressInt.LEGAL_DIGITAL_ADDRESS_TYPE channelType, String address) {
-        return NotificationInt.builder()
-                .iun("IUN_01")
-                .paProtocolNumber("protocol_01")
-                .sender(NotificationSenderInt.builder()
-                        .paId(" pa_02")
-                        .build()
-                )
-                .documents(List.of(NotificationDocumentInt.builder()
-                        .digests(NotificationDocumentInt.Digests.builder()
-                                .sha256("sha256").build())
-                        .ref(NotificationDocumentInt.Ref.builder().key("test").versionToken("1").build())
-                        .build()))
-                .recipients(Collections.singletonList(
-                        NotificationRecipientInt.builder()
-                                .taxId("testIdRecipient")
-                                .internalId("test")
-                                .denomination("Nome Cognome/Ragione Sociale")
-                                .digitalDomicile(LegalDigitalAddressInt.builder()
-                                        .type(channelType)
-                                        .address(address)
-                                        .build())
-                                .payments(List.of(NotificationPaymentInfoInt.builder()
-                                        .pagoPA(PagoPaInt.builder()
-                                                .noticeCode("noticeCode")
-                                                .creditorTaxId("taxId")
-                                                .attachment(NotificationDocumentInt.builder()
-                                                        .ref(NotificationDocumentInt.Ref.builder().key("paymentAttach").versionToken("1").build())
-                                                        .digests(NotificationDocumentInt.Digests.builder()
-                                                                .sha256("sha256").build())
-                                                        .build())
-                                                .build())
-                                        .build()))
-                                .build()
-                ))
-                .build();
-    }
-
     public static NotificationInt getNotificationV2WithoutPayments() {
         return NotificationInt.builder()
                 .iun("IUN_01")
@@ -1072,46 +1017,11 @@ public class TestUtils {
     }
 
 
-    public static NotificationInt getNotificationMultiRecipient() {
-        return NotificationInt.builder()
-                .iun("IUN_01")
-                .paProtocolNumber("protocol_01")
-                .sender(NotificationSenderInt.builder()
-                        .paId(" pa_02")
-                        .build()
-                )
-                .recipients(Arrays.asList(
-                        NotificationRecipientInt.builder()
-                                .taxId("testIdRecipient")
-                                .internalId("test")
-                                .denomination("Nome Cognome/Ragione Sociale")
-                                .digitalDomicile(LegalDigitalAddressInt.builder()
-                                        .type(LegalDigitalAddressInt.LEGAL_DIGITAL_ADDRESS_TYPE.PEC)
-                                        .address("account@dominio.it")
-                                        .build())
-                                .build(),
-                        NotificationRecipientInt.builder()
-                                .taxId("testIdRecipient")
-                                .internalId("test")
-                                .denomination("Nome Cognome/Ragione Sociale")
-                                .digitalDomicile(LegalDigitalAddressInt.builder()
-                                        .type(LegalDigitalAddressInt.LEGAL_DIGITAL_ADDRESS_TYPE.PEC)
-                                        .address("account@dominio.it")
-                                        .build())
-                                .build()
-                ))
-                .build();
-    }
-
     public static String getMethodName(final int depth) {
         final StackTraceElement[] ste = Thread.currentThread().getStackTrace();
         return ste[depth].getMethodName();
     }
 
-    public static String getMethodNameAndClassName(final int depth) {
-        final StackTraceElement[] ste = Thread.currentThread().getStackTrace();
-        return ste[depth].getClassName()+"."+ste[depth].getMethodName();
-    }
 
     public static String getRandomIun(int level) {
         String callerMethod = getMethodName(level);
@@ -1127,8 +1037,8 @@ public class TestUtils {
     private static String getIun(String callerMethod) {
         Random rand = new Random();
         int upperbound = 10000;
-        int int_random = rand.nextInt(upperbound);
-        return "iun-" + callerMethod + "_" + int_random;
+        int intRandom = rand.nextInt(upperbound);
+        return "iun-" + callerMethod + "_" + intRandom;
     }
 
 
@@ -1177,38 +1087,6 @@ public class TestUtils {
     }
 
 
-    public static NotificationRecipientInt getNotificationRecipientInt() {
-        return NotificationRecipientInt.builder()
-                .taxId("testIdRecipient")
-                .internalId("test")
-                .denomination("Nome Cognome/Ragione Sociale")
-                .digitalDomicile(LegalDigitalAddressInt.builder()
-                        .type(LegalDigitalAddressInt.LEGAL_DIGITAL_ADDRESS_TYPE.PEC)
-                        .address("account@dominio.it")
-                        .build())
-                .payments(List.of(NotificationPaymentInfoInt.builder()
-                        .pagoPA(PagoPaInt.builder()
-                                .noticeCode("noticeCode")
-                                .creditorTaxId("taxId")
-                                .attachment(NotificationDocumentInt.builder()
-                                        .ref(NotificationDocumentInt.Ref.builder().build())
-                                        .digests(NotificationDocumentInt.Digests.builder()
-                                                .sha256("sha256").build())
-                                        .build())
-                                .build())
-                        .f24(F24Int.builder()
-                                .title("title")
-                                .applyCost(true)
-                                .metadataAttachment(NotificationDocumentInt.builder()
-                                        .ref(NotificationDocumentInt.Ref.builder().build())
-                                        .digests(NotificationDocumentInt.Digests.builder()
-                                                .sha256("sha256").build())
-                                        .build())
-                                .build())
-                        .build()))
-                .build();
-    }
-
     @Builder
     @Getter
     public static class GeneratedLegalFactsInfo {
@@ -1244,5 +1122,3 @@ public class TestUtils {
         String sentAttemptMade;
     }
 }
-
-

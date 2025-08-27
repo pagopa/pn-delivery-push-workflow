@@ -62,8 +62,7 @@ public class PnSafeStorageClientImpl extends CommonBaseClient implements PnSafeS
 
     @Override
     @Retryable(
-            value = {PnInternalException.class},
-            maxAttempts = 3,
+            retryFor = {PnInternalException.class},
             backoff = @Backoff(random = true, delay = 500, maxDelay = 1000, multiplier = 2)
     )
     public Mono<OperationResultCodeResponse> updateFileMetadata(String fileKey, UpdateFileMetadataRequest request) {
@@ -93,7 +92,7 @@ public class PnSafeStorageClientImpl extends CommonBaseClient implements PnSafeS
 
             ResponseEntity<String> res = restTemplate.exchange(url, method, req, String.class);
 
-            if (res.getStatusCodeValue() != HttpStatus.OK.value())
+            if (res.getStatusCode().value() != HttpStatus.OK.value())
             {
                 throw new PnInternalException("File upload failed", PnDeliveryPushExceptionCodes.ERROR_CODE_DELIVERYPUSH_UPLOADFILEERROR);
             }

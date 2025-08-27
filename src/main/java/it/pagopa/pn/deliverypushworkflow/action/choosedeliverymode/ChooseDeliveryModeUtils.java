@@ -3,7 +3,6 @@ package it.pagopa.pn.deliverypushworkflow.action.choosedeliverymode;
 import it.pagopa.pn.deliverypushworkflow.dto.address.DigitalAddressSourceInt;
 import it.pagopa.pn.deliverypushworkflow.dto.address.LegalDigitalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendCourtesyMessageDetailsInt;
 
 import java.time.Instant;
 import java.util.Optional;

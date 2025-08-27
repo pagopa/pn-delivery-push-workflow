@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockserver.client.MockServerClient;
-import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.MediaType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -28,17 +27,16 @@ import static org.mockserver.model.HttpResponse.response;
 @SpringBootTest
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
-        "pn.delivery-push-workflow.external-registry-base-url=http://localhost:9998",
+        "pn.delivery-push-workflow.external-registry-base-url=http://localhost:9998"
 })
 class PnExternalRegistriesClientReactiveImplTest extends MockAWSObjectsTest {
     @Autowired
+    @SuppressWarnings("unused")
     private PnExternalRegistriesClientReactive client;
-
-    private static ClientAndServer mockServer;
 
     @BeforeAll
     public static void startMockServer() {
-        mockServer = startClientAndServer(9998);
+         startClientAndServer(9998);
     }
     
     @Test

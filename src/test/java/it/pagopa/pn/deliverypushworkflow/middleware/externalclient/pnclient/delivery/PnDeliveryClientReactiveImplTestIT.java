@@ -33,13 +33,13 @@ class PnDeliveryClientReactiveImplTestIT extends MockAWSObjectsTest {
     private static ClientAndServer mockServer;
 
     @BeforeAll
-    public static void startMockServer() {
+    static void startMockServer() {
 
         mockServer = startClientAndServer(9998);
     }
 
     @AfterAll
-    public static void stopMockServer() {
+    static void stopMockServer() {
         mockServer.stop();
     }
 
@@ -54,7 +54,7 @@ class PnDeliveryClientReactiveImplTestIT extends MockAWSObjectsTest {
                 .replace("{iun}",iun);
 
         ObjectMapper mapper = new ObjectMapper();
-        String respjson = mapper.writeValueAsString(notification);
+        String respJson = mapper.writeValueAsString(notification);
         mockServer.stop();
         mockServer = startClientAndServer(9998);
         new MockServerClient("localhost", 9998)
@@ -62,7 +62,7 @@ class PnDeliveryClientReactiveImplTestIT extends MockAWSObjectsTest {
                         .withMethod("DELETE")
                         .withPath(path))
                 .respond(response()
-                        .withBody(respjson)
+                        .withBody(respJson)
                         .withContentType(MediaType.APPLICATION_JSON)
                         .withStatusCode(200));
 

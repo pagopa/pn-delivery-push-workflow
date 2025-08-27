@@ -96,13 +96,7 @@ public class TimelineClientMock implements TimelineClient {
 
         log.debug("[TEST] Add timeline element {}", dto);
 
-/*        if(getTimelineElement(dto.getIun(), dto.getElementId()).isPresent()){
-            log.error("TimelineElement is already present timelineElementId={}",dto.getElementId());
-            throw new RuntimeException("TimelineElement is already present");
-        }*/
-
         timelineList.add(dto);
-
 
         if( dto.getDetails() != null && dto.getDetails() instanceof RecipientRelatedTimelineElementDetails) {
 

@@ -20,7 +20,6 @@ import java.util.Map;
 public class ScheduleRecipientWorkflow {
     private final NotificationService notificationService;
     private final SchedulerService schedulerService;
-    private final NotificationUtils notificationUtils;
 
     public void startScheduleRecipientWorkflow(String iun) {
         log.info( "StartScheduleRecipientWorkflow for iun={}", iun);
@@ -29,7 +28,7 @@ public class ScheduleRecipientWorkflow {
         Map<String, String> quickAccessLinkTokens = notificationService.getRecipientsQuickAccessLinkToken(notification.getIun());
 
         for (NotificationRecipientInt recipient : notification.getRecipients()) {
-            Integer recIndex = notificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
+            Integer recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
             String quickAccessLinkToken = quickAccessLinkTokens.get(recipient.getInternalId());
             log.debug( "Get quickAccessToken={} for iun={} recIndex={}", quickAccessLinkToken, notification.getIun(), recIndex );
             scheduleStartRecipientWorkflow(notification.getIun(), recIndex, new RecipientsWorkflowDetails(quickAccessLinkToken));

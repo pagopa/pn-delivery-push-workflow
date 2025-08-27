@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Assertions;
 import org.springframework.context.annotation.Lazy;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,7 +24,7 @@ public class PaperChannelMock implements PaperChannelSendClient {
     public static final String EXTCHANNEL_SEND_FAIL = "FAIL"; //Invio notifica fallita
     public static final String EXTCHANNEL_SEND_FAIL_KOUNREACHABLE = "KOUNREACHABLE"; //Invio notifica fallita
     public static final String EXT_CHANNEL_SEND_NEW_ADDR = "NEW_ADDR:"; //Invio notifica fallita con nuovo indirizzo da investigazione
-    //Esempio: La combinazione di EXT_CHANNEL_SEND_NEW_ADDR + EXTCHANNEL_SEND_OK ad esempio significa -> Invio notifica fallito ma con nuovo indirizzo trovato e l'invio a tale indirzzo avrà successo
+    //Esempio: La combinazione di EXT_CHANNEL_SEND_NEW_ADDR + EXTCHANNEL_SEND_OK ad esempio significa -> Invio notifica fallito ma con nuovo indirizzo trovato e l'invio a tale indirizzo avrà successo
     public static final String EXTCHANNEL_SEND_DECEASED = "DECEASED"; //Invio notifica ok ma con destinatario deceduto
     public static final int EXTCHANNEL_SECOND_SEND_ATTEMPT = 1;
     public static final String EXTCHANNEL_SEND_PRODUCT_RIR = "PRODUCT_RIR"; //Invio notifica con prodotto RIR
@@ -79,9 +80,7 @@ public class PaperChannelMock implements PaperChannelSendClient {
                 throw new RuntimeException(e);
             }
 
-            Assertions.assertDoesNotThrow(() -> {
-                simulateSendResponse(paperChannelSendRequest.getRequestId(), paperChannelSendRequest.getReceiverAddress().getAddress());
-            });
+            Assertions.assertDoesNotThrow(() -> simulateSendResponse(paperChannelSendRequest.getRequestId(), paperChannelSendRequest.getReceiverAddress().getAddress()));
 
         }));
 
@@ -101,7 +100,30 @@ public class PaperChannelMock implements PaperChannelSendClient {
 
         int sendAttempt = extractAttemptFromTimelineId(timelineEventId);
 
-        String status = "PROGRESS";
+        String status = getStatus(address);
+
+
+        if (status.equals("OK")) {
+            prepareEvent.setReceiverAddress(new AnalogAddress());
+            Objects.requireNonNull(prepareEvent.getReceiverAddress()).setFullname(PAPER_ADDRESS_FULL_NAME);
+            prepareEvent.getReceiverAddress().setAddress(address);
+            prepareEvent.getReceiverAddress().setCity(PAPER_ADDRESS_CITTA);
+            prepareEvent.getReceiverAddress().setCountry(PAPER_ADDRESS_ITALY);
+            prepareEvent.setProductType("NR_AR");
+
+            prepareEvent.setProductType("NR_AR");
+        }
+
+        singleStatusUpdate.setPrepareEvent(prepareEvent);
+        prepareEvent.setStatusCode(StatusCodeEnum.valueOf(status));
+
+        Assertions.assertNotNull(status);
+
+        paperChannelResponseHandler.paperChannelResponseReceiver(singleStatusUpdate);
+    }
+
+    private String getStatus(String address) {
+        String status;
         if (address == null)
         {
             status = "KOUNREACHABLE";
@@ -129,21 +151,7 @@ public class PaperChannelMock implements PaperChannelSendClient {
                 throw new IllegalArgumentException("Address " + address + " do not match test rule for mocks");
             }
         }
-
-
-
-        if (status.equals("OK")) {
-            prepareEvent.setReceiverAddress(new AnalogAddress());
-            prepareEvent.getReceiverAddress().setFullname(PAPER_ADDRESS_FULL_NAME);
-            prepareEvent.getReceiverAddress().setAddress(address);
-            prepareEvent.getReceiverAddress().setCity(PAPER_ADDRESS_CITTA);
-            prepareEvent.getReceiverAddress().setCountry(PAPER_ADDRESS_ITALY);
-        }
-
-        singleStatusUpdate.setPrepareEvent(prepareEvent);
-        prepareEvent.setStatusCode(StatusCodeEnum.valueOf(status));
-        
-        paperChannelResponseHandler.paperChannelResponseReceiver(singleStatusUpdate);
+        return status;
     }
 
     private int extractAttemptFromTimelineId(String timelineId) {
@@ -159,7 +167,7 @@ public class PaperChannelMock implements PaperChannelSendClient {
         sendEvent.setRequestId(timelineEventId);
 
         String newAddress;
-        StatusCodeEnum status = null;
+        StatusCodeEnum status;
         Matcher matcher = NEW_ADDRESS_INPUT_PATTERN.matcher(address);
         if (matcher.find()) {
             status = StatusCodeEnum.KO;
@@ -190,7 +198,7 @@ public class PaperChannelMock implements PaperChannelSendClient {
 
         if (newAddress != null) {
             sendEvent.setDiscoveredAddress(new AnalogAddress());
-            sendEvent.getDiscoveredAddress().setFullname(PAPER_ADDRESS_FULL_NAME);
+            Objects.requireNonNull(sendEvent.getDiscoveredAddress()).setFullname(PAPER_ADDRESS_FULL_NAME);
             sendEvent.getDiscoveredAddress().setAddress(newAddress);
             sendEvent.getDiscoveredAddress().setCity(PAPER_ADDRESS_CITTA);
             sendEvent.getDiscoveredAddress().setCountry(PAPER_ADDRESS_ITALY);

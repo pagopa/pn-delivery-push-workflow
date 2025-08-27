@@ -63,7 +63,7 @@ class NotificationCancelledTestIT extends CommonTestConfiguration{
                 .build()
         );
 
-        NotificationInt notification = commonExecution(iun, taxId,1);
+        NotificationInt notification = commonExecution(iun, taxId);
 
         commonChecks(notification, 0, TestUtils.GeneratedLegalFactsInfo.builder()
                 .notificationReceivedLegalFactGenerated(true)
@@ -85,7 +85,7 @@ class NotificationCancelledTestIT extends CommonTestConfiguration{
                 .build()
         ) + TimelineClientMock.SIMULATE_AFTER_CANCEL_NOTIFICATION;
 
-        NotificationInt notification = commonExecution(iun, taxId,1);
+        NotificationInt notification = commonExecution(iun, taxId);
 
         commonChecks(notification, 0, TestUtils.GeneratedLegalFactsInfo.builder()
                 .notificationReceivedLegalFactGenerated(true)
@@ -108,7 +108,7 @@ class NotificationCancelledTestIT extends CommonTestConfiguration{
                 .build()
         );
 
-        NotificationInt notification = commonExecution(iun, taxId, 1);
+        NotificationInt notification = commonExecution(iun, taxId);
 
         //Simulazione visualizzazione della notifica per il secondo recipient
         Instant notificationViewDate2 = Instant.now();
@@ -161,7 +161,7 @@ class NotificationCancelledTestIT extends CommonTestConfiguration{
         Assertions.assertTrue(timelineElementInternalOpt1.isEmpty());
     }
 
-    private NotificationInt commonExecution(String iun, String taxId, int notrefined){
+    private NotificationInt commonExecution(String iun, String taxId){
         //GIVEN
         LegalDigitalAddressInt platformAddress = LegalDigitalAddressInt.builder()
                 .address("platformAddress@" + ExternalChannelMock.EXT_CHANNEL_SEND_FAIL_BOTH)
@@ -228,8 +228,8 @@ class NotificationCancelledTestIT extends CommonTestConfiguration{
         // Viene atteso fino a che non viene persistito l'elemento NOTIFICATION_CANCELLED che implica il passaggio di stato della notifica in CANCELLED
         await().untilAsserted(() -> Assertions.assertTrue(TestUtils.isCancelledNotification(iun, timelineService)));
 
-        checkNotificationCancelledTimelineElement(iun, notrefined);
-        for(int kk = 0;kk<notrefined;kk++)
+        checkNotificationCancelledTimelineElement(iun, 1);
+        for(int kk = 0; kk< 1; kk++)
             checkNoSendXXX(iun, kk);
 
         return notification;
