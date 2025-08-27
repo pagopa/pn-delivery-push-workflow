@@ -1,5 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.action.it.mockbean;
 
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventIdBuilder;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.*;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.paperchannel.PaperChannelPrepareRequest;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.paperchannel.PaperChannelSendClient;
@@ -25,7 +26,14 @@ public class PaperChannelMock implements PaperChannelSendClient {
     public static final String EXT_CHANNEL_SEND_NEW_ADDR = "NEW_ADDR:"; //Invio notifica fallita con nuovo indirizzo da investigazione
     //Esempio: La combinazione di EXT_CHANNEL_SEND_NEW_ADDR + EXTCHANNEL_SEND_OK ad esempio significa -> Invio notifica fallito ma con nuovo indirizzo trovato e l'invio a tale indirizzo avrà successo
     public static final String EXTCHANNEL_SEND_DECEASED = "DECEASED"; //Invio notifica ok ma con destinatario deceduto
-    
+    public static final int EXTCHANNEL_SECOND_SEND_ATTEMPT = 1;
+    public static final String EXTCHANNEL_SEND_PRODUCT_RIR = "PRODUCT_RIR"; //Invio notifica con prodotto RIR
+    public static final String EXTCHANNEL_RIR_NO_FEEDBACK = EXTCHANNEL_SEND_PRODUCT_RIR + "_NO_FEEDBACK"; //Invio notifica con prodotto RIR che non riceve esito
+    public static final String EXTCHANNEL_RIR_WITH_FEEDBACK_OK = EXTCHANNEL_SEND_PRODUCT_RIR + "_FEEDBACK_OK"; //Invio notifica con prodotto RIR che produce un esito OK
+    public static final String EXTCHANNEL_SEND_PRODUCT_RIR_ATTEMPT_RELATED = "PRODUCT_RIR_ATTEMPT_RELATED";
+    public static final String EXTCHANNEL_RIR_WITH_PREPARE_KO_SECOND_ATTEMPT = EXTCHANNEL_SEND_PRODUCT_RIR_ATTEMPT_RELATED + "_PREPARE_KO_SECOND_ATTEMPT"; //Invio notifica con prodotto RIR che produce un esito KO al secondo tentativo di prepare
+
+
     public static final int WAITING_TIME = 3000;
     private static final Pattern NEW_ADDRESS_INPUT_PATTERN = Pattern.compile("^" + EXT_CHANNEL_SEND_NEW_ADDR + "(.*)$");
     public static final String PAPER_ADDRESS_FULL_NAME = "full name";
@@ -88,35 +96,14 @@ public class PaperChannelMock implements PaperChannelSendClient {
         PrepareEvent prepareEvent = new PrepareEvent();
         prepareEvent.setStatusDateTime(Instant.now());
         prepareEvent.setRequestId(timelineEventId);
+        prepareEvent.setProductType("NR_AR");
 
-        String status = getStatus(address);
+        int sendAttempt = extractAttemptFromTimelineId(timelineEventId);
 
-
-        if (status.equals("OK")) {
-            prepareEvent.setReceiverAddress(new AnalogAddress());
-            Objects.requireNonNull(prepareEvent.getReceiverAddress()).setFullname(PAPER_ADDRESS_FULL_NAME);
-            prepareEvent.getReceiverAddress().setAddress(address);
-            prepareEvent.getReceiverAddress().setCity(PAPER_ADDRESS_CITTA);
-            prepareEvent.getReceiverAddress().setCountry(PAPER_ADDRESS_ITALY);
-
-            prepareEvent.setProductType("NR_AR");
-        }
-
-        singleStatusUpdate.setPrepareEvent(prepareEvent);
-        prepareEvent.setStatusCode(StatusCodeEnum.valueOf(status));
-
-        Assertions.assertNotNull(status);
-        
-        paperChannelResponseHandler.paperChannelResponseReceiver(singleStatusUpdate);
-    }
-
-    private String getStatus(String address) {
         String status;
-        if (address == null)
-        {
+        if (address == null) {
             status = "KOUNREACHABLE";
-        }
-        else {
+        } else {
             Matcher matcher = NEW_ADDRESS_INPUT_PATTERN.matcher(address);
             if (matcher.find()) {
                 status = "OK";
@@ -128,11 +115,38 @@ public class PaperChannelMock implements PaperChannelSendClient {
                 status = "OK";
             } else if (address.startsWith(EXTCHANNEL_SEND_DECEASED)) {
                 status = "OK";
+            } else if (address.startsWith(EXTCHANNEL_RIR_WITH_PREPARE_KO_SECOND_ATTEMPT) && sendAttempt == EXTCHANNEL_SECOND_SEND_ATTEMPT) {
+                status = "KO";
+                prepareEvent.setProductType("RIR");
+                prepareEvent.setFailureDetailCode(FailureDetailCodeEnum.D00);
+            } else if (address.startsWith(EXTCHANNEL_SEND_PRODUCT_RIR)) {
+                status = "OK";
+                prepareEvent.setProductType("RIR");
             } else {
                 throw new IllegalArgumentException("Address " + address + " do not match test rule for mocks");
             }
         }
-        return status;
+
+        if (status.equals("OK")) {
+            prepareEvent.setReceiverAddress(new AnalogAddress());
+            Objects.requireNonNull(prepareEvent.getReceiverAddress()).setFullname(PAPER_ADDRESS_FULL_NAME);
+            prepareEvent.getReceiverAddress().setAddress(address);
+            prepareEvent.getReceiverAddress().setCity(PAPER_ADDRESS_CITTA);
+            prepareEvent.getReceiverAddress().setCountry(PAPER_ADDRESS_ITALY);
+        }
+
+        singleStatusUpdate.setPrepareEvent(prepareEvent);
+        prepareEvent.setStatusCode(StatusCodeEnum.valueOf(status));
+
+        Assertions.assertNotNull(status);
+
+        paperChannelResponseHandler.paperChannelResponseReceiver(singleStatusUpdate);
+    }
+
+    private int extractAttemptFromTimelineId(String timelineId) {
+        //<timelineId = CATEGORY_VALUE>;IUN_<IUN_VALUE>;RECINDEX_<RECINDEX_VALUE>;ATTEMPT_<ATTEMPT_VALUE>...
+        String sendAttemptString = timelineId.split("\\" + TimelineEventIdBuilder.DELIMITER)[3].replace("ATTEMPT_", "");
+        return Integer.parseInt(sendAttemptString);
     }
 
     private void simulateSendResponse(String timelineEventId, String address) throws InterruptedException {
@@ -159,6 +173,13 @@ public class PaperChannelMock implements PaperChannelSendClient {
             newAddress = null;
             sendEvent.setDeliveryFailureCause("M02");
             Thread.sleep(WAITING_TIME);
+        } else if(address.startsWith(EXTCHANNEL_RIR_NO_FEEDBACK) || address.startsWith(EXTCHANNEL_RIR_WITH_PREPARE_KO_SECOND_ATTEMPT)) {
+            Thread.sleep(WAITING_TIME);
+            // In questo caso non dobbiamo restituire un feedback, quindi facciamo terminare il metodo.
+            return;
+        } else if(address.startsWith(EXTCHANNEL_RIR_WITH_FEEDBACK_OK)) {
+            status = StatusCodeEnum.OK;
+            newAddress = null;
         } else {
             throw new IllegalArgumentException("Address " + address + " do not match test rule for mocks");
         }
