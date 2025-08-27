@@ -565,7 +565,6 @@ public class AnalogDeliveryTimeoutTestIT extends CommonTestConfiguration {
         TestUtils.GeneratedLegalFactsPayload generatedLegalFactsPayload = TestUtils.GeneratedLegalFactsPayload.builder()
                 .notification(notification)
                 .recipient(recipient)
-                .recIndex(recIndex)
                 .generatedLegalFactsInfo(generatedLegalFactsInfo)
                 .endWorkflowStatus(EndWorkflowStatus.SUCCESS)
                 .legalFactGenerator(legalFactGenerator)

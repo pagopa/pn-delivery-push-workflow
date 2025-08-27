@@ -100,35 +100,10 @@ public class PaperChannelMock implements PaperChannelSendClient {
 
         int sendAttempt = extractAttemptFromTimelineId(timelineEventId);
 
-        String status = getStatus(address);
-
-
-        if (status.equals("OK")) {
-            prepareEvent.setReceiverAddress(new AnalogAddress());
-            Objects.requireNonNull(prepareEvent.getReceiverAddress()).setFullname(PAPER_ADDRESS_FULL_NAME);
-            prepareEvent.getReceiverAddress().setAddress(address);
-            prepareEvent.getReceiverAddress().setCity(PAPER_ADDRESS_CITTA);
-            prepareEvent.getReceiverAddress().setCountry(PAPER_ADDRESS_ITALY);
-            prepareEvent.setProductType("NR_AR");
-
-            prepareEvent.setProductType("NR_AR");
-        }
-
-        singleStatusUpdate.setPrepareEvent(prepareEvent);
-        prepareEvent.setStatusCode(StatusCodeEnum.valueOf(status));
-
-        Assertions.assertNotNull(status);
-
-        paperChannelResponseHandler.paperChannelResponseReceiver(singleStatusUpdate);
-    }
-
-    private String getStatus(String address) {
         String status;
-        if (address == null)
-        {
+        if (address == null) {
             status = "KOUNREACHABLE";
-        }
-        else {
+        } else {
             Matcher matcher = NEW_ADDRESS_INPUT_PATTERN.matcher(address);
             if (matcher.find()) {
                 status = "OK";
@@ -151,7 +126,21 @@ public class PaperChannelMock implements PaperChannelSendClient {
                 throw new IllegalArgumentException("Address " + address + " do not match test rule for mocks");
             }
         }
-        return status;
+
+        if (status.equals("OK")) {
+            prepareEvent.setReceiverAddress(new AnalogAddress());
+            Objects.requireNonNull(prepareEvent.getReceiverAddress()).setFullname(PAPER_ADDRESS_FULL_NAME);
+            prepareEvent.getReceiverAddress().setAddress(address);
+            prepareEvent.getReceiverAddress().setCity(PAPER_ADDRESS_CITTA);
+            prepareEvent.getReceiverAddress().setCountry(PAPER_ADDRESS_ITALY);
+        }
+
+        singleStatusUpdate.setPrepareEvent(prepareEvent);
+        prepareEvent.setStatusCode(StatusCodeEnum.valueOf(status));
+
+        Assertions.assertNotNull(status);
+
+        paperChannelResponseHandler.paperChannelResponseReceiver(singleStatusUpdate);
     }
 
     private int extractAttemptFromTimelineId(String timelineId) {

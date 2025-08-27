@@ -1111,7 +1111,6 @@ public class TestUtils {
     public static class GeneratedLegalFactsPayload {
         NotificationInt notification;
         NotificationRecipientInt recipient;
-        Integer recIndex;
         int sentPecAttemptNumber;
         TestUtils.GeneratedLegalFactsInfo generatedLegalFactsInfo;
         EndWorkflowStatus endWorkflowStatus;

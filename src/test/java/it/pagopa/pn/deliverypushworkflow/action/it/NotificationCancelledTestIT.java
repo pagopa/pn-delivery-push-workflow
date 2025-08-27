@@ -243,7 +243,6 @@ class NotificationCancelledTestIT extends CommonTestConfiguration{
         TestUtils.GeneratedLegalFactsPayload generatedLegalFactsPayload = TestUtils.GeneratedLegalFactsPayload.builder()
                 .notification(notification)
                 .recipient(notification.getRecipients().get(recIndex))
-                .recIndex(recIndex)
                 .generatedLegalFactsInfo(generatedLegalFactsInfo)
                 .endWorkflowStatus(EndWorkflowStatus.FAILURE)
                 .legalFactGenerator(legalFactGenerator)

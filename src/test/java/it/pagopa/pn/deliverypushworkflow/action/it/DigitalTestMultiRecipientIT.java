@@ -272,7 +272,6 @@ class DigitalTestMultiRecipientIT extends CommonTestConfiguration {
         TestUtils.GeneratedLegalFactsPayload generatedLegalFactsPayload = TestUtils.GeneratedLegalFactsPayload.builder()
                 .notification(notification)
                 .recipient(recipient1)
-                .recIndex(recIndex1)
                 .generatedLegalFactsInfo(generatedLegalFactsInfo)
                 .endWorkflowStatus(endWorkflowStatus)
                 .legalFactGenerator(legalFactGenerator)
