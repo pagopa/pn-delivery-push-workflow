@@ -10,17 +10,17 @@ import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.*;
 import it.pagopa.pn.deliverypushworkflow.dto.io.IoSendMessageResultInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.EventId;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventId;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventIdBuilder;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ProbableDateAnalogWorkflowDetailsInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendCourtesyMessageDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.exceptions.PnNotFoundException;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.emd.integration.model.SendMessageRequestBody;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregistry.model.SendMessageResponse;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.emdintegration.PnEmdIntegrationClient;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.impl.TimeParams;
-import it.pagopa.pn.deliverypushworkflow.service.*;
+import it.pagopa.pn.deliverypushworkflow.service.AddressBookService;
+import it.pagopa.pn.deliverypushworkflow.service.ExternalChannelService;
+import it.pagopa.pn.deliverypushworkflow.service.IoService;
+import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import it.pagopa.pn.deliverypushworkflow.service.impl.AuditLogServiceImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +35,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static it.pagopa.pn.deliverypushworkflow.action.it.mockbean.ExternalChannelMock.EXTCHANNEL_SEND_SUCCESS;
@@ -56,7 +59,7 @@ class CourtesyMessageUtilsTest {
     private PnDeliveryPushWorkflowConfigs mockConfig;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         addressBookService = Mockito.mock(AddressBookService.class);
         externalChannelService = Mockito.mock(ExternalChannelService.class);
         timelineService = Mockito.mock(TimelineService.class);
@@ -671,7 +674,7 @@ class CourtesyMessageUtilsTest {
 
 
         List<String> eventIdAllValues = eventIdArgumentCaptor.getAllValues();
-        String firstEventIdInTimeline = eventIdAllValues.get(0);
+        String firstEventIdInTimeline = eventIdAllValues.getFirst();
 
         String firstEventIdExpected = TimelineEventId.SEND_COURTESY_MESSAGE.buildEventId(EventId.builder()
                 .iun(notification.getIun())

@@ -1,18 +1,27 @@
 package it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel;
 
+import lombok.Getter;
 import org.springframework.util.StringUtils;
 
+@Getter
 public enum SendAttachmentMode {
     AAR("AAR"),
     AAR_DOCUMENTS("AAR-DOCUMENTS"),
     AAR_DOCUMENTS_PAYMENTS("AAR-DOCUMENTS-PAYMENTS");
 
     public static SendAttachmentMode fromValue(String sendAnalogNotificationAttachments) {
-        if(StringUtils.hasText(sendAnalogNotificationAttachments)) {
+        if (StringUtils.hasText(sendAnalogNotificationAttachments)) {
             try {
-                // gestisce le varianti con il "-" come separatore, o ritorna direttamente il valore dell'enum
-                return "AAR-DOCUMENTS-PAYMENTS".equals(sendAnalogNotificationAttachments)?AAR_DOCUMENTS_PAYMENTS:("AAR-DOCUMENTS".equals(sendAnalogNotificationAttachments)?AAR_DOCUMENTS:SendAttachmentMode.valueOf(sendAnalogNotificationAttachments));
-            }catch (Exception e){
+                SendAttachmentMode mode;
+                if ("AAR-DOCUMENTS-PAYMENTS".equals(sendAnalogNotificationAttachments)) {
+                    mode = AAR_DOCUMENTS_PAYMENTS;
+                } else if ("AAR-DOCUMENTS".equals(sendAnalogNotificationAttachments)) {
+                    mode = AAR_DOCUMENTS;
+                } else {
+                    mode = SendAttachmentMode.valueOf(sendAnalogNotificationAttachments);
+                }
+                return mode;
+            } catch (Exception e) {
                 return AAR;
             }
         }
@@ -23,10 +32,6 @@ public enum SendAttachmentMode {
 
     SendAttachmentMode(String value) {
         this.value = value;
-    }
-
-    public String getValue() {
-        return value;
     }
 
     @Override

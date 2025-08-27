@@ -17,11 +17,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.util.StringUtils;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
@@ -58,7 +56,7 @@ class CompletelyUnreachableUtilsTest {
                 .iun("iun1").elementId("aaaa1").timestamp(Instant.now().minusMillis(30000))
                 .details(SendDigitalProgressDetailsInt.builder().build())
                 .build();
-        NotificationRecipientInt recipient = buildRecipient("Galileo Bruno");
+        NotificationRecipientInt recipient = buildRecipient();
         PaperNotificationFailed notificationFailed = PaperNotificationFailed.builder()
                 .iun(notification.getIun())
                 .recipientId(recipient.getInternalId())
@@ -82,7 +80,7 @@ class CompletelyUnreachableUtilsTest {
                 .details(SendDigitalProgressDetailsInt.builder().build())
                 .build();
 
-        NotificationRecipientInt recipient = buildRecipient("Galileo Bruno");
+        NotificationRecipientInt recipient = buildRecipient();
         PaperNotificationFailed notificationFailed = PaperNotificationFailed.builder()
                 .iun(notification.getIun())
                 .recipientId(recipient.getInternalId())
@@ -112,9 +110,9 @@ class CompletelyUnreachableUtilsTest {
         );
     }
 
-    private NotificationRecipientInt buildRecipient(String denomination) {
-        String defaultDenomination = StringUtils.hasText(denomination) ? denomination : "Galileo Bruno";
-        NotificationRecipientInt rec1 = NotificationRecipientInt.builder()
+    private NotificationRecipientInt buildRecipient() {
+        String defaultDenomination = "Galileo Bruno";
+        return NotificationRecipientInt.builder()
                 .taxId("CDCFSC11R99X001Z")
                 .denomination(defaultDenomination)
                 .digitalDomicile(LegalDigitalAddressInt.builder()
@@ -123,8 +121,6 @@ class CompletelyUnreachableUtilsTest {
                         .build())
                 .physicalAddress(buildPhysicalAddressInt())
                 .build();
-
-        return rec1;
     }
 
     private NotificationSenderInt createSender() {
@@ -141,7 +137,7 @@ class CompletelyUnreachableUtilsTest {
                 .sentAt(Instant.now().minus(Duration.ofDays(1).minus(Duration.ofMinutes(10))))
                 .iun("Example_IUN_1234_Test")
                 .subject("notification test subject")
-                .documents(Arrays.asList(
+                .documents(Collections.singletonList(
                                 NotificationDocumentInt.builder()
                                         .ref(NotificationDocumentInt.Ref.builder()
                                                 .key("doc00")

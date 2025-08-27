@@ -54,7 +54,7 @@ class RefinementHandlerTest {
     private RefinementHandler refinementHandler;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         refinementHandler = new RefinementHandler(timelineService,
                 timelineUtils, notificationService, notificationProcessCostService, attachmentUtils, PnDeliveryPushWorkflowConfigs);
     }
@@ -104,7 +104,7 @@ class RefinementHandlerTest {
         TimelineElementInternal viewedTimelineElement = new TimelineElementInternal();
         viewedTimelineElement.setCategory(TimelineElementCategoryInt.NOTIFICATION_VIEWED_CREATION_REQUEST);
         NotificationViewedCreationRequestDetailsInt notificationViewedCreationRequestDetailsInt = new NotificationViewedCreationRequestDetailsInt();
-        notificationViewedCreationRequestDetailsInt.setEventTimestamp(now.plus(1l, ChronoUnit.DAYS));
+        notificationViewedCreationRequestDetailsInt.setEventTimestamp(now.plus(1L, ChronoUnit.DAYS));
         viewedTimelineElement.setDetails(notificationViewedCreationRequestDetailsInt);
 
         Mockito.when(timelineUtils.getNotificationViewCreationRequest(Mockito.anyString(), Mockito.anyInt())).thenReturn(Optional.of(viewedTimelineElement));
@@ -139,7 +139,7 @@ class RefinementHandlerTest {
         TimelineElementInternal viewedTimelineElement = new TimelineElementInternal();
         viewedTimelineElement.setCategory(TimelineElementCategoryInt.NOTIFICATION_VIEWED_CREATION_REQUEST);
         NotificationViewedCreationRequestDetailsInt notificationViewedCreationRequestDetailsInt = new NotificationViewedCreationRequestDetailsInt();
-        notificationViewedCreationRequestDetailsInt.setEventTimestamp(now.minus(1l, ChronoUnit.DAYS));
+        notificationViewedCreationRequestDetailsInt.setEventTimestamp(now.minus(1L, ChronoUnit.DAYS));
         viewedTimelineElement.setDetails(notificationViewedCreationRequestDetailsInt);
 
         Mockito.when(timelineUtils.getNotificationViewCreationRequest(Mockito.anyString(), Mockito.anyInt())).thenReturn(Optional.of(viewedTimelineElement));
@@ -170,9 +170,7 @@ class RefinementHandlerTest {
         when(notificationService.getNotificationByIun(iun)).thenReturn(notification);
         when(notificationProcessCostService.getSendFeeAsync()).thenReturn(Mono.error(new RuntimeException("questa è l'eccezione")));
 
-        assertThrows(RuntimeException.class, () -> {
-            refinementHandler.handleRefinement(iun, recIndex);
-        });
+        assertThrows(RuntimeException.class, () -> refinementHandler.handleRefinement(iun, recIndex));
     }
     
     private NotificationInt getNotificationWithPhysicalAddress() {

@@ -55,7 +55,7 @@ class AnalogWorkflowPaperChannelResponseHandlerTest {
     private TimelineService timelineService;
     
     @BeforeEach
-    public void setup() {
+    void setup() {
         analogWorkflowPaperChannelResponseHandler = new AnalogWorkflowPaperChannelResponseHandler(notificationService,
                 paperChannelService,
                 analogWorkflowUtils,

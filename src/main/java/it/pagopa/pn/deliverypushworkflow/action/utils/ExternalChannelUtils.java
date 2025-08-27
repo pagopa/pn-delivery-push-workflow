@@ -54,14 +54,7 @@ public class ExternalChannelUtils {
         Optional<AarGenerationDetailsInt> aarDetailsOpt = timelineService.getTimelineElementDetails(iun, eventId, AarGenerationDetailsInt.class);
 
         if (aarDetailsOpt.isPresent()) {
-            String fileKey = aarDetailsOpt.get().getGeneratedAarUrl();
-            /*
-            #ECP
-            if(fileKey != null){
-                // elimino eventuale prefisso di safestorage
-                fileKey = fileKey.replace(SAFE_STORAGE_URL_PREFIX, "");
-            }*/
-            return fileKey;
+            return aarDetailsOpt.get().getGeneratedAarUrl();
         } else {
             log.error("There isn't AAR timeline element - iun {} eventId {}", iun, eventId);
             throw new PnInternalException("There isn't AAR timeline element - iun " + iun + " eventId " + eventId, ERROR_CODE_DELIVERYPUSH_TIMELINENOTFOUND);

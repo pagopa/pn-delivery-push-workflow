@@ -5,8 +5,8 @@ import it.pagopa.pn.commons.exceptions.PnInternalException;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationSenderInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.ServiceLevelTypeInt;
-import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.SentNotificationV25;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.NotificationFeePolicy;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.SentNotificationV25;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.delivery.PnDeliveryClient;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.delivery.PnDeliveryClientReactive;
 import org.junit.jupiter.api.Assertions;
@@ -32,7 +32,7 @@ class NotificationServiceImplTest {
     private NotificationServiceImpl service;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         service = new NotificationServiceImpl(pnDeliveryClient, pnDeliveryClientReactive);
     }
 
