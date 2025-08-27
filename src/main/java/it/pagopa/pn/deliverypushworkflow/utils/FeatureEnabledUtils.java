@@ -24,9 +24,14 @@ public class FeatureEnabledUtils {
     }
 
     public boolean isFeatureAAROnlyPECForRADDAndPFEnabled(){
-        return Optional.ofNullable(configs.getAAROnlyPECForRADDAndPF())
+        return Optional.ofNullable(configs.getAarOnlyPecForRaddAndPf())
                 .map("true"::equalsIgnoreCase)
                 .orElse(false);
+    }
+
+    public boolean isAnalogWorkflowTimeoutFeatureEnabled(Instant notificationSentAt) {
+        Instant startDate = configs.getStartAnalogWorkflowTimeoutFeatureDate();
+        return startDate != null && notificationSentAt.compareTo(startDate) >= 0;
     }
 
 }

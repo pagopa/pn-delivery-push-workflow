@@ -25,7 +25,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @CustomLog
 public class TemplatesClientPecImpl implements TemplatesClientPec{
-    private final PnDeliveryPushWorkflowConfigs PnDeliveryPushWorkflowConfigs;
+    private final PnDeliveryPushWorkflowConfigs pnDeliveryPushWorkflowConfigs;
     private final TemplateApiConfiguration templateApiConfiguration;
 
 
@@ -33,8 +33,7 @@ public class TemplatesClientPecImpl implements TemplatesClientPec{
     @Override
     public String parametrizedNotificationAarForPec(LanguageEnum language, NotificationAarForPec notificationAarForPec) {
         log.info("parametrizedNotificationAarForPec - {} / {}", language, notificationAarForPec );
-        Object postBody = notificationAarForPec;
-        ApiClient apiClient = templateApiConfiguration.templateApiConfig(new RestTemplate(), PnDeliveryPushWorkflowConfigs).getApiClient();
+        ApiClient apiClient = templateApiConfiguration.templateApiConfig(new RestTemplate(), pnDeliveryPushWorkflowConfigs).getApiClient();
 
         // verify the required parameter 'xLanguage' is set
         if (language == null) {
@@ -47,10 +46,10 @@ public class TemplatesClientPecImpl implements TemplatesClientPec{
         }
 
 
-        final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<String, String>();
+        final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
         final HttpHeaders headerParams = new HttpHeaders();
-        final MultiValueMap<String, String> cookieParams = new LinkedMultiValueMap<String, String>();
-        final MultiValueMap<String, Object> formParams = new LinkedMultiValueMap<String, Object>();
+        final MultiValueMap<String, String> cookieParams = new LinkedMultiValueMap<>();
+        final MultiValueMap<String, Object> formParams = new LinkedMultiValueMap<>();
 
         headerParams.add("x-language", apiClient.parameterToString(language));
 
@@ -65,7 +64,8 @@ public class TemplatesClientPecImpl implements TemplatesClientPec{
 
         String[] authNames = new String[] {  };
 
-        ParameterizedTypeReference<String> returnType = new ParameterizedTypeReference<String>() {};
-        return  apiClient.invokeAPI(PnDeliveryPushWorkflowConfigs.getTemplateURLforPEC(), HttpMethod.PUT, Collections.<String, Object>emptyMap(), queryParams, postBody, headerParams, cookieParams, formParams, localVarAccept, localVarContentType, authNames, returnType).getBody();
+        ParameterizedTypeReference<String> returnType = new ParameterizedTypeReference<>() {
+        };
+        return  apiClient.invokeAPI(pnDeliveryPushWorkflowConfigs.getTemplateURLforPEC(), HttpMethod.PUT, Collections.emptyMap(), queryParams, notificationAarForPec, headerParams, cookieParams, formParams, localVarAccept, localVarContentType, authNames, returnType).getBody();
     }
 }

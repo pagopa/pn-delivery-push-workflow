@@ -1,6 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.service;
 
 import it.pagopa.pn.deliverypushworkflow.action.utils.EndWorkflowStatus;
+import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
 import it.pagopa.pn.deliverypushworkflow.dto.legalfacts.PdfInfo;
@@ -37,4 +38,11 @@ public interface SaveLegalFactsService {
     );
 
     String sendCreationRequestForNotificationCancelledLegalFact(NotificationInt notification, Instant notificationCancellationRequestDate);
+
+    String sendCreationRequestForAnalogDeliveryWorkflowTimeoutLegalFact(
+            NotificationInt notification,
+            NotificationRecipientInt recipient,
+            PhysicalAddressInt physicalAddress,
+            String sentAttemptMade,
+            Instant timeoutDate);
 }

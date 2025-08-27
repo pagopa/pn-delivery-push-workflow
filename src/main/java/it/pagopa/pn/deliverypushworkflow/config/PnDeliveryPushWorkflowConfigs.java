@@ -81,7 +81,7 @@ public class PnDeliveryPushWorkflowConfigs {
 
     private String pfNewWorkflowStop;
 
-    private String AAROnlyPECForRADDAndPF;
+    private String aarOnlyPecForRaddAndPf;
 
     private ExternalChannel externalChannel;
 
@@ -97,6 +97,11 @@ public class PnDeliveryPushWorkflowConfigs {
 
     private PaperChannel paperChannel;
 
+    private int retentionAttachmentDaysAfterDeliveryTimeout;
+
+    private String paperTrackerBaseUrl;
+
+    private Instant startAnalogWorkflowTimeoutFeatureDate;
 
     @Data
     public static class Topics {

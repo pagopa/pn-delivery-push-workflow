@@ -1,0 +1,61 @@
+package it.pagopa.pn.deliverypushworkflow.action.analogworkflow;
+
+import it.pagopa.pn.deliverypushworkflow.action.details.AnalogWorkflowTimeoutDetails;
+import it.pagopa.pn.deliverypushworkflow.action.utils.AnalogDeliveryTimeoutUtils;
+import it.pagopa.pn.deliverypushworkflow.action.utils.PaperChannelUtils;
+import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
+import it.pagopa.pn.deliverypushworkflow.dto.documentcreation.DocumentCreationTypeInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendAnalogDetailsInt;
+import it.pagopa.pn.deliverypushworkflow.service.*;
+import it.pagopa.pn.deliverypushworkflow.utils.FeatureEnabledUtils;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import java.time.Instant;
+import java.util.Optional;
+
+@Component
+@AllArgsConstructor
+@Slf4j
+public class AnalogWorkflowTimeoutActionHandler {
+    private final NotificationService notificationService;
+    private final TimelineService timelineService;
+    private final FeatureEnabledUtils featureEnabledUtils;
+    private final PaperTrackerService paperTrackerService;
+    private final SaveLegalFactsService saveLegalFactsService;
+    private final TimelineUtils timelineUtils;
+    private final DocumentCreationRequestService documentCreationRequestService;
+    private final AnalogDeliveryTimeoutUtils analogDeliveryTimeoutUtils;
+    private final PaperChannelUtils paperChannelUtils;
+
+    public void handleAnalogWorkflowTimeout(String iun, String sendAnalogDomicileTimelineId, Integer recIndex, AnalogWorkflowTimeoutDetails analogWorkflowTimeoutDetails, Instant timeoutDate) {
+        NotificationInt notification = notificationService.getNotificationByIun(iun);
+        int sentAttemptMade = analogWorkflowTimeoutDetails.getSentAttemptMade();
+        if (!featureEnabledUtils.isAnalogWorkflowTimeoutFeatureEnabled(notification.getSentAt())) {
+            log.info("Analog workflow timeout feature is not enabled for notification with IUN: {}, recIndex: {}", iun, recIndex);
+        } else {
+            log.info("Handling analog workflow timeout for notification with IUN: {}, recIndex: {}", iun, recIndex);
+            Optional<SendAnalogDetailsInt> sendAnalogDomicileTimelineElementOpt = timelineService.getTimelineElementDetails(iun, sendAnalogDomicileTimelineId, SendAnalogDetailsInt.class);
+
+            if (sendAnalogDomicileTimelineElementOpt.isPresent()) {
+                SendAnalogDetailsInt sendAnalogDetails = sendAnalogDomicileTimelineElementOpt.get();
+                String prepareRequestId = paperChannelUtils.buildPrepareAnalogDomicileEventId(notification, recIndex, sentAttemptMade);
+                if (paperTrackerService.isPresentDematForPrepareRequest(prepareRequestId) || analogDeliveryTimeoutUtils.isSendAnalogFeedbackPresentInTimeline(iun, recIndex, sentAttemptMade)) {
+                    log.info("Demat or SEND_ANALOG_FEEDBACK is present for prepareRequestId: {}, skipping analog workflow timeout handling for IUN: {}, recIndex: {}, sentAttemptMade: {}", prepareRequestId, iun, recIndex, sentAttemptMade);
+                } else {
+                    String legalFactId = saveLegalFactsService.sendCreationRequestForAnalogDeliveryWorkflowTimeoutLegalFact(notification, notification.getRecipients().get(recIndex), sendAnalogDetails.getPhysicalAddress(), String.valueOf(sentAttemptMade), timeoutDate);
+                    log.info("Adding SEND_ANALOG_TIMEOUT_CREATION_REQUEST timeline element for IUN: {}, recIndex: {}, sentAttemptMade: {}", iun, recIndex, sentAttemptMade);
+                    TimelineElementInternal timelineElementInternal = timelineUtils.buildSendAnalogTimeoutCreationRequest(notification,
+                            recIndex, timeoutDate, sentAttemptMade, sendAnalogDomicileTimelineId, legalFactId);
+                    timelineService.addTimelineElement(timelineElementInternal, notification);
+                    //Vengono inserite le informazioni della richiesta di creazione del legalFacts a safeStorage
+                    documentCreationRequestService.addDocumentCreationRequest(legalFactId, iun, recIndex, DocumentCreationTypeInt.ANALOG_DELIVERY_TIMEOUT, timelineElementInternal.getElementId());
+                }
+            }
+        }
+
+    }
+}

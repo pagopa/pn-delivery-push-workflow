@@ -93,7 +93,7 @@ class SendDigitalFinalStatusResponseHandlerTest {
         NotificationInt notification = getNotification();
         String iun = notification.getIun();
         String sendDigitalFeedbackTimelineId = "sendDigitalFeedbackTimelineId";
-        int recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, notification.getRecipients().get(0).getTaxId());
+        int recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, notification.getRecipients().getFirst().getTaxId());
 
         Mockito.when(notificationService.getNotificationByIun(iun)).thenReturn(notification);
         
@@ -127,7 +127,7 @@ class SendDigitalFinalStatusResponseHandlerTest {
         NotificationInt notification = getNotification();
         String iun = notification.getIun();
         String sendDigitalFeedbackTimelineId = "sendDigitalFeedbackTimelineId";
-        int recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, notification.getRecipients().get(0).getTaxId());
+        int recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, notification.getRecipients().getFirst().getTaxId());
 
         Mockito.when(notificationService.getNotificationByIun(iun)).thenReturn(notification);
 
@@ -167,7 +167,7 @@ class SendDigitalFinalStatusResponseHandlerTest {
         NotificationInt notification = getNotification();
         String iun = notification.getIun();
         String sendDigitalFeedbackTimelineId = "sendDigitalFeedbackTimelineId";
-        int recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, notification.getRecipients().get(0).getTaxId());
+        int recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, notification.getRecipients().getFirst().getTaxId());
 
         Mockito.when(notificationService.getNotificationByIun(iun)).thenReturn(notification);
 
@@ -198,7 +198,7 @@ class SendDigitalFinalStatusResponseHandlerTest {
         Mockito.when( timelineService.getTimelineElementDetails(Mockito.eq(iun), Mockito.eq(sendDigitalFeedbackTimelineId), Mockito.any())).thenReturn(
                 Optional.of(sendDigitalFeedbackDetails)
         );
-        Mockito.when(digitalWorkFlowHandler.getTimelineElement(Mockito.eq(iun), Mockito.eq(recIndex), Mockito.eq("alreadyPresentRelatedFeedbackTimelineId"))).thenReturn(timelineElementInternal);
+        Mockito.when(digitalWorkFlowHandler.getTimelineElement(iun, recIndex, "alreadyPresentRelatedFeedbackTimelineId")).thenReturn(timelineElementInternal);
 
         //WHEN
         sendDigitalFinalStatusResponseHandler.handleSendDigitalFinalStatusResponse(iun, details);
@@ -218,7 +218,7 @@ class SendDigitalFinalStatusResponseHandlerTest {
         NotificationInt notification = getNotification();
         String iun = notification.getIun();
         String sendDigitalFeedbackTimelineId = "sendDigitalFeedbackTimelineId";
-        int recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, notification.getRecipients().get(0).getTaxId());
+        int recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, notification.getRecipients().getFirst().getTaxId());
 
         Mockito.when(notificationService.getNotificationByIun(iun)).thenReturn(notification);
 
@@ -257,7 +257,7 @@ class SendDigitalFinalStatusResponseHandlerTest {
         NotificationInt notification = getNotification();
         String iun = notification.getIun();
         String sendDigitalFeedbackTimelineId = "sendDigitalFeedbackTimelineId";
-        int recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, notification.getRecipients().get(0).getTaxId());
+        int recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, notification.getRecipients().getFirst().getTaxId());
 
         Mockito.when(notificationService.getNotificationByIun(iun)).thenReturn(notification);
 
@@ -298,7 +298,7 @@ class SendDigitalFinalStatusResponseHandlerTest {
         NotificationInt notification = getNotification();
         String iun = notification.getIun();
         String sendDigitalFeedbackTimelineId = "sendDigitalFeedbackTimelineId";
-        int recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, notification.getRecipients().get(0).getTaxId());
+        int recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, notification.getRecipients().getFirst().getTaxId());
 
         Mockito.when(notificationService.getNotificationByIun(iun)).thenReturn(notification);
 
@@ -349,7 +349,7 @@ class SendDigitalFinalStatusResponseHandlerTest {
         NotificationInt notification = getNotification();
         String iun = notification.getIun();
         String sendDigitalFeedbackTimelineId = "sendDigitalFeedbackTimelineId";
-        int recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, notification.getRecipients().get(0).getTaxId());
+        int recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, notification.getRecipients().getFirst().getTaxId());
         
         SendDigitalFinalStatusResponseDetails details = SendDigitalFinalStatusResponseDetails.builder()
                 .lastAttemptAddressInfo(

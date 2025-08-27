@@ -19,7 +19,6 @@ import org.mockito.Mockito;
 import org.springframework.util.StringUtils;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 
@@ -71,7 +70,7 @@ class NationalRegistriesClientServiceImplTest {
                 .sentAt(Instant.now())
                 .iun("Example_IUN_1234_Test")
                 .subject("notification test subject")
-                .documents(Arrays.asList(
+                .documents(Collections.singletonList(
                                 NotificationDocumentInt.builder()
                                         .ref(NotificationDocumentInt.Ref.builder()
                                                 .key("doc00")
@@ -91,7 +90,7 @@ class NationalRegistriesClientServiceImplTest {
 
     private NotificationRecipientInt buildRecipient(String denomination) {
         String defaultDenomination = StringUtils.hasText(denomination) ? denomination : "Galileo Bruno";
-        NotificationRecipientInt rec1 = NotificationRecipientInt.builder()
+        return NotificationRecipientInt.builder()
                 .taxId("CDCFSC11R99X001Z")
                 .denomination(defaultDenomination)
                 .digitalDomicile(LegalDigitalAddressInt.builder()
@@ -101,8 +100,6 @@ class NationalRegistriesClientServiceImplTest {
                 .physicalAddress(buildPhysicalAddressInt())
                 .recipientType(RecipientTypeInt.PF)
                 .build();
-
-        return rec1;
     }
 
     private PhysicalAddressInt buildPhysicalAddressInt() {

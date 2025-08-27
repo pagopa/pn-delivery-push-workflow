@@ -34,7 +34,7 @@ class AnalogFailureDeliveryCreationResponseHandlerTest {
     @Mock
     private RefinementScheduler refinementScheduler;
     @Mock
-    private PnDeliveryPushWorkflowConfigs PnDeliveryPushWorkflowConfigs;
+    private PnDeliveryPushWorkflowConfigs pnDeliveryPushWorkflowConfigs;
 
     private AnalogFailureDeliveryCreationResponseHandler handler;
 
@@ -45,7 +45,7 @@ class AnalogFailureDeliveryCreationResponseHandlerTest {
                 notificationService,
                 timelineService,
                 refinementScheduler,
-                PnDeliveryPushWorkflowConfigs
+                pnDeliveryPushWorkflowConfigs
         );
     }
 
@@ -62,7 +62,7 @@ class AnalogFailureDeliveryCreationResponseHandlerTest {
         Instant completionWorkflowDate = Instant.now().minusSeconds(3600);
 
         Mockito.when(notificationService.getNotificationByIun(iun)).thenReturn(notification);
-        Mockito.when(PnDeliveryPushWorkflowConfigs.getFeatureUnreachableRefinementPostAARStartDate()).thenReturn(featureUnreachableRefinementPostAARStartDate);
+        Mockito.when(pnDeliveryPushWorkflowConfigs.getFeatureUnreachableRefinementPostAARStartDate()).thenReturn(featureUnreachableRefinementPostAARStartDate);
         CompletelyUnreachableCreationRequestDetails details = new CompletelyUnreachableCreationRequestDetails();
         details.setCompletionWorkflowDate(completionWorkflowDate);
         details.setLegalFactId("legalFactId");
@@ -93,7 +93,7 @@ class AnalogFailureDeliveryCreationResponseHandlerTest {
         Instant completionWorkflowDate = Instant.now().minusSeconds(3600);
 
         Mockito.when(notificationService.getNotificationByIun(iun)).thenReturn(notification);
-        Mockito.when(PnDeliveryPushWorkflowConfigs.getFeatureUnreachableRefinementPostAARStartDate()).thenReturn(featureUnreachableRefinementPostAARStartDate);
+        Mockito.when(pnDeliveryPushWorkflowConfigs.getFeatureUnreachableRefinementPostAARStartDate()).thenReturn(featureUnreachableRefinementPostAARStartDate);
         CompletelyUnreachableCreationRequestDetails details = new CompletelyUnreachableCreationRequestDetails();
         details.setCompletionWorkflowDate(completionWorkflowDate);
         details.setLegalFactId("legalFactId");
@@ -140,7 +140,7 @@ class AnalogFailureDeliveryCreationResponseHandlerTest {
         Instant completionWorkflowDate = Instant.now();
 
         Mockito.when(notificationService.getNotificationByIun(iun)).thenReturn(notification);
-        Mockito.when(PnDeliveryPushWorkflowConfigs.getFeatureUnreachableRefinementPostAARStartDate()).thenReturn(featureUnreachableRefinementPostAARStartDate);
+        Mockito.when(pnDeliveryPushWorkflowConfigs.getFeatureUnreachableRefinementPostAARStartDate()).thenReturn(featureUnreachableRefinementPostAARStartDate);
         CompletelyUnreachableCreationRequestDetails details = new CompletelyUnreachableCreationRequestDetails();
         details.setCompletionWorkflowDate(completionWorkflowDate);
         details.setLegalFactId("legalFactId");

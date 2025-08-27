@@ -3,7 +3,6 @@ package it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.Action;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ActionsPool;
 import it.pagopa.pn.deliverypushworkflow.service.ActionService;
-import lombok.AllArgsConstructor;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

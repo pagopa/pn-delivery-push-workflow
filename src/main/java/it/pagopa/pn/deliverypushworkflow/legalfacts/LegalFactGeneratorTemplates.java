@@ -1,8 +1,9 @@
 package it.pagopa.pn.deliverypushworkflow.legalfacts;
 
-import it.pagopa.pn.deliverypushworkflow.action.utils.EndWorkflowStatus;
 import it.pagopa.pn.commons.exceptions.PnInternalException;
+import it.pagopa.pn.deliverypushworkflow.action.utils.EndWorkflowStatus;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
+import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.datavault.RecipientTypeInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
@@ -21,7 +22,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
@@ -373,7 +374,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      */
     private String getAccessUrlLabel(NotificationRecipientInt recipient) {
         try {
-            String host = new URL(getAccessUrl(recipient)).getHost();
+            String host = URI.create(getAccessUrl(recipient)).toURL().getHost();
             return host.startsWith("www.") ? host.substring(4) : host;
         } catch (MalformedURLException e) {
             log.warn("cannot get host", e);
@@ -441,7 +442,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      */
     private String getAccessLinkLabel() {
         try {
-            String host = new URL(pnDeliveryPushWorkflowConfigs.getWebapp().getLandingUrl()).getHost();
+            String host = URI.create(pnDeliveryPushWorkflowConfigs.getWebapp().getLandingUrl()).toURL().getHost();
             return host.startsWith("www.") ? host.substring(4) : host;
         } catch (MalformedURLException e) {
             log.warn("cannot get host", e);
@@ -480,7 +481,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      */
     private LanguageEnum getLanguage(List<String> additionalLanguages) {
         return (!pnDeliveryPushWorkflowConfigs.isAdditionalLangsEnabled() || CollectionUtils.isEmpty(additionalLanguages))
-                ? LanguageEnum.IT : LanguageEnum.fromValue(additionalLanguages.get(0));
+                ? LanguageEnum.IT : LanguageEnum.fromValue(additionalLanguages.getFirst());
     }
 
     /**
@@ -492,6 +493,25 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
     private String buildAarSenderLogo(String paId) {
         String aarUrlTemplate = pnDeliveryPushWorkflowConfigs.getWebapp().getAarSenderLogoUrlTemplate();
         return aarUrlTemplate.replace("<PA_ID>", paId);
+    }
+
+    @Override
+    public byte[] generateAnalogDeliveryWorkflowTimeoutLegalFact(NotificationInt notification,
+                                                                 NotificationRecipientInt recipient,
+                                                                 PhysicalAddressInt physicalAddress,
+                                                                 String sentAttemptMade,
+                                                                 Instant timeoutDate) {
+        log.info("retrieve AnalogDeliveryWorkflowTimeoutLegalFact template for iun {}", notification.getIun());
+        AnalogDeliveryWorkflowTimeoutLegalFact analogDeliveryWorkflowTimeoutLegalFact =
+                analogDeliveryWorkflowTimeoutLegalFact(
+                        notification.getIun(),
+                        timeoutDate,
+                        instantWriter,
+                        recipient,
+                        sentAttemptMade,
+                        physicalAddressWriter);
+        LanguageEnum language = getLanguage(notification.getAdditionalLanguages());
+        return templatesClient.analogDeliveryWorkflowTimeoutLegalFact(language, analogDeliveryWorkflowTimeoutLegalFact);
     }
 
 
