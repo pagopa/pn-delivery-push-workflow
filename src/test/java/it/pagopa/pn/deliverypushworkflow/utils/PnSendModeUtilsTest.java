@@ -25,7 +25,7 @@ import static it.pagopa.pn.deliverypushworkflow.utils.PnSendModeUtils.*;
 @ExtendWith(SpringExtension.class)
 class PnSendModeUtilsTest {
     @Mock
-    private PnDeliveryPushWorkflowConfigs PnDeliveryPushWorkflowConfigs;
+    private PnDeliveryPushWorkflowConfigs pnDeliveryPushWorkflowConfigs;
     @Mock
     private AarTemplateStrategyFactory aarTemplateStrategyFactory;
     @Mock
@@ -41,8 +41,8 @@ class PnSendModeUtilsTest {
         String[] arrayObj = firstCorrectConfiguration.split(SEPARATOR);
         Instant correctConfigStartDate = Instant.parse(arrayObj[INDEX_START_DATE]);
         configurationList.add(firstCorrectConfiguration);
-        Mockito.when(PnDeliveryPushWorkflowConfigs.getPnSendMode()).thenReturn(configurationList);
-        pnSendModeUtils = new PnSendModeUtils(PnDeliveryPushWorkflowConfigs, aarTemplateStrategyFactory);
+        Mockito.when(pnDeliveryPushWorkflowConfigs.getPnSendMode()).thenReturn(configurationList);
+        pnSendModeUtils = new PnSendModeUtils(pnDeliveryPushWorkflowConfigs, aarTemplateStrategyFactory);
 
         Instant time = correctConfigStartDate.minus(1, ChronoUnit.DAYS);
         //WHEN
@@ -62,11 +62,11 @@ class PnSendModeUtilsTest {
         SendAttachmentMode correctSimpleRegisteredLetterSendAttachmentMode = SendAttachmentMode.fromValue(arrayObj[SIMPLE_REGISTERED_LETTER_SEND_ATTACHMENT_MODE_INDEX]);
         AarTemplateType correctAarTemplateType = AarTemplateType.valueOf(arrayObj[AAR_TEMPLATE_TYPE_INDEX]);
         configurationList.add(firstCorrectConfiguration);
-        Mockito.when(PnDeliveryPushWorkflowConfigs.getPnSendMode()).thenReturn(configurationList);
+        Mockito.when(pnDeliveryPushWorkflowConfigs.getPnSendMode()).thenReturn(configurationList);
         AarTemplateChooseStrategy aarTemplateChooseStrategy = new StaticAarTemplateChooseStrategy(AarTemplateType.valueOf(correctAarTemplateType.name()));
         Mockito.when(aarTemplateStrategyFactory.getAarTemplateStrategy(Mockito.anyString())).thenReturn(aarTemplateChooseStrategy);
 
-        pnSendModeUtils = new PnSendModeUtils(PnDeliveryPushWorkflowConfigs, aarTemplateStrategyFactory);
+        pnSendModeUtils = new PnSendModeUtils(pnDeliveryPushWorkflowConfigs, aarTemplateStrategyFactory);
         Instant time = correctConfigStartDate.plus(1, ChronoUnit.DAYS);
 
         //WHEN
@@ -99,11 +99,11 @@ class PnSendModeUtilsTest {
         SendAttachmentMode correctAnalogSendAttachmentMode = SendAttachmentMode.fromValue(arrayObj[ANALOG_SEND_ATTACHMENT_MODE_INDEX]);
         SendAttachmentMode correctSimpleRegisteredLetterSendAttachmentMode = SendAttachmentMode.fromValue(arrayObj[SIMPLE_REGISTERED_LETTER_SEND_ATTACHMENT_MODE_INDEX]);
         AarTemplateType correctAarTemplateType = AarTemplateType.valueOf(arrayObj[AAR_TEMPLATE_TYPE_INDEX]);
-        Mockito.when(PnDeliveryPushWorkflowConfigs.getPnSendMode()).thenReturn(configurationList);
+        Mockito.when(pnDeliveryPushWorkflowConfigs.getPnSendMode()).thenReturn(configurationList);
         AarTemplateChooseStrategy aarTemplateChooseStrategy = new StaticAarTemplateChooseStrategy(AarTemplateType.valueOf(correctAarTemplateType.name()));
         Mockito.when(aarTemplateStrategyFactory.getAarTemplateStrategy(Mockito.anyString())).thenReturn(aarTemplateChooseStrategy);
 
-        pnSendModeUtils = new PnSendModeUtils(PnDeliveryPushWorkflowConfigs, aarTemplateStrategyFactory);
+        pnSendModeUtils = new PnSendModeUtils(pnDeliveryPushWorkflowConfigs, aarTemplateStrategyFactory);
 
         
         Instant time = correctConfigStartDate.plus(1, ChronoUnit.DAYS);
@@ -134,11 +134,11 @@ class PnSendModeUtilsTest {
         SendAttachmentMode correctSimpleRegisteredLetterSendAttachmentMode = SendAttachmentMode.fromValue(arrayObj[SIMPLE_REGISTERED_LETTER_SEND_ATTACHMENT_MODE_INDEX]);
         AarTemplateType correctAarTemplateType = AarTemplateType.valueOf(arrayObj[AAR_TEMPLATE_TYPE_INDEX]);
 
-        Mockito.when(PnDeliveryPushWorkflowConfigs.getPnSendMode()).thenReturn(configurationList);
+        Mockito.when(pnDeliveryPushWorkflowConfigs.getPnSendMode()).thenReturn(configurationList);
         AarTemplateChooseStrategy aarTemplateChooseStrategy = new StaticAarTemplateChooseStrategy(AarTemplateType.valueOf(correctAarTemplateType.name()));
         Mockito.when(aarTemplateStrategyFactory.getAarTemplateStrategy(Mockito.anyString())).thenReturn(aarTemplateChooseStrategy);
 
-        pnSendModeUtils = new PnSendModeUtils(PnDeliveryPushWorkflowConfigs, aarTemplateStrategyFactory);
+        pnSendModeUtils = new PnSendModeUtils(pnDeliveryPushWorkflowConfigs, aarTemplateStrategyFactory);
 
         //WHEN
         PnSendMode pnSendMode = pnSendModeUtils.getPnSendMode(correctConfigStartDate);
@@ -168,11 +168,11 @@ class PnSendModeUtilsTest {
         SendAttachmentMode correctSimpleRegisteredLetterSendAttachmentMode = SendAttachmentMode.fromValue(arrayObj[SIMPLE_REGISTERED_LETTER_SEND_ATTACHMENT_MODE_INDEX]);
         AarTemplateType correctAarTemplateType = AarTemplateType.valueOf(arrayObj[AAR_TEMPLATE_TYPE_INDEX]);
 
-        Mockito.when(PnDeliveryPushWorkflowConfigs.getPnSendMode()).thenReturn(configurationList);
+        Mockito.when(pnDeliveryPushWorkflowConfigs.getPnSendMode()).thenReturn(configurationList);
         AarTemplateChooseStrategy aarTemplateChooseStrategy = new StaticAarTemplateChooseStrategy(AarTemplateType.valueOf(correctAarTemplateType.name()));
         Mockito.when(aarTemplateStrategyFactory.getAarTemplateStrategy(Mockito.anyString())).thenReturn(aarTemplateChooseStrategy);
 
-        pnSendModeUtils = new PnSendModeUtils(PnDeliveryPushWorkflowConfigs, aarTemplateStrategyFactory);
+        pnSendModeUtils = new PnSendModeUtils(pnDeliveryPushWorkflowConfigs, aarTemplateStrategyFactory);
         
         Instant time = correctConfigStartDate.plus(1, ChronoUnit.DAYS);
         
@@ -204,11 +204,11 @@ class PnSendModeUtilsTest {
         SendAttachmentMode correctSimpleRegisteredLetterSendAttachmentMode = SendAttachmentMode.fromValue(arrayObj[SIMPLE_REGISTERED_LETTER_SEND_ATTACHMENT_MODE_INDEX]);
         AarTemplateType correctAarTemplateType = AarTemplateType.valueOf(arrayObj[AAR_TEMPLATE_TYPE_INDEX]);
 
-        Mockito.when(PnDeliveryPushWorkflowConfigs.getPnSendMode()).thenReturn(configurationList);
+        Mockito.when(pnDeliveryPushWorkflowConfigs.getPnSendMode()).thenReturn(configurationList);
         AarTemplateChooseStrategy aarTemplateChooseStrategy = new StaticAarTemplateChooseStrategy(AarTemplateType.valueOf(correctAarTemplateType.name()));
         Mockito.when(aarTemplateStrategyFactory.getAarTemplateStrategy(Mockito.anyString())).thenReturn(aarTemplateChooseStrategy);
 
-        pnSendModeUtils = new PnSendModeUtils(PnDeliveryPushWorkflowConfigs, aarTemplateStrategyFactory);
+        pnSendModeUtils = new PnSendModeUtils(pnDeliveryPushWorkflowConfigs, aarTemplateStrategyFactory);
     
         String[] secondConfObj = secondConfiguration.split(SEPARATOR);
         Instant secondConfStartDate = Instant.parse(secondConfObj[INDEX_START_DATE]);
@@ -250,8 +250,8 @@ class PnSendModeUtilsTest {
         AarTemplateChooseStrategy templateChooseStrategy = new DynamicRADDExperimentationChooseStrategy(checkRADDExperimentation);
         Mockito.when(aarTemplateStrategyFactory.getAarTemplateStrategy(Mockito.anyString())).thenReturn(templateChooseStrategy);
         
-        Mockito.when(PnDeliveryPushWorkflowConfigs.getPnSendMode()).thenReturn(configurationList);
-        pnSendModeUtils = new PnSendModeUtils(PnDeliveryPushWorkflowConfigs, aarTemplateStrategyFactory);
+        Mockito.when(pnDeliveryPushWorkflowConfigs.getPnSendMode()).thenReturn(configurationList);
+        pnSendModeUtils = new PnSendModeUtils(pnDeliveryPushWorkflowConfigs, aarTemplateStrategyFactory);
 
         Instant time = correctConfigStartDate.plus(1, ChronoUnit.DAYS);
         //WHEN
@@ -269,8 +269,8 @@ class PnSendModeUtilsTest {
     void noConfiguration() {
         List<String> configurationList = new ArrayList<>();
         
-        Mockito.when(PnDeliveryPushWorkflowConfigs.getPnSendMode()).thenReturn(configurationList);
-        pnSendModeUtils = new PnSendModeUtils(PnDeliveryPushWorkflowConfigs, aarTemplateStrategyFactory);
+        Mockito.when(pnDeliveryPushWorkflowConfigs.getPnSendMode()).thenReturn(configurationList);
+        pnSendModeUtils = new PnSendModeUtils(pnDeliveryPushWorkflowConfigs, aarTemplateStrategyFactory);
 
         Instant time = Instant.now();
         PnSendMode pnSendMode = pnSendModeUtils.getPnSendMode(time);

@@ -84,8 +84,6 @@ class CheckAttachmentRetentionIT extends CommonTestConfiguration {
         TimeParams times = cfg.getTimeParams();
         times.setCheckAttachmentTimeBeforeExpiration(checkAttachmentTimeBeforeExpiration);
         Mockito.when(cfg.getTimeParams()).thenReturn(times);
-    //    Mockito.when(cfg.getTimeParams().getCheckAttachmentTimeBeforeExpiration()).thenReturn(Duration.ofSeconds(10));
-    //    Mockito.when(cfg.getTimeParams().getAttachmentTimeToAddAfterExpiration()).thenReturn(Duration.ofSeconds(20));
 
         // Scheduliamo qui il check retention manualmente poichè non è presente in questo dominio la validazione della notifica,
         // in cui in teoria si schedula per la prima volta il check della retention.
@@ -166,7 +164,6 @@ class CheckAttachmentRetentionIT extends CommonTestConfiguration {
         times.setCheckAttachmentTimeBeforeExpiration(checkAttachmentTimeBeforeExpiration);
         times.setAttachmentTimeToAddAfterExpiration(attachmentTimeToAddAfterExpiration);
         Mockito.when(cfg.getTimeParams()).thenReturn(times);
-        //    Mockito.when(cfg.getTimeParams().getAttachmentTimeToAddAfterExpiration()).thenReturn(Duration.ofSeconds(20));
 
         // Scheduliamo qui il check retention manualmente poichè non è presente in questo dominio la validazione della notifica,
         // in cui in teoria si schedula per la prima volta il check della retention.
@@ -193,13 +190,16 @@ class CheckAttachmentRetentionIT extends CommonTestConfiguration {
                         .recIndex(0)
                         .build()
         );
-        TimelineElementInternal aarCreationRequest = timelineService.getTimelineElement(iun, timelineId).get();
-        Instant dateToWait = aarCreationRequest.getTimestamp().plus(attachmentRetentionTimeAfterValidation.plus(Duration.ofSeconds(5)));
-        await()
-                .atMost(200, TimeUnit.SECONDS)
-                .untilAsserted(() -> Assertions.assertTrue(Instant.now().isAfter(dateToWait)));
 
-        //Viene quindi verificato che il metodo di check attacment sia stato effettivamente richiamato ...
+        await().untilAsserted(() -> {
+            TimelineElementInternal aarCreationRequest = timelineService.getTimelineElement(iun, timelineId)
+                    .orElseThrow(() -> new IllegalStateException("Elemento timeline non trovato"));
+            Instant dateToWait = aarCreationRequest.getTimestamp().plus(attachmentRetentionTimeAfterValidation.plus(Duration.ofSeconds(5)));
+            await()
+                    .atMost(200, TimeUnit.SECONDS)
+                    .untilAsserted(() -> Assertions.assertTrue(Instant.now().isAfter(dateToWait)));
+        });
+        //Viene quindi verificato che il metodo di check attachment sia stato effettivamente richiamato ...
         Mockito.verify(checkAttachmentRetentionHandler).handleCheckAttachmentRetentionBeforeExpiration(Mockito.eq(iun), Mockito.any(Instant.class));
         //... ma che non abbia effettuato l'update della retention perchè la notifica è già perfezionata (per presa visione)
         Mockito.verify(attachmentUtils, Mockito.times(2)).changeAttachmentsRetention(Mockito.eq(notification), Mockito.anyInt());

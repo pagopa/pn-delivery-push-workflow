@@ -13,7 +13,6 @@ import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.Optional;
@@ -25,8 +24,10 @@ class AarCreationResponseHandlerTest extends CommonTestConfiguration {
     @MockitoBean
     TimelineService timelineService;
     @MockitoBean
+    @SuppressWarnings("unused")
     CourtesyMessageUtils courtesyMessageUtils;
     @MockitoBean
+    @SuppressWarnings("unused")
     TimelineUtils timelineUtils;
     @Autowired
     AarCreationResponseHandler handler;

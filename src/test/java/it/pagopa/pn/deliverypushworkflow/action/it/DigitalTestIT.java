@@ -179,12 +179,10 @@ class DigitalTestIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient,
-                recIndex,
                 sentPecAttemptNumber,
                 generatedLegalFactsInfo,
                 endWorkflowStatus,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 
@@ -314,12 +312,10 @@ class DigitalTestIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient,
-                recIndex,
                 sentPecAttemptNumber,
                 generatedLegalFactsInfo,
                 endWorkflowStatus,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 
@@ -431,12 +427,10 @@ class DigitalTestIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient,
-                recIndex,
                 sentPecAttemptNumber,
                 generatedLegalFactsInfo,
                 endWorkflowStatus,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 
@@ -539,12 +533,10 @@ class DigitalTestIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient,
-                recIndex,
                 sentPecAttemptNumber,
                 generatedLegalFactsInfo,
                 endWorkflowStatus,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 
@@ -692,12 +684,10 @@ class DigitalTestIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient,
-                recIndex,
                 sentPecAttemptNumber,
                 generatedLegalFactsInfo,
                 endWorkflowStatus,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 
@@ -786,12 +776,10 @@ class DigitalTestIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient,
-                recIndex,
                 sentPecAttemptNumber,
                 generatedLegalFactsInfo,
                 endWorkflowStatus,
                 legalFactGenerator,
-                timelineService,
                 null
         );
         
@@ -904,12 +892,10 @@ class DigitalTestIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient,
-                recIndex,
                 sentPecAttemptNumber,
                 generatedLegalFactsInfo,
                 endWorkflowStatus,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 
@@ -994,12 +980,10 @@ class DigitalTestIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient,
-                recIndex,
                 sentPecAttemptNumber,
                 generatedLegalFactsInfo,
                 endWorkflowStatus,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 
@@ -1100,12 +1084,10 @@ class DigitalTestIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient,
-                recIndex,
                 sentPecAttemptNumber,
                 generatedLegalFactsInfo,
                 endWorkflowStatus,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 
@@ -1212,12 +1194,10 @@ class DigitalTestIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient,
-                recIndex,
                 sentPecAttemptNumber,
                 generatedLegalFactsInfo,
                 endWorkflowStatus,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 
@@ -1353,12 +1333,10 @@ class DigitalTestIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient,
-                recIndex,
                 sentPecAttemptNumber,
                 generatedLegalFactsInfo,
                 endWorkflowStatus,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 
@@ -1505,12 +1483,10 @@ class DigitalTestIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient,
-                recIndex,
                 sentPecAttemptNumber,
                 generatedLegalFactsInfo,
                 endWorkflowStatus,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 

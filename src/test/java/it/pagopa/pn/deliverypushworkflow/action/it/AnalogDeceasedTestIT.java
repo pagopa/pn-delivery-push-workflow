@@ -86,7 +86,7 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
                 .withNotificationFeePolicy(NotificationFeePolicy.DELIVERY_MODE)
                 .withNotificationRecipient(recipient)
                 .build();
-        
+
         pnDeliveryClientMock.addNotification(notification);
         addressBookMock.addLegalDigitalAddresses(recipient.getInternalId(), notification.getSender().getPaId(), Collections.emptyList());
 
@@ -134,12 +134,10 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient,
-                recIndex,
                 0,
                 generatedLegalFactsInfo,
                 EndWorkflowStatus.SUCCESS,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 
@@ -172,7 +170,7 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
                                 .iun(iun)
                                 .recIndex(0)
                                 .build()
-                )+TimelineClientMock.SIMULATE_AFTER_CANCEL_NOTIFICATION;
+                ) + TimelineClientMock.SIMULATE_AFTER_CANCEL_NOTIFICATION;
 
         NotificationRecipientInt recipient = NotificationRecipientTestBuilder.builder()
                 .withInternalId("internalIdTest")
@@ -244,12 +242,10 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient,
-                recIndex,
                 0,
                 generatedLegalFactsInfo,
                 EndWorkflowStatus.SUCCESS,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 
@@ -347,12 +343,10 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient,
-                recIndex1,
                 0,
                 generatedLegalFactsInfo1,
                 EndWorkflowStatus.SUCCESS,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 
@@ -477,12 +471,10 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient1,
-                recIndex1,
                 0,
                 generatedLegalFactsInfo1,
                 EndWorkflowStatus.SUCCESS,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 
@@ -498,12 +490,10 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient2,
-                recIndex2,
                 0,
                 generatedLegalFactsInfo2,
                 EndWorkflowStatus.SUCCESS,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 
@@ -515,7 +505,7 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
     }
 
     @Test
-    @Disabled
+    @Disabled("Test disabilitato perché fallisce a causa di condizioni di race tra eventi di visualizzazione e deceduto.")
     void multiRecipientWithFirstUnreachableAndSecondDeceased() {
   /*
        PRIMO RECIPIENT
@@ -545,17 +535,16 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
                 .withAddress(ExternalChannelMock.EXT_CHANNEL_SEND_NEW_ADDR + ExternalChannelMock.EXTCHANNEL_SEND_FAIL + " Via Nuova")
                 .build();
 
-        String taxid01 = "TAXID01";
-
+        String taxId01 = "TAXID01";
         NotificationRecipientInt recipient1 = NotificationRecipientTestBuilder.builder()
-                .withTaxId(taxid01)
-                .withInternalId("ANON_"+taxid01)
+                .withTaxId(taxId01)
+                .withInternalId("ANON_" + taxId01)
                 .withPhysicalAddress(paPhysicalAddress1)
                 .build();
 
         List<CourtesyDigitalAddressInt> listCourtesyAddressRecipient1 = Collections.singletonList(CourtesyDigitalAddressInt.builder()
                 .address("test@mail.it")
-                .type( CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.EMAIL )
+                .type(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.EMAIL)
                 .build());
 
         PhysicalAddressInt paPhysicalAddress2 = PhysicalAddressBuilder.builder()
@@ -571,7 +560,6 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
         String fileDoc = "sha256_doc00";
         List<NotificationDocumentInt> notificationDocumentList = TestUtils.getDocumentList(fileDoc);
         List<TestUtils.DocumentWithContent> listDocumentWithContent = TestUtils.getDocumentWithContents(fileDoc, notificationDocumentList);
-
         notificationDocumentList = TestUtils.firstFileUploadFromNotification(listDocumentWithContent, notificationDocumentList, safeStorageClientMock);
 
         NotificationInt notification = NotificationTestBuilder.builder()
@@ -580,7 +568,7 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
                 .withNotificationFeePolicy(NotificationFeePolicy.DELIVERY_MODE)
                 .withNotificationRecipients(List.of(recipient1, recipient2))
                 .build();
-        
+
         pnDeliveryClientMock.addNotification(notification);
         addressBookMock.addLegalDigitalAddresses(recipient1.getInternalId(), notification.getSender().getPaId(), Collections.emptyList());
         addressBookMock.addCourtesyDigitalAddresses(recipient1.getInternalId(), notification.getSender().getPaId(), listCourtesyAddressRecipient1);
@@ -683,16 +671,13 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
                 .pecDeliveryWorkflowLegalFactsGenerated(false)
                 .notificationCompletelyUnreachableLegalFactGenerated(true)
                 .build();
-
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient1,
-                recIndex1,
                 0,
                 generatedLegalFactsInfo1,
                 EndWorkflowStatus.FAILURE,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 
@@ -704,16 +689,13 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
                 .pecDeliveryWorkflowLegalFactsGenerated(false)
                 .notificationCompletelyUnreachableLegalFactGenerated(false)
                 .build();
-
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient2,
-                recIndex2,
                 0,
                 generatedLegalFactsInfo2,
                 EndWorkflowStatus.SUCCESS,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 
@@ -840,12 +822,10 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient1,
-                recIndex1,
                 0,
                 generatedLegalFactsInfo1,
                 EndWorkflowStatus.SUCCESS,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 
@@ -861,12 +841,10 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient2,
-                recIndex2,
                 0,
                 generatedLegalFactsInfo2,
                 EndWorkflowStatus.SUCCESS,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 
@@ -1011,12 +989,10 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient1,
-                recIndex1,
                 0,
                 generatedLegalFactsInfo1,
                 EndWorkflowStatus.SUCCESS,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 
@@ -1032,12 +1008,10 @@ public class AnalogDeceasedTestIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient2,
-                recIndex2,
                 0,
                 generatedLegalFactsInfo2,
                 EndWorkflowStatus.SUCCESS,
                 legalFactGenerator,
-                timelineService,
                 null
         );
 

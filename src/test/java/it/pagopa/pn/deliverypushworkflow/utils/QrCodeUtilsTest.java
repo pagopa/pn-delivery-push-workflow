@@ -56,9 +56,9 @@ class QrCodeUtilsTest {
   }
 
   @Test
-  void generateQRCodeImageFailure() throws IOException, NotFoundException {
+  void generateQRCodeImageFailure() {
     try (MockedStatic<MatrixToImageWriter> mockWriter =
-        Mockito.mockStatic(MatrixToImageWriter.class);) {
+        Mockito.mockStatic(MatrixToImageWriter.class)) {
       mockWriter.when(() -> MatrixToImageWriter.writeToStream(any(), any(), any()))
           .thenThrow(new IOException("message"));
       assertThrows(PnInternalException.class,

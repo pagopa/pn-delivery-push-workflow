@@ -11,7 +11,6 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.externalchannel.AttachmentDetai
 import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.SendEventInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendAnalogDetailsInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendAnalogFeedbackDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,15 +27,13 @@ import java.util.List;
 class AnalogWorkflowUtilsTest {
 
     private static final String TAX_ID = "tax_id";
-    private final Integer recIndex = 0;
-    private TimelineService timelineService;
     private TimelineUtils timelineUtils;
     private NotificationUtils notificationUtils;
     private AnalogWorkflowUtils analogWorkflowUtils;
 
     @BeforeEach
     void setup() {
-        timelineService = Mockito.mock(TimelineService.class);
+        TimelineService timelineService = Mockito.mock(TimelineService.class);
         timelineUtils = Mockito.mock(TimelineUtils.class);
         notificationUtils = Mockito.mock(NotificationUtils.class);
         analogWorkflowUtils = new AnalogWorkflowUtils(timelineService, timelineUtils, notificationUtils);
@@ -86,6 +83,7 @@ class AnalogWorkflowUtilsTest {
         PhysicalAddressInt physicalAddressInt = PhysicalAddressInt.builder().province("province").municipality("munic").at("at").build();
         NotificationRecipientInt notificationRecipientInt = NotificationRecipientInt.builder().physicalAddress(physicalAddressInt).taxId("testIdRecipient").denomination("Nome Cognome/Ragione Sociale").build();
 
+        int recIndex = 0;
         Mockito.when(notificationUtils.getRecipientFromIndex(notificationInt, recIndex)).thenReturn(notificationRecipientInt);
 
         PhysicalAddressInt tmp = analogWorkflowUtils.getPhysicalAddress(notificationInt, recIndex);

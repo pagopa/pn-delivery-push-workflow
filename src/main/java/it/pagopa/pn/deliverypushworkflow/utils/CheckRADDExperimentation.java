@@ -1,7 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.utils;
 
 import it.pagopa.pn.commons.abstractions.ParameterConsumer;
-
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
 import lombok.extern.slf4j.Slf4j;
@@ -18,12 +17,12 @@ public class CheckRADDExperimentation {
     private static final String[] EXPERIMENTAL_COUNTRIES = {"it", "italia", "italy"};
 
 
-    private final PnDeliveryPushWorkflowConfigs PnDeliveryPushWorkflowConfigs;
+    private final PnDeliveryPushWorkflowConfigs pnDeliveryPushWorkflowConfigs;
     private final ParameterConsumer parameterConsumer;
 
-    public CheckRADDExperimentation(ParameterConsumer parameterConsumer, PnDeliveryPushWorkflowConfigs PnDeliveryPushWorkflowConfigs) {
+    public CheckRADDExperimentation(ParameterConsumer parameterConsumer, PnDeliveryPushWorkflowConfigs pnDeliveryPushWorkflowConfigs) {
         this.parameterConsumer = parameterConsumer;
-        this.PnDeliveryPushWorkflowConfigs = PnDeliveryPushWorkflowConfigs;
+        this.pnDeliveryPushWorkflowConfigs = pnDeliveryPushWorkflowConfigs;
     }
 
     private boolean isAnExperimentalCountry(final String countryToCheck) {
@@ -39,7 +38,7 @@ public class CheckRADDExperimentation {
 
         if (isAnExperimentalCountry(toCheck.getForeignState())) {
             // country in admitted countries
-            List<String> storeNames = PnDeliveryPushWorkflowConfigs.getRaddExperimentationStoresName();
+            List<String> storeNames = pnDeliveryPushWorkflowConfigs.getRaddExperimentationStoresName();
             if (storeNames == null) return false;
             for (String currentStore : storeNames) {
                 log.info("Current Store {}", currentStore);

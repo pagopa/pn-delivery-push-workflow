@@ -115,7 +115,7 @@ public class TimelineServiceMapper {
         return StatusInfoInternal.builder()
                 .actual(statusInfo.getActual())
                 .statusChangeTimestamp(statusInfo.getStatusChangeTimestamp())
-                .statusChanged(statusInfo.getStatusChanged() != null ? statusInfo.getStatusChanged() : false)
+                .statusChanged(statusInfo.getStatusChanged() != null ? statusInfo.getStatusChanged() : Boolean.FALSE)
                 .build();
     }
 }

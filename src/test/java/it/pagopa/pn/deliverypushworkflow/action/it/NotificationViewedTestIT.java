@@ -172,12 +172,10 @@ class NotificationViewedTestIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient,
-                recIndex,
                 6,
                 generatedLegalFactsInfo,
                 EndWorkflowStatus.FAILURE,
                 legalFactGenerator,
-                timelineService,
                 delegateInfoInt
         );
 
@@ -281,12 +279,10 @@ class NotificationViewedTestIT extends CommonTestConfiguration {
         TestUtils.checkGeneratedLegalFacts(
                 notification,
                 recipient,
-                recIndex,
                 6,
                 generatedLegalFactsInfo,
                 EndWorkflowStatus.FAILURE,
                 legalFactGenerator,
-                timelineService,
                 null
         );
         

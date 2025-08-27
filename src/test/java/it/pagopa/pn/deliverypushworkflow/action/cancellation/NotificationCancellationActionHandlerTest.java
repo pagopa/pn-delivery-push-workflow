@@ -4,8 +4,6 @@ import it.pagopa.pn.deliverypushworkflow.action.it.utils.NotificationRecipientTe
 import it.pagopa.pn.deliverypushworkflow.action.it.utils.NotificationTestBuilder;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationCancelledDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.service.NotificationCancellationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,8 +11,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-
-import java.time.Instant;
 
 class NotificationCancellationActionHandlerTest {
 
@@ -24,7 +20,7 @@ class NotificationCancellationActionHandlerTest {
     private NotificationCancellationActionHandler handler;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
 
         handler = new NotificationCancellationActionHandler(
                 notificationCancellationService);

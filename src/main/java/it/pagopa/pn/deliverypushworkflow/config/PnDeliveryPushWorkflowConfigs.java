@@ -81,7 +81,7 @@ public class PnDeliveryPushWorkflowConfigs {
 
     private String pfNewWorkflowStop;
 
-    private String AAROnlyPECForRADDAndPF;
+    private String aarOnlyPecForRaddAndPf;
 
     private ExternalChannel externalChannel;
 
