@@ -1,10 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.legalfacts;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import it.pagopa.pn.commons.abstractions.ParameterConsumer;
-import it.pagopa.pn.commons.utils.qr.QrUrlCodecRegistry;
 import it.pagopa.pn.commons.utils.qr.QrUrlCodecService;
-import it.pagopa.pn.commons.utils.qr.QrUrlCodecV1;
 import it.pagopa.pn.commons.utils.qr.models.UrlData;
 import it.pagopa.pn.deliverypushworkflow.action.it.CommonTestConfiguration;
 import it.pagopa.pn.deliverypushworkflow.action.it.mockbean.TemplatesClientMock;
@@ -22,7 +18,6 @@ import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.templateseng
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.templatesengine.TemplatesClient;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.templatesengine.TemplatesClientPec;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;

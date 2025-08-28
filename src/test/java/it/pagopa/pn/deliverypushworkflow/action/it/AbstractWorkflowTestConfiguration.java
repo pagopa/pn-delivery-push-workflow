@@ -2,7 +2,6 @@ package it.pagopa.pn.deliverypushworkflow.action.it;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.commons.abstractions.ParameterConsumer;
-import it.pagopa.pn.commons.utils.qr.QrUrlCodec;
 import it.pagopa.pn.commons.utils.qr.QrUrlCodecService;
 import it.pagopa.pn.deliverypushworkflow.action.it.mockbean.*;
 import it.pagopa.pn.deliverypushworkflow.action.utils.InstantNowSupplier;
