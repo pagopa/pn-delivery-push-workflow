@@ -93,7 +93,6 @@ import static org.awaitility.Awaitility.setDefaultTimeout;
         ChooseDeliveryModeUtilsImpl.class,
         TimelineUtils.class,
         TimelineServiceHttpImpl.class,
-        TimelineClientMock.class,
         PublicRegistryUtils.class,
         NotificationServiceImpl.class,
         PaperNotificationFailedServiceImpl.class,
@@ -154,7 +153,12 @@ import static org.awaitility.Awaitility.setDefaultTimeout;
         DocumentCreationResponseEventHandler.class,
         SendDigitalFinalStatusResponseEventHandler.class,
         PostAcceptedProcessingCompletedHandler.class,
-        SendAnalogFinalStatusResponseHandler.class
+        SendAnalogFinalStatusResponseHandler.class,
+        AnalogDeliveryTimeoutUtils.class,
+        AnalogWorkflowTimeoutHandler.class,
+        AnalogWorkflowTimeoutActionHandler.class,
+        PaperTrackerServiceImpl.class,
+        AnalogWorkflowDeliveryTimeoutHandler.class
 })
 @ExtendWith(SpringExtension.class)
 @TestPropertySource(value = "classpath:/application-testIT.properties")
@@ -231,6 +235,7 @@ public class CommonTestConfiguration {
         times.setTimeToAddInNonVisibilityTimeCase(Duration.ofSeconds(1));
         times.setCheckAttachmentTimeBeforeExpiration(Duration.ofSeconds(2));
         times.setAttachmentTimeToAddAfterExpiration(Duration.ofSeconds(50));
+        times.setScheduleAnalogWorkflowTimeoutOffset(Duration.ofSeconds(5));
         
         Mockito.when(cfg.getTimeParams()).thenReturn(times);
 
@@ -301,6 +306,7 @@ public class CommonTestConfiguration {
 
         Mockito.when(cfg.getTemplateURLforPEC()).thenReturn("/templates-engine-private/v1/templates/notification-aar-for-pec");
         Mockito.when(cfg.getTemplatesEngineBaseUrl()).thenReturn("http://localhost:8090");
+        Mockito.when(cfg.getStartAnalogWorkflowTimeoutFeatureDate()).thenReturn(Instant.parse("2024-11-27T00:00:00Z"));
     }
 
 }

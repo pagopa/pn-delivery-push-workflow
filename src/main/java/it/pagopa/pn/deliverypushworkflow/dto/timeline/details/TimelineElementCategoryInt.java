@@ -42,7 +42,10 @@ public enum TimelineElementCategoryInt {
     NOTIFICATION_CANCELLATION_REQUEST(NotificationCancellationRequestDetailsInt.class, TimelineElementCategoryInt.VERSION_20),
     NOTIFICATION_CANCELLED(NotificationCancelledDetailsInt.class, TimelineElementCategoryInt.VERSION_20),
     NOTIFICATION_CANCELLED_DOCUMENT_CREATION_REQUEST(NotificationCancelledDocumentCreationRequestDetailsInt.class, TimelineElementCategoryInt.VERSION_25),
-    ANALOG_WORKFLOW_RECIPIENT_DECEASED(AnalogWorfklowRecipientDeceasedDetailsInt.class, TimelineElementCategoryInt.PRIORITY_ANALOG_WORKFLOW_RECIPIENT_DECEASED, TimelineElementCategoryInt.VERSION_26);
+    ANALOG_WORKFLOW_RECIPIENT_DECEASED(AnalogWorfklowRecipientDeceasedDetailsInt.class, TimelineElementCategoryInt.PRIORITY_ANALOG_WORKFLOW_RECIPIENT_DECEASED, TimelineElementCategoryInt.VERSION_26),
+    SEND_ANALOG_TIMEOUT_CREATION_REQUEST(SendAnalogTimeoutCreationRequestDetailsInt.class, TimelineElementCategoryInt.VERSION_28),
+    SEND_ANALOG_TIMEOUT(SendAnalogTimeoutDetailsInt.class, TimelineElementCategoryInt.VERSION_28),
+    ANALOG_FAILURE_WORKFLOW_TIMEOUT(AnalogFailureWorkflowTimeoutDetailsInt.class, TimelineElementCategoryInt.PRIORITY_ANALOG_FAILURE_WORKFLOW_TIMEOUT, TimelineElementCategoryInt.VERSION_28);
 
     private final Class<? extends TimelineElementDetailsInt> detailsJavaClass;
     private final int priority;
@@ -55,6 +58,7 @@ public enum TimelineElementCategoryInt {
     public static final int PRIORITY_COMPLETELY_UNREACHABLE_CREATION_REQUEST = 50;
     public static final int PRIORITY_COMPLETELY_UNREACHABLET = 60;
     public static final int PRIORITY_SCHEDULE_REFINEMENT = 70;
+    public static final int PRIORITY_ANALOG_FAILURE_WORKFLOW_TIMEOUT = 40;
 
     public static final int PRIORITY_BEFORE = 10;
     public static final int PRIORITY_AFTER = 20;
@@ -64,6 +68,7 @@ public enum TimelineElementCategoryInt {
     public static final int VERSION_23 = 23;
     public static final int VERSION_25 = 25;
     public static final int VERSION_26 = 26;
+    public static final int VERSION_28 = 28;
 
     TimelineElementCategoryInt(Class<? extends TimelineElementDetailsInt> detailsJavaClass, int version) {
         this(detailsJavaClass, PRIORITY_BEFORE, version);

@@ -16,4 +16,5 @@ public class TimeParams {
     private Duration timeToAddInNonVisibilityTimeCase;
     private Duration checkAttachmentTimeBeforeExpiration;
     private Duration attachmentTimeToAddAfterExpiration;
+    private Duration scheduleAnalogWorkflowTimeoutOffset;
 }

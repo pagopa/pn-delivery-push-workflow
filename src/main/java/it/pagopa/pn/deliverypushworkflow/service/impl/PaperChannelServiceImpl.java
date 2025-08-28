@@ -1,13 +1,17 @@
 package it.pagopa.pn.deliverypushworkflow.service.impl;
 
+import it.pagopa.pn.commons.exceptions.PnInternalException;
 import it.pagopa.pn.commons.log.PnAuditLogEvent;
 import it.pagopa.pn.commons.log.PnAuditLogEventType;
 import it.pagopa.pn.deliverypushworkflow.action.analogworkflow.AnalogWorkflowUtils;
+import it.pagopa.pn.deliverypushworkflow.action.details.AnalogWorkflowTimeoutDetails;
 import it.pagopa.pn.deliverypushworkflow.action.startworkflow.notificationvalidation.AttachmentUtils;
 import it.pagopa.pn.deliverypushworkflow.action.startworkflow.notificationvalidation.F24ResolutionMode;
+import it.pagopa.pn.deliverypushworkflow.action.utils.AnalogDeliveryTimeoutUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.NotificationUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.PaperChannelUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
+import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.ServiceLevelTypeInt;
@@ -18,20 +22,28 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.ResultFilterInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.PhysicalAddressRelatedTimelineElement;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendAnalogFeedbackDetailsInt;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.ProductTypeEnum;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.SendResponse;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.paperchannel.PaperChannelPrepareRequest;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.paperchannel.PaperChannelSendClient;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.paperchannel.PaperChannelSendRequest;
+import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ActionType;
 import it.pagopa.pn.deliverypushworkflow.service.AuditLogService;
 import it.pagopa.pn.deliverypushworkflow.service.PaperChannelService;
+import it.pagopa.pn.deliverypushworkflow.service.SchedulerService;
+import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+
+import static it.pagopa.pn.deliverypushworkflow.exceptions.PnDeliveryPushExceptionCodes.ERROR_CODE_DELIVERYPUSH_TIMELINENOTFOUND;
 
 @CustomLog
 @AllArgsConstructor
@@ -44,6 +56,10 @@ public class PaperChannelServiceImpl implements PaperChannelService {
     private final AnalogWorkflowUtils analogWorkflowUtils;
     private final AuditLogService auditLogService;
     private final AttachmentUtils attachmentUtils;
+    private final SchedulerService schedulerService;
+    private final PnDeliveryPushWorkflowConfigs pnDeliveryPushWorkflowConfigs;
+    private final TimelineService timelineService;
+    private final AnalogDeliveryTimeoutUtils analogDeliveryTimeoutUtils;
 
     /**
      * Send registered letter to external channel
@@ -170,17 +186,11 @@ public class PaperChannelServiceImpl implements PaperChannelService {
                 // il relatedEventId del primo tentativo serve a paperChannel distinguere e correlare la seconda invocazione dalla prima
                 relatedEventId = paperChannelUtils.buildPrepareAnalogDomicileEventId(notification, recIndex, sentAttemptMade - 1);
 
+                // Verifico la presenza dell'elemento di tipo SendAnalogTimeoutCreationRequest all'interno della timeline.
+                // Se esiste, l'elemento SendAnalogFeedback non sarà presente nella timeline; altrimenti
                 // ricostruisco il feedback corrispondente, tanto ha la forma che gli avevo dato io all'iterazione precedente.
                 // mi serve per recuperare il discoveredAddress all'interno
-                String relatedAnalogFeedbackEventId = paperChannelUtils.buildSendAnalogFeedbackEventId(notification, recIndex, sentAttemptMade - 1);
-
-                TimelineElementInternal previousResult = paperChannelUtils.getPaperChannelNotificationTimelineElement(notification.getIun(), relatedAnalogFeedbackEventId);
-                discoveredAddress = ((SendAnalogFeedbackDetailsInt)previousResult.getDetails()).getNewAddress();
-                if (discoveredAddress != null && !StringUtils.hasText(discoveredAddress.getFullname()))
-                {
-                    // se il discovered address non contiene il full name, lo imposto alla denominazione del recipient
-                    discoveredAddress.setFullname(notification.getRecipients().get(recIndex).getDenomination());
-                }
+                discoveredAddress = retrieveDiscoveredAddressIfPresent(notification.getIun(), recIndex, sentAttemptMade, notification);
 
                 // se la relatedrequestid non è nulla, il receiver address è quello usato nella prima send
                 String eventIdPreviousSend = paperChannelUtils.buildSendAnalogDomicileEventId(notification, recIndex, sentAttemptMade-1);
@@ -324,6 +334,7 @@ public class PaperChannelServiceImpl implements PaperChannelService {
 
                 log.info("Analog notification sent to paperChannel - iun={} id={}", notification.getIun(), recIndex);
                 auditLogEvent.generateSuccess("send success cost={} send timelineId={}", sendResponse.getAmount(), timelineId).log();
+                scheduleAnalogWorkflowNoFeedbackTimeoutForRIRProduct(notification, recIndex, productType, sentAttemptMade, timelineId);
 
             } catch (Exception exc) {
                 auditLogEvent.generateFailure("failed send", exc).log();
@@ -335,6 +346,45 @@ public class PaperChannelServiceImpl implements PaperChannelService {
         }
 
         return timelineId;
+    }
+
+    private void scheduleAnalogWorkflowNoFeedbackTimeoutForRIRProduct(NotificationInt notification, Integer recIndex, String productType, int sentAttemptMade, String timelineId) {
+        log.info("scheduleAnalogWorkflowNoFeedbackTimeoutForRIRProduct - iun{} productType={} sentAttemptMade={} timelineId={}", notification.getIun(), productType, sentAttemptMade, timelineId);
+        if (!ProductTypeEnum.RIR.getValue().equals(productType)) {
+            log.debug("Skipping scheduling ANALOG_WORKFLOW_NO_FEEDBACK_TIMEOUT for iun={} as productType={} is not RIR", notification.getIun(), productType);
+            return;
+        }
+
+        String iun = notification.getIun();
+        Optional<TimelineElementInternal> timelineElementInternalOpt = timelineService.getTimelineElement(iun, timelineId);
+
+        if (timelineElementInternalOpt.isPresent()) {
+            TimelineElementInternal sendAnalogDomicileElement = timelineElementInternalOpt.get();
+            Instant timestamp = sendAnalogDomicileElement.getTimestamp();
+            scheduleEventForRIRProduct(notification, recIndex, sentAttemptMade, timestamp, iun, timelineId);
+        } else {
+            throw new PnInternalException("Timeline element not found for iun=" + iun + " and timelineId=" + timelineId, ERROR_CODE_DELIVERYPUSH_TIMELINENOTFOUND);
+        }
+    }
+
+    private void scheduleEventForRIRProduct(
+            NotificationInt notification,
+            Integer recIndex,
+            int sentAttemptMade,
+            Instant timestamp,
+            String iun,
+            String timelineId
+    ) {
+        AnalogWorkflowTimeoutDetails actionDetails = AnalogWorkflowTimeoutDetails.builder()
+                .sentAttemptMade(sentAttemptMade)
+                .build();
+        Instant dateToSchedule = timestamp.plus(pnDeliveryPushWorkflowConfigs.getTimeParams().getScheduleAnalogWorkflowTimeoutOffset());
+        try {
+            log.info("Scheduling ANALOG_WORKFLOW_NO_FEEDBACK_TIMEOUT action for iun={}, sentAttemptMade={}, date={}", iun, sentAttemptMade, dateToSchedule);
+            schedulerService.scheduleEvent(notification.getIun(), recIndex, dateToSchedule, ActionType.ANALOG_WORKFLOW_NO_FEEDBACK_TIMEOUT, timelineId, actionDetails);
+        } catch (Exception e) {
+            log.fatal("Failed to schedule ANALOG_WORKFLOW_NO_FEEDBACK_TIMEOUT action with iun={}, sentAttemptMade={}, dateToSchedule={}, sendAnalogDomicileTimestamp={}", iun, sentAttemptMade, dateToSchedule, timestamp, e);
+        }
     }
 
     private List<String> legacyRetrieveAcceptedAttachments(NotificationInt notification, Integer recIndex, List<String> replacedF24AttachmentUrls, NotificationChannelType notificationChannelType){
@@ -358,6 +408,27 @@ public class PaperChannelServiceImpl implements PaperChannelService {
         }
     }
 
+    private PhysicalAddressInt retrieveDiscoveredAddressIfPresent(String iun, int recIndex, Integer sentAttemptMade, NotificationInt notification) {
+        Integer previousSentAttemptMade = sentAttemptMade - 1;
+        if (analogDeliveryTimeoutUtils.isSendAnalogTimeoutCreationRequestPresent(iun, recIndex, previousSentAttemptMade)) {
+            log.info("retrieveDiscoveredAddressIfPresent - SendAnalogTimeoutCreationRequest already present in timeline for iun={} recIndex={} previousSentAttemptMade={}", iun, recIndex, previousSentAttemptMade);
+            return null;
+        } else {
+            return retrieveSendAnalogFeedbackDiscoveredAddress(recIndex, notification, previousSentAttemptMade);
+        }
+    }
 
+    private PhysicalAddressInt retrieveSendAnalogFeedbackDiscoveredAddress(int recIndex, NotificationInt notification, Integer previousSentAttemptMade) {
+        log.info("retrieveSendAnalogFeedbackDiscoveredAddress - Retrieving discovered address for iun={} recIndex={} previousSentAttemptMade={}", notification.getIun(), recIndex, previousSentAttemptMade);
+        String relatedAnalogFeedbackEventId = paperChannelUtils.buildSendAnalogFeedbackEventId(notification, recIndex, previousSentAttemptMade);
+
+        TimelineElementInternal previousResult = paperChannelUtils.getPaperChannelNotificationTimelineElement(notification.getIun(), relatedAnalogFeedbackEventId);
+        PhysicalAddressInt discoveredAddress = ((SendAnalogFeedbackDetailsInt)previousResult.getDetails()).getNewAddress();
+        if (discoveredAddress != null && !StringUtils.hasText(discoveredAddress.getFullname())) {
+            // se il discovered address non contiene il full name, lo imposto alla denominazione del recipient
+            discoveredAddress.setFullname(notification.getRecipients().get(recIndex).getDenomination());
+        }
+        return discoveredAddress;
+    }
 
 }
