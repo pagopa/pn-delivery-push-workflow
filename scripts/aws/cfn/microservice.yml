@@ -483,6 +483,7 @@ Resources:
               - 'ssm:GetParameters'
             Resource:
               - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/radd-experimentation-zip-*'
+              - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/AARQrUrlConfigs'
           - Effect: Allow
             Action:
               - 'dynamodb:GetItem'

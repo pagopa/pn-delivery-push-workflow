@@ -1,6 +1,8 @@
 package it.pagopa.pn.deliverypushworkflow.legalfacts;
 
 import it.pagopa.pn.commons.exceptions.PnInternalException;
+import it.pagopa.pn.commons.utils.qr.QrUrlCodecService;
+import it.pagopa.pn.commons.utils.qr.models.UrlData;
 import it.pagopa.pn.deliverypushworkflow.action.utils.EndWorkflowStatus;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
@@ -43,7 +45,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
     private final PnSendModeUtils pnSendModeUtils;
     private final TemplatesClient templatesClient;
     private final TemplatesClientPec templatesClientPec;
-
+    private final QrUrlCodecService qrUrlCodecService;
 
     /**
      * Generates the legal fact for the viewing of a notification.
@@ -287,7 +289,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      *                          including its unique identifier (IUN).
      * @param recipient         the {@link NotificationRecipientInt} object representing the recipient of the notification,
      *                          including relevant details such as contact information.
-     * @param quickAccessToken  a {@link String} representing the token used to generate the quick access URL
+     * @param quickAccess  a {@link String} representing the value used to generate the quick access URL
      *                          for the notification details.
      * @return a {@link String} representing the body of the AAR email for the notification.
      *
@@ -298,13 +300,13 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      * {@link NotificationAarForEmail} object and return the expected email body string.
      */
     @Override
-    public String generateNotificationAARBody(NotificationInt notification, NotificationRecipientInt recipient, String quickAccessToken) {
+    public String generateNotificationAARBody(NotificationInt notification, NotificationRecipientInt recipient, String quickAccess) {
         log.info("retrieve NotificationAARBody template for iun {}", notification.getIun());
         NotificationAarForEmail notificationAAR =
                 notificationAarForEmail(
                         notification,
                         this.getPerfezionamentoLink(),
-                        this.getQuickAccessLink(recipient, quickAccessToken),
+                        this.getQuickAccessLink(recipient, quickAccess),
                         this.getFAQSendURL(),
                         this.getAccessUrl(recipient));
         LanguageEnum language = getLanguage(notification.getAdditionalLanguages());
@@ -402,13 +404,14 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      *
      * @param recipient the {@link NotificationRecipientInt} object representing the recipient of the notification,
      *                  used to retrieve the base access URL.
-     * @param quickAccessToken the token used to generate the quick access link, typically used for secure access.
+     * @param quickAccess the value used to generate the quick access link, typically used for secure access.
      * @return a {@link String} representing the full quick access URL, including the token as a query parameter.
      */
-    private String getQuickAccessLink(NotificationRecipientInt recipient, String quickAccessToken) {
-        String templateUrl = getAccessUrl(recipient) + pnDeliveryPushWorkflowConfigs.getWebapp().getQuickAccessUrlAarDetailSuffix();
-        log.debug("getQrCodeQuickAccessUrlAarDetail templateUrl {} quickAccessLink {}", templateUrl, quickAccessToken);
-        return templateUrl + '=' + quickAccessToken;
+    private String getQuickAccessLink(NotificationRecipientInt recipient, String quickAccess) {
+        UrlData urlData = new UrlData();
+        urlData.setRecipientType(it.pagopa.pn.commons.utils.qr.models.RecipientTypeInt.valueOf(recipient.getRecipientType().name()));
+        log.debug("getQrCodeQuickAccessUrlAarDetail: {}", quickAccess);
+        return qrUrlCodecService.encode(quickAccess, urlData);
     }
 
     /**

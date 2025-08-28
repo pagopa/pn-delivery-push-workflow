@@ -1,5 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.legalfacts;
 
+import it.pagopa.pn.commons.utils.qr.QrUrlCodecService;
+import it.pagopa.pn.commons.utils.qr.models.UrlData;
 import it.pagopa.pn.deliverypushworkflow.action.it.CommonTestConfiguration;
 import it.pagopa.pn.deliverypushworkflow.action.it.mockbean.TemplatesClientMock;
 import it.pagopa.pn.deliverypushworkflow.action.it.mockbean.TemplatesClientMockPec;
@@ -38,10 +40,12 @@ class LegalFactGeneratorTemplatesTest extends CommonTestConfiguration {
 
     TemplatesClientMock templatesClientMock = new TemplatesClientMock();
     TemplatesClientMockPec templatesClientMockPec = new TemplatesClientMockPec();
-
     private static final String IUN = "TEST_TEST";
     private static final String TEST_RETURN = "Templates As String Result";
     public static final String QUICK_ACCESS_TOKEN = "quickAccessToken_TEST";
+
+    @MockitoBean
+    private QrUrlCodecService qrUrlCodecService;
 
     @Test
     void generateNotificationViewedLegalFact() {
@@ -98,6 +102,8 @@ class LegalFactGeneratorTemplatesTest extends CommonTestConfiguration {
         Mockito.when(templatesClient.notificationAar(Mockito.any(LanguageEnum.class), Mockito.any(NotificationAar.class)))
                 .thenReturn(templatesClientMock.notificationAar(LanguageEnum.IT, new NotificationAar()));
 
+        Mockito.when(qrUrlCodecService.encode(Mockito.anyString(), Mockito.any(UrlData.class)))
+                .thenReturn("http://example.com/quickAccessToken");
         AARInfo result = Assertions.assertDoesNotThrow(() -> legalFactGeneratorTemplatesTest.generateNotificationAAR(
                 notificationInt(), notificationRecipientInt(), QUICK_ACCESS_TOKEN)
         );
