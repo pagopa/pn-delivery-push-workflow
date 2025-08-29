@@ -109,7 +109,7 @@ public class AnalogWorkflowDeliveryTimeoutHandler {
             analogDeliveryTimeoutUtils.buildAnalogFailureWorkflowTimeoutElement(notification, recIndex, timeoutDate);
             auditLogEvent.generateSuccess("ANALOG_FAILURE_WORKFLOW_TIMEOUT successfully added for recIndex={}", recIndex).log();
         } catch (Exception exc) {
-            auditLogEvent.generateFailure("Unexpected error", exc).log();
+            auditLogEvent.generateFailure("Unexpected error handling second attempt", exc).log();
             throw exc;
         }
     }

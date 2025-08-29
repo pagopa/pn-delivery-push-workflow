@@ -1,13 +1,9 @@
 package it.pagopa.pn.deliverypushworkflow.service.mapper;
 
 import it.pagopa.pn.deliverypushworkflow.action.utils.EndWorkflowStatus;
-import it.pagopa.pn.commons.utils.FileUtils;
-
 import it.pagopa.pn.deliverypushworkflow.dto.address.DigitalAddressSourceInt;
-import it.pagopa.pn.deliverypushworkflow.dto.address.LegalDigitalAddressInt;
-import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationDocumentInt;
+import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
-import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationPaymentInfoInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.externalchannel.ResponseStatusInt;
 import it.pagopa.pn.deliverypushworkflow.dto.mandate.DelegateInfoInt;
@@ -15,10 +11,8 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendDigitalFeedbac
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.templatesengine.model.*;
 import it.pagopa.pn.deliverypushworkflow.legalfacts.CustomInstantWriter;
 import it.pagopa.pn.deliverypushworkflow.legalfacts.PhysicalAddressWriter;
-import org.springframework.util.CollectionUtils;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -263,109 +257,15 @@ public class TemplatesEngineMapper {
                 : null;
     }
 
-    public static NotificationReceivedLegalFact notificationReceivedLegalFact(NotificationInt notification,
-                                                                              PhysicalAddressWriter physicalAddressWriter,
-                                                                              CustomInstantWriter instantWriter) {
-        String physicalAddressAndDenomination;
-        List<NotificationRecipientInt> recipients = Optional.of(notification)
-                .map(NotificationInt::getRecipients)
-                .orElse(new ArrayList<>());
-
-        List<NotificationReceivedRecipient> receivedRecipients = new ArrayList<>();
-        for (var recipientInt : recipients) {
-            String denomination = recipientInt.getDenomination();
-            physicalAddressAndDenomination = physicalAddressWriter.nullSafePhysicalAddressToString(
-                    recipientInt.getPhysicalAddress(), denomination, "<br/>");
-            NotificationReceivedRecipient notificationReceivedNotification =
-                    notificationReceivedNotification(physicalAddressAndDenomination, recipientInt);
-            receivedRecipients.add(notificationReceivedNotification);
-        }
-
-        NotificationReceivedNotification notificationReceivedNotification = new NotificationReceivedNotification()
-                .iun(notification.getIun())
-                .recipients(receivedRecipients)
-                .sender(sender(notification));
-
-        return new NotificationReceivedLegalFact()
-                .sendDate(instantWriter.instantToDate(notification.getSentAt()))
-                .subject(notification.getSubject())
-                .notification(notificationReceivedNotification)
-                .digests(extractNotificationAttachmentDigests(notification));
-    }
-
-    private static NotificationReceivedRecipient notificationReceivedNotification(String physicalAddressAndDenomination,
-                                                                                  NotificationRecipientInt recipientInt) {
-        return recipientInt != null ?
-                new NotificationReceivedRecipient()
-                        .physicalAddressAndDenomination(physicalAddressAndDenomination)
-                        .denomination(recipientInt.getDenomination())
-                        .taxId(recipientInt.getTaxId())
-                        .digitalDomicile(digitalDomicile(recipientInt.getDigitalDomicile())) : null;
-    }
-
-    private static NotificationReceivedDigitalDomicile digitalDomicile(LegalDigitalAddressInt domicile) {
-        return domicile != null ? new NotificationReceivedDigitalDomicile().address(domicile.getAddress()) : null;
-    }
-
-    private static NotificationReceivedSender sender(NotificationInt notification) {
-        var senderInt = Optional.of(notification).map(NotificationInt::getSender).orElse(null);
-        return senderInt != null ?
-                new NotificationReceivedSender()
-                        .paDenomination(senderInt.getPaDenomination())
-                        .paTaxId(senderInt.getPaTaxId())
-                : null;
-    }
-
-    /**
-     * Extracts the SHA-256 digests of the attachments related to a notification.
-     *
-     * @param notification the {@link NotificationInt} object containing the details of the notification,
-     *                     including its attached documents and recipients with payment information.
-     * @return a {@link List} of {@link String} representing the SHA-256 digests (in hexadecimal uppercase)
-     * of all relevant attachments from the notification.
-     */
-    private static List<String> extractNotificationAttachmentDigests(NotificationInt notification) {
-        List<String> digests = new ArrayList<>();
-        // - Documents digests
-        for (NotificationDocumentInt attachment : notification.getDocuments()) {
-            digests.add(FileUtils.convertBase64toHexUppercase(attachment.getDigests().getSha256()));
-        }
-        // F24 digests
-        for (NotificationRecipientInt recipient : notification.getRecipients()) {
-            //add digests for v21
-            addDigestsForMultiPayments(recipient.getPayments(), digests);
-        }
-        return digests;
-    }
-
-    /**
-     * Adds the SHA-256 digests of the attachments related to the payments made by the recipient.
-     *
-     * @param payments a {@link List} of {@link NotificationPaymentInfoInt} objects representing the payments
-     *                 made by the recipient, potentially containing attachments.
-     * @param digests  a {@link List} of {@link String} where the extracted digests will be added.
-     */
-    private static void addDigestsForMultiPayments(List<NotificationPaymentInfoInt> payments, List<String> digests) {
-        if (!CollectionUtils.isEmpty(payments)) {
-            payments.forEach(payment -> {
-                if (payment.getPagoPA() != null && payment.getPagoPA().getAttachment() != null) {
-                    digests.add(FileUtils.convertBase64toHexUppercase(payment.getPagoPA().getAttachment().getDigests().getSha256()));
-                }
-                if (payment.getF24() != null && payment.getF24().getMetadataAttachment() != null) {
-                    digests.add(FileUtils.convertBase64toHexUppercase(payment.getF24().getMetadataAttachment().getDigests().getSha256()));
-                }
-            });
-        }
-    }
-
     public static AnalogDeliveryWorkflowTimeoutLegalFact analogDeliveryWorkflowTimeoutLegalFact(String iun,
-                                                                                                Instant TimeoutDate,
+                                                                                                Instant timeoutDate,
                                                                                                 CustomInstantWriter instantWriter,
                                                                                                 NotificationRecipientInt recipient,
                                                                                                 String sentAttemptMade,
+                                                                                                PhysicalAddressInt physicalAddress,
                                                                                                 PhysicalAddressWriter physicalAddressWriter) {
         String physicalAddressToString = physicalAddressWriter.nullSafePhysicalAddressToString(
-                recipient.getPhysicalAddress(), recipient.getDenomination(), "<br/>");
+                physicalAddress, recipient.getDenomination(), "<br/>");
         AnalogDeliveryWorkflowTimeoutRecipient analogDeliveryWorkflowTimeoutRecipient = new AnalogDeliveryWorkflowTimeoutRecipient()
                 .denomination(recipient.getDenomination())
                 .taxId(recipient.getTaxId())
@@ -373,8 +273,8 @@ public class TemplatesEngineMapper {
 
         return new AnalogDeliveryWorkflowTimeoutLegalFact()
                 .iun(iun)
-                .endWorkflowDate(instantWriter.instantToDate(TimeoutDate, true))
-                .endWorkflowTime(instantWriter.instantToTime(TimeoutDate))
+                .endWorkflowDate(instantWriter.instantToDate(timeoutDate, true))
+                .endWorkflowTime(instantWriter.instantToTime(timeoutDate))
                 .recipient(analogDeliveryWorkflowTimeoutRecipient)
                 .attempt(sentAttemptMade);
     }
