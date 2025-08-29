@@ -1323,10 +1323,10 @@ public class TimelineUtils {
     public TimelineElementInternal buildSendAnalogTimeout(NotificationInt notification,
                                                           SendAnalogDetailsInt sendAnalogDetailsInt,
                                                           Instant timeoutDate,
-                                                          String legalFactId) {
+                                                          String legalFactId,
+                                                          String sendAnalogDomicileTimelineId) {
         Integer recIndex = sendAnalogDetailsInt.getRecIndex();
-        String relatedRequestId = sendAnalogDetailsInt.getRelatedRequestId();
-        log.debug("buildSendAnalogTimeout - IUN={} and id={} relatedRequestId={}", notification.getIun(), recIndex, relatedRequestId);
+        log.debug("buildSendAnalogTimeout - IUN={} and id={} relatedRequestId={}", notification.getIun(), recIndex, sendAnalogDomicileTimelineId);
 
         String elementId = TimelineEventId.SEND_ANALOG_TIMEOUT.buildEventId(
                 EventId.builder()
@@ -1339,7 +1339,7 @@ public class TimelineUtils {
                 .timeoutDate(timeoutDate)
                 .recIndex(recIndex)
                 .sentAttemptMade(sendAnalogDetailsInt.getSentAttemptMade())
-                .relatedRequestId(relatedRequestId)
+                .relatedRequestId(sendAnalogDomicileTimelineId)
                 .serviceLevel(sendAnalogDetailsInt.getServiceLevel())
                 .physicalAddress(sendAnalogDetailsInt.getPhysicalAddress())
                 .build();
