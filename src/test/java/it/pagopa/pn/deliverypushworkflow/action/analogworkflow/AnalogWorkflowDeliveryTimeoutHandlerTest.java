@@ -71,7 +71,7 @@ class AnalogWorkflowDeliveryTimeoutHandlerTest {
         when(timelineService.getTimelineElementDetails(eq(iun), eq(sendAnalogDomicileCreationRequestId), eq(SendAnalogDetailsInt.class)))
                 .thenReturn(Optional.of(sendAnalogDetails));
         TimelineElementInternal timelineElement = mock(TimelineElementInternal.class);
-        when(timelineUtils.buildSendAnalogTimeout(any(), any(), any(), any())).thenReturn(timelineElement);
+        when(timelineUtils.buildSendAnalogTimeout(any(), any(), any(), any(), any())).thenReturn(timelineElement);
 
         when(timelineUtils.checkIsNotificationViewed(iun, recIndex)).thenReturn(false);
 
@@ -106,7 +106,7 @@ class AnalogWorkflowDeliveryTimeoutHandlerTest {
         when(timelineService.getTimelineElementDetails(eq(iun), eq(sendAnalogDomicileCreationRequestId), eq(SendAnalogDetailsInt.class)))
                 .thenReturn(Optional.of(sendAnalogDetails));
         TimelineElementInternal timelineElement = mock(TimelineElementInternal.class);
-        when(timelineUtils.buildSendAnalogTimeout(any(), any(), any(), any())).thenReturn(timelineElement);
+        when(timelineUtils.buildSendAnalogTimeout(any(), any(), any(), any(), any())).thenReturn(timelineElement);
 
         when(timelineUtils.checkIsNotificationViewed(iun, recIndex)).thenReturn(true);
 

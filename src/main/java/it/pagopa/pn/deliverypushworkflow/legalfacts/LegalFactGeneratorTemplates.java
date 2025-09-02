@@ -512,6 +512,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
                         instantWriter,
                         recipient,
                         sentAttemptMade,
+                        physicalAddress,
                         physicalAddressWriter);
         LanguageEnum language = getLanguage(notification.getAdditionalLanguages());
         return templatesClient.analogDeliveryWorkflowTimeoutLegalFact(language, analogDeliveryWorkflowTimeoutLegalFact);

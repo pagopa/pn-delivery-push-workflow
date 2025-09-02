@@ -83,13 +83,14 @@ public class AnalogWorkflowDeliveryTimeoutHandler {
         Recupero l'elemento di timeline con category SEND_ANALOG_DOMICILE legato all'elemento di timeline con category SEND_ANALOG_TIMEOUT_CREATION_REQUEST
         Poichè nel dettaglio contiene una serie di informazioni relative all'affido dell'invio analogico, che devono essere riportate nell'elemento di timeline SEND_ANALOG_TIMEOUT
          */
+        String sendAnalogDomicileTimelineId = sendAnalogTimeoutCreationRequestDetailsInt.getRelatedRequestId();
         Optional<SendAnalogDetailsInt> sendAnalogDetailsOpt =
-                timelineService.getTimelineElementDetails(iun, sendAnalogTimeoutCreationRequestDetailsInt.getRelatedRequestId(), SendAnalogDetailsInt.class);
+                timelineService.getTimelineElementDetails(iun, sendAnalogDomicileTimelineId, SendAnalogDetailsInt.class);
         if (sendAnalogDetailsOpt.isPresent()) {
             SendAnalogDetailsInt sendAnalogDetails = sendAnalogDetailsOpt.get();
             String legalFactId = sendAnalogTimeoutCreationRequestDetailsInt.getLegalFactId();
             Instant timeoutDate = sendAnalogTimeoutCreationRequestDetailsInt.getTimeoutDate();
-            TimelineElementInternal sendAnalogTimeoutElementInternal = timelineUtils.buildSendAnalogTimeout(notification, sendAnalogDetails, timeoutDate, legalFactId);
+            TimelineElementInternal sendAnalogTimeoutElementInternal = timelineUtils.buildSendAnalogTimeout(notification, sendAnalogDetails, timeoutDate, legalFactId, sendAnalogDomicileTimelineId);
             timelineService.addTimelineElement(sendAnalogTimeoutElementInternal, notification);
             auditLogEvent.generateSuccess("SEND_ANALOG_TIMEOUT successfully added for recIndex={} and sentAttempt={}", recIndex, sendAnalogDetails.getSentAttemptMade()).log();
         } else {
@@ -108,7 +109,7 @@ public class AnalogWorkflowDeliveryTimeoutHandler {
             analogDeliveryTimeoutUtils.buildAnalogFailureWorkflowTimeoutElement(notification, recIndex, timeoutDate);
             auditLogEvent.generateSuccess("ANALOG_FAILURE_WORKFLOW_TIMEOUT successfully added for recIndex={}", recIndex).log();
         } catch (Exception exc) {
-            auditLogEvent.generateFailure("Unexpected error", exc).log();
+            auditLogEvent.generateFailure("Unexpected error handling second attempt", exc).log();
             throw exc;
         }
     }

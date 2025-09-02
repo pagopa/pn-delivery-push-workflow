@@ -1,6 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.action.analogworkflow;
 
 import it.pagopa.pn.commons.exceptions.PnInternalException;
+import it.pagopa.pn.commons.log.PnAuditLogBuilder;
 import it.pagopa.pn.commons.log.PnAuditLogEvent;
 import it.pagopa.pn.commons.log.PnAuditLogEventType;
 import it.pagopa.pn.deliverypushworkflow.action.utils.AnalogDeliveryTimeoutUtils;
@@ -107,9 +108,19 @@ public class AnalogWorkflowPaperChannelResponseHandler {
     }
 
     private void addAnalogFailureWorkflowTimeoutElement(NotificationInt notification, int recIndex, SendAnalogTimeoutCreationRequestDetailsInt timelineDetails) {
-        log.info("addAnalogFailureWorkflowTimeoutElement - adding in timeline ANALOG_FAILURE_WORKFLOW_TIMEOUT element for iun={} - recipient index={} - sentAttemptMade={}", notification.getIun(), recIndex, FIRST_ATTEMPT_MADE);
+        String iun = notification.getIun();
+        PnAuditLogEvent auditLogEvent = new PnAuditLogBuilder()
+                .before(PnAuditLogEventType.AUD_NT_ANALOG_TIMEOUT, "Received KO event: prepare phase failed at sentAttempt={}, notification timeout occurred, recipient iun={} recIndex={}",FIRST_ATTEMPT_MADE, iun, recIndex)
+                .iun(iun)
+                .build()
+                .log();
         Instant timeoutDate = timelineDetails.getTimeoutDate();
-        analogDeliveryTimeoutUtils.buildAnalogFailureWorkflowTimeoutElement(notification, recIndex, timeoutDate);
+        try {
+            analogDeliveryTimeoutUtils.buildAnalogFailureWorkflowTimeoutElement(notification, recIndex, timeoutDate);
+            auditLogEvent.generateSuccess("ANALOG_FAILURE_WORKFLOW_TIMEOUT successfully added for recIndex={}", recIndex).log();
+        } catch (Exception e) {
+            auditLogEvent.generateFailure("Unexpected error adding element with category ANALOG_FAILURE_WORKFLOW_TIMEOUT", e).log();
+        }
     }
 
     private void handlerPrepareOK(PrepareEventInt response, NotificationInt notification, TimelineElementInternal timelineElementInternal, int recIndex, String requestId, PnAuditLogEvent auditLogEvent) {
