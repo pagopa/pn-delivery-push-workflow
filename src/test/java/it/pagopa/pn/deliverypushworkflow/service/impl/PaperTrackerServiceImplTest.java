@@ -1,5 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.service.impl;
 
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.papertracker.model.PaperStatus;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.papertracker.model.Tracking;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.papertracker.model.TrackingsResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.papertracker.model.ValidationFlow;
@@ -10,7 +11,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.time.Instant;
 import java.util.List;
 
 class PaperTrackerServiceImplTest {
@@ -30,9 +30,9 @@ class PaperTrackerServiceImplTest {
         TrackingsResponse trackingsResponse = new TrackingsResponse();
         Tracking tracking = new Tracking();
         tracking.setPcRetry("0");
-        ValidationFlow validationFlow = new ValidationFlow();
-        validationFlow.setDematValidationTimestamp(Instant.now());
-        tracking.setValidationFlow(validationFlow);
+        PaperStatus paperStatus = new PaperStatus();
+        paperStatus.setFinalDematFound(true);
+        tracking.setPaperStatus(paperStatus);
         trackingsResponse.setTrackings(List.of(tracking));
         Mockito.when(paperTrackerClient.getTrackingResponse(prepareAnalogDomicileTimelineId))
                 .thenReturn(trackingsResponse);

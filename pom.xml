@@ -811,7 +811,7 @@
 								<typeMapping>OffsetDateTime=java.time.Instant</typeMapping>
 							</typeMappings>
 							<inputSpec>
-								https://raw.githubusercontent.com/pagopa/pn-paper-tracker/978f5bd305109594a84100b015180214aec64834/docs/openapi/api-internal-v1.yaml
+								https://raw.githubusercontent.com/pagopa/pn-paper-tracker/2a00ee94cc022dd154848be0d08dfe119c79ec63/docs/openapi/api-internal-v1.yaml
 							</inputSpec>
 							<generatorName>java</generatorName>
 							<library>resttemplate</library>
