@@ -31,8 +31,8 @@ public class PaperTrackerServiceImpl implements PaperTrackerService {
         if (maxPcRetryOpt.isPresent()) {
             log.info("Found tracking with max pcRetry: {}", maxPcRetryOpt.get().getPcRetry());
             Tracking maxPcRetryTracking = maxPcRetryOpt.get();
-            return maxPcRetryTracking.getValidationFlow() != null
-                    && maxPcRetryTracking.getValidationFlow().getDematValidationTimestamp() != null;
+            return maxPcRetryTracking.getPaperStatus() != null
+                    && Boolean.TRUE.equals(maxPcRetryTracking.getPaperStatus().getFinalDematFound());
         } else {
             log.info("No tracking found with pcRetry, returning false");
             return false;

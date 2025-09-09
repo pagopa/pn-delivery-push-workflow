@@ -5,13 +5,12 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.EventId;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventId;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.BaseAnalogDetailsInt;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.papertracker.model.PaperStatus;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.papertracker.model.Tracking;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.papertracker.model.TrackingsResponse;
-import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.papertracker.model.ValidationFlow;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.papertracker.PaperTrackerClient;
 import lombok.extern.slf4j.Slf4j;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
@@ -65,8 +64,8 @@ public class PaperTrackerClientMock implements PaperTrackerClient {
         Tracking tracking = new Tracking();
         tracking.setTrackingId("trackingId");
         tracking.setPcRetry("3");
-        tracking.setValidationFlow(new ValidationFlow());
-        Objects.requireNonNull(tracking.getValidationFlow()).setDematValidationTimestamp(Instant.now());
+        tracking.setPaperStatus(new PaperStatus());
+        Objects.requireNonNull(tracking.getPaperStatus()).setFinalDematFound(true);
         return tracking;
     }
 }
