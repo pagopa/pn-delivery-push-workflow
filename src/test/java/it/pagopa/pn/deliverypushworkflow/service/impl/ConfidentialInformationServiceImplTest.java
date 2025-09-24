@@ -1,7 +1,11 @@
 package it.pagopa.pn.deliverypushworkflow.service.impl;
 
+import it.pagopa.pn.commons.exceptions.PnInternalException;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.datavault.BaseRecipientDtoInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.datavault.RecipientTypeInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.datavault_reactive.model.BaseRecipientDto;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.datavault_reactive.model.DenominationDto;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.datavault_reactive.model.MandateDto;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.datavault.PnDataVaultClientReactive;
 import it.pagopa.pn.deliverypushworkflow.service.ConfidentialInformationService;
 import org.junit.jupiter.api.Assertions;
@@ -41,5 +45,64 @@ class ConfidentialInformationServiceImplTest {
         Assertions.assertNotNull(baseRecipientDto);
         Assertions.assertEquals(taxId, baseRecipientDto.getTaxId());
         Assertions.assertEquals(denomination, baseRecipientDto.getDenomination());
+    }
+
+    @Test
+    void getMandatesByIdsPf() {
+        String mandateId = "mandateId";
+        String destName = "Name";
+        String destSurname = "Surname";
+        String expectedDenomination = "Name Surname";
+        RecipientTypeInt delegateType = RecipientTypeInt.PF;
+
+        Flux<MandateDto> flux = Flux.just(MandateDto.builder()
+                .mandateId(mandateId)
+                .info(DenominationDto.builder()
+                        .destName(destName)
+                        .destSurname(destSurname)
+                        .build())
+                .build());
+        Mockito.when(pnDataVaultClientReactive.getMandatesByIds(Mockito.any())).thenReturn(flux);
+
+        Mono<BaseRecipientDtoInt> monoDelegateInfo = confidentialInformationService.getDelegateInformationByMandateId(mandateId, delegateType);
+
+        BaseRecipientDtoInt baseRecipientDto = monoDelegateInfo.block();
+        Assertions.assertNotNull(baseRecipientDto);
+        Assertions.assertEquals(expectedDenomination, baseRecipientDto.getDenomination());
+    }
+
+    @Test
+    void getMandatesByIdsPG() {
+        String mandateId = "mandateId";
+        String destBusinessName = "Fake Business Name";
+        String expectedDenomination = "Fake Business Name";
+        RecipientTypeInt delegateType = RecipientTypeInt.PG;
+
+        Flux<MandateDto> flux = Flux.just(MandateDto.builder()
+                .mandateId(mandateId)
+                .info(DenominationDto.builder()
+                        .destBusinessName(destBusinessName)
+                        .build())
+                .build());
+        Mockito.when(pnDataVaultClientReactive.getMandatesByIds(Mockito.any())).thenReturn(flux);
+
+        Mono<BaseRecipientDtoInt> monoDelegateInfo = confidentialInformationService.getDelegateInformationByMandateId(mandateId, delegateType);
+
+        BaseRecipientDtoInt baseRecipientDto = monoDelegateInfo.block();
+        Assertions.assertNotNull(baseRecipientDto);
+        Assertions.assertEquals(expectedDenomination, baseRecipientDto.getDenomination());
+    }
+
+    @Test
+    void getMandatesByIdsNotFound() {
+        String mandateId = "mandateId";
+        RecipientTypeInt delegateType = RecipientTypeInt.PF;
+
+        Flux<MandateDto> flux = Flux.empty();
+        Mockito.when(pnDataVaultClientReactive.getMandatesByIds(Mockito.any())).thenReturn(flux);
+
+        Mono<BaseRecipientDtoInt> monoDelegateInfo = confidentialInformationService.getDelegateInformationByMandateId(mandateId, delegateType);
+
+        Assertions.assertThrows(PnInternalException.class, monoDelegateInfo::block);
     }
 }
