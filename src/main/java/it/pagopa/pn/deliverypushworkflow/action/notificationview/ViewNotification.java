@@ -5,6 +5,7 @@ import it.pagopa.pn.deliverypushworkflow.action.startworkflow.notificationvalida
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.documentcreation.DocumentCreationTypeInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.datavault.BaseRecipientDtoInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notificationviewed.NotificationViewedInt;
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -61,11 +63,29 @@ public class ViewNotification {
     private Mono<Void> getDelegateInfoAndHandleLegalFactCreation(NotificationInt notification, NotificationRecipientInt recipient, NotificationViewedInt notificationViewed) {
         return confidentialInformationService.getRecipientInformationByInternalId(notificationViewed.getDelegateInfo().getInternalId())
                 .doOnSuccess( baseRecipientDto -> log.info("Completed getBaseRecipientDtoIntMono - iun={} id={} taxId={}" , notification.getIun(), notificationViewed.getRecipientIndex(), LogUtils.maskTaxId(baseRecipientDto.getTaxId())))
+                .flatMap(delegateDtoInt -> {
+                    if(delegateDtoInt != null && StringUtils.hasText(delegateDtoInt.getDenomination())) {
+                        return Mono.just(delegateDtoInt);
+                    } else {
+                        return retrieveDelegateInfoMissingDenomination(notification, notificationViewed, delegateDtoInt);
+                    }
+                })
                 .doOnNext(baseRecipientDtoInt -> {
                     notificationViewed.getDelegateInfo().setDenomination(baseRecipientDtoInt.getDenomination());
                     notificationViewed.getDelegateInfo().setTaxId(baseRecipientDtoInt.getTaxId());
                 })
                 .then(handleLegalFactCreation(notification, recipient, notificationViewed));
+    }
+
+    private Mono<BaseRecipientDtoInt> retrieveDelegateInfoMissingDenomination(NotificationInt notification, NotificationViewedInt notificationViewed, BaseRecipientDtoInt delegateDtoInt) {
+        /*
+        La denominazione potrebbe non essere valorizzata se il delegato è stato creato tramite AppIO
+        Dunque in questo caso provo a recuperarla dai dati anonimizzati persistiti su data-vault in fase di creazione delega.
+        Il taxCode invece in delegateDtoInt mi aspetto sia sempre valorizzato, dunque non lo sovrascrivo.
+        */
+        log.info("Delegate info missing denomination - iun={} id={} internalId={}", notification.getIun(), notificationViewed.getRecipientIndex(), notificationViewed.getDelegateInfo().getInternalId());
+        return confidentialInformationService.getDelegateInformationByMandateId(notificationViewed.getDelegateInfo().getMandateId(), notificationViewed.getDelegateInfo().getDelegateType())
+                .doOnNext(delegateInfo -> delegateInfo.setTaxId(delegateDtoInt.getTaxId()));
     }
 
     @NotNull

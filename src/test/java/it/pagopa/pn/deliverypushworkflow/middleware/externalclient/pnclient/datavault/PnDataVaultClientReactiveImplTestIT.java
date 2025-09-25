@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.commons.exceptions.PnInternalException;
 import it.pagopa.pn.deliverypushworkflow.MockAWSObjectsTest;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.datavault_reactive.model.BaseRecipientDto;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.datavault_reactive.model.DenominationDto;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.datavault_reactive.model.MandateDto;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.datavault_reactive.model.RecipientType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -96,6 +98,71 @@ class PnDataVaultClientReactiveImplTestIT extends MockAWSObjectsTest {
         
         Assertions.assertThrows( PnInternalException.class, responseMono::blockFirst);
         
+        mockServer.stop();
+    }
+
+    @Test
+    void getMandatesByIdsOk() throws JsonProcessingException {
+        mockServer = startClientAndServer(9998);
+
+        //Given
+        String path = "/datavault-private/v1/mandates";
+
+        ObjectMapper mapper = new ObjectMapper();
+
+        String mandateId = "mandateId";
+
+        MandateDto responseDto = new MandateDto();
+        responseDto.setMandateId(mandateId);
+        DenominationDto info = new DenominationDto();
+        info.setDestName("destName");
+        info.setDestSurname("destSurname");
+        responseDto.setInfo(info);
+
+        String responseJson = mapper.writeValueAsString(responseDto);
+
+        new MockServerClient("localhost", 9998)
+                .when(request()
+                        .withMethod("GET")
+                        .withPath(path)
+                )
+                .respond(response()
+                        .withBody(responseJson)
+                        .withContentType(MediaType.APPLICATION_JSON)
+                        .withStatusCode(200)
+                );
+
+        Flux<MandateDto> responseMono = client.getMandatesByIds(List.of(mandateId));
+        Assertions.assertNotNull(responseMono);
+        MandateDto response = responseMono.blockFirst();
+        Assertions.assertEquals(responseDto, response);
+
+        mockServer.stop();
+    }
+
+    @Test
+    void getMandatesByIdsKo() {
+        mockServer = startClientAndServer(9998);
+
+        //Given
+        String path = "/datavault-private/v1/mandates";
+        String mandateId = "mandateId";
+
+        new MockServerClient("localhost", 9998)
+                .when(request()
+                        .withMethod("GET")
+                        .withPath(path)
+                )
+                .respond(response()
+                        .withContentType(MediaType.APPLICATION_JSON)
+                        .withStatusCode(400)
+                );
+
+        Flux<MandateDto> responseMono = client.getMandatesByIds(List.of(mandateId));
+        Assertions.assertNotNull(responseMono);
+
+        Assertions.assertThrows( PnInternalException.class, responseMono::blockFirst);
+
         mockServer.stop();
     }
 }
