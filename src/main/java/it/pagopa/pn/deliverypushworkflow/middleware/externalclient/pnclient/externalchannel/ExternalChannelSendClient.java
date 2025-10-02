@@ -6,6 +6,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.address.CourtesyDigitalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.address.LegalDigitalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.DeliveryModeInt;
 
 import java.util.List;
 
@@ -27,6 +28,7 @@ public interface ExternalChannelSendClient {
                                   CourtesyDigitalAddressInt digitalAddress,
                                   String timelineEventId,
                                   String aarKey,
-                                  String quickAccessToken);
+                                  String quickAccessToken,
+                                  DeliveryModeInt deliveryMode);
 
 }
