@@ -15,6 +15,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.time.Instant;
 import java.util.Optional;
 
 class AarCreationResponseHandlerTest extends CommonTestConfiguration {
@@ -57,7 +58,9 @@ class AarCreationResponseHandlerTest extends CommonTestConfiguration {
             .key("key").timelineId(timelineId).documentCreationType(docType)
             .build();
 
-        Mockito.when(notificationService.getNotificationByIun(iun)).thenReturn(NotificationInt.builder().build());
+        Mockito.when(notificationService.getNotificationByIun(iun)).thenReturn(NotificationInt.builder()
+                .sentAt(Instant.now())
+                .build());
         handler.handleAarCreationResponse(iun,0, actionDetails);
 
         //Then
