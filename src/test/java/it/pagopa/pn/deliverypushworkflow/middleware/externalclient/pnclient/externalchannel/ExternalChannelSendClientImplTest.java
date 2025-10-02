@@ -9,14 +9,15 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.Notificat
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationSenderInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.DeliveryModeInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalchannel.api.DigitalCourtesyMessagesApi;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalchannel.api.DigitalLegalMessagesApi;
 import it.pagopa.pn.deliverypushworkflow.legalfacts.LegalFactGenerator;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.core.ParameterizedTypeReference;
@@ -82,9 +83,10 @@ class ExternalChannelSendClientImplTest {
         assertDoesNotThrow(() -> client.sendLegalNotification(notificationInt, notificationRecipientInt, legalDigitalAddressInt, timelineEventId, Collections.singletonList(aarKey), quickAccessToken));
     }
 
-    @Test
+    @ParameterizedTest
     @ExtendWith(SpringExtension.class)
-    void sendCourtesyNotificationEmail() {
+    @EnumSource(value = DeliveryModeInt.class, names = {"ANALOG", "DIGITAL"})
+    void sendCourtesyNotificationEmail(DeliveryModeInt deliveryMode) {
         NotificationInt notificationInt = buildNotification();
         NotificationRecipientInt notificationRecipientInt = buildNotificationRecipientInt();
         CourtesyDigitalAddressInt courtesyDigitalAddressInt = CourtesyDigitalAddressInt.builder()
@@ -98,12 +100,17 @@ class ExternalChannelSendClientImplTest {
         Mockito.when(restTemplate.exchange(Mockito.any(RequestEntity.class), Mockito.any(ParameterizedTypeReference.class)))
                 .thenReturn(ResponseEntity.ok(""));
 
-        assertDoesNotThrow(() -> client.sendCourtesyNotification(notificationInt, notificationRecipientInt, courtesyDigitalAddressInt, timelineEventId, aarKey, ""));
+        assertDoesNotThrow(() -> client.sendCourtesyNotification(notificationInt, notificationRecipientInt, courtesyDigitalAddressInt, timelineEventId, aarKey, "", deliveryMode));
+        Mockito.verify(legalFactGenerator, Mockito.times(deliveryMode == DeliveryModeInt.ANALOG ? 1 : 0))
+                .generateNotificationAARBodyForEmailAnalog(notificationInt, notificationRecipientInt, "");
+        Mockito.verify(legalFactGenerator, Mockito.times(deliveryMode == DeliveryModeInt.DIGITAL ? 1 : 0))
+                .generateNotificationAARBodyForEmailDigital(notificationInt, notificationRecipientInt, "");
     }
 
-    @Test
+    @ParameterizedTest
     @ExtendWith(SpringExtension.class)
-    void sendCourtesyNotificationSms() {
+    @EnumSource(value = DeliveryModeInt.class, names = {"ANALOG", "DIGITAL"})
+    void sendCourtesyNotificationSms(DeliveryModeInt deliveryMode) {
         NotificationInt notificationInt = buildNotification();
         NotificationRecipientInt notificationRecipientInt = buildNotificationRecipientInt();
         CourtesyDigitalAddressInt courtesyDigitalAddressInt = CourtesyDigitalAddressInt.builder()
@@ -117,7 +124,11 @@ class ExternalChannelSendClientImplTest {
         Mockito.when(restTemplate.exchange(Mockito.any(RequestEntity.class), Mockito.any(ParameterizedTypeReference.class)))
                 .thenReturn(ResponseEntity.ok(""));
 
-        assertDoesNotThrow(() -> client.sendCourtesyNotification(notificationInt, notificationRecipientInt, courtesyDigitalAddressInt, timelineEventId, aarKey, ""));
+        assertDoesNotThrow(() -> client.sendCourtesyNotification(notificationInt, notificationRecipientInt, courtesyDigitalAddressInt, timelineEventId, aarKey, "", deliveryMode));
+        Mockito.verify(legalFactGenerator, Mockito.times(deliveryMode == DeliveryModeInt.ANALOG ? 1 : 0))
+                .generateNotificationAARForSMSAnalog(notificationInt);
+        Mockito.verify(legalFactGenerator, Mockito.times(deliveryMode == DeliveryModeInt.DIGITAL ? 1 : 0))
+                .generateNotificationAARForSMSDigital(notificationInt);
     }
 
     @ParameterizedTest

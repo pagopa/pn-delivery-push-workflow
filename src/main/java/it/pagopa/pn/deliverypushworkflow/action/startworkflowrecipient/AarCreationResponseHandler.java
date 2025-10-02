@@ -44,7 +44,7 @@ public class AarCreationResponseHandler {
 
         
         //... Invio messaggio di cortesia ... 
-        courtesyMessageUtils.checkAddressesAndSendCourtesyMessage(notification, recIndex);
+        courtesyMessageUtils.checkAddressesAndSendCourtesyMessage(notification, recIndex, null);
 
         //... e viene schedulato il processo di scelta della tipologia di notificazione
         scheduleChooseDeliveryMode(iun, recIndex);

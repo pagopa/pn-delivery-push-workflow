@@ -58,7 +58,8 @@ public class TestUtils {
                 Mockito.any(CourtesyDigitalAddressInt.class),
                 Mockito.any(String.class),
                 Mockito.anyString(),
-                Mockito.anyString()
+                Mockito.anyString(),
+                Mockito.any()
         );
     }
 

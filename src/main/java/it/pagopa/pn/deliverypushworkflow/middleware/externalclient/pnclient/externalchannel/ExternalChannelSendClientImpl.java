@@ -9,6 +9,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.address.DigitalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.address.LegalDigitalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.DeliveryModeInt;
 import it.pagopa.pn.deliverypushworkflow.legalfacts.LegalFactGenerator;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalchannel.api.DigitalCourtesyMessagesApi;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalchannel.api.DigitalLegalMessagesApi;
@@ -63,12 +64,13 @@ public class ExternalChannelSendClientImpl implements ExternalChannelSendClient 
                                          CourtesyDigitalAddressInt digitalAddress,
                                          String timelineEventId,
                                          String aarKey,
-                                         String quickAccessToken)
+                                         String quickAccessToken,
+                                         DeliveryModeInt deliveryMode)
     {
         if (digitalAddress.getType() == CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.EMAIL) {
-            sendNotificationEMAIL(timelineEventId, notificationInt, recipientInt, digitalAddress, aarKey, quickAccessToken);
+            sendNotificationEMAIL(timelineEventId, notificationInt, recipientInt, digitalAddress, aarKey, quickAccessToken, deliveryMode);
         } else if (digitalAddress.getType() == CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.SMS) {
-            sendNotificationSMS(timelineEventId, notificationInt, digitalAddress);
+            sendNotificationSMS(timelineEventId, notificationInt, digitalAddress, deliveryMode);
         } else {
             log.error("channel type not supported for iun={}", notificationInt.getIun());
             throw new PnInternalException("channel type not supported", ERROR_CODE_DELIVERYPUSH_CHANNELTYPENOTSUPPORTED);
@@ -127,13 +129,20 @@ public class ExternalChannelSendClientImpl implements ExternalChannelSendClient 
                                        NotificationRecipientInt recipientInt,
                                        DigitalAddressInt digitalAddress,
                                        String aarKey,
-                                       String quickAccessToken)
+                                       String quickAccessToken,
+                                       DeliveryModeInt deliveryMode)
     {
         try {
             log.logInvokingAsyncExternalService(CLIENT_NAME, COURTESY_NOTIFICATION_REQUEST + "[EMAIL]", requestId);
             log.debug("[enter] sendNotificationSMS address={} requestId={} recipient={}", LogUtils.maskNumber(digitalAddress.getAddress()), requestId, LogUtils.maskGeneric(recipientInt.getDenomination()));
 
-            String mailbody = legalFactGenerator.generateNotificationAARBody(notificationInt, recipientInt, quickAccessToken);
+            String mailbody = "";
+            if (deliveryMode.getValue() == null || deliveryMode == DeliveryModeInt.ANALOG) {
+                mailbody = legalFactGenerator.generateNotificationAARBodyForEmailAnalog(notificationInt, recipientInt, quickAccessToken);
+            } else {
+                mailbody = legalFactGenerator.generateNotificationAARBodyForEmailDigital(notificationInt, recipientInt, quickAccessToken);
+            }
+
             String mailsubj = legalFactGenerator.generateNotificationAARSubject(notificationInt);
 
             DigitalCourtesyMailRequest digitalNotificationRequest = new DigitalCourtesyMailRequest();
@@ -159,12 +168,18 @@ public class ExternalChannelSendClientImpl implements ExternalChannelSendClient 
         }
     }
 
-    private void sendNotificationSMS(String requestId, NotificationInt notificationInt, DigitalAddressInt digitalAddress)
+    private void sendNotificationSMS(String requestId, NotificationInt notificationInt, DigitalAddressInt digitalAddress, DeliveryModeInt deliveryMode)
     {
         try {
             log.logInvokingAsyncExternalService(CLIENT_NAME, COURTESY_NOTIFICATION_REQUEST + "[SMS]", requestId);
 
-            String smsbody = legalFactGenerator.generateNotificationAARForSMS(notificationInt);
+            String smsbody = "";
+
+            if (deliveryMode.getValue() == null || deliveryMode == DeliveryModeInt.ANALOG) {
+                smsbody = legalFactGenerator.generateNotificationAARForSMSAnalog(notificationInt);
+            } else {
+                smsbody = legalFactGenerator.generateNotificationAARForSMSDigital(notificationInt);
+            }
 
             DigitalCourtesySmsRequest digitalNotificationRequest = new DigitalCourtesySmsRequest();
             digitalNotificationRequest.setChannel(DigitalCourtesySmsRequest.ChannelEnum.SMS);
