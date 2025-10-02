@@ -34,4 +34,9 @@ public class FeatureEnabledUtils {
         return startDate != null && notificationSentAt.compareTo(startDate) >= 0;
     }
 
+    public boolean isSendCourtesyAtAARGenerationEnabled(Instant notificationSentAt) {
+        Instant startDate = configs.getSendCourtesyAtChooseDeliveryActivationDate();
+        return startDate != null && notificationSentAt.compareTo(startDate) < 0;
+    }
+
 }
