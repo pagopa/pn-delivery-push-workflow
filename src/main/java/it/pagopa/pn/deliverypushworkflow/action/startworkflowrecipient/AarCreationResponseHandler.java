@@ -14,6 +14,7 @@ import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.
 import it.pagopa.pn.deliverypushworkflow.service.NotificationService;
 import it.pagopa.pn.deliverypushworkflow.service.SchedulerService;
 import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
+import it.pagopa.pn.deliverypushworkflow.utils.FeatureEnabledUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -33,7 +34,8 @@ public class AarCreationResponseHandler {
     private final CourtesyMessageUtils courtesyMessageUtils;
     private final SchedulerService schedulerService;
     private final TimelineService timelineService;
-    
+    private final FeatureEnabledUtils featureEnabledUtils;
+
     public void handleAarCreationResponse(String iun, int recIndex, DocumentCreationResponseActionDetails actionDetails) {
         log.info("Start handleAarCreationResponse recipientWorkflow process - iun={} aarKey={}", iun, actionDetails.getKey());
 
@@ -43,8 +45,10 @@ public class AarCreationResponseHandler {
         storingAarResponse(iun, recIndex, actionDetails, notification);
 
         
-        //... Invio messaggio di cortesia ... 
-        courtesyMessageUtils.checkAddressesAndSendCourtesyMessage(notification, recIndex, null);
+        //... Invio messaggio di cortesia ...
+        if (featureEnabledUtils.isSendCourtesyAtAARGenerationEnabled(notification.getSentAt())) {
+            courtesyMessageUtils.checkAddressesAndSendCourtesyMessage(notification, recIndex, null);
+        }
 
         //... e viene schedulato il processo di scelta della tipologia di notificazione
         scheduleChooseDeliveryMode(iun, recIndex);
