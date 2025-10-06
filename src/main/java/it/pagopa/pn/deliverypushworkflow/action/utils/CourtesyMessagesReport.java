@@ -3,11 +3,13 @@ package it.pagopa.pn.deliverypushworkflow.action.utils;
 import it.pagopa.pn.deliverypushworkflow.dto.address.CourtesyDigitalAddressInt;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Getter
 public class CourtesyMessagesReport {
     private final List<CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT> sentCourtesyTypes = new ArrayList<>();
@@ -21,14 +23,17 @@ public class CourtesyMessagesReport {
     }
 
     public void addSentCourtesyType(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT courtesyType) {
+        log.debug("Adding sent courtesy type: {}", courtesyType);
         this.sentCourtesyTypes.add(courtesyType);
     }
 
     public void addNotSentCourtesyType(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT courtesyType) {
+        log.debug("Adding not sent courtesy type: {}", courtesyType);
         this.notSentCourtesyTypes.add(courtesyType);
     }
 
     public void addCourtesyTypeInError(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT courtesyType) {
+        log.debug("Adding courtesy type in error: {}", courtesyType);
         this.courtesyTypesInError.add(courtesyType);
     }
 }

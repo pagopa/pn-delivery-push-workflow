@@ -2,6 +2,8 @@ package it.pagopa.pn.deliverypushworkflow.action.choosedeliverymode;
 
 import it.pagopa.pn.deliverypushworkflow.action.digitalworkflow.DigitalWorkFlowHandler;
 import it.pagopa.pn.deliverypushworkflow.action.digitalworkflow.DigitalWorkFlowUtils;
+import it.pagopa.pn.deliverypushworkflow.action.utils.CourtesyMessageUtils;
+import it.pagopa.pn.deliverypushworkflow.action.utils.CourtesyMessagesReport;
 import it.pagopa.pn.deliverypushworkflow.action.utils.NotificationUtils;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.address.DigitalAddressSourceInt;
@@ -11,6 +13,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.Notificat
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationSenderInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.publicregistry.NationalRegistriesResponse;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ContactPhaseInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.DeliveryModeInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ProbableDateAnalogWorkflowDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ActionType;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.impl.TimeParams;
@@ -52,9 +55,12 @@ class ChooseDeliveryModeHandlerTest {
     private NotificationService notificationService;
     @Mock
     private TimelineService timelineService;
-
     @Mock
     private DigitalWorkFlowUtils digitalWorkFlowUtils;
+    @Mock
+    private FeatureEnabledUtils featureEnabledUtils;
+    @Mock
+    private CourtesyMessageUtils courtesyMessageUtils;
 
     private ChooseDeliveryModeHandler handler;
 
@@ -69,7 +75,7 @@ class ChooseDeliveryModeHandlerTest {
         cfg = mock(PnDeliveryPushWorkflowConfigs.class);
         FeatureEnabledUtils featureEnabledUtils = new FeatureEnabledUtils(cfg);
         handler = new ChooseDeliveryModeHandler(digitalWorkFlowHandler, schedulerService, nationalRegistriesService,
-                chooseDeliveryUtils, notificationService, timelineService, featureEnabledUtils);
+                chooseDeliveryUtils, notificationService, timelineService, featureEnabledUtils, courtesyMessageUtils);
         notificationUtils= new NotificationUtils();
     }
 
@@ -231,6 +237,10 @@ class ChooseDeliveryModeHandlerTest {
         //GIVEN
         NotificationInt notification = getNotification();
         NotificationRecipientInt recipient =notification.getRecipients().get(0);
+
+        Mockito.lenient().when(cfg.getSendCourtesyAtChooseDeliveryActivationDate()).thenReturn(notification.getSentAt().plus(1, ChronoUnit.DAYS));
+        Mockito.lenient().when(featureEnabledUtils.isSendCourtesyAtAARGenerationEnabled(notification.getSentAt())).thenReturn(true);
+
         Integer recIndex = notificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
         
         NationalRegistriesResponse response = NationalRegistriesResponse.builder()
@@ -269,6 +279,10 @@ class ChooseDeliveryModeHandlerTest {
                 .digitalAddress(null).build();
 
         NotificationInt notification = getNotification();
+
+        Mockito.lenient().when(cfg.getSendCourtesyAtChooseDeliveryActivationDate()).thenReturn(notification.getSentAt().plus(1, ChronoUnit.DAYS));
+        Mockito.lenient().when(featureEnabledUtils.isSendCourtesyAtAARGenerationEnabled(notification.getSentAt())).thenReturn(true);
+
         NotificationRecipientInt recipient =notification.getRecipients().get(0);
         Integer recIndex = notificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
         when(chooseDeliveryUtils.retrieveSpecialAddress(notification, recIndex)).thenReturn(null);
@@ -280,6 +294,7 @@ class ChooseDeliveryModeHandlerTest {
 
         //WHEN
         handler.handleGeneralAddressResponse(response, notification, recIndex);
+
         verify(chooseDeliveryUtils, times(1)).addAvailabilitySourceToTimeline(anyInt(), any(NotificationInt.class), eq(DigitalAddressSourceInt.GENERAL), eq(false));
         verifyNoInteractions(digitalWorkFlowHandler);
         verify(chooseDeliveryUtils, times(1)).addScheduleAnalogWorkflowToTimeline(recIndex, notification, probableDateAnalogWorkflowDetails.getSchedulingAnalogDate());
@@ -339,6 +354,79 @@ class ChooseDeliveryModeHandlerTest {
         verifyNoInteractions(timelineService);
         verifyNoInteractions(schedulerService);
 
+    }
+
+    @Test
+    void scheduleAnalogWorkflow_courtesyAtChooseDeliveryEnabled() {
+        NotificationInt notification = getNotification();
+        int recIndex = 0;
+        CourtesyMessagesReport courtesyMessagesReport = new CourtesyMessagesReport();
+        Instant expectedDate = Instant.now().plusSeconds(1000);
+        courtesyMessagesReport.setSchedulingAnalogDate(expectedDate);
+
+        Mockito.lenient().when(cfg.getSendCourtesyAtChooseDeliveryActivationDate()).thenReturn(notification.getSentAt());
+
+        Mockito.lenient().when(featureEnabledUtils.isSendCourtesyAtAARGenerationEnabled(notification.getSentAt())).thenReturn(false);
+        Mockito.lenient().when(featureEnabledUtils.isSendCourtesyAtChooseDeliveryEnabled(notification.getSentAt())).thenReturn(true);
+        when(courtesyMessageUtils.checkAddressesAndSendCourtesyMessage(notification, recIndex, DeliveryModeInt.ANALOG))
+                .thenReturn(courtesyMessagesReport);
+
+        handler.scheduleAnalogWorkflow(notification, recIndex);
+
+        verify(courtesyMessageUtils, times(1))
+                .checkAddressesAndSendCourtesyMessage(notification, recIndex, DeliveryModeInt.ANALOG);
+        verify(chooseDeliveryUtils).addScheduleAnalogWorkflowToTimeline(recIndex, notification, expectedDate);
+        verify(schedulerService).scheduleEvent(notification.getIun(), recIndex, expectedDate, ActionType.ANALOG_WORKFLOW);
+    }
+
+    @Test
+    void scheduleAnalogWorkflow_courtesyAtAarEnabled_timelinePresent() {
+        NotificationInt notification = getNotification();
+        int recIndex = 0;
+        ProbableDateAnalogWorkflowDetailsInt details = new ProbableDateAnalogWorkflowDetailsInt();
+        Instant expectedDate = Instant.now().plusSeconds(5000);
+        details.setSchedulingAnalogDate(expectedDate);
+
+        Mockito.lenient().when(cfg.getSendCourtesyAtChooseDeliveryActivationDate()).thenReturn(notification.getSentAt().plus(1, ChronoUnit.DAYS));
+
+        Mockito.lenient().when(featureEnabledUtils.isSendCourtesyAtAARGenerationEnabled(notification.getSentAt())).thenReturn(true);
+        Mockito.lenient().when(featureEnabledUtils.isSendCourtesyAtChooseDeliveryEnabled(notification.getSentAt())).thenReturn(false);
+
+        when(timelineService.getTimelineElementDetailForSpecificRecipient(
+                notification.getIun(), recIndex, false,
+                PROBABLE_SCHEDULING_ANALOG_DATE, ProbableDateAnalogWorkflowDetailsInt.class))
+                .thenReturn(Optional.of(details));
+
+        handler.scheduleAnalogWorkflow(notification, recIndex);
+
+        verify(timelineService).getTimelineElementDetailForSpecificRecipient(
+                notification.getIun(), recIndex, false,
+                PROBABLE_SCHEDULING_ANALOG_DATE, ProbableDateAnalogWorkflowDetailsInt.class);
+        verify(chooseDeliveryUtils).addScheduleAnalogWorkflowToTimeline(recIndex, notification, expectedDate);
+        verify(schedulerService).scheduleEvent(notification.getIun(), recIndex, expectedDate, ActionType.ANALOG_WORKFLOW);
+    }
+
+    @Test
+    void scheduleAnalogWorkflow_courtesyAtAarEnabled_timelineAbsent() {
+        NotificationInt notification = getNotification();
+        int recIndex = 0;
+
+        Mockito.lenient().when(cfg.getSendCourtesyAtChooseDeliveryActivationDate()).thenReturn(notification.getSentAt().plus(1, ChronoUnit.DAYS));
+
+        Mockito.lenient().when(featureEnabledUtils.isSendCourtesyAtAARGenerationEnabled(notification.getSentAt())).thenReturn(true);
+        Mockito.lenient().when(featureEnabledUtils.isSendCourtesyAtChooseDeliveryEnabled(notification.getSentAt())).thenReturn(false);
+        when(timelineService.getTimelineElementDetailForSpecificRecipient(
+                notification.getIun(), recIndex, false,
+                PROBABLE_SCHEDULING_ANALOG_DATE, ProbableDateAnalogWorkflowDetailsInt.class))
+                .thenReturn(Optional.empty());
+
+        handler.scheduleAnalogWorkflow(notification, recIndex);
+
+        verify(timelineService).getTimelineElementDetailForSpecificRecipient(
+                notification.getIun(), recIndex, false,
+                PROBABLE_SCHEDULING_ANALOG_DATE, ProbableDateAnalogWorkflowDetailsInt.class);
+        verify(chooseDeliveryUtils).addScheduleAnalogWorkflowToTimeline(eq(recIndex), eq(notification), any(Instant.class));
+        verify(schedulerService).scheduleEvent(eq(notification.getIun()), eq(recIndex), any(Instant.class), eq(ActionType.ANALOG_WORKFLOW));
     }
 
     private NotificationInt getNotification() {
