@@ -49,7 +49,7 @@ public class CourtesyMessageUtils {
      */
     public CourtesyMessagesReport checkAddressesAndSendCourtesyMessage(NotificationInt notification, Integer recIndex, DeliveryModeInt deliveryMode) {
         final String iun = notification.getIun();
-        log.debug("Start checkAddressesForSendCourtesyMessage - iun={} id={} ", iun, recIndex);
+        log.debug("Start checkAddressesForSendCourtesyMessage - iun={} id={} delivery mode={} ", iun, recIndex, deliveryMode);
 
         NotificationRecipientInt recipient = notificationUtils.getRecipientFromIndex(notification, recIndex);
 
@@ -87,10 +87,12 @@ public class CourtesyMessageUtils {
         String probableSchedulingElementId = getProbableSchedulingAnalogTimelineElementId(recIndex, iun);
         Instant schedulingAnalogDate = retrieveProbableSchedulingAnalogTimeline(iun, probableSchedulingElementId);
         if (schedulingAnalogDate != null) {
+            log.info("Scheduling analog date found in timeline - iun={} id={} schedulingAnalogDate={}", iun, recIndex, schedulingAnalogDate);
             return schedulingAnalogDate;
         }
         // Se non esiste, la calcolo ex-novo
         Duration waitingTime = pnDeliveryPushConfigs.getTimeParams().getWaitingForReadCourtesyMessage();
+        log.info("Scheduling analog date not found in timeline, calculating new one - iun={} id={} waitingTime={}", iun, recIndex, waitingTime);
         return Instant.now().plus(waitingTime);
     }
 
