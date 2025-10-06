@@ -111,4 +111,30 @@ class FeatureEnabledUtilsTest {
 
         assertFalse(utils.isSendCourtesyAtAARGenerationEnabled(sentAt));
     }
+
+    @Test
+    void testIsSendCourtesyAtChooseDeliveryActivationEnabled_StartDateNull() {
+        Instant sentAt = Instant.now();
+        Mockito.when(configs.getSendCourtesyAtChooseDeliveryActivationDate()).thenReturn(null);
+
+        assertFalse(utils.isSendCourtesyAtChooseDeliveryEnabled(sentAt));
+    }
+
+    @Test
+    void testIsSendCourtesyAtChooseDeliveryActivationEnabled_True() {
+        Instant start = Instant.parse("2024-06-10T10:00:00Z");
+        Instant sentAt = Instant.parse("2024-06-10T10:00:00Z");
+        Mockito.when(configs.getSendCourtesyAtChooseDeliveryActivationDate()).thenReturn(start);
+
+        assertTrue(utils.isSendCourtesyAtChooseDeliveryEnabled(sentAt));
+    }
+
+    @Test
+    void testIsSendCourtesyAtChooseDeliveryActivationEnabled_False() {
+        Instant start = Instant.parse("2024-06-10T10:00:00Z");
+        Instant sentAt = Instant.parse("2024-06-09T10:00:00Z");
+        Mockito.when(configs.getSendCourtesyAtChooseDeliveryActivationDate()).thenReturn(start);
+
+        assertFalse(utils.isSendCourtesyAtChooseDeliveryEnabled(sentAt));
+    }
 }
