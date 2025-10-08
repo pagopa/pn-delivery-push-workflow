@@ -105,6 +105,11 @@ class ExternalChannelSendClientImplTest {
                 .generateNotificationAARBodyForEmailAnalog(notificationInt, notificationRecipientInt, "");
         Mockito.verify(legalFactGenerator, Mockito.times(deliveryMode == DeliveryModeInt.DIGITAL ? 1 : 0))
                 .generateNotificationAARBodyForEmailDigital(notificationInt, notificationRecipientInt, "");
+
+        // Test for deliveryMode = null
+        assertDoesNotThrow(() -> client.sendCourtesyNotification(notificationInt, notificationRecipientInt, courtesyDigitalAddressInt, timelineEventId, aarKey, "", null));
+        Mockito.verify(legalFactGenerator, Mockito.atLeastOnce())
+                .generateNotificationAARBodyForEmailAnalog(notificationInt, notificationRecipientInt, "");
     }
 
     @ParameterizedTest
@@ -129,6 +134,11 @@ class ExternalChannelSendClientImplTest {
                 .generateNotificationAARForSMSAnalog(notificationInt);
         Mockito.verify(legalFactGenerator, Mockito.times(deliveryMode == DeliveryModeInt.DIGITAL ? 1 : 0))
                 .generateNotificationAARForSMSDigital(notificationInt);
+
+        // Test for deliveryMode = null
+        assertDoesNotThrow(() -> client.sendCourtesyNotification(notificationInt, notificationRecipientInt, courtesyDigitalAddressInt, timelineEventId, aarKey, "", null));
+        Mockito.verify(legalFactGenerator, Mockito.atLeastOnce())
+                .generateNotificationAARForSMSAnalog(notificationInt);
     }
 
     @ParameterizedTest

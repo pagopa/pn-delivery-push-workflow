@@ -137,7 +137,7 @@ public class ExternalChannelSendClientImpl implements ExternalChannelSendClient 
             log.debug("[enter] sendNotificationSMS address={} requestId={} recipient={}", LogUtils.maskNumber(digitalAddress.getAddress()), requestId, LogUtils.maskGeneric(recipientInt.getDenomination()));
 
             String mailbody = "";
-            if (deliveryMode.getValue() == null || deliveryMode == DeliveryModeInt.ANALOG) {
+            if (deliveryMode == null || deliveryMode == DeliveryModeInt.ANALOG) {
                 mailbody = legalFactGenerator.generateNotificationAARBodyForEmailAnalog(notificationInt, recipientInt, quickAccessToken);
             } else {
                 mailbody = legalFactGenerator.generateNotificationAARBodyForEmailDigital(notificationInt, recipientInt, quickAccessToken);
@@ -175,7 +175,7 @@ public class ExternalChannelSendClientImpl implements ExternalChannelSendClient 
 
             String smsbody = "";
 
-            if (deliveryMode.getValue() == null || deliveryMode == DeliveryModeInt.ANALOG) {
+            if (deliveryMode == null || deliveryMode == DeliveryModeInt.ANALOG) {
                 smsbody = legalFactGenerator.generateNotificationAARForSMSAnalog(notificationInt);
             } else {
                 smsbody = legalFactGenerator.generateNotificationAARForSMSDigital(notificationInt);
