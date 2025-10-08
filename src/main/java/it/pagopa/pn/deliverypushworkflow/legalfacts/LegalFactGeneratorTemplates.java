@@ -297,13 +297,13 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      *
      * <p><strong>Note:</strong></p>
      * Ensure that {@code templatesClient} is properly configured to handle the generated
-     * {@link NotificationAarForEmail} object and return the expected email body string.
+     * {@link NotificationAarForEmailAnalog} object and return the expected email body string.
      */
     @Override
     public String generateNotificationAARBodyForEmailAnalog(NotificationInt notification, NotificationRecipientInt recipient, String quickAccess) {
         log.info("retrieve NotificationAARBody template for iun {}", notification.getIun());
-        NotificationAarForEmail notificationAAR =
-                notificationAarForEmail(
+        NotificationAarForEmailAnalog notificationAAR =
+                notificationAarForEmailAnalog(
                         notification,
                         this.getPerfezionamentoLink(),
                         this.getQuickAccessLink(recipient, quickAccess),
@@ -328,14 +328,15 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      *
      * <p><strong>Note:</strong></p>
      * Ensure that {@code templatesClient} is properly configured to handle the generated
-     * {@link NotificationAarForEmail} object and return the expected email body string.
+     * {@link NotificationAarForEmailDigital} object and return the expected email body string.
      */
     @Override
     public String generateNotificationAARBodyForEmailDigital(NotificationInt notification, NotificationRecipientInt recipient, String quickAccess) {
         log.info("retrieve NotificationAARBody template for iun {}", notification.getIun());
-        NotificationAarForEmail notificationAAR =
-                notificationAarForEmail(
+        NotificationAarForEmailDigital notificationAAR =
+                notificationAarForEmailDigital(
                         notification,
+                        recipient,
                         this.getPerfezionamentoLink(),
                         this.getQuickAccessLink(recipient, quickAccess),
                         this.getFAQSendURL(),
@@ -387,12 +388,12 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      *
      * <p><strong>Note:</strong></p>
      * Ensure that {@code templatesClient} is properly configured to handle the generated
-     * {@link NotificationAarForSms} object and return the expected SMS body string.
+     * {@link NotificationAarForSmsAnalog} object and return the expected SMS body string.
      */
     @Override
     public String generateNotificationAARForSMSAnalog(NotificationInt notification) {
         log.info("retrieve NotificationAARForSMS template for iun {}", notification.getIun());
-        NotificationAarForSms notificationAARForSMS = notificationAarForSms(notification);
+        NotificationAarForSmsAnalog notificationAARForSMS = notificationAarForSmsAnalog(notification);
         LanguageEnum language = getLanguage(notification.getAdditionalLanguages());
         return templatesClient.notificationAarForSmsAnalog(language, notificationAARForSMS);
     }
@@ -407,12 +408,12 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      *
      * <p><strong>Note:</strong></p>
      * Ensure that {@code templatesClient} is properly configured to handle the generated
-     * {@link NotificationAarForSms} object and return the expected SMS body string.
+     * {@link NotificationAarForSmsDigital} object and return the expected SMS body string.
      */
     @Override
     public String generateNotificationAARForSMSDigital(NotificationInt notification) {
         log.info("retrieve NotificationAARForSMS template for iun {}", notification.getIun());
-        NotificationAarForSms notificationAARForSMS = notificationAarForSms(notification);
+        NotificationAarForSmsDigital notificationAARForSMS = notificationAarForSmsDigital(notification);
         LanguageEnum language = getLanguage(notification.getAdditionalLanguages());
         return templatesClient.notificationAarForSmsDigital(language, notificationAARForSMS);
     }

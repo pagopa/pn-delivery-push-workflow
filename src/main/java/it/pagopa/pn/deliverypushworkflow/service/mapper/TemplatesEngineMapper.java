@@ -91,15 +91,27 @@ public class TemplatesEngineMapper {
                 .senderLogoBase64(senderLogoBase64);
     }
 
-    public static NotificationAarForSms notificationAarForSms(NotificationInt notification) {
+    public static NotificationAarForSmsAnalog notificationAarForSmsAnalog(NotificationInt notification) {
         AarForSmsSender sender = new AarForSmsSender()
                 .paDenomination(notification.getSender().getPaDenomination());
 
-        AarForSmsNotification aarForSmsNotification = new AarForSmsNotification()
+        AarForSmsNotificationAnalog aarForSmsNotification = new AarForSmsNotificationAnalog()
                 .iun(notification.getIun())
                 .sender(sender);
 
-        return new NotificationAarForSms()
+        return new NotificationAarForSmsAnalog()
+                .notification(aarForSmsNotification);
+    }
+
+    public static NotificationAarForSmsDigital notificationAarForSmsDigital(NotificationInt notification) {
+        AarForSmsSender sender = new AarForSmsSender()
+                .paDenomination(notification.getSender().getPaDenomination());
+
+        AarForSmsNotificationDigital aarForSmsNotification = new AarForSmsNotificationDigital()
+                .iun(notification.getIun())
+                .sender(sender);
+
+        return new NotificationAarForSmsDigital()
                 .notification(aarForSmsNotification);
     }
 
@@ -131,19 +143,44 @@ public class TemplatesEngineMapper {
                 .recipientType(recipientTypeForHTMLTemplate);
     }
 
-    public static NotificationAarForEmail notificationAarForEmail(NotificationInt notification,
-                                                                  String perfezionamentoLink,
-                                                                  String quickAccessLink,
-                                                                  String faqSendURL,
-                                                                  String piattaformaNotificheURL) {
+    public static NotificationAarForEmailAnalog notificationAarForEmailAnalog(NotificationInt notification,
+                                                                              String perfezionamentoLink,
+                                                                              String quickAccessLink,
+                                                                              String faqSendURL,
+                                                                              String piattaformaNotificheURL) {
         AarForEmailSender sender = new AarForEmailSender()
                 .paDenomination(notification.getSender().getPaDenomination());
 
-        AarForEmailNotification aarForEmailNotification = new AarForEmailNotification()
+        AarForEmailNotificationAnalog aarForEmailNotification = new AarForEmailNotificationAnalog()
                 .iun(notification.getIun())
                 .sender(sender);
 
-        return new NotificationAarForEmail()
+        return new NotificationAarForEmailAnalog()
+                .perfezionamentoURL(perfezionamentoLink)
+                .quickAccessLink(quickAccessLink)
+                .pnFaqSendURL(faqSendURL)
+                .piattaformaNotificheURL(piattaformaNotificheURL)
+                .notification(aarForEmailNotification);
+    }
+
+    public static NotificationAarForEmailDigital notificationAarForEmailDigital(NotificationInt notification,
+                                                                                NotificationRecipientInt recipient,
+                                                                                String perfezionamentoLink,
+                                                                                String quickAccessLink,
+                                                                                String faqSendURL,
+                                                                                String piattaformaNotificheURL) {
+        AarForEmailSender sender = new AarForEmailSender()
+                .paDenomination(notification.getSender().getPaDenomination());
+
+        AarForEmailRecipient aarForEmailRecipient = new AarForEmailRecipient()
+                .denomination(recipient.getDenomination());
+
+        AarForEmailNotificationDigital aarForEmailNotification = new AarForEmailNotificationDigital()
+                .iun(notification.getIun())
+                .sender(sender)
+                .recipient(aarForEmailRecipient);
+
+        return new NotificationAarForEmailDigital()
                 .perfezionamentoURL(perfezionamentoLink)
                 .quickAccessLink(quickAccessLink)
                 .pnFaqSendURL(faqSendURL)
