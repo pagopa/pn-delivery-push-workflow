@@ -301,7 +301,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      */
     @Override
     public String generateNotificationAARBodyForEmailAnalog(NotificationInt notification, NotificationRecipientInt recipient, String quickAccess) {
-        log.info("retrieve NotificationAARBody template for iun {}", notification.getIun());
+        log.info("retrieve NotificationAARBodyForEmailAnalog template for iun {}", notification.getIun());
         NotificationAarForEmail notificationAAR =
                 notificationAarForEmail(
                         notification,
@@ -332,7 +332,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      */
     @Override
     public String generateNotificationAARBodyForEmailDigital(NotificationInt notification, NotificationRecipientInt recipient, String quickAccess) {
-        log.info("retrieve NotificationAARBody template for iun {}", notification.getIun());
+        log.info("retrieve NotificationAARBodyForEmailDigital template for iun {}", notification.getIun());
         NotificationAarForEmail notificationAAR =
                 notificationAarForEmail(
                         notification,
@@ -391,7 +391,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      */
     @Override
     public String generateNotificationAARForSMSAnalog(NotificationInt notification) {
-        log.info("retrieve NotificationAARForSMS template for iun {}", notification.getIun());
+        log.info("retrieve NotificationAARForSMSAnalog template for iun {}", notification.getIun());
         NotificationAarForSms notificationAARForSMS = notificationAarForSms(notification);
         LanguageEnum language = getLanguage(notification.getAdditionalLanguages());
         return templatesClient.notificationAarForSmsAnalog(language, notificationAARForSMS);
@@ -411,7 +411,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
      */
     @Override
     public String generateNotificationAARForSMSDigital(NotificationInt notification) {
-        log.info("retrieve NotificationAARForSMS template for iun {}", notification.getIun());
+        log.info("retrieve NotificationAARForSMSDigital template for iun {}", notification.getIun());
         NotificationAarForSms notificationAARForSMS = notificationAarForSms(notification);
         LanguageEnum language = getLanguage(notification.getAdditionalLanguages());
         return templatesClient.notificationAarForSmsDigital(language, notificationAARForSMS);
@@ -461,7 +461,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
     private String getQuickAccessLink(NotificationRecipientInt recipient, String quickAccess) {
         UrlData urlData = new UrlData();
         urlData.setRecipientType(it.pagopa.pn.commons.utils.qr.models.RecipientTypeInt.valueOf(recipient.getRecipientType().name()));
-        log.debug("getQrCodeQuickAccessUrlAarDetail: {}", quickAccess);
+        log.debug("getQrCodeQuickAccessUrlAarDetail: quick access token used");
         return qrUrlCodecService.encode(quickAccess, urlData);
     }
 
