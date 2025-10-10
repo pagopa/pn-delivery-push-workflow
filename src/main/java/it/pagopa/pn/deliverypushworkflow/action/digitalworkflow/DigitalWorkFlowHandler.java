@@ -4,6 +4,7 @@ import it.pagopa.pn.commons.exceptions.PnInternalException;
 import it.pagopa.pn.commons.utils.LogUtils;
 import it.pagopa.pn.deliverypushworkflow.action.choosedeliverymode.ChooseDeliveryModeUtilsImpl;
 import it.pagopa.pn.deliverypushworkflow.action.completionworkflow.CompletionWorkFlowHandler;
+import it.pagopa.pn.deliverypushworkflow.action.utils.CourtesyMessageUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.InstantNowSupplier;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.address.DigitalAddressInfoSentAttempt;
@@ -50,7 +51,8 @@ public class DigitalWorkFlowHandler {
     private final PnDeliveryPushWorkflowConfigs pnDeliveryPushConfigs;
     private final DigitalWorkflowFirstSendRepeatHandler digitalWorkflowFirstSendRepeatHandler;
     private final FeatureEnabledUtils featureEnabledUtils;
-    
+    private final CourtesyMessageUtils courtesyMessageUtils;
+
     /**
      * Starting digital workflow sending notification information to external channel
      *
@@ -78,6 +80,10 @@ public class DigitalWorkFlowHandler {
                 false,
                 null,
                 false);
+
+        if (featureEnabledUtils.isSendCourtesyAtChooseDeliveryEnabled(notification.getSentAt())) {
+            courtesyMessageUtils.checkAddressesAndSendCourtesyMessage(notification, recIndex, DeliveryModeInt.DIGITAL);
+        }
     }
 
     /**

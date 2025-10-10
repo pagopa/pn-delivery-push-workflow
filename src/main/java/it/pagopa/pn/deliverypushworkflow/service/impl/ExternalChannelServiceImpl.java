@@ -9,7 +9,6 @@ import it.pagopa.pn.deliverypushworkflow.action.startworkflow.notificationvalida
 import it.pagopa.pn.deliverypushworkflow.action.utils.ExternalChannelUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.NotificationUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
-import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.address.CourtesyDigitalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.address.LegalDigitalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.address.SendInformation;
@@ -20,6 +19,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.NotificationChanne
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.EventId;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventId;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.DeliveryModeInt;
 import it.pagopa.pn.deliverypushworkflow.exceptions.PnDeliveryPushExceptionCodes;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.externalchannel.ExternalChannelSendClient;
 import it.pagopa.pn.deliverypushworkflow.service.AuditLogService;
@@ -192,7 +192,7 @@ public class ExternalChannelServiceImpl implements ExternalChannelService {
      *
      */
     @Override
-    public void sendCourtesyNotification(NotificationInt notification, CourtesyDigitalAddressInt courtesyAddress, Integer recIndex, String eventId) {
+    public void sendCourtesyNotification(NotificationInt notification, CourtesyDigitalAddressInt courtesyAddress, Integer recIndex, String eventId, DeliveryModeInt deliveryMode) {
         log.debug("Start sendCourtesyNotification - iun {} id {}", notification.getIun(), recIndex);
         PnAuditLogEvent logEvent = buildAuditLogEvent(notification.getIun(), courtesyAddress, recIndex, eventId);
 
@@ -200,7 +200,8 @@ public class ExternalChannelServiceImpl implements ExternalChannelService {
             DigitalParameters digitalParameters = retrieveDigitalParameters(notification, recIndex, true);
             externalChannel.sendCourtesyNotification(notification, notificationUtils.getRecipientFromIndex(notification,recIndex), courtesyAddress, eventId,
                 digitalParameters.fileKeys.get(0), //AAR is always the first element
-                digitalParameters.quickAccessToken);
+                digitalParameters.quickAccessToken,
+                    deliveryMode);
             logEvent.generateSuccess().log();
         } catch (Exception e) {
             logEvent.generateFailure("Error in sendCourtesyNotification, iun={} id={}", notification.getIun(), recIndex, e).log();
