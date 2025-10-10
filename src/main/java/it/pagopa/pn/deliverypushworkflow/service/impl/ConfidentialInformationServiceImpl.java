@@ -1,7 +1,10 @@
 package it.pagopa.pn.deliverypushworkflow.service.impl;
 
+import it.pagopa.pn.commons.exceptions.PnInternalException;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.datavault.BaseRecipientDtoInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.datavault.RecipientTypeInt;
+import it.pagopa.pn.deliverypushworkflow.exceptions.PnDeliveryPushExceptionCodes;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.datavault_reactive.model.MandateDto;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.datavault.PnDataVaultClientReactive;
 import it.pagopa.pn.deliverypushworkflow.service.ConfidentialInformationService;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +41,30 @@ public class ConfidentialInformationServiceImpl implements ConfidentialInformati
                     else 
                         return null;
                 });
+    }
+
+    public Mono<BaseRecipientDtoInt> getDelegateInformationByMandateId(String mandateId, RecipientTypeInt delegateType) {
+        return pnDataVaultClientReactive.getMandatesByIds(List.of(mandateId))
+                .filter( el -> mandateId.equals(el.getMandateId()))
+                .map( el -> BaseRecipientDtoInt.builder()
+                        .denomination(buildDenominationByMandateInfo(el, delegateType))
+                        .build()
+                ).collectList()
+                .flatMap(list -> {
+                    if(list != null && !list.isEmpty())
+                        return Mono.just(list.getFirst());
+                    else
+                        return Mono.error(new PnInternalException("Mandate not found for mandateId " + mandateId, PnDeliveryPushExceptionCodes.ERROR_CODE_DELIVERYPUSH_DATAVAULTMANDATES_NOT_FOUND));
+                });
+    }
+
+    private String buildDenominationByMandateInfo(MandateDto el, RecipientTypeInt delegateType) {
+        assert el.getInfo() != null;
+        if(delegateType == RecipientTypeInt.PF) {
+            return el.getInfo().getDestName() + " " + el.getInfo().getDestSurname();
+        } else {
+            return el.getInfo().getDestBusinessName();
+        }
     }
 
 }

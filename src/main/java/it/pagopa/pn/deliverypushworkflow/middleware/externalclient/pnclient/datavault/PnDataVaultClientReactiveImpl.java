@@ -3,8 +3,10 @@ package it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.dat
 import it.pagopa.pn.commons.exceptions.PnInternalException;
 import it.pagopa.pn.commons.pnclients.CommonBaseClient;
 import it.pagopa.pn.deliverypushworkflow.exceptions.PnDeliveryPushExceptionCodes;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.datavault_reactive.api.MandatesApi;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.datavault_reactive.api.RecipientsApi;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.datavault_reactive.model.BaseRecipientDto;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.datavault_reactive.model.MandateDto;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import org.springframework.retry.annotation.Backoff;
@@ -20,6 +22,7 @@ import java.util.List;
 @CustomLog
 public class PnDataVaultClientReactiveImpl extends CommonBaseClient implements PnDataVaultClientReactive {
     private final RecipientsApi recipientsApi;
+    private final MandatesApi mandatesApi;
 
     @Override
     @Retryable(
@@ -34,6 +37,20 @@ public class PnDataVaultClientReactiveImpl extends CommonBaseClient implements P
                 .onErrorResume( err -> {
                     log.error("Exception invoking getRecipientDenominationByInternalId with internalId list={} err ",listInternalId, err);
                     return Mono.error(new PnInternalException("Exception invoking getRecipientDenominationByInternalId ", PnDeliveryPushExceptionCodes.ERROR_CODE_DELIVERYPUSH_UPDATEMETAFILEERROR, err));
+                });
+    }
+
+    @Override
+    @Retryable(
+            retryFor = {PnInternalException.class},
+            backoff = @Backoff(random = true, delay = 500, maxDelay = 1000, multiplier = 2)
+    )
+    public Flux<MandateDto> getMandatesByIds(List<String> mandateIds) {
+        log.logInvokingExternalService(CLIENT_NAME, GET_MANDATES_BY_IDS);
+        return mandatesApi.getMandatesByIds(mandateIds)
+                .onErrorResume( err -> {
+                    log.error("Exception invoking getMandatesByIds with mandateIds list={} err ", mandateIds, err);
+                    return Mono.error(new PnInternalException("Exception invoking getMandatesByIds ", PnDeliveryPushExceptionCodes.ERROR_CODE_DELIVERYPUSH_DATAVAULTMANDATESERROR, err));
                 });
     }
 }

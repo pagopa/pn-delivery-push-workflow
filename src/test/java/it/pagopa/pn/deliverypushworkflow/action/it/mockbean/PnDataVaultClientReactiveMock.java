@@ -1,6 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.action.it.mockbean;
 
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.datavault_reactive.model.BaseRecipientDto;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.datavault_reactive.model.MandateDto;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.datavault.PnDataVaultClientReactive;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
@@ -26,6 +27,11 @@ public class PnDataVaultClientReactiveMock implements PnDataVaultClientReactive 
         return Flux.fromStream(listInternalId.stream()
                 .filter( internalId -> confidentialMap.get(internalId) != null)
                 .map(internalId -> confidentialMap.get(internalId)));
+    }
+
+    @Override
+    public Flux<MandateDto> getMandatesByIds(List<String> mandateIds) {
+        return null;
     }
 
 }
