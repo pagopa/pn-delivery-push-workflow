@@ -141,6 +141,14 @@ public enum ActionType {
               details.getSentAttemptMade()
       );
     }
+  },
+
+  NOTIFICATION_REWORK_VALIDATION(NotHandledDetails.class) {
+    @Override
+    public String buildActionId(Action action) {
+      //FIXME correggere il formato della stringa
+      return String.format("%s_rework_notification", action.getIun());
+    }
   };
 
   private final Class<? extends ActionDetails> detailsJavaClass;
