@@ -111,6 +111,7 @@ public class PnDeliveryPushWorkflowConfigs {
         private String fromExternalChannel;
         private String scheduledActions;
         private String nationalRegistriesEvents;
+        private String reworkRequestEvents;
     }
 
     @Data
