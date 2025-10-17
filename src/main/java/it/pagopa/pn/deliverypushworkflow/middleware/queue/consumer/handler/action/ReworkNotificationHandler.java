@@ -34,11 +34,7 @@ public class ReworkNotificationHandler extends AbstractActionEventHandler {
             HandleEventUtils.addIunAndRecIndexAndCorrIdToMdc(action.getIun(), action.getRecipientIndex(), action.getActionId());
 
             log.logStartingProcess(processName);
-            //TODO checkNotificationCancelledAndExecute è necessario?
-            checkNotificationCancelledAndExecute(
-                    action,
-                    reworkHandler::handleRework
-            );
+            reworkHandler.handleRework(action);
             log.logEndingProcess(processName);
         } catch (Exception ex) {
             log.logEndingProcess(processName, false, ex.getMessage());

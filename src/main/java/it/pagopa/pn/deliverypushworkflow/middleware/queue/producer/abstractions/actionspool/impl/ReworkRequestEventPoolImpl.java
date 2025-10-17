@@ -26,10 +26,10 @@ public class ReworkRequestEventPoolImpl implements ReworkRequestEventPool {
 
     @Override
     public void scheduleFutureAction(ReworkRequestEventAction action, ReworkRequestEventType type) {
-        addSortEventAction(action, type);
+        addReworkRequestEventAction(action, type);
     }
 
-    private void addSortEventAction(ReworkRequestEventAction action, ReworkRequestEventType reworkRequestEventType) {
+    private void addReworkRequestEventAction(ReworkRequestEventAction action, ReworkRequestEventType reworkRequestEventType) {
         ReworkRequestEvent reworkRequestEvent = ReworkRequestEvent.builder()
                 .header( GenericEventHeader.builder()
                         .publisher("pn-delivery-push-workflow")
