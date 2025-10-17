@@ -19,7 +19,7 @@ public class PnDeliveryPushWorkflowMiddlewareConfigs {
 
     @Bean
     public SqsReworkRequestEventsProducer reworkRequestEventsProducer(SqsClient sqs, ObjectMapper objMapper) {
-        return new SqsReworkRequestEventsProducer( sqs, cfg.getTopics().getReworkRequestEvents(), objMapper);
+        return new SqsReworkRequestEventsProducer( sqs, cfg.getTopics().getNotificationReworkUpdaterEvent(), objMapper);
     }
 }
 

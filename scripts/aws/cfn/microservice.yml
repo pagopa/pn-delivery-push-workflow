@@ -351,10 +351,6 @@ Parameters:
   DeliveryPushToNotificationReworkUpdaterQueueName:
     Type: String
     Description: 'Queue to send rework request event'
-
-  DeliveryPushToNotificationReworkUpdaterQueueARN:
-    Type: String
-    Description: 'Queue to send rework request event'
     
 Conditions:
     UseExternalChannelMock: !Equals [ !Ref ExternalChannelBaseUrl, "Mock" ]
@@ -413,7 +409,7 @@ Resources:
         ContainerEnvEntry23: !Sub 'WIRE_TAP_LOG=${WireTapLogActivation}'
         ContainerEnvEntry24: !Sub 'PN_DELIVERYPUSHWORKFLOW_PAPERTRACKERBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
         ContainerEnvEntry25: !Sub 'PN_DELIVERYPUSHWORKFLOW_REWORKTTLADDRESSRANGE=${ReworkTTLAddressRange}'
-        ContainerEnvEntry26: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_REWORKREQUESTEVENTS=${DeliveryPushToNotificationReworkUpdaterQueueName}'
+        ContainerEnvEntry26: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_NOTIFICATIONREWORKUPDATEREVENT=${DeliveryPushToNotificationReworkUpdaterQueueName}'
         ApplicativeEnvFileChecksum: !Ref ApplicativeEnvFileChecksum
         ParentMicroserviceName: !Sub '${ProjectName}-delivery-push-workflow'
         JavaToolOptions: '-Dreactor.netty.ioWorkerCount=50'
@@ -492,7 +488,7 @@ Resources:
               - !Ref DeliveryPushInputsQueueARN
               - !Ref ExternalChannelsOutputsQueueARN
               - !Ref ScheduledActionsQueueARN
-              - !Ref DeliveryPushToNotificationReworkUpdaterQueueARN
+              - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${DeliveryPushToNotificationReworkUpdaterQueueName}
           - Effect: Allow
             Action:
               - 'ssm:GetParameter'

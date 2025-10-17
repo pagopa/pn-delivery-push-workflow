@@ -24,7 +24,6 @@
     "NewWorkflowLambdasEnabledStart": "1753881000000",
     "NewWorkflowLambdasEnabledEnd": "4070908800000",
     "ReworkTTLAddressRange": 10,
-    "DeliveryPushToNotificationReworkUpdaterQueueName": "pn-delivery_push_to_notification_rework_updater",
-    "DeliveryPushToNotificationReworkUpdaterQueueARN": "arn:aws:sqs:eu-south-1:830192246553:pn-delivery_push_to_notification_rework_updater"
+    "DeliveryPushToNotificationReworkUpdaterQueueName": "pn-delivery_push_to_notification_rework_updater"
   }
 }
