@@ -32,6 +32,7 @@ public class NotificationReworkValidationHandler {
     private Mono<NotificationReworkInfo> checkNotificationStatusAndThrow(NotificationReworkInfo info) {
         return Mono.just(notificationService.getNotificationByIun(info.getAction().getIun()))
                 .flatMap(notification -> {
+                    info.setRecipientSize(notification.getRecipients().size());
                     int recIndex = getRecIndexFromAction(info.getAction());
                     if (notification.getRecipients().size() > recIndex) {
                         return checkNotificationStatus(notification, info);
@@ -48,6 +49,7 @@ public class NotificationReworkValidationHandler {
 
     private Mono<NotificationReworkInfo> checkNotificationStatus(NotificationInt notification, NotificationReworkInfo info) {
         NotificationHistoryResponse response = timelineService.getTimelineAndStatusHistory(notification.getIun(), notification.getRecipients().size(), notification.getSentAt());
+        info.setNotificationStatus(response.getNotificationStatus().getValue());
         if ((notification.getRecipients().size() == 1 && !MONO_REC_NOTIFICATION_VALID_STATUS.contains(response.getNotificationStatus().getValue())) ||
                 (notification.getRecipients().size() > 1 && !MULTI_REC_NOTIFICATION_VALID_STATUS.contains(response.getNotificationStatus().getValue()))) {
 

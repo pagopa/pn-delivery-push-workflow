@@ -14,4 +14,6 @@ public class NotificationReworkInfo {
     private Action action;
     private Set<TimelineElementInternal> timeline;
     private String requestId;
+    private String notificationStatus;
+    private int recipientSize;
 }
