@@ -2,6 +2,7 @@ package it.pagopa.pn.deliverypushworkflow.action.rework;
 
 import it.pagopa.pn.deliverypushworkflow.action.details.NotificationReworkValidationDetails;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.rework.NotificationReworkError;
 import it.pagopa.pn.deliverypushworkflow.dto.rework.NotificationReworkErrorCause;
 import it.pagopa.pn.deliverypushworkflow.dto.rework.NotificationReworkInfo;
@@ -10,7 +11,10 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationViewed
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ScheduleRefinementDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.exceptions.NotificationReworkValidationException;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationHistoryResponse;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.Action;
+import it.pagopa.pn.deliverypushworkflow.service.NotificationService;
+import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
@@ -30,11 +34,40 @@ public class NotificationReworkValidationHandler {
     private static final String STATUS_EFFECTIVE_DATE = "EFFECTIVE_DATE";
     private static final String STATUS_VIEWED = "VIEWED";
     private static final String STATUS_RETURNED_TO_SENDER = "RETURNED_TO_SENDER";
-    private static final List<String> NOTIFICATION_STATE_FOR_TIMELINE_VALIDATION = List.of(
-            STATUS_EFFECTIVE_DATE, STATUS_VIEWED, STATUS_RETURNED_TO_SENDER, "DELIVERING", "DELIVERED", "UNREACHABLE"
-    );
 
+    private final List<String> MONO_REC_NOTIFICATION_VALID_STATUS = List.of("EFFECTIVE_DATE", "RETURNED_TO_SENDER", "VIEWED");
+    private final List<String> MULTI_REC_NOTIFICATION_VALID_STATUS = List.of("DELIVERING", "DELIVERED", "EFFETCTIVE_DATE", "VIEWED", "RETURNED_TO_SENDER", "UNREACHABLE");
+
+    private final NotificationService notificationService;
+    private final TimelineService timelineService;
     private final TimelineUtils timelineUtils;
+
+    private Mono<NotificationReworkInfo> checkNotificationStatusAndThrow(NotificationReworkInfo info) {
+        return Mono.just(notificationService.getNotificationByIun(info.getAction().getIun()))
+                .flatMap(notification -> {
+                    info.setRecipientSize(notification.getRecipients().size());
+                    int recIndex = getRecIndexFromAction(info.getAction());
+                    if (notification.getRecipients().size() > recIndex) {
+                        return checkNotificationStatus(notification, info);
+                    } else {
+                        return Mono.error(new NotificationReworkValidationException(NotificationReworkError.builder().cause(NotificationReworkErrorCause.INVALID_RECINDEX.getCause()).description(NotificationReworkErrorCause.INVALID_RECINDEX.getErrorDetails()).build()));
+                    }
+                });
+    }
+
+    private Mono<NotificationReworkInfo> checkNotificationStatus(NotificationInt notification, NotificationReworkInfo info) {
+        NotificationHistoryResponse response = timelineService.getTimelineAndStatusHistory(notification.getIun(), notification.getRecipients().size(), notification.getSentAt());
+        info.setNotificationStatus(response.getNotificationStatus().getValue());
+        if ((notification.getRecipients().size() == 1 && !MONO_REC_NOTIFICATION_VALID_STATUS.contains(response.getNotificationStatus().getValue())) ||
+                (notification.getRecipients().size() > 1 && !MULTI_REC_NOTIFICATION_VALID_STATUS.contains(response.getNotificationStatus().getValue()))) {
+
+            String errorMessage = notification.getRecipients().size() > 1 ?
+                    String.format(NotificationReworkErrorCause.INVALID_NOTIFICATION_STATUS.getErrorDetails(), response.getNotificationStatus().getValue(), MULTI_REC_NOTIFICATION_VALID_STATUS) :
+                    String.format(NotificationReworkErrorCause.INVALID_NOTIFICATION_STATUS.getErrorDetails(), response.getNotificationStatus().getValue(), MONO_REC_NOTIFICATION_VALID_STATUS);
+            return Mono.error(new NotificationReworkValidationException(NotificationReworkError.builder().cause(NotificationReworkErrorCause.INVALID_NOTIFICATION_STATUS.getCause()).description(errorMessage).build()));
+        }
+        return Mono.just(info);
+    }
 
     private Mono<NotificationReworkInfo> checkNotificationTimelineAndThrow(NotificationReworkInfo info) {
         String recIndex = ((NotificationReworkValidationDetails) info.getAction().getDetails()).getReworkrecIndex();
@@ -110,7 +143,7 @@ public class NotificationReworkValidationHandler {
         String status = info.getNotificationStatus();
         List<TimelineElementInternal> timeline = info.getTimeline().stream().toList();
 
-        if (NOTIFICATION_STATE_FOR_TIMELINE_VALIDATION.contains(status)) {
+        if (MULTI_REC_NOTIFICATION_VALID_STATUS.contains(status)) {
             boolean hasSendAnalogFeedback = hasCategory(timeline, TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK);
             boolean hasRefinement = hasCategory(timeline, TimelineElementCategoryInt.REFINEMENT);
             boolean hasNotificationViewed = hasCategory(timeline, TimelineElementCategoryInt.NOTIFICATION_VIEWED);
