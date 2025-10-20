@@ -23,7 +23,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Component
@@ -31,6 +33,7 @@ import java.util.List;
 public class NotificationReworkValidationHandler {
 
     private static final String REC_INDEX = "RECINDEX_";
+    private static final String ATTEMPT_ID = "ATTEMPT_";
     private static final String STATUS_EFFECTIVE_DATE = "EFFECTIVE_DATE";
     private static final String STATUS_VIEWED = "VIEWED";
     private static final String STATUS_RETURNED_TO_SENDER = "RETURNED_TO_SENDER";
@@ -70,12 +73,21 @@ public class NotificationReworkValidationHandler {
     }
 
     private Mono<NotificationReworkInfo> checkNotificationTimelineAndThrow(NotificationReworkInfo info) {
-        String recIndex = ((NotificationReworkValidationDetails) info.getAction().getDetails()).getReworkrecIndex();
+        String recIndex = ((NotificationReworkValidationDetails) info.getAction().getDetails()).getReworkrecIndex() == null ? REC_INDEX+"0" : ((NotificationReworkValidationDetails) info.getAction().getDetails()).getReworkrecIndex();
+        String attempt = ((NotificationReworkValidationDetails) info.getAction().getDetails()).getReworkAttempt();
 
         return Flux.fromIterable(info.getTimeline())
-                .filter(timelineElement -> timelineElement.getElementId().contains(REC_INDEX + recIndex))
+                .filter(timelineElement -> timelineElement.getElementId().contains(attempt))
                 .switchIfEmpty(Mono.error(new NotificationReworkValidationException(NotificationReworkError.builder().cause(NotificationReworkErrorCause.INVALID_ATTEMPT_ID.getCause()).description(NotificationReworkErrorCause.INVALID_ATTEMPT_ID.getErrorDetails()).build())))
-                .then(Mono.just(info))
+                .filter(timelineElement -> timelineElement.getElementId().contains(recIndex))
+                .collectList()
+                .flatMap(timeline -> {
+                    if (timeline.isEmpty()) {
+                        return Mono.error(new NotificationReworkValidationException(NotificationReworkError.builder().cause(NotificationReworkErrorCause.INVALID_RECINDEX.getCause()).description(NotificationReworkErrorCause.INVALID_RECINDEX.getErrorDetails()).build()));
+                    }
+                    info.setFilteredTimeline(timeline);
+                    return Mono.just(info);
+                })
                 .flatMap(this::checkNotificationTimelineAndStatus);
     }
 
@@ -88,7 +100,7 @@ public class NotificationReworkValidationHandler {
 
     private Mono<NotificationReworkInfo> checkNotificationTimelineAndStatusForMono(NotificationReworkInfo info) {
         String status = info.getNotificationStatus();
-        List<TimelineElementInternal> timeline = info.getTimeline().stream().toList();
+        List<TimelineElementInternal> timeline = info.getFilteredTimeline().stream().toList();
 
         if (STATUS_EFFECTIVE_DATE.equals(status)) {
             boolean hasSendAnalogFeedback = hasCategory(timeline, TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK);
@@ -141,7 +153,7 @@ public class NotificationReworkValidationHandler {
 
     private Mono<NotificationReworkInfo> checkNotificationTimelineAndStatusForMulti(NotificationReworkInfo info) {
         String status = info.getNotificationStatus();
-        List<TimelineElementInternal> timeline = info.getTimeline().stream().toList();
+        List<TimelineElementInternal> timeline = info.getFilteredTimeline().stream().toList();
 
         if (MULTI_REC_NOTIFICATION_VALID_STATUS.contains(status)) {
             boolean hasSendAnalogFeedback = hasCategory(timeline, TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK);

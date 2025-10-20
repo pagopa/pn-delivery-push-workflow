@@ -13,6 +13,7 @@ public class NotificationReworkInfo {
     private List<NotificationReworkError> errorList = new ArrayList<>();
     private Action action;
     private Set<TimelineElementInternal> timeline;
+    private List<TimelineElementInternal> filteredTimeline;
     private String requestId;
     private String notificationStatus;
     private int recipientSize;
