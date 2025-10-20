@@ -488,6 +488,7 @@ Resources:
               - !Ref DeliveryPushInputsQueueARN
               - !Ref ExternalChannelsOutputsQueueARN
               - !Ref ScheduledActionsQueueARN
+              - !Ref NationalRegistries2DeliveryPushQueueARN
               - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${DeliveryPushToNotificationReworkUpdaterQueueName}
           - Effect: Allow
             Action:
