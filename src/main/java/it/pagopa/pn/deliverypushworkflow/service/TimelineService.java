@@ -3,6 +3,9 @@ package it.pagopa.pn.deliverypushworkflow.service;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationHistoryResponse;
+
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 
@@ -68,4 +71,5 @@ public interface TimelineService {
      */
     Set<TimelineElementInternal> getTimelineByIunTimelineId(String iun, String timelineId, boolean confidentialInfoRequired);
 
+    NotificationHistoryResponse getTimelineAndStatusHistory(String iun, int recipients, Instant createdAt);
 }

@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.List;
 
 @CustomLog
@@ -92,5 +93,12 @@ public class TimelineClientImpl implements TimelineClient {
                 .filter(element -> TimelineElementCategoryInt.isKnownCategory(element.getCategory().getValue()))
                 .map(timelineServiceMapper::toTimelineElementInternal)
                 .toList();
+    }
+
+    @Override
+    public NotificationHistoryResponse getTimelineAndStatusHistory(String iun, int recipients, Instant createdAt) {
+        log.logInvokingExternalService(CLIENT_NAME, GET_TIMELINE_AND_STATUS_HISTORY);
+
+        return timelineControllerApi.getTimelineAndStatusHistory(iun, recipients, createdAt);
     }
 }
