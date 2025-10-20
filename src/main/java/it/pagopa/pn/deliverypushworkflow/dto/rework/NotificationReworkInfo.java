@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Set;
 
 @Data
-public class ReworkInfo {
-    private List<ReworkError> errorList = new ArrayList<>();
+public class NotificationReworkInfo {
+    private List<NotificationReworkError> errorList = new ArrayList<>();
     private Action action;
     private Set<TimelineElementInternal> timeline;
     private String requestId;

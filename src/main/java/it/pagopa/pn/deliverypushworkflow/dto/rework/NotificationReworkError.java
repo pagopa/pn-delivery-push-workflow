@@ -7,7 +7,7 @@ import lombok.Getter;
 @Builder
 @Getter
 @EqualsAndHashCode
-public class ReworkError {
+public class NotificationReworkError {
     private String cause;
     private String description;
 }
