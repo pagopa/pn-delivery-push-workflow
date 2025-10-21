@@ -1,14 +1,13 @@
 package it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.safestorage;
 
 import it.pagopa.pn.commons.exceptions.PnInternalException;
+import it.pagopa.pn.commons.log.PnLogger;
 import it.pagopa.pn.commons.pnclients.CommonBaseClient;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.safestorage.FileCreationWithContentRequest;
 import it.pagopa.pn.deliverypushworkflow.exceptions.PnDeliveryPushExceptionCodes;
-import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.model.FileCreationRequest;
-import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.model.FileCreationResponse;
-import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.model.OperationResultCodeResponse;
-import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.model.UpdateFileMetadataRequest;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.model.*;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.v1.api.FileDownloadApi;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.v1.api.FileMetadataUpdateApi;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.v1.api.FileUploadApi;
 import lombok.CustomLog;
@@ -34,16 +33,19 @@ import java.net.URI;
 public class PnSafeStorageClientImpl extends CommonBaseClient implements PnSafeStorageClient {
     private final FileUploadApi fileUploadApi;
     private final FileMetadataUpdateApi fileMetadataUpdateApi;
+    private final FileDownloadApi fileDownloadApi;
     private final RestTemplate restTemplate;
     private final PnDeliveryPushWorkflowConfigs cfg;
 
     public PnSafeStorageClientImpl(PnDeliveryPushWorkflowConfigs cfg,
                                    @Qualifier("withOffsetDateTimeFormatter") RestTemplate restTemplate,
                                    FileUploadApi fileUploadApi,
-                                   FileMetadataUpdateApi fileMetadataUpdateApi) {
+                                   FileMetadataUpdateApi fileMetadataUpdateApi,
+                                   FileDownloadApi fileDownloadApi) {
         this.cfg = cfg;
         this.fileUploadApi = fileUploadApi;
         this.fileMetadataUpdateApi = fileMetadataUpdateApi;
+        this.fileDownloadApi = fileDownloadApi;
         this.restTemplate = restTemplate;
     }
 
@@ -107,6 +109,12 @@ public class PnSafeStorageClientImpl extends CommonBaseClient implements PnSafeS
             log.error("uploadContent Exception uploading file", ee);
             throw new PnInternalException("Exception uploading file", PnDeliveryPushExceptionCodes.ERROR_CODE_DELIVERYPUSH_UPLOADFILEERROR, ee);
         }
+    }
+
+    @Override
+    public Mono<FileDownloadResponse> getFile(String fileKey, Boolean metadataOnly, Boolean tags) {
+        log.logInvokingExternalService(PnLogger.EXTERNAL_SERVICES.PN_SAFE_STORAGE, "getFile");
+        return fileDownloadApi.getFile( fileKey, this.cfg.getSafeStorageCxId(), metadataOnly, tags);
     }
 
 }

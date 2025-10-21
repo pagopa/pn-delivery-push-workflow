@@ -22,6 +22,7 @@
     "NotificationCancellationActionInsertLambdaMaximumBatchingWindowInSeconds": "60",
     "NotificationCancellationActionInsertLambdaBatchSize": "20",
     "NewWorkflowLambdasEnabledStart": "1753881000000",
-    "NewWorkflowLambdasEnabledEnd": "4070908800000"
+    "NewWorkflowLambdasEnabledEnd": "4070908800000",
+    "NotificationReworkDocumentExpiringRange": 30
   }
 }

@@ -5,6 +5,7 @@ import it.pagopa.pn.commons.utils.MDCUtils;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.safestorage.FileCreationResponseInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.safestorage.FileCreationWithContentRequest;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.safestorage.UpdateFileMetadataResponseInt;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.model.FileDownloadResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.model.UpdateFileMetadataRequest;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.safestorage.PnSafeStorageClient;
 import it.pagopa.pn.deliverypushworkflow.service.SafeStorageService;
@@ -74,6 +75,11 @@ public class SafeStorageServiceImpl implements SafeStorageService {
                             .resultDescription(res.getResultDescription())
                             .build()
                 );
+    }
+
+    @Override
+    public Mono<FileDownloadResponse> getFile(String fileKey, Boolean metadataOnly, Boolean tags) {
+        return safeStorageClient.getFile( fileKey, metadataOnly, tags);
     }
 
     private String computeSha256( byte[] content ) {

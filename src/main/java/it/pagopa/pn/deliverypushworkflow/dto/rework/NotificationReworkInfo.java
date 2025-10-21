@@ -1,5 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.dto.rework;
 
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.Action;
 import lombok.Data;
@@ -15,5 +16,6 @@ public class NotificationReworkInfo {
     private Set<TimelineElementInternal> timeline;
     private String requestId;
     private String notificationStatus;
+    private NotificationInt notification;
     private int recipientSize;
 }
