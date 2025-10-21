@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 public class NotificationReworkValidationDetails implements ActionDetails {
     private String reworkId;
     private String reworkAttempt;
-    private String reworkpcRetry;
-    private String reworkrecIndex;
-    private String reworkexpectedFinalStatus;
+    private String reworkPcRetry;
+    private String reworkRecIndex;
+    private String reworkExpectedFinalStatus;
 }

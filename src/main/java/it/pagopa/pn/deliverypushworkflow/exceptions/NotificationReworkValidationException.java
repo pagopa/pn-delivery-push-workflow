@@ -1,7 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.exceptions;
 
 import it.pagopa.pn.commons.exceptions.PnInternalException;
-import it.pagopa.pn.deliverypushworkflow.dto.rework.NotificationReworkError;
+import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkError;
 
 import java.util.ArrayList;
 import java.util.List;
