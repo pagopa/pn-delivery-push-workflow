@@ -25,6 +25,9 @@ public class NotificationReworkValidationHandler {
     private final List<String> MONO_REC_NOTIFICATION_VALID_STATUS = List.of("EFFECTIVE_DATE", "RETURNED_TO_SENDER", "VIEWED");
     private final List<String> MULTI_REC_NOTIFICATION_VALID_STATUS = List.of("DELIVERING", "DELIVERED", "EFFETCTIVE_DATE", "VIEWED", "RETURNED_TO_SENDER", "UNREACHABLE");
     private final String REC_INDEX = "RECINDEX_";
+    private final String ATTEMPT_0 = "ATTEMPT_0";
+    private final String ATTEMPT_1 = "ATTEMPT_1";
+    private final String KO = "KO";
     
     private final NotificationService notificationService;
     private final TimelineService timelineService;
@@ -39,6 +42,21 @@ public class NotificationReworkValidationHandler {
                     } else {
                         return Mono.error(new NotificationReworkValidationException(NotificationReworkError.builder().cause(NotificationReworkErrorCause.INVALID_RECINDEX.getCause()).description(NotificationReworkErrorCause.INVALID_RECINDEX.getErrorDetails()).build()));
                     }
+                });
+    }
+
+    private Mono<NotificationReworkInfo> checkNotificationExpectedFinalStatusCodeAndThrow(NotificationReworkInfo info) {
+        return Mono.just(info.getTimeline())
+                .flatMap(timeline -> {
+                    boolean hasAttempt0 = timeline.stream().anyMatch(timelineElement -> timelineElement.getElementId().contains(ATTEMPT_0));
+                    boolean hasAttempt1 = timeline.stream().anyMatch(timelineElement -> timelineElement.getElementId().contains(ATTEMPT_1));
+                    String expectedAttempt = ((NotificationReworkValidationDetails) info.getAction().getDetails()).getReworkAttempt();
+                    String expectedStatus = ((NotificationReworkValidationDetails) info.getAction().getDetails()).getReworkexpectedFinalStatus();
+
+                    if (hasAttempt0 && hasAttempt1 && ATTEMPT_0.equals(expectedAttempt) && KO.equals(expectedStatus)) {
+                        return Mono.error(new NotificationReworkValidationException(NotificationReworkError.builder().cause(NotificationReworkErrorCause.INVALID_EXPECTED_STATUS_CODE.getCause()).description(String.format(NotificationReworkErrorCause.INVALID_EXPECTED_STATUS_CODE.getErrorDetails(), expectedStatus, expectedAttempt)).build()));
+                    }
+                    return Mono.just(info);
                 });
     }
 
