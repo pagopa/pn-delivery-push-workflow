@@ -1,4 +1,4 @@
-package it.pagopa.pn.deliverypushworkflow.dto.rework;
+package it.pagopa.pn.deliverypushworkflow.dto.notificationrework;
 
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
@@ -14,6 +14,7 @@ public class NotificationReworkInfo {
     private List<NotificationReworkError> errorList = new ArrayList<>();
     private Action action;
     private Set<TimelineElementInternal> timeline;
+    private Set<TimelineElementInternal> filteredTimeline;
     private String requestId;
     private String notificationStatus;
     private NotificationInt notification;

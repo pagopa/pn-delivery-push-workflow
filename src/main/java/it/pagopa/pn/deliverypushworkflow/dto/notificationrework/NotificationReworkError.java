@@ -1,4 +1,4 @@
-package it.pagopa.pn.deliverypushworkflow.dto.rework;
+package it.pagopa.pn.deliverypushworkflow.dto.notificationrework;
 
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
