@@ -22,12 +22,12 @@ public class PaperTrackerServiceImpl implements PaperTrackerService {
     @Override
     public boolean isPresentDematForPrepareRequest(String prepareRequestId) {
         log.info("Invoking PaperTrackerClient to check trackingsRequest: {}", prepareRequestId);
-        TrackingsResponse response = paperTrackerClient.getTrackingResponse(prepareRequestId);
+        TrackingsResponse response = paperTrackerClient.retrieveTrackingsByAttemptId(prepareRequestId);
         List<Tracking> trackings = response.getTrackings();
 
         Optional<Tracking> maxPcRetryOpt = trackings.stream()
                 .filter(t -> t.getPcRetry() != null && !t.getPcRetry().isEmpty())
-                .max(Comparator.comparingInt(t -> Integer.parseInt(t.getPcRetry())));
+                .max(Comparator.comparingInt(t -> Integer.parseInt(removePrefixPcRetry(t.getPcRetry()))));
         if (maxPcRetryOpt.isPresent()) {
             log.info("Found tracking with max pcRetry: {}", maxPcRetryOpt.get().getPcRetry());
             Tracking maxPcRetryTracking = maxPcRetryOpt.get();
@@ -37,5 +37,9 @@ public class PaperTrackerServiceImpl implements PaperTrackerService {
             log.info("No tracking found with pcRetry, returning false");
             return false;
         }
+    }
+
+    private String removePrefixPcRetry(String pcRetry) {
+        return pcRetry.replaceFirst("^PCRETRY_", "");
     }
 }
