@@ -28,18 +28,23 @@ class PaperTrackerServiceImplTest {
         String prepareAnalogDomicileTimelineId = "prepareAnalogDomicileTimelineId";
 
         TrackingsResponse trackingsResponse = new TrackingsResponse();
-        Tracking tracking = new Tracking();
-        tracking.setPcRetry("0");
-        PaperStatus paperStatus = new PaperStatus();
-        paperStatus.setFinalDematFound(true);
-        tracking.setPaperStatus(paperStatus);
-        trackingsResponse.setTrackings(List.of(tracking));
-        Mockito.when(paperTrackerClient.getTrackingResponse(prepareAnalogDomicileTimelineId))
+        Tracking tracking1 = new Tracking();
+        tracking1.setPcRetry("PCRETRY_1");
+        PaperStatus paperStatus1 = new PaperStatus();
+        paperStatus1.setFinalDematFound(false);
+        tracking1.setPaperStatus(paperStatus1);
+        Tracking tracking2 = new Tracking();
+        tracking2.setPcRetry("PCRETRY_10");
+        PaperStatus paperStatus2 = new PaperStatus();
+        paperStatus2.setFinalDematFound(true);
+        tracking2.setPaperStatus(paperStatus2);
+        trackingsResponse.setTrackings(List.of(tracking1, tracking2));
+        Mockito.when(paperTrackerClient.retrieveTrackingsByAttemptId(prepareAnalogDomicileTimelineId))
                 .thenReturn(trackingsResponse);
 
         boolean result = paperTrackerService.isPresentDematForPrepareRequest(prepareAnalogDomicileTimelineId);
 
-        Mockito.verify(paperTrackerClient).getTrackingResponse(prepareAnalogDomicileTimelineId);
+        Mockito.verify(paperTrackerClient).retrieveTrackingsByAttemptId(prepareAnalogDomicileTimelineId);
         Assertions.assertTrue(result);
     }
 
@@ -52,12 +57,12 @@ class PaperTrackerServiceImplTest {
         tracking.setPcRetry("0");
         tracking.setValidationFlow(new ValidationFlow());
         trackingsResponse.setTrackings(List.of(tracking));
-        Mockito.when(paperTrackerClient.getTrackingResponse(prepareAnalogDomicileTimelineId))
+        Mockito.when(paperTrackerClient.retrieveTrackingsByAttemptId(prepareAnalogDomicileTimelineId))
                 .thenReturn(trackingsResponse);
 
         boolean result = paperTrackerService.isPresentDematForPrepareRequest(prepareAnalogDomicileTimelineId);
 
-        Mockito.verify(paperTrackerClient).getTrackingResponse(prepareAnalogDomicileTimelineId);
+        Mockito.verify(paperTrackerClient).retrieveTrackingsByAttemptId(prepareAnalogDomicileTimelineId);
         Assertions.assertFalse(result);
     }
 
@@ -69,12 +74,12 @@ class PaperTrackerServiceImplTest {
         Tracking tracking = new Tracking();
         tracking.setPcRetry("0");
         trackingsResponse.setTrackings(List.of(tracking));
-        Mockito.when(paperTrackerClient.getTrackingResponse(prepareAnalogDomicileTimelineId))
+        Mockito.when(paperTrackerClient.retrieveTrackingsByAttemptId(prepareAnalogDomicileTimelineId))
                 .thenReturn(trackingsResponse);
 
         boolean result = paperTrackerService.isPresentDematForPrepareRequest(prepareAnalogDomicileTimelineId);
 
-        Mockito.verify(paperTrackerClient).getTrackingResponse(prepareAnalogDomicileTimelineId);
+        Mockito.verify(paperTrackerClient).retrieveTrackingsByAttemptId(prepareAnalogDomicileTimelineId);
         Assertions.assertFalse(result);
     }
 
@@ -82,12 +87,12 @@ class PaperTrackerServiceImplTest {
     void isPresentDematForPrepareRequestIsFalseForMissingDemat3() {
         String prepareAnalogDomicileTimelineId = "prepareAnalogDomicileTimelineId";
 
-        Mockito.when(paperTrackerClient.getTrackingResponse(prepareAnalogDomicileTimelineId))
+        Mockito.when(paperTrackerClient.retrieveTrackingsByAttemptId(prepareAnalogDomicileTimelineId))
                 .thenReturn(new TrackingsResponse());
 
         boolean result = paperTrackerService.isPresentDematForPrepareRequest(prepareAnalogDomicileTimelineId);
 
-        Mockito.verify(paperTrackerClient).getTrackingResponse(prepareAnalogDomicileTimelineId);
+        Mockito.verify(paperTrackerClient).retrieveTrackingsByAttemptId(prepareAnalogDomicileTimelineId);
         Assertions.assertFalse(result);
     }
 

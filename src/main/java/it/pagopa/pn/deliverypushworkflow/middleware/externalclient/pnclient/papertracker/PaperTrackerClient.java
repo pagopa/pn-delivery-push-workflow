@@ -5,7 +5,7 @@ import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.papertracker
 
 public interface PaperTrackerClient {
     String CLIENT_NAME = PnLogger.EXTERNAL_SERVICES.PN_PAPER_TRACKER;
-    String GET_TRACKING_RESPONSE = "GET TRACKING RESPONSE";
+    String RETRIEVE_TRACKINGS_BY_ATTEMPTID = "RETRIEVE TRACKINGS BY ATTEMPTID";
 
-    TrackingsResponse getTrackingResponse(String prepareRequestId);
+    TrackingsResponse retrieveTrackingsByAttemptId(String prepareRequestId);
 }
