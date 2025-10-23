@@ -20,11 +20,12 @@ class PaperTrackerClientImplTest {
     }
 
     @Test
-    void getTrackingResponse() {
-        Mockito.when(paperTracking.retrieveTrackings(Mockito.any()))
+    void retrieveTrackingsByAttemptId() {
+        String prepareRequest = "trackingsRequest";
+        Mockito.when(paperTracking.retrieveTrackingsByAttemptId(prepareRequest, null))
                 .thenReturn(new TrackingsResponse());
 
-        TrackingsResponse response = paperTrackerClient.getTrackingResponse("trackingsRequest");
+        TrackingsResponse response = paperTrackerClient.retrieveTrackingsByAttemptId(prepareRequest);
 
         Assertions.assertNotNull(response);
     }
