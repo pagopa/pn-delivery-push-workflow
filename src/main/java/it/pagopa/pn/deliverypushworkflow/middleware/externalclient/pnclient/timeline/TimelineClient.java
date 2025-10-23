@@ -5,7 +5,9 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.Notificat
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementDetailsInt;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationHistoryResponse;
 
+import java.time.Instant;
 import java.util.List;
 
 public interface TimelineClient {
@@ -17,6 +19,7 @@ public interface TimelineClient {
     String GET_TIMELINE_ELEMENT_DETAIL_FOR_SPECIFIC_RECIPIENT = "GET TIMELINE ELEMENT DETAIL FOR SPECIFIC RECIPIENT";
     String GET_TIMELINE_ELEMENT_FOR_SPECIFIC_RECIPIENT = "GET TIMELINE ELEMENT FOR SPECIFIC RECIPIENT";
     String GET_TIMELINE = "GET TIMELINE";
+    String GET_TIMELINE_AND_STATUS_HISTORY = "GET TIMELINE AND STATUS HISTORY";
 
     boolean addTimelineElement(TimelineElementInternal element, NotificationInt notification);
 
@@ -31,5 +34,7 @@ public interface TimelineClient {
     TimelineElementInternal getTimelineElementForSpecificRecipient(String iun, Integer recIndex, TimelineElementCategoryInt category);
 
     List<TimelineElementInternal> getTimeline(String iun, Boolean confidentialInfoRequired, Boolean strongly, String timelineId);
+
+    NotificationHistoryResponse getTimelineAndStatusHistory(String iun, int recipients, Instant createdAt);
 
 }
