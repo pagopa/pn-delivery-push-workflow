@@ -1,6 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.handler.action;
 
-import it.pagopa.pn.deliverypushworkflow.action.rework.ReworkHandler;
+import it.pagopa.pn.deliverypushworkflow.action.rework.NotificationReworkValidationHandler;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.router.SupportedEventType;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.Action;
 import org.junit.jupiter.api.Test;
@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class ReworkNotificationHandlerTest {
 
     @Mock
-    private ReworkHandler reworkHandler;
+    private NotificationReworkValidationHandler notificationReworkHandler;
 
     @Mock
     private MessageHeaders headers;
@@ -40,7 +40,7 @@ class ReworkNotificationHandlerTest {
 
         handler.handle(action, headers);
 
-        Mockito.verify(reworkHandler).handleRework(action);
+        Mockito.verify(notificationReworkHandler).handleNotificationRework(action);
     }
 
     @Test
@@ -50,10 +50,10 @@ class ReworkNotificationHandlerTest {
                 .recipientIndex(1)
                 .build();
 
-        Mockito.doThrow(new RuntimeException("Errore di validazione")).when(reworkHandler).handleRework(action);
+        Mockito.doThrow(new RuntimeException("Errore di validazione")).when(notificationReworkHandler).handleNotificationRework(action);
 
         assertThrows(RuntimeException.class, () -> handler.handle(action, headers));
 
-        Mockito.verify(reworkHandler).handleRework(action);
+        Mockito.verify(notificationReworkHandler).handleNotificationRework(action);
     }
 }

@@ -1,6 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool;
 
-import it.pagopa.pn.deliverypushworkflow.dto.rework.ReworkError;
+import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkError;
 import lombok.*;
 
 import java.util.List;
@@ -15,6 +15,6 @@ import java.util.List;
 public class ReworkRequestEventAction {
     private String iun;
     private String reworkId;
-    private List<ReworkError> error;
+    private List<NotificationReworkError> error;
     private String operation;
 }

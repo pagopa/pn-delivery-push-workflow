@@ -1,6 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.handler.action;
 
-import it.pagopa.pn.deliverypushworkflow.action.rework.ReworkHandler;
+import it.pagopa.pn.deliverypushworkflow.action.rework.NotificationReworkValidationHandler;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.handler.utils.HandleEventUtils;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.router.SupportedEventType;
@@ -13,11 +13,11 @@ import org.springframework.stereotype.Component;
 @Component
 @CustomLog
 public class ReworkNotificationHandler extends AbstractActionEventHandler {
-    private final ReworkHandler reworkHandler;
+    private final NotificationReworkValidationHandler notificationReworkHandler;
 
-    public ReworkNotificationHandler(TimelineUtils timelineUtils, ReworkHandler reworkHandler) {
+    public ReworkNotificationHandler(TimelineUtils timelineUtils, NotificationReworkValidationHandler notificationReworkHandler) {
         super(timelineUtils);
-        this.reworkHandler = reworkHandler;
+        this.notificationReworkHandler = notificationReworkHandler;
     }
 
     @Override
@@ -34,7 +34,7 @@ public class ReworkNotificationHandler extends AbstractActionEventHandler {
             HandleEventUtils.addIunAndRecIndexAndCorrIdToMdc(action.getIun(), action.getRecipientIndex(), action.getActionId());
 
             log.logStartingProcess(processName);
-            reworkHandler.handleRework(action);
+            notificationReworkHandler.handleNotificationRework(action);
             log.logEndingProcess(processName);
         } catch (Exception ex) {
             log.logEndingProcess(processName, false, ex.getMessage());
