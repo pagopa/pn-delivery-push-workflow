@@ -105,6 +105,8 @@ public class PnDeliveryPushWorkflowConfigs {
 
     private Instant sendCourtesyAtChooseDeliveryActivationDate;
 
+    private int notificationReworkDocumentExpiringRange;
+
     @Data
     public static class Topics {
         private String newNotifications;
