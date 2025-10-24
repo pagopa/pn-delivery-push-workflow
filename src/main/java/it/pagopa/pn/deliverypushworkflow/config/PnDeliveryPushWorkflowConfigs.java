@@ -107,6 +107,8 @@ public class PnDeliveryPushWorkflowConfigs {
 
     private int reworkTTLAddressRange;
 
+    private int notificationReworkDocumentExpiringRange;
+
     @Data
     public static class Topics {
         private String newNotifications;

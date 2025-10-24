@@ -7,6 +7,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.documentcreation.DocumentCreationRe
 import it.pagopa.pn.deliverypushworkflow.dto.ext.safestorage.FileCreationWithContentRequest;
 import it.pagopa.pn.deliverypushworkflow.dto.legalfacts.LegalFactCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.model.FileCreationResponse;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.model.FileDownloadResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.model.OperationResultCodeResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.model.UpdateFileMetadataRequest;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.safestorage.PnSafeStorageClient;
@@ -155,5 +156,10 @@ public class SafeStorageClientMock implements PnSafeStorageClient {
                 yield "pdf";
             }
         };
+    }
+
+    @Override
+    public Mono<FileDownloadResponse> getFile(String fileKey, Boolean metadataOnly, Boolean tags) {
+        return Mono.just(new FileDownloadResponse());
     }
 }
