@@ -345,6 +345,7 @@ Parameters:
 
   NotificationReworkDocumentExpiringRange:
     Type: Number
+    Default: 30
     Description: 'Number of days before document expiration is still valid for notification rework'
     
 Conditions:

@@ -39,9 +39,9 @@ import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.Notificat
 public class NotificationReworkValidationHandler {
 
     private final List<String> MONO_REC_NOTIFICATION_VALID_STATUS = List.of("EFFECTIVE_DATE", "RETURNED_TO_SENDER", "VIEWED");
-    private final List<String> MULTI_REC_NOTIFICATION_VALID_STATUS = List.of("DELIVERING", "DELIVERED", "EFFETCTIVE_DATE", "VIEWED", "RETURNED_TO_SENDER", "UNREACHABLE");
+    private final List<String> MULTI_REC_NOTIFICATION_VALID_STATUS = List.of("DELIVERING", "DELIVERED", "EFFECTIVE_DATE", "VIEWED", "RETURNED_TO_SENDER", "UNREACHABLE");
     private final String REC_INDEX = "RECINDEX_";
-    
+
     private final NotificationService notificationService;
     private final TimelineService timelineService;
     private final SafeStorageService safeStorageService;
@@ -78,16 +78,23 @@ public class NotificationReworkValidationHandler {
     private Mono<NotificationReworkInfo> checkNotificationAttachments(NotificationReworkInfo info) {
         return Flux.fromIterable(info.getNotification().getDocuments())
                 .flatMap(document -> safeStorageService.getFile(document.getRef().getKey(), true, false))
-                .flatMap(response -> {
-                    if (response.getRetentionUntil().minusDays(pnDeliveryPushWorkflowConfigs.getNotificationReworkDocumentExpiringRange()).isBefore(OffsetDateTime.now())) {
-                        info.getErrorList().add(NotificationReworkError.builder().cause(NotificationReworkErrorCause.INVALID_ATTACHMENT.getCause()).description(String.format(NotificationReworkErrorCause.INVALID_ATTACHMENT.getErrorDetails(), response.getKey(), response.getRetentionUntil())).build());
-                    }
-                    return Mono.just(info);
-                })
-                .doOnError(PnHttpResponseException.class, ex -> {
-                    if(ex.getStatusCode() == HttpStatus.GONE.value()) {
-                        info.getErrorList().add(NotificationReworkError.builder().cause(NotificationReworkErrorCause.EXPIRED_ATTACHMENT.getCause()).description(NotificationReworkErrorCause.EXPIRED_ATTACHMENT.getErrorDetails()).build());
-                    }
+                .filter(response -> response.getRetentionUntil().minusDays(pnDeliveryPushWorkflowConfigs.getNotificationReworkDocumentExpiringRange()).isBefore(OffsetDateTime.now()))
+                .map(response -> NotificationReworkError.builder()
+                        .cause(NotificationReworkErrorCause.INVALID_ATTACHMENT.getCause())
+                        .description(String.format(NotificationReworkErrorCause.INVALID_ATTACHMENT.getErrorDetails(), response.getKey(), response.getRetentionUntil()))
+                        .build())
+                .onErrorResume(PnHttpResponseException.class, ex ->
+                        ex.getStatusCode() == HttpStatus.GONE.value()
+                                ? Mono.just(NotificationReworkError.builder()
+                                .cause(NotificationReworkErrorCause.EXPIRED_ATTACHMENT.getCause())
+                                .description(NotificationReworkErrorCause.EXPIRED_ATTACHMENT.getErrorDetails())
+                                .build())
+                                : Mono.empty()
+                )
+                .collectList()
+                .map(errors -> {
+                    info.getErrorList().addAll(errors);
+                    return info;
                 })
                 .then(Mono.just(info));
     }
@@ -125,7 +132,7 @@ public class NotificationReworkValidationHandler {
         String status = info.getNotificationStatus();
         Set<TimelineElementInternal> timeline = info.getFilteredTimeline();
 
-        if(!containsCategory(timeline, TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK)){
+        if (!containsCategory(timeline, TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK)) {
             log.warn("La timeline non contiene l'elemento SEND_ANALOG_FEEDBACK necessario a procedere con la richiesta di invalidazione per lo iun: [{}] , recIndex: [{}] e attemptId: [{}]", info.getAction().getIun(), recIndex, attempt);
             return fail(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT, "SEND_ANALOG_FEEDBACK assente");
         }
