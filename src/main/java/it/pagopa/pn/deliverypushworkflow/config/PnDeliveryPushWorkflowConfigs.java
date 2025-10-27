@@ -107,6 +107,8 @@ public class PnDeliveryPushWorkflowConfigs {
 
     private int notificationReworkDocumentExpiringRange;
 
+    private List<String> inalidableCategories;
+
     @Data
     public static class Topics {
         private String newNotifications;

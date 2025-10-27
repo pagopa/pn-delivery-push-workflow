@@ -347,7 +347,12 @@ Parameters:
     Type: Number
     Default: 30
     Description: 'Number of days before document expiration is still valid for notification rework'
-    
+
+  InvalidableCategories:
+    Type: CommaDelimitedList
+    Description: 'Categories which can be invalidated during a notification rework'
+
+
 Conditions:
     UseExternalChannelMock: !Equals [ !Ref ExternalChannelBaseUrl, "Mock" ]
 
@@ -405,6 +410,7 @@ Resources:
         ContainerEnvEntry23: !Sub 'WIRE_TAP_LOG=${WireTapLogActivation}'
         ContainerEnvEntry24: !Sub 'PN_DELIVERYPUSHWORKFLOW_PAPERTRACKERBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
         ContainerEnvEntry25: !Sub 'PN_DELIVERYPUSHWORKFLOW_NOTIFICATIONREWORKDOCUMENTEXPIRINGRANGE=${NotificationReworkDocumentExpiringRange}'
+        ContainerEnvEntry26: !Sub 'PN_DELIVERYPUSHWORKFLOW_INVALIDABLECATEGORIES=${InvalidableCategories}'
         ApplicativeEnvFileChecksum: !Ref ApplicativeEnvFileChecksum
         ParentMicroserviceName: !Sub '${ProjectName}-delivery-push-workflow'
         JavaToolOptions: '-Dreactor.netty.ioWorkerCount=50'
