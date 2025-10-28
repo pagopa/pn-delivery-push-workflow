@@ -11,4 +11,5 @@ public class NotificationReworkConstant {
     public static final String ATTEMPT_0 = "ATTEMPT_0";
     public static final String ATTEMPT_1 = "ATTEMPT_1";
     public static final String KO = "KO";
+    public static final String CON = "CON";
 }
