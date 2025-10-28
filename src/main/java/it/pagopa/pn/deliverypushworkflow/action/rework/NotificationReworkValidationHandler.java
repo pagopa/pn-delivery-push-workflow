@@ -30,7 +30,6 @@ import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
@@ -56,6 +55,7 @@ public class NotificationReworkValidationHandler {
     private final List<String> MONO_REC_NOTIFICATION_VALID_STATUS = List.of("EFFECTIVE_DATE", "RETURNED_TO_SENDER", "VIEWED");
     private final List<String> MULTI_REC_NOTIFICATION_VALID_STATUS = List.of("DELIVERING", "DELIVERED", "EFFECTIVE_DATE", "VIEWED", "RETURNED_TO_SENDER", "UNREACHABLE");
     private final String REC_INDEX = "RECINDEX_";
+    private final String ATTEMPT = "ATTEMPT_";
 
     private final CheckAddressApi checkAddressApi;
     private final ActionApi actionManagerApi;
@@ -70,6 +70,7 @@ public class NotificationReworkValidationHandler {
         log.info("Start handleRework - iun {} id {}", action.getIun(), action.getRecipientIndex());
         NotificationReworkInfo reworkInfo = new NotificationReworkInfo();
         reworkInfo.setAction(action);
+        reworkInfo.setActionDetail(((NotificationReworkValidationDetails) action.getDetails()));
 
         Mono.just(reworkInfo)
                 .flatMap(this::checkNotificationCancelledAndThrow)
@@ -80,10 +81,10 @@ public class NotificationReworkValidationHandler {
                 .flatMap(this::checkNotificationAttachments)
                 .flatMap(this::computeRequestId)
                 .flatMap(this::checkNotificationAddress)
-                .flatMap(info -> this.checkErrorList(info.getErrorList(), info.getAction(), info.getRequestId()))
+                .flatMap(info -> this.checkErrorList(info.getErrorList(), info.getAction(), reworkInfo.getActionDetail(), info.getRequestId()))
                 .onErrorResume(NotificationReworkValidationException.class, e -> {
                     log.error("Errore durante handleRework per iun {}: {}", action.getIun(), e.getMessage(), e);
-                    return this.checkErrorList(e.getErrors(), action, null);
+                    return this.checkErrorList(e.getErrors(), action, reworkInfo.getActionDetail(), null);
                 })
                 .doOnSuccess(v -> log.info("handleRework completato per iun {}", action.getIun()))
                 .block();
@@ -105,7 +106,7 @@ public class NotificationReworkValidationHandler {
                 .doOnNext(info::setNotification)
                 .flatMap(notification -> {
                     info.setRecipientSize(notification.getRecipients().size());
-                    int recIndex = getRecIndexFromAction(info.getAction());
+                    int recIndex = getRecIndexFromAction(info.getActionDetail());
                     if (notification.getRecipients().size() > recIndex) {
                         return checkNotificationStatus(notification, info);
                     } else {
@@ -124,8 +125,8 @@ public class NotificationReworkValidationHandler {
                 .flatMap(timeline -> {
                     boolean hasAttempt0 = timeline.stream().anyMatch(timelineElement -> timelineElement.getElementId().contains(ATTEMPT_0));
                     boolean hasAttempt1 = timeline.stream().anyMatch(timelineElement -> timelineElement.getElementId().contains(ATTEMPT_1));
-                    String expectedAttempt = ((NotificationReworkValidationDetails) info.getAction().getDetails()).getReworkAttempt();
-                    String expectedStatus = ((NotificationReworkValidationDetails) info.getAction().getDetails()).getReworkExpectedFinalStatus();
+                    String expectedAttempt = info.getActionDetail().getReworkAttempt();
+                    String expectedStatus = info.getActionDetail().getReworkExpectedFinalStatus();
 
                     if (hasAttempt0 && hasAttempt1 && ATTEMPT_0.equals(expectedAttempt) && KO.equals(expectedStatus)) {
                         return Mono.error(new NotificationReworkValidationException(NotificationReworkError.builder().cause(NotificationReworkErrorCause.INVALID_EXPECTED_STATUS_CODE.getCause()).description(String.format(NotificationReworkErrorCause.INVALID_EXPECTED_STATUS_CODE.getErrorDetails(), expectedStatus, expectedAttempt)).build()));
@@ -162,9 +163,10 @@ public class NotificationReworkValidationHandler {
         log.debug("computeRequestId per iun {}", info.getAction().getIun());
         return Flux.fromIterable(info.getTimeline())
                 .filter(timelineElement -> timelineElement.getCategory().equals(TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE))
-                .filter(timelineElement -> timelineElement.getElementId().endsWith("ATTEMPT_"+((NotificationReworkValidationDetails) info.getAction().getDetails()).getReworkAttempt()))
+                .filter(timelineElement -> timelineElement.getElementId().contains(ATTEMPT + info.getActionDetail().getReworkAttempt()))
+                .filter(timelineElement -> timelineElement.getElementId().contains(REC_INDEX + info.getActionDetail().getReworkRecIndex()))
                 .flatMap(timelineElementInternal -> {
-                    String requestId = timelineElementInternal.getElementId() + "." + ((NotificationReworkValidationDetails) info.getAction().getDetails()).getReworkPcRetry();
+                    String requestId = timelineElementInternal.getElementId() + "." + info.getActionDetail().getReworkPcRetry();
                     info.setRequestId(requestId);
                     log.info("RequestId calcolato: {}", requestId);
                     return Mono.just(info);
@@ -196,16 +198,16 @@ public class NotificationReworkValidationHandler {
                 });
     }
 
-    private Mono<Void> checkErrorList(List<NotificationReworkError> errorList, Action action, String requestId) {
+    private Mono<Void> checkErrorList(List<NotificationReworkError> errorList, Action action, NotificationReworkValidationDetails detail, String requestId) {
         log.debug("checkErrorList per iun {}: {}", action.getIun(), errorList);
         return Mono.just(errorList)
                 .flatMap(errors -> {
                     if (errors.isEmpty()) {
                         log.info("Nessun errore trovato, inserisco nuova action per iun {}", action.getIun());
-                        actionManagerApi.insertAction(getNewAction(action, requestId));
+                        actionManagerApi.insertAction(getNewAction(action, detail, requestId));
                     } else {
                         log.error("Errori trovati per iun {}: {}", action, errors);
-                        reworkRequestEventPool.scheduleFutureAction(getReworkRequestEventAction(errors, action), ReworkRequestEventType.NOTIFICATION_REWORK_REQUESTED);
+                        reworkRequestEventPool.scheduleFutureAction(getReworkRequestEventAction(errors, detail, action), ReworkRequestEventType.NOTIFICATION_REWORK_REQUESTED);
                     }
                     return Mono.empty();
                 });
@@ -226,8 +228,8 @@ public class NotificationReworkValidationHandler {
     }
 
     private Mono<NotificationReworkInfo> checkNotificationTimelineAndThrow(NotificationReworkInfo info) {
-        String recIndex = ((NotificationReworkValidationDetails) info.getAction().getDetails()).getReworkRecIndex();
-        String attempt = ((NotificationReworkValidationDetails) info.getAction().getDetails()).getReworkAttempt();
+        String recIndex = info.getActionDetail().getReworkRecIndex();
+        String attempt = info.getActionDetail().getReworkAttempt();
 
         return Mono.just(info.getTimeline().stream().filter(timelineElementInternal -> timelineElementInternal.getElementId().contains(attempt)).collect(Collectors.toSet()))
                 .filter(timelineElementInternals -> !timelineElementInternals.isEmpty())
@@ -287,8 +289,8 @@ public class NotificationReworkValidationHandler {
         return timeline.stream().anyMatch(e -> e.getCategory() == category);
     }
 
-    private int getRecIndexFromAction(Action action) {
-        String recIndex = ((NotificationReworkValidationDetails) action.getDetails()).getReworkRecIndex();
+    private int getRecIndexFromAction(NotificationReworkValidationDetails actionDetail) {
+        String recIndex = actionDetail.getReworkRecIndex();
         return Integer.parseInt(recIndex.substring((recIndex.lastIndexOf(REC_INDEX) + 9)));
     }
 
@@ -297,9 +299,9 @@ public class NotificationReworkValidationHandler {
                 NotificationReworkError.builder().cause(cause.getCause()).description(details).build()));
     }
 
-    private static @NotNull NewAction getNewAction(Action action, String requestId) {
+    private static NewAction getNewAction(Action action, NotificationReworkValidationDetails detail, String requestId) {
         NewAction newAction = new NewAction();
-        newAction.setActionId(((NotificationReworkValidationDetails) action.getDetails()).getReworkId());
+        newAction.setActionId(detail.getReworkId());
         newAction.setIun(action.getIun());
         newAction.setType(ActionType.NOTIFICATION_REWORK_REQUESTED);
         newAction.setNotBefore(Instant.now());
@@ -310,11 +312,11 @@ public class NotificationReworkValidationHandler {
         return newAction;
     }
 
-    private static @NotNull ReworkRequestEventAction getReworkRequestEventAction(List<NotificationReworkError> errorList, Action action) {
+    private static ReworkRequestEventAction getReworkRequestEventAction(List<NotificationReworkError> errorList, NotificationReworkValidationDetails detail, Action action) {
         ReworkRequestEventAction reworkRequest = new ReworkRequestEventAction();
         reworkRequest.setError(errorList);
         reworkRequest.setIun(action.getIun());
-        reworkRequest.setReworkId(((NotificationReworkValidationDetails) action.getDetails()).getReworkId());
+        reworkRequest.setReworkId(detail.getReworkId());
         reworkRequest.setOperation("ERROR");
         return reworkRequest;
     }
