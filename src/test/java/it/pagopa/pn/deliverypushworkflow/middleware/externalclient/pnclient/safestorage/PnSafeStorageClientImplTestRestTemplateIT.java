@@ -3,6 +3,7 @@ package it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.saf
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.safestorage.FileCreationWithContentRequest;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.model.FileCreationResponse;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.v1.api.FileDownloadApi;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.v1.api.FileMetadataUpdateApi;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.v1.api.FileUploadApi;
 import org.junit.jupiter.api.*;
@@ -49,12 +50,15 @@ class PnSafeStorageClientImplTestRestTemplateIT {
     
     @Mock
     private FileMetadataUpdateApi fileMetadataUpdateApi;
+
+    @Mock
+    private FileDownloadApi fileDownloadApi;
     
     private PnSafeStorageClientImpl safeStorageClient;
     
     @BeforeEach
     void setup() {
-        this.safeStorageClient = new PnSafeStorageClientImpl(cfg, restTemplate, fileUploadApi, fileMetadataUpdateApi);
+        this.safeStorageClient = new PnSafeStorageClientImpl(cfg, restTemplate, fileUploadApi, fileMetadataUpdateApi, fileDownloadApi);
     }
 
     @ExtendWith(MockitoExtension.class)

@@ -3,6 +3,7 @@ package it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.saf
 import it.pagopa.pn.commons.log.PnLogger;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.safestorage.FileCreationWithContentRequest;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.model.FileCreationResponse;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.model.FileDownloadResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.model.OperationResultCodeResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.model.UpdateFileMetadataRequest;
 import reactor.core.publisher.Mono;
@@ -21,4 +22,5 @@ public interface PnSafeStorageClient {
 
     void uploadContent(FileCreationWithContentRequest fileCreationRequest, FileCreationResponse fileCreationResponse, String sha256);
 
+    Mono<FileDownloadResponse> getFile(String fileKey, Boolean metadataOnly, Boolean tags);
 }
