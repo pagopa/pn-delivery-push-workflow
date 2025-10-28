@@ -1,11 +1,13 @@
 package it.pagopa.pn.deliverypushworkflow.action.rework;
 
 import it.pagopa.pn.deliverypushworkflow.action.details.NotificationReworkValidationDetails;
+import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkError;
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkErrorCause;
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkInfo;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.CompletelyUnreachableCreationRequestDetails;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationViewedCreationRequestDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ScheduleRefinementDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
@@ -19,12 +21,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkConstant.*;
+import static it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt.ANALOG_FAILURE_WORKFLOW;
+import static it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt.ANALOG_SUCCESS_WORKFLOW;
 
 @Slf4j
 @Component
@@ -33,6 +39,7 @@ public class NotificationReworkValidationHandler {
 
     private final NotificationService notificationService;
     private final TimelineService timelineService;
+    private final PnDeliveryPushWorkflowConfigs pnDeliveryPushWorkflowConfigs;
 
     private Mono<NotificationReworkInfo> checkNotificationStatusAndThrow(NotificationReworkInfo info) {
         return Mono.just(notificationService.getNotificationByIun(info.getAction().getIun()))
@@ -119,10 +126,12 @@ public class NotificationReworkValidationHandler {
                     .map(NotificationViewedCreationRequestDetailsInt::getEventTimestamp)
                     .orElse(null);
 
-            if (Objects.nonNull(viewedDate) && Objects.nonNull(refinementDate) && viewedDate.isAfter(refinementDate)) {
-                log.warn("Il refinement della notifica è in corso, non è possibile procedere alla richiesta di invalidazione per lo iun: [{}] , recIndex: [{}] e attemptId: [{}]", info.getAction().getIun(), recIndex, attempt);
-                return fail(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT, "Refinement in corso");
+            if (Objects.nonNull(refinementDate)) {
+                return checkViewedDateWithRefinementDate(viewedDate, refinementDate, recIndex, attempt, info.getAction().getIun());
+            } else {
+                return checkViewedDateWithSchedulingDate(viewedDate, info, recIndex, attempt);
             }
+
         }
 
         if (!STATUS_VIEWED.equals(status) && !(containsCategory(timeline, TimelineElementCategoryInt.ANALOG_WORKFLOW_RECIPIENT_DECEASED) && containsCategory(timeline, TimelineElementCategoryInt.REFINEMENT))) {
@@ -131,6 +140,42 @@ public class NotificationReworkValidationHandler {
         }
 
         return Mono.empty();
+    }
+
+    private Mono<Void> checkViewedDateWithRefinementDate(Instant viewedDate, Instant refinementDate, String recIndex, String attempt, String iun) {
+        if (Objects.nonNull(viewedDate) && viewedDate.isAfter(refinementDate)) {
+            log.warn("Il refinement della notifica è in corso, non è possibile procedere alla richiesta di invalidazione per lo iun: [{}] , recIndex: [{}] e attemptId: [{}]", iun, recIndex, attempt);
+            return fail(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT, "Refinement in corso");
+        }
+        return Mono.empty();
+    }
+
+    private Mono<Void> checkViewedDateWithSchedulingDate(Instant viewedDate, NotificationReworkInfo info, String recIndex, String attempt) {
+        Duration schedulingDays;
+        Instant notificationDate;
+        Optional<TimelineElementInternal> analogSuccessWorkflow = info.getFilteredTimeline().stream().filter(elem -> elem.getCategory().equals(ANALOG_SUCCESS_WORKFLOW)).findFirst();
+        Optional<TimelineElementInternal> analogFailureWorkflow = info.getFilteredTimeline().stream().filter(elem -> elem.getCategory().equals(ANALOG_FAILURE_WORKFLOW)).findFirst();
+
+        if (analogSuccessWorkflow.isPresent()) {
+            schedulingDays = pnDeliveryPushWorkflowConfigs.getTimeParams().getSchedulingDaysSuccessAnalogRefinement();
+            notificationDate = analogSuccessWorkflow.get().getNotificationSentAt();
+        } else if (analogFailureWorkflow.isPresent()) {
+            schedulingDays = pnDeliveryPushWorkflowConfigs.getTimeParams().getSchedulingDaysFailureAnalogRefinement();
+            notificationDate = analogFailureWorkflow.get().getNotificationSentAt();
+        } else {
+            log.warn("Il refinement della notifica è in corso, non è possibile procedere alla richiesta di invalidazione per lo iun: [{}] , recIndex: [{}] e attemptId: [{}]", info.getAction().getIun(), recIndex, attempt);
+            return fail(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT, "Refinement in corso");
+        }
+
+        Instant schedulingDate = notificationDate.plus(schedulingDays);
+
+        if (Objects.nonNull(viewedDate) && Objects.nonNull(schedulingDate) && viewedDate.isAfter(schedulingDate)) {
+            log.warn("Il refinement della notifica è in corso, non è possibile procedere alla richiesta di invalidazione per lo iun: [{}] , recIndex: [{}] e attemptId: [{}]", info.getAction().getIun(), recIndex, attempt);
+            return fail(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT, "Refinement in corso");
+        }
+
+        return Mono.empty();
+
     }
 
 
