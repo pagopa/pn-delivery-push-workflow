@@ -10,5 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class NotificationReworkRequestedDetails implements ActionDetails {
     private String reworkrequestId;
+    private String attempt;
+    private String recIndex;
     private String reworkId;
 }

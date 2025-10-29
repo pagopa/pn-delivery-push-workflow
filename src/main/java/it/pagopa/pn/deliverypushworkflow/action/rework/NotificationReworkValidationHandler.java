@@ -26,7 +26,6 @@ import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -37,10 +36,6 @@ import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.Notificat
 @Component
 @RequiredArgsConstructor
 public class NotificationReworkValidationHandler {
-
-    private final List<String> MONO_REC_NOTIFICATION_VALID_STATUS = List.of("EFFECTIVE_DATE", "RETURNED_TO_SENDER", "VIEWED");
-    private final List<String> MULTI_REC_NOTIFICATION_VALID_STATUS = List.of("DELIVERING", "DELIVERED", "EFFECTIVE_DATE", "VIEWED", "RETURNED_TO_SENDER", "UNREACHABLE");
-    private final String REC_INDEX = "RECINDEX_";
 
     private final NotificationService notificationService;
     private final TimelineService timelineService;
