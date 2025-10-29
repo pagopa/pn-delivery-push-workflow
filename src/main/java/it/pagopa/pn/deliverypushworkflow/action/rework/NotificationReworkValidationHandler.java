@@ -198,7 +198,7 @@ public class NotificationReworkValidationHandler {
             schedulingDays = pnDeliveryPushWorkflowConfigs.getTimeParams().getSchedulingDaysFailureAnalogRefinement();
             notificationDate = analogFailureWorkflow.get().getNotificationSentAt();
         } else {
-            log.warn("Il refinement della notifica è in corso, non è possibile procedere alla richiesta di invalidazione per lo iun: [{}] , recIndex: [{}] e attemptId: [{}]", info.getAction().getIun(), recIndex, attempt);
+            log.warn("Il destinatario risulta deceduto, non è possibile procedere alla richiesta di invalidazione per lo iun: [{}] , recIndex: [{}] e attemptId: [{}]", info.getAction().getIun(), recIndex, attempt);
             return fail(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT, "Refinement in corso");
         }
 
