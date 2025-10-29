@@ -123,7 +123,7 @@ public class CheckAttachmentRetentionHandler {
                 .max(Comparator.comparing(AnalogFailureWorkflowTimeoutDetailsInt::getTimeoutDate));
     }
 
-    private void scheduleCheckAttachmentRetentionBeforeExpiration(String iun, Instant lastActionNotBefore) {
+    public void scheduleCheckAttachmentRetentionBeforeExpiration(String iun, Instant lastActionNotBefore) {
         Duration attachmentTimeToAddAfterExpiration = configs.getTimeParams().getAttachmentTimeToAddAfterExpiration();
         Duration checkAttachmentTimeBeforeExpiration = configs.getTimeParams().getCheckAttachmentTimeBeforeExpiration();
         log.debug("Start scheduleCheckAttachmentRetentionBeforeExpiration - attachmentDaysToAddAfterExpiration={} checkAttachmentDaysBeforeExpiration={} iun={}",

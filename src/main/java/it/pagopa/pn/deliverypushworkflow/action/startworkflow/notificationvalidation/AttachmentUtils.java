@@ -122,6 +122,13 @@ public class AttachmentUtils {
         return updateFileMetadata(ref.getKey(), null, retentionUntil);
     }
 
+    public Mono<Void> changeAttachmentRetention(String key, int retentionUntilDays) {
+        OffsetDateTime retentionUntil = OffsetDateTime.now().plusDays(retentionUntilDays);
+        log.info( "changeAttachmentRetention begin changing retentionUntil for attachment with key={}", key);
+
+        return updateFileMetadata(key, null, retentionUntil);
+    }
+
     private Mono<Void> updateFileMetadata(String fileKey, String statusRequest, OffsetDateTime retentionUntilRequest) {
         UpdateFileMetadataRequest request = new UpdateFileMetadataRequest();
         request.setStatus(statusRequest);
