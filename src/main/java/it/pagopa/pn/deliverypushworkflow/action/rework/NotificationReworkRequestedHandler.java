@@ -49,7 +49,8 @@ public class NotificationReworkRequestedHandler {
         return Flux.fromIterable(documents)
                 .flatMap(document -> safeStorageService.getFile(document.getRef().getKey(), true, false))
                 .filter(response -> newRetentionDate.isAfter(response.getRetentionUntil()))
-                .doOnNext(response -> attachmentUtils.changeAttachmentRetention(response.getKey(), retentionUntilDays))
+                .flatMap(response -> attachmentUtils.changeAttachmentRetention(response.getKey(), newRetentionDate))
+                .collectList()
                 .doOnNext(response -> checkAttachmentRetentionHandler.scheduleCheckAttachmentRetentionBeforeExpiration(iun, actionCreatedAt))
                 .then();
     }
