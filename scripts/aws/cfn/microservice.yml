@@ -343,6 +343,15 @@ Parameters:
     Type: String
     Description: 'Keep track of used projects commitIds'
 
+  ReworkTTLAddressRange:
+    Default: 10
+    Type: Number
+    Description: 'Number of days before the address TTL check for which a notification can be reworked'
+
+  DeliveryPushToNotificationReworkUpdaterQueueName:
+    Type: String
+    Description: 'Queue to send rework request event'
+
   NotificationReworkDocumentExpiringRange:
     Type: Number
     Default: 30
@@ -409,8 +418,10 @@ Resources:
         ContainerEnvEntry22: !Sub 'PN_CRON_ANALYZER=${PnCronAnalyzer}'
         ContainerEnvEntry23: !Sub 'WIRE_TAP_LOG=${WireTapLogActivation}'
         ContainerEnvEntry24: !Sub 'PN_DELIVERYPUSHWORKFLOW_PAPERTRACKERBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
-        ContainerEnvEntry25: !Sub 'PN_DELIVERYPUSHWORKFLOW_NOTIFICATIONREWORKDOCUMENTEXPIRINGRANGE=${NotificationReworkDocumentExpiringRange}'
-        ContainerEnvEntry26: !Sub 'PN_DELIVERYPUSHWORKFLOW_INVALIDABLECATEGORIES=${InvalidableCategories}'
+        ContainerEnvEntry25: !Sub 'PN_DELIVERYPUSHWORKFLOW_REWORKTTLADDRESSRANGE=${ReworkTTLAddressRange}'
+        ContainerEnvEntry26: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_NOTIFICATIONREWORKUPDATEREVENT=${DeliveryPushToNotificationReworkUpdaterQueueName}'
+        ContainerEnvEntry27: !Sub 'PN_DELIVERYPUSHWORKFLOW_NOTIFICATIONREWORKDOCUMENTEXPIRINGRANGE=${NotificationReworkDocumentExpiringRange}'
+        ContainerEnvEntry28: !Sub 'PN_DELIVERYPUSHWORKFLOW_INVALIDABLECATEGORIES=${InvalidableCategories}'
         ApplicativeEnvFileChecksum: !Ref ApplicativeEnvFileChecksum
         ParentMicroserviceName: !Sub '${ProjectName}-delivery-push-workflow'
         JavaToolOptions: '-Dreactor.netty.ioWorkerCount=50'
@@ -460,6 +471,7 @@ Resources:
             - !Ref ExternalChannelsOutputsQueueARN
             - !Ref ScheduledActionsQueueARN
             - !Ref NationalRegistries2DeliveryPushQueueARN
+            - !Ref DeliveryPushToExternalRegistriesQueueARN
         LogGroupsNames: !Join
           - ','
           - - !Sub '/aws/ecs/${ProjectName}-delivery-push-workflow'
@@ -489,6 +501,7 @@ Resources:
               - !Ref ExternalChannelsOutputsQueueARN
               - !Ref ScheduledActionsQueueARN
               - !Ref NationalRegistries2DeliveryPushQueueARN
+              - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${DeliveryPushToNotificationReworkUpdaterQueueName}
           - Effect: Allow
             Action:
               - 'ssm:GetParameter'

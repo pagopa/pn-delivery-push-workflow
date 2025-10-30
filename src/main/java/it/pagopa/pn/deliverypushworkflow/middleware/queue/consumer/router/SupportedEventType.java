@@ -27,6 +27,7 @@ public enum SupportedEventType {
     // Inizio eventi coda ExternalChannels
     SEND_PEC_RESPONSE,
     SEND_ANALOG_RESPONSE,
-    PREPARE_ANALOG_RESPONSE
+    PREPARE_ANALOG_RESPONSE,
+    NOTIFICATION_REWORK_VALIDATION
     // Fine eventi coda ExternalChannels
 }
