@@ -57,6 +57,7 @@ public class NotificationReworkRequestedHandler {
     }
 
     private Mono<List<String>> computeTimelineElementToInvalidate(Set<TimelineElementInternal> timelineElementInternalList, String recIndex, String attemptId) {
+        log.debug("Inizio computeTimelineElementToInvalidate per recIndex {} e attemptId {}", recIndex, attemptId);
         return Flux.fromIterable(timelineElementInternalList)
                 .filter(elem -> pnDeliveryPushWorkflowConfigs.getInvalidableCategories().contains(elem.getCategory().name()))
                 .filter(elem -> elem.getElementId().contains(recIndex))
@@ -64,22 +65,31 @@ public class NotificationReworkRequestedHandler {
                 .filter(elem -> checkPrepareAnalogDomicile(elem, attemptId))
                 .filter(this::checkDeliveryDetailCode)
                 .map(TimelineElementInternal::getElementId)
-                .collectList();
+                .collectList()
+                .doOnNext(list -> log.debug("Elementi invalidabili trovati: {}", list));
     }
 
-    private Mono<String> updateAttachmentRetention(Instant actionCreatedAt, String iun, List< NotificationDocumentInt > documents) {
+    private Mono<String> updateAttachmentRetention(Instant actionCreatedAt, String iun, List<NotificationDocumentInt> documents) {
+        log.debug("Inizio updateAttachmentRetention per iun {} con {} documenti", iun, documents.size());
         int retentionUntilDays = (int) pnDeliveryPushWorkflowConfigs.getTimeParams().getAttachmentTimeToAddAfterExpiration().toDays();
         OffsetDateTime newRetentionDate = OffsetDateTime.now().plusDays(retentionUntilDays);
         return Flux.fromIterable(documents)
                 .flatMap(document -> safeStorageService.getFile(document.getRef().getKey(), true, false))
                 .filter(response -> newRetentionDate.isAfter(response.getRetentionUntil()))
-                .flatMap(response -> attachmentUtils.changeAttachmentRetention(response.getKey(), newRetentionDate))
+                .flatMap(response -> {
+                    log.info("Aggiornamento retention per file {}: nuova data {}", response.getKey(), newRetentionDate);
+                    return attachmentUtils.changeAttachmentRetention(response.getKey(), newRetentionDate);
+                })
                 .collectList()
-                .doOnNext(response -> checkAttachmentRetentionHandler.scheduleCheckAttachmentRetentionBeforeExpiration(iun, actionCreatedAt))
+                .doOnNext(response -> {
+                    log.debug("Retention aggiornata per iun {}. Scheduling checkAttachmentRetention.", iun);
+                    checkAttachmentRetentionHandler.scheduleCheckAttachmentRetentionBeforeExpiration(iun, actionCreatedAt);
+                })
                 .thenReturn(iun);
     }
 
     private Mono<Void> addTimelineElement(TimelineElementInternal element, NotificationInt notification) {
+        log.debug("Aggiunto elemento timeline {} per iun {}", element, notification.getIun());
         return Mono.just(timelineService.addTimelineElement(element, notification)).then();
     }
 
@@ -104,10 +114,6 @@ public class NotificationReworkRequestedHandler {
         return true;
     }
 
-    public Mono<Action> computeTimelineElementToInvalidate(Action action) {
-        return Mono.just(action);
-    }
-
     private boolean checkDeliveryDetailCode(TimelineElementInternal elem) {
         if (TimelineElementCategoryInt.SEND_ANALOG_PROGRESS.name().equals(elem.getCategory().name())) {
             return !((SendAnalogProgressDetailsInt) elem.getDetails()).getDeliveryDetailCode().startsWith(CON);
@@ -116,6 +122,7 @@ public class NotificationReworkRequestedHandler {
     }
 
     public Mono<String> startNotificationReworkProcess(NotificationReworkRequestedDetails details) {
+        log.info("Avvio processo di rework per reworkRequestId {} e reworkId {}", details.getReworkrequestId(), details.getReworkId());
         return Mono.just(paperChannelService.initNotificationRework(details.getReworkrequestId(), details.getReworkId()));
     }
 }
