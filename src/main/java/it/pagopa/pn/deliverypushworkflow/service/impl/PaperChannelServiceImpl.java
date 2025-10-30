@@ -431,4 +431,10 @@ public class PaperChannelServiceImpl implements PaperChannelService {
         return discoveredAddress;
     }
 
+    @Override
+    public String initNotificationRework(String requestId, String reworkId) {
+        //TODO implementare quando sarà disponibile il client
+        return "";
+    }
+
 }
