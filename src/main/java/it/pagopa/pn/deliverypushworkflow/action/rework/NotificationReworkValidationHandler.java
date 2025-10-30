@@ -10,7 +10,6 @@ import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationRewo
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkErrorCause;
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkInfo;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.CompletelyUnreachableCreationRequestDetails;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationViewedCreationRequestDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ScheduleRefinementDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
@@ -57,10 +56,6 @@ import static it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineEle
 @RequiredArgsConstructor
 public class NotificationReworkValidationHandler {
 
-    private final List<String> MONO_REC_NOTIFICATION_VALID_STATUS = List.of("EFFECTIVE_DATE", "RETURNED_TO_SENDER", "VIEWED");
-    private final List<String> MULTI_REC_NOTIFICATION_VALID_STATUS = List.of("DELIVERING", "DELIVERED", "EFFECTIVE_DATE", "VIEWED", "RETURNED_TO_SENDER", "UNREACHABLE");
-    private final String REC_INDEX = "RECINDEX_";
-    private final String ATTEMPT = "ATTEMPT_";
 
     private final CheckAddressApi checkAddressApi;
     private final ActionApi actionManagerApi;
@@ -84,8 +79,9 @@ public class NotificationReworkValidationHandler {
                 .flatMap(this::checkNotificationTimelineAndThrow)
                 .flatMap(this::checkNotificationExpectedFinalStatusCodeAndThrow)
                 .flatMap(this::checkNotificationAttachments)
-                .flatMap(this::computeRequestId)
-                .flatMap(this::checkNotificationAddress)
+                .map(this::computeRequestId)
+                .doOnNext(reworkInfo::setRequestId)
+                .flatMap(requestId -> checkNotificationAddress(reworkInfo))
                 .flatMap(info -> this.checkErrorList(info.getErrorList(), info.getAction(), reworkInfo.getActionDetail(), info.getRequestId()))
                 .onErrorResume(NotificationReworkValidationException.class, e -> {
                     log.error("Errore durante handleRework per iun {}: {}", action.getIun(), e.getMessage(), e);
@@ -164,23 +160,15 @@ public class NotificationReworkValidationHandler {
                 .then(Mono.just(info));
     }
 
-    private Mono<NotificationReworkInfo> computeRequestId(NotificationReworkInfo info) {
+    private String computeRequestId(NotificationReworkInfo info) {
         log.debug("computeRequestId per iun {}", info.getAction().getIun());
-        return Flux.fromIterable(info.getTimeline())
+        return info.getTimeline().stream()
                 .filter(timelineElement -> timelineElement.getCategory().equals(TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE))
                 .filter(timelineElement -> timelineElement.getElementId().contains(ATTEMPT + info.getActionDetail().getReworkAttempt()))
                 .filter(timelineElement -> timelineElement.getElementId().contains(REC_INDEX + info.getActionDetail().getReworkRecIndex()))
-                .flatMap(timelineElementInternal -> {
-                    String requestId = timelineElementInternal.getElementId() + "." + info.getActionDetail().getReworkPcRetry();
-                    info.setRequestId(requestId);
-                    log.info("RequestId calcolato: {}", requestId);
-                    return Mono.just(info);
-                })
-                .switchIfEmpty(Mono.fromRunnable(() -> {
-                    log.warn("Nessun elemento timeline trovato per iun {}", info.getAction().getIun());
-                    info.setRequestId(StringUtils.EMPTY);
-                }))
-                .then(Mono.just(info));
+                .findFirst()
+                .map(timelineElementInternal -> timelineElementInternal.getElementId() + "." + info.getActionDetail().getReworkPcRetry())
+                .orElse(StringUtils.EMPTY);
     }
 
     private Mono<NotificationReworkInfo> checkNotificationAddress(NotificationReworkInfo externalInfo) {
@@ -251,44 +239,52 @@ public class NotificationReworkValidationHandler {
         String status = info.getNotificationStatus();
         Set<TimelineElementInternal> timeline = info.getFilteredTimeline();
 
+        boolean isStatusViewed = STATUS_VIEWED.equals(status);
+
         if (!containsCategory(timeline, TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK)) {
             log.warn("La timeline non contiene l'elemento SEND_ANALOG_FEEDBACK necessario a procedere con la richiesta di invalidazione per lo iun: [{}] , recIndex: [{}] e attemptId: [{}]", info.getAction().getIun(), recIndex, attempt);
             return fail(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT, "SEND_ANALOG_FEEDBACK assente");
         }
 
-        if (STATUS_VIEWED.equals(status) && !containsCategory(timeline, TimelineElementCategoryInt.REFINEMENT)) {
-            Instant refinementDate = timeline.stream()
-                    .filter(e -> e.getCategory() == TimelineElementCategoryInt.SCHEDULE_REFINEMENT)
-                    .map(TimelineElementInternal::getDetails)
-                    .filter(details -> details instanceof ScheduleRefinementDetailsInt)
-                    .map(details -> (ScheduleRefinementDetailsInt) details)
-                    .findFirst()
-                    .map(ScheduleRefinementDetailsInt::getSchedulingDate)
-                    .orElse(null);
+        if (containsCategory(timeline, TimelineElementCategoryInt.REFINEMENT) || containsCategory(timeline, TimelineElementCategoryInt.ANALOG_WORKFLOW_RECIPIENT_DECEASED)) {
+            return Mono.empty();
+        }
 
-            Instant viewedDate = timeline.stream()
-                    .filter(e -> e.getCategory() == TimelineElementCategoryInt.NOTIFICATION_VIEWED_CREATION_REQUEST)
-                    .map(TimelineElementInternal::getDetails)
-                    .filter(details -> details instanceof NotificationViewedCreationRequestDetailsInt)
-                    .map(details -> (NotificationViewedCreationRequestDetailsInt) details)
-                    .findFirst()
-                    .map(NotificationViewedCreationRequestDetailsInt::getEventTimestamp)
-                    .orElse(null);
+        if (isStatusViewed) {
+            Instant refinementDate = retrieveRefinementDate(timeline);
+            Instant viewedDate = retrieveViewedDate(timeline);
 
             if (Objects.nonNull(refinementDate)) {
                 return checkViewedDateWithRefinementDate(viewedDate, refinementDate, recIndex, attempt, info.getAction().getIun());
             } else {
                 return checkViewedDateWithSchedulingDate(viewedDate, info, recIndex, attempt);
             }
-
-        }
-
-        if (!STATUS_VIEWED.equals(status) && !containsCategory(timeline, TimelineElementCategoryInt.ANALOG_WORKFLOW_RECIPIENT_DECEASED) && !containsCategory(timeline, TimelineElementCategoryInt.REFINEMENT)) {
+        } else {
             log.warn("La timeline non contiene gli elementi finali (REFINEMENT o ANALOG_WORKFLOW_RECIPIENT_DECEASED) necessari a procedere con la richiesta di invalidazione per lo iun: [{}] , recIndex: [{}] e attemptId: [{}]", info.getAction().getIun(), recIndex, attempt);
             return fail(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT, "REFINEMENT e ANALOG_WORKFLOW_RECIPIENT_DECEASED assenti");
         }
+    }
 
-        return Mono.empty();
+    private static Instant retrieveRefinementDate(Set<TimelineElementInternal> timeline) {
+        return timeline.stream()
+                .filter(e -> e.getCategory() == TimelineElementCategoryInt.SCHEDULE_REFINEMENT)
+                .map(TimelineElementInternal::getDetails)
+                .filter(details -> details instanceof ScheduleRefinementDetailsInt)
+                .map(details -> (ScheduleRefinementDetailsInt) details)
+                .findFirst()
+                .map(ScheduleRefinementDetailsInt::getSchedulingDate)
+                .orElse(null);
+    }
+
+    private static Instant retrieveViewedDate(Set<TimelineElementInternal> timeline) {
+        return timeline.stream()
+                .filter(e -> e.getCategory() == TimelineElementCategoryInt.NOTIFICATION_VIEWED_CREATION_REQUEST)
+                .map(TimelineElementInternal::getDetails)
+                .filter(details -> details instanceof NotificationViewedCreationRequestDetailsInt)
+                .map(details -> (NotificationViewedCreationRequestDetailsInt) details)
+                .findFirst()
+                .map(NotificationViewedCreationRequestDetailsInt::getEventTimestamp)
+                .orElse(null);
     }
 
     private Mono<Void> checkViewedDateWithRefinementDate(Instant viewedDate, Instant refinementDate, String recIndex, String attempt, String iun) {
