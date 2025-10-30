@@ -36,7 +36,7 @@ public class ReworkRequestHandler extends AbstractActionEventHandler {
             log.logStartingProcess(processName);
             checkNotificationCancelledAndExecute(
                     action,
-                    a -> notificationReworkRequestedService.handleNotificationReworkRequested(a)
+                    notificationReworkRequestedService::handleNotificationReworkRequested
             );
             log.logEndingProcess(processName);
         } catch (Exception ex) {
