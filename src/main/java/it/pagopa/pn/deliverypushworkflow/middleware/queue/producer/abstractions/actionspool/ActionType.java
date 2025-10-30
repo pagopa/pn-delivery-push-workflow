@@ -143,6 +143,13 @@ public enum ActionType {
     }
   },
 
+  NOTIFICATION_REWORK_VALIDATION(NotHandledDetails.class) {
+    @Override
+    public String buildActionId(Action action) {
+      return String.format("%s_notification_rework_validation", action.getIun());
+    }
+  },
+
   NOTIFICATION_REWORK_REQUESTED(NotificationReworkRequestedDetails.class) {
     @Override
     public String buildActionId(Action action) {

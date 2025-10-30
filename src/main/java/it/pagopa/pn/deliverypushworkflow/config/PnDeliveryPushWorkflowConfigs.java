@@ -105,7 +105,11 @@ public class PnDeliveryPushWorkflowConfigs {
 
     private Instant sendCourtesyAtChooseDeliveryActivationDate;
 
+    private int reworkTTLAddressRange;
+
     private int notificationReworkDocumentExpiringRange;
+
+    private List<String> invalidableCategories;
 
     @Data
     public static class Topics {
@@ -113,6 +117,7 @@ public class PnDeliveryPushWorkflowConfigs {
         private String fromExternalChannel;
         private String scheduledActions;
         private String nationalRegistriesEvents;
+        private String notificationReworkUpdaterEvent;
     }
 
     @Data

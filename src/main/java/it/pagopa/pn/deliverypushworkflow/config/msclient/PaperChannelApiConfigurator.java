@@ -1,6 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.config.msclient;
 
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.ApiClient;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.api.CheckAddressApi;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.api.PaperMessagesApi;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -17,5 +18,13 @@ public class PaperChannelApiConfigurator {
         ApiClient apiClient = new ApiClient(restTemplate);
         apiClient.setBasePath(cfg.getPaperChannelBaseUrl());
         return new PaperMessagesApi(apiClient);
+    }
+
+    @Bean
+    @Primary
+    public CheckAddressApi checkAddressApi(@Qualifier("withOffsetDateTimeFormatter") RestTemplate restTemplate, PnDeliveryPushWorkflowConfigs cfg){
+        ApiClient apiClient = new ApiClient(restTemplate);
+        apiClient.setBasePath(cfg.getPaperChannelBaseUrl());
+        return new CheckAddressApi(apiClient);
     }
 }
