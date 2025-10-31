@@ -15,5 +15,6 @@ public interface PaperChannelService {
 
     String sendAnalogNotification(NotificationInt notification, Integer recIndex, int sentAttemptMade, String requestId, PhysicalAddressInt receiverAddress, String productType, List<String> replacedF24AttachmentUrls, CategorizedAttachmentsResultInt categorizedAttachmentsResult);
 
-    String initNotificationRework(String requestId, String reworkId);
+    void initNotificationRework(String requestId, String reworkId);
+
 }

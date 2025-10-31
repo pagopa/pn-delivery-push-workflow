@@ -2,7 +2,7 @@
 
 echo "### CREATE QUEUES ###"
 
-queues="local-delivery-push-inputs.fifo local-delivery-push-actions-done local-ext-channels-outputs local-national-registries-gateway"
+queues="local-delivery-push-inputs.fifo local-delivery-push-actions-done local-ext-channels-outputs local-national-registries-gateway delivery-push-to-notification-rework-updater"
 
 for qn in  $( echo $queues | tr " " "\n" ) ; do
 
