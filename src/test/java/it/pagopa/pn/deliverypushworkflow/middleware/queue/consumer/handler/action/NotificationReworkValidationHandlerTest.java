@@ -1,6 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.handler.action;
 
-import it.pagopa.pn.deliverypushworkflow.action.rework.NotificationReworkValidationHandler;
+import it.pagopa.pn.deliverypushworkflow.action.rework.ReworkValidationHandler;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.router.SupportedEventType;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.Action;
 import org.junit.jupiter.api.Test;
@@ -10,21 +10,24 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.messaging.MessageHeaders;
+import reactor.core.publisher.Mono;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class ReworkNotificationHandlerTest {
+class NotificationReworkValidationHandlerTest {
 
     @Mock
-    private NotificationReworkValidationHandler notificationReworkHandler;
+    private ReworkValidationHandler notificationReworkHandler;
 
     @Mock
     private MessageHeaders headers;
 
     @InjectMocks
-    private ReworkNotificationHandler handler;
+    private NotificationReworkValidationHandler handler;
 
     @Test
     void getSupportedEventTypeReturnsCorrectType() {
@@ -37,6 +40,8 @@ class ReworkNotificationHandlerTest {
                 .iun("iun_456")
                 .recipientIndex(1)
                 .build();
+
+        when(notificationReworkHandler.handleNotificationRework(any())).thenReturn(Mono.empty());
 
         handler.handle(action, headers);
 

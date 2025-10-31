@@ -30,7 +30,7 @@ import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.Notificat
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class NotificationReworkRequestedHandler {
+public class ReworkRequestedHandler {
 
     private final TimelineService timelineService;
     private final NotificationService notificationService;
@@ -41,23 +41,21 @@ public class NotificationReworkRequestedHandler {
     private final AttachmentUtils attachmentUtils;
 
 
-    public void handleNotificationReworkRequested(Action action) {
+    public Mono<Void> handleNotificationReworkRequested(Action action) {
         NotificationReworkRequestedDetails detail = (NotificationReworkRequestedDetails) action.getDetails();
-        Mono.just(timelineService.getTimeline(action.getIun(), true))
-            .flatMap(timeline -> computeTimelineElementToInvalidate(timeline, detail.getRecIndex(), detail.getAttempt()))
-            .flatMap(list -> startNotificationReworkProcess(detail))
-            .thenReturn(notificationService.getNotificationByIun(action.getIun()).getDocuments())
-            .flatMap(documents -> updateAttachmentRetention(detail.getCreatedAt(), action.getIun(), documents))
-            .thenReturn(action)
-            .flatMap(this::buildTimelineElement)
-            .zipWith(Mono.just(notificationService.getNotificationByIun(action.getIun())))
-            .flatMap(tuple -> addTimelineElement(tuple.getT1(), tuple.getT2()))
-            .doOnSuccess(v -> log.info("NotificationReworkRequested completato per iun {}", action.getIun()))
-            .block();
+        return Mono.just(timelineService.getTimeline(action.getIun(), true))
+                .flatMap(timeline -> computeTimelineElementToInvalidate(timeline, detail.getRecIndex(), detail.getAttempt()))
+                .flatMap(list -> startNotificationReworkProcess(detail))
+                .thenReturn(notificationService.getNotificationByIun(action.getIun()).getDocuments())
+                .flatMap(documents -> updateAttachmentRetention(detail.getCreatedAt(), action.getIun(), documents))
+                .thenReturn(action)
+                .flatMap(this::buildTimelineElement)
+                .zipWith(Mono.just(notificationService.getNotificationByIun(action.getIun())))
+                .flatMap(tuple -> addTimelineElement(tuple.getT1(), tuple.getT2()));
     }
 
     private Mono<List<String>> computeTimelineElementToInvalidate(Set<TimelineElementInternal> timelineElementInternalList, String recIndex, String attemptId) {
-        log.debug("Inizio computeTimelineElementToInvalidate per recIndex {} e attemptId {}", recIndex, attemptId);
+        log.debug("Starting computeTimelineElementToInvalidate for recIndex {} and attemptId {}", recIndex, attemptId);
         return Flux.fromIterable(timelineElementInternalList)
                 .filter(elem -> pnDeliveryPushWorkflowConfigs.getInvalidableCategories().contains(elem.getCategory().name()))
                 .filter(elem -> elem.getElementId().contains(recIndex))
@@ -66,35 +64,35 @@ public class NotificationReworkRequestedHandler {
                 .filter(this::checkDeliveryDetailCode)
                 .map(TimelineElementInternal::getElementId)
                 .collectList()
-                .doOnNext(list -> log.debug("Elementi invalidabili trovati: {}", list));
+                .doOnNext(list -> log.debug("Invalidable elements found: {}", list));
     }
 
     private Mono<String> updateAttachmentRetention(Instant actionCreatedAt, String iun, List<NotificationDocumentInt> documents) {
-        log.debug("Inizio updateAttachmentRetention per iun {} con {} documenti", iun, documents.size());
+        log.debug("Starting updateAttachmentRetention for iun {} with {} documents", iun, documents.size());
         int retentionUntilDays = (int) pnDeliveryPushWorkflowConfigs.getTimeParams().getAttachmentTimeToAddAfterExpiration().toDays();
         OffsetDateTime newRetentionDate = OffsetDateTime.now().plusDays(retentionUntilDays);
         return Flux.fromIterable(documents)
                 .flatMap(document -> safeStorageService.getFile(document.getRef().getKey(), true, false))
                 .filter(response -> newRetentionDate.isAfter(response.getRetentionUntil()))
                 .flatMap(response -> {
-                    log.info("Aggiornamento retention per file {}: nuova data {}", response.getKey(), newRetentionDate);
+                    log.info("Updating retention for file {}: new date {}", response.getKey(), newRetentionDate);
                     return attachmentUtils.changeAttachmentRetention(response.getKey(), newRetentionDate);
                 })
                 .collectList()
                 .doOnNext(response -> {
-                    log.debug("Retention aggiornata per iun {}. Scheduling checkAttachmentRetention.", iun);
+                    log.debug("Retention updated for iun {}. Scheduling checkAttachmentRetention.", iun);
                     checkAttachmentRetentionHandler.scheduleCheckAttachmentRetentionBeforeExpiration(iun, actionCreatedAt);
                 })
                 .thenReturn(iun);
     }
 
     private Mono<Void> addTimelineElement(TimelineElementInternal element, NotificationInt notification) {
-        log.debug("Aggiunto elemento timeline {} per iun {}", element, notification.getIun());
+        log.debug("Added timeline element {} for iun {}", element, notification.getIun());
         return Mono.just(timelineService.addTimelineElement(element, notification)).then();
     }
 
     private Mono<TimelineElementInternal> buildTimelineElement(Action action) {
-        //TODO da implementare quando sarà disponibile la logica
+        //TODO to be implemented when logic will be available
         return Mono.just(new TimelineElementInternal());
     }
 
@@ -122,7 +120,7 @@ public class NotificationReworkRequestedHandler {
     }
 
     public Mono<String> startNotificationReworkProcess(NotificationReworkRequestedDetails details) {
-        log.info("Avvio processo di rework per reworkRequestId {} e reworkId {}", details.getReworkrequestId(), details.getReworkId());
+        log.info("Starting rework process for reworkRequestId {} and reworkId {}", details.getReworkrequestId(), details.getReworkId());
         return Mono.just(paperChannelService.initNotificationRework(details.getReworkrequestId(), details.getReworkId()));
     }
 }

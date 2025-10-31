@@ -1,6 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.handler.action;
 
-import it.pagopa.pn.deliverypushworkflow.action.rework.NotificationReworkRequestedHandler;
+import it.pagopa.pn.commons.utils.MDCUtils;
+import it.pagopa.pn.deliverypushworkflow.action.rework.ReworkRequestedHandler;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.handler.utils.HandleEventUtils;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.router.SupportedEventType;
@@ -9,13 +10,14 @@ import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.
 import lombok.CustomLog;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
 @Component
 @CustomLog
-public class ReworkRequestHandler extends AbstractActionEventHandler {
-    private final NotificationReworkRequestedHandler notificationReworkRequestedService;
+public class NotificationReworkRequestedHandler extends AbstractActionEventHandler {
+    private final ReworkRequestedHandler notificationReworkRequestedService;
 
-    public ReworkRequestHandler(TimelineUtils timelineUtils, NotificationReworkRequestedHandler notificationReworkRequestedService) {
+    public NotificationReworkRequestedHandler(TimelineUtils timelineUtils, ReworkRequestedHandler notificationReworkRequestedService) {
         super(timelineUtils);
         this.notificationReworkRequestedService = notificationReworkRequestedService;
     }
@@ -28,21 +30,14 @@ public class ReworkRequestHandler extends AbstractActionEventHandler {
     @Override
     public void handle(Action action, MessageHeaders headers) {
         final String processName = ActionType.NOTIFICATION_REWORK_REQUESTED.name();
+        log.debug("Handle action of type NOTIFICATION_REWORK_REQUESTED, with payload {}", action);
+        HandleEventUtils.addIunAndRecIndexAndCorrIdToMdc(action.getIun(), action.getRecipientIndex(), action.getActionId());
+        log.logStartingProcess(processName);
 
-        try {
-            log.debug("Handle action of type NOTIFICATION_REWORK_REQUESTED, with payload {}", action);
-            HandleEventUtils.addIunAndRecIndexAndCorrIdToMdc(action.getIun(), action.getRecipientIndex(), action.getActionId());
-
-            log.logStartingProcess(processName);
-            checkNotificationCancelledAndExecute(
-                    action,
-                    notificationReworkRequestedService::handleNotificationReworkRequested
-            );
-            log.logEndingProcess(processName);
-        } catch (Exception ex) {
-            log.logEndingProcess(processName, false, ex.getMessage());
-            HandleEventUtils.handleException(headers, ex);
-            throw ex;
-        }
+        MDCUtils.addMDCToContextAndExecute(Mono.just(action)
+                        .flatMap(notificationReworkRequestedService::handleNotificationReworkRequested)
+                        .doOnSuccess(resultFromAsync -> log.logEndingProcess(processName))
+                        .doOnError(error -> log.logEndingProcess(processName, false, error.getMessage())))
+                .block();
     }
 }

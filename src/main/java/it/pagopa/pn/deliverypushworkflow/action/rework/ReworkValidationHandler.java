@@ -54,7 +54,7 @@ import static it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineEle
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class NotificationReworkValidationHandler {
+public class ReworkValidationHandler {
 
 
     private final CheckAddressApi checkAddressApi;
@@ -66,13 +66,13 @@ public class NotificationReworkValidationHandler {
     private final PnDeliveryPushWorkflowConfigs pnDeliveryPushWorkflowConfigs;
     private final SafeStorageService safeStorageService;
 
-    public void handleNotificationRework(Action action) {
+    public Mono<Void> handleNotificationRework(Action action) {
         log.info("Start handleRework - iun {} id {}", action.getIun(), action.getRecipientIndex());
         NotificationReworkInfo reworkInfo = new NotificationReworkInfo();
         reworkInfo.setAction(action);
         reworkInfo.setActionDetail(((NotificationReworkValidationDetails) action.getDetails()));
 
-        Mono.just(reworkInfo)
+        return Mono.just(reworkInfo)
                 .flatMap(this::checkNotificationCancelledAndThrow)
                 .flatMap(this::checkNotificationStatusAndThrow)
                 .flatMap(this::retrieveTimeline)
@@ -84,12 +84,9 @@ public class NotificationReworkValidationHandler {
                 .flatMap(requestId -> checkNotificationAddress(reworkInfo))
                 .flatMap(info -> this.checkErrorList(info.getErrorList(), info.getAction(), reworkInfo.getActionDetail(), info.getRequestId()))
                 .onErrorResume(NotificationReworkValidationException.class, e -> {
-                    log.error("Errore durante handleRework per iun {}: {}", action.getIun(), e.getMessage(), e);
+                    log.error("Error during handleRework for iun {}: {}", action.getIun(), e.getMessage(), e);
                     return this.checkErrorList(e.getErrors(), action, reworkInfo.getActionDetail(), null);
-                })
-                .doOnSuccess(v -> log.info("handleRework completato per iun {}", action.getIun()))
-                .block();
-
+                });
     }
 
     private Mono<NotificationReworkInfo> checkNotificationCancelledAndThrow(NotificationReworkInfo externalInfo) {
@@ -161,7 +158,7 @@ public class NotificationReworkValidationHandler {
     }
 
     private String computeRequestId(NotificationReworkInfo info) {
-        log.debug("computeRequestId per iun {}", info.getAction().getIun());
+        log.debug("computeRequestId for iun {}", info.getAction().getIun());
         return info.getTimeline().stream()
                 .filter(timelineElement -> timelineElement.getCategory().equals(TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE))
                 .filter(timelineElement -> timelineElement.getElementId().contains(ATTEMPT + info.getActionDetail().getReworkAttempt()))
@@ -172,19 +169,19 @@ public class NotificationReworkValidationHandler {
     }
 
     private Mono<NotificationReworkInfo> checkNotificationAddress(NotificationReworkInfo externalInfo) {
-        log.debug("checkNotificationAddress per iun {}, requestId {}", externalInfo.getAction().getIun(), externalInfo.getRequestId());
+        log.debug("checkNotificationAddress for iun {}, requestId {}", externalInfo.getAction().getIun(), externalInfo.getRequestId());
         return Mono.just(externalInfo)
                 .flatMap(info -> {
                     int range = pnDeliveryPushWorkflowConfigs.getReworkTTLAddressRange();
                     CheckAddressResponse response = checkAddressApi.checkAddress(info.getRequestId());
                     if (Boolean.TRUE.equals(response.getFound())) {
-                        log.info("Indirizzo trovato per requestId {}", info.getRequestId());
+                        log.info("Address found for requestId {}", info.getRequestId());
                         if (response.getEndValidity() != null && response.getEndValidity().minus(range, ChronoUnit.DAYS).isBefore(Instant.now())) {
-                            log.warn("Indirizzo per requestId {} scade tra meno di {} giorni", info.getRequestId(), range);
+                            log.warn("Address for requestId {} expires in less than {} days", info.getRequestId(), range);
                             info.getErrorList().add(NotificationReworkError.builder().cause(NotificationReworkErrorCause.INVALID_ANALOG_ADDRESS.getCause()).description(String.format(NotificationReworkErrorCause.INVALID_ANALOG_ADDRESS.getErrorDetails(), DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneOffset.UTC).format(response.getEndValidity()))).build());
                         }
                     } else {
-                        log.warn("Indirizzo non trovato per requestId {}", info.getRequestId());
+                        log.warn("Address not found for requestId {}", info.getRequestId());
                         info.getErrorList().add(NotificationReworkError.builder().cause(NotificationReworkErrorCause.EXPIRED_ANALOG_ADDRESS.getCause()).description(NotificationReworkErrorCause.EXPIRED_ANALOG_ADDRESS.getErrorDetails()).build());
                     }
                     return Mono.just(info);
@@ -192,14 +189,14 @@ public class NotificationReworkValidationHandler {
     }
 
     private Mono<Void> checkErrorList(List<NotificationReworkError> errorList, Action action, NotificationReworkValidationDetails detail, String requestId) {
-        log.debug("checkErrorList per iun {}: {}", action.getIun(), errorList);
+        log.debug("checkErrorList for iun {}: {}", action.getIun(), errorList);
         return Mono.just(errorList)
                 .flatMap(errors -> {
                     if (errors.isEmpty()) {
-                        log.info("Nessun errore trovato, inserisco nuova action per iun {}", action.getIun());
+                        log.info("No errors found, inserting new action for iun {}", action.getIun());
                         actionManagerApi.insertAction(getNewAction(action, detail, requestId));
                     } else {
-                        log.error("Errori trovati per iun {}: {}", action, errors);
+                        log.error("Errors found for iun {}: {}", action, errors);
                         reworkRequestEventPool.scheduleFutureAction(getReworkRequestEventAction(errors, detail, action), ReworkRequestEventType.NOTIFICATION_REWORK_REQUESTED);
                     }
                     return Mono.empty();
@@ -242,8 +239,8 @@ public class NotificationReworkValidationHandler {
         boolean isStatusViewed = STATUS_VIEWED.equals(status);
 
         if (!containsCategory(timeline, TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK)) {
-            log.warn("La timeline non contiene l'elemento SEND_ANALOG_FEEDBACK necessario a procedere con la richiesta di invalidazione per lo iun: [{}] , recIndex: [{}] e attemptId: [{}]", info.getAction().getIun(), recIndex, attempt);
-            return fail(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT, "SEND_ANALOG_FEEDBACK assente");
+            log.warn("Timeline does not contain the SEND_ANALOG_FEEDBACK element required to proceed with the invalidation request for iun: [{}], recIndex: [{}], attemptId: [{}]", info.getAction().getIun(), recIndex, attempt);
+            return fail(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT, "SEND_ANALOG_FEEDBACK missing");
         }
 
         if (containsCategory(timeline, TimelineElementCategoryInt.REFINEMENT) || containsCategory(timeline, TimelineElementCategoryInt.ANALOG_WORKFLOW_RECIPIENT_DECEASED)) {
@@ -260,8 +257,8 @@ public class NotificationReworkValidationHandler {
                 return checkViewedDateWithSchedulingDate(viewedDate, info, recIndex, attempt);
             }
         } else {
-            log.warn("La timeline non contiene gli elementi finali (REFINEMENT o ANALOG_WORKFLOW_RECIPIENT_DECEASED) necessari a procedere con la richiesta di invalidazione per lo iun: [{}] , recIndex: [{}] e attemptId: [{}]", info.getAction().getIun(), recIndex, attempt);
-            return fail(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT, "REFINEMENT e ANALOG_WORKFLOW_RECIPIENT_DECEASED assenti");
+            log.warn("Timeline does not contain the final elements (REFINEMENT or ANALOG_WORKFLOW_RECIPIENT_DECEASED) required to proceed with the invalidation request for iun: [{}], recIndex: [{}], attemptId: [{}]", info.getAction().getIun(), recIndex, attempt);
+            return fail(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT, "REFINEMENT and ANALOG_WORKFLOW_RECIPIENT_DECEASED missing");
         }
     }
 
@@ -289,8 +286,8 @@ public class NotificationReworkValidationHandler {
 
     private Mono<Void> checkViewedDateWithRefinementDate(Instant viewedDate, Instant refinementDate, String recIndex, String attempt, String iun) {
         if (Objects.nonNull(viewedDate) && viewedDate.isAfter(refinementDate)) {
-            log.warn("Il refinement della notifica è in corso, non è possibile procedere alla richiesta di invalidazione per lo iun: [{}] , recIndex: [{}] e attemptId: [{}]", iun, recIndex, attempt);
-            return fail(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT, "Refinement in corso");
+            log.warn("Notification refinement is in progress, it is not possible to proceed with the invalidation request for iun: [{}], recIndex: [{}], attemptId: [{}]", iun, recIndex, attempt);
+            return fail(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT, "Refinement in progress");
         }
         return Mono.empty();
     }
@@ -308,21 +305,19 @@ public class NotificationReworkValidationHandler {
             schedulingDays = pnDeliveryPushWorkflowConfigs.getTimeParams().getSchedulingDaysFailureAnalogRefinement();
             notificationDate = analogFailureWorkflow.get().getNotificationSentAt();
         } else {
-            log.warn("Il destinatario risulta deceduto, non è possibile procedere alla richiesta di invalidazione per lo iun: [{}] , recIndex: [{}] e attemptId: [{}]", info.getAction().getIun(), recIndex, attempt);
-            return fail(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT, "Refinement in corso");
+            log.warn("The recipient is deceased, it is not possible to proceed with the invalidation request for iun: [{}], recIndex: [{}], attemptId: [{}]", info.getAction().getIun(), recIndex, attempt);
+            return fail(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT, "Refinement in progress");
         }
 
         Instant schedulingDate = notificationDate.plus(schedulingDays);
 
         if (Objects.nonNull(viewedDate) && Objects.nonNull(schedulingDate) && viewedDate.isAfter(schedulingDate)) {
-            log.warn("Il refinement della notifica è in corso, non è possibile procedere alla richiesta di invalidazione per lo iun: [{}] , recIndex: [{}] e attemptId: [{}]", info.getAction().getIun(), recIndex, attempt);
-            return fail(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT, "Refinement in corso");
+            log.warn("Notification refinement is in progress, it is not possible to proceed with the invalidation request for iun: [{}], recIndex: [{}], attemptId: [{}]", info.getAction().getIun(), recIndex, attempt);
+            return fail(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT, "Refinement in progress");
         }
 
         return Mono.empty();
-
     }
-
 
     private boolean containsCategory(Set<TimelineElementInternal> timeline, TimelineElementCategoryInt category) {
         return timeline.stream().anyMatch(e -> e.getCategory() == category);
