@@ -148,6 +148,15 @@ public enum ActionType {
     public String buildActionId(Action action) {
       return String.format("%s_notification_rework_validation", action.getIun());
     }
+  },
+
+  NOTIFICATION_REWORK_REQUESTED(NotificationReworkRequestedDetails.class) {
+    @Override
+    public String buildActionId(Action action) {
+
+      return String.format("notification_rework_requested_%s",
+              action.getIun());
+    }
   };
 
   private final Class<? extends ActionDetails> detailsJavaClass;

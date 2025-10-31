@@ -46,7 +46,7 @@ import java.util.Set;
 import static org.mockito.Mockito.*;
 
 @org.junit.jupiter.api.extension.ExtendWith(MockitoExtension.class)
-class NotificationReworkValidationHandlerTest {
+class ReworkValidationHandlerTest {
 
     @Mock
     private CheckAddressApi checkAddressApi;
@@ -65,11 +65,11 @@ class NotificationReworkValidationHandlerTest {
     @Mock
     private SafeStorageService safeStorageService;
 
-    private NotificationReworkValidationHandler notificationReworkHandler;
+    private ReworkValidationHandler notificationReworkHandler;
 
     @BeforeEach
     void setup() {
-        notificationReworkHandler = new NotificationReworkValidationHandler(checkAddressApi, actionManagerApi, notificationService, timelineService, timelineUtils, reworkRequestEventPool, pnDeliveryPushWorkflowConfigs, safeStorageService);
+        notificationReworkHandler = new ReworkValidationHandler(checkAddressApi, actionManagerApi, notificationService, timelineService, timelineUtils, reworkRequestEventPool, pnDeliveryPushWorkflowConfigs, safeStorageService);
     }
 
     @Test
@@ -130,7 +130,7 @@ class NotificationReworkValidationHandlerTest {
         response.setEndValidity(Instant.now().plus(20, java.time.temporal.ChronoUnit.DAYS));
         when(checkAddressApi.checkAddress(anyString())).thenReturn(response);
 
-        notificationReworkHandler.handleNotificationRework(action);
+        notificationReworkHandler.handleNotificationRework(action).block();
 
         verify(actionManagerApi, times(1)).insertAction(any());
         verify(reworkRequestEventPool, never()).scheduleFutureAction(any(), any());
@@ -161,7 +161,7 @@ class NotificationReworkValidationHandlerTest {
 
         ArgumentCaptor<ReworkRequestEventAction> captor = ArgumentCaptor.forClass(ReworkRequestEventAction.class);
 
-        notificationReworkHandler.handleNotificationRework(action);
+        notificationReworkHandler.handleNotificationRework(action).block();
 
         verify(actionManagerApi, never()).insertAction(any());
         verify(reworkRequestEventPool, times(1)).scheduleFutureAction(captor.capture(), any());
@@ -189,7 +189,7 @@ class NotificationReworkValidationHandlerTest {
         when(timelineUtils.checkIsNotificationCancellationRequested(any())).thenReturn(false);
         when(notificationService.getNotificationByIun(any())).thenReturn(notification);
 
-        notificationReworkHandler.handleNotificationRework(action);
+        notificationReworkHandler.handleNotificationRework(action).block();
 
         verify(actionManagerApi, never()).insertAction(any());
 
@@ -223,7 +223,7 @@ class NotificationReworkValidationHandlerTest {
         notificationHistoryResponse.setNotificationStatus(NotificationStatus.DELIVERED);
         when(timelineService.getTimelineAndStatusHistory(any(),anyInt(),any())).thenReturn(notificationHistoryResponse);
 
-        notificationReworkHandler.handleNotificationRework(action);
+        notificationReworkHandler.handleNotificationRework(action).block();
 
         verify(actionManagerApi, never()).insertAction(any());
 
@@ -258,7 +258,7 @@ class NotificationReworkValidationHandlerTest {
         notificationHistoryResponse.setNotificationStatus(NotificationStatus.REFUSED);
         when(timelineService.getTimelineAndStatusHistory(any(),anyInt(),any())).thenReturn(notificationHistoryResponse);
 
-        notificationReworkHandler.handleNotificationRework(action);
+        notificationReworkHandler.handleNotificationRework(action).block();
 
         verify(actionManagerApi, never()).insertAction(any());
 
@@ -311,7 +311,7 @@ class NotificationReworkValidationHandlerTest {
         when(notificationService.getNotificationByIun(any())).thenReturn(notification);
         when(timelineService.getTimelineAndStatusHistory(any(),anyInt(),any())).thenReturn(notificationHistoryResponse);
 
-        notificationReworkHandler.handleNotificationRework(action);
+        notificationReworkHandler.handleNotificationRework(action).block();
 
         verify(actionManagerApi, never()).insertAction(any());
 
@@ -358,7 +358,7 @@ class NotificationReworkValidationHandlerTest {
         when(notificationService.getNotificationByIun(any())).thenReturn(notification);
         when(timelineService.getTimelineAndStatusHistory(any(),anyInt(),any())).thenReturn(notificationHistoryResponse);
 
-        notificationReworkHandler.handleNotificationRework(action);
+        notificationReworkHandler.handleNotificationRework(action).block();
 
         verify(actionManagerApi, never()).insertAction(any());
 
@@ -421,7 +421,7 @@ class NotificationReworkValidationHandlerTest {
         when(notificationService.getNotificationByIun(any())).thenReturn(notification);
         when(timelineService.getTimelineAndStatusHistory(any(),anyInt(),any())).thenReturn(notificationHistoryResponse);
 
-        notificationReworkHandler.handleNotificationRework(action);
+        notificationReworkHandler.handleNotificationRework(action).block();
 
         verify(actionManagerApi, never()).insertAction(any());
 
@@ -429,7 +429,7 @@ class NotificationReworkValidationHandlerTest {
         verify(reworkRequestEventPool, times(1)).scheduleFutureAction(captor.capture(), any());
         List<NotificationReworkError> capturedErrorList = captor.getValue().getError();
         Assertions.assertEquals(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT.getCause(), capturedErrorList.getFirst().getCause());
-        Assertions.assertEquals("Refinement in corso", capturedErrorList.getFirst().getDescription());
+        Assertions.assertEquals("Refinement in progress", capturedErrorList.getFirst().getDescription());
     }
 
     @Test
@@ -468,7 +468,7 @@ class NotificationReworkValidationHandlerTest {
         when(notificationService.getNotificationByIun(any())).thenReturn(notification);
         when(timelineService.getTimelineAndStatusHistory(any(),anyInt(),any())).thenReturn(notificationHistoryResponse);
 
-        notificationReworkHandler.handleNotificationRework(action);
+        notificationReworkHandler.handleNotificationRework(action).block();
 
         verify(actionManagerApi, never()).insertAction(any());
 
@@ -476,7 +476,7 @@ class NotificationReworkValidationHandlerTest {
         verify(reworkRequestEventPool, times(1)).scheduleFutureAction(captor.capture(), any());
         List<NotificationReworkError> capturedErrorList = captor.getValue().getError();
         Assertions.assertEquals(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT.getCause(), capturedErrorList.getFirst().getCause());
-        Assertions.assertEquals("REFINEMENT e ANALOG_WORKFLOW_RECIPIENT_DECEASED assenti", capturedErrorList.getFirst().getDescription());
+        Assertions.assertEquals("REFINEMENT and ANALOG_WORKFLOW_RECIPIENT_DECEASED missing", capturedErrorList.getFirst().getDescription());
     }
 
     @Test
@@ -537,7 +537,7 @@ class NotificationReworkValidationHandlerTest {
         when(notificationService.getNotificationByIun(any())).thenReturn(notification);
         when(timelineService.getTimelineAndStatusHistory(any(),anyInt(),any())).thenReturn(notificationHistoryResponse);
 
-        notificationReworkHandler.handleNotificationRework(action);
+        notificationReworkHandler.handleNotificationRework(action).block();
 
         verify(actionManagerApi, never()).insertAction(any());
 
@@ -609,7 +609,7 @@ class NotificationReworkValidationHandlerTest {
         response.setEndValidity(Instant.now().plus(20, java.time.temporal.ChronoUnit.DAYS));
         when(checkAddressApi.checkAddress(anyString())).thenReturn(response);
 
-        notificationReworkHandler.handleNotificationRework(action);
+        notificationReworkHandler.handleNotificationRework(action).block();
 
         verify(actionManagerApi, never()).insertAction(any());
 
@@ -680,7 +680,7 @@ class NotificationReworkValidationHandlerTest {
         response.setEndValidity(Instant.now().plus(20, java.time.temporal.ChronoUnit.DAYS));
         when(checkAddressApi.checkAddress(anyString())).thenReturn(response);
 
-        notificationReworkHandler.handleNotificationRework(action);
+        notificationReworkHandler.handleNotificationRework(action).block();
 
         verify(actionManagerApi, never()).insertAction(any());
 
@@ -749,7 +749,7 @@ class NotificationReworkValidationHandlerTest {
         response.setEndValidity(Instant.now().plus(20, java.time.temporal.ChronoUnit.DAYS));
         when(checkAddressApi.checkAddress(anyString())).thenReturn(response);
 
-        notificationReworkHandler.handleNotificationRework(action);
+        notificationReworkHandler.handleNotificationRework(action).block();
 
         verify(actionManagerApi, never()).insertAction(any());
 
@@ -819,7 +819,7 @@ class NotificationReworkValidationHandlerTest {
         response.setEndValidity(Instant.now().plus(5, java.time.temporal.ChronoUnit.DAYS));
         when(checkAddressApi.checkAddress(anyString())).thenReturn(response);
 
-        notificationReworkHandler.handleNotificationRework(action);
+        notificationReworkHandler.handleNotificationRework(action).block();
 
         verify(actionManagerApi, never()).insertAction(any());
 
