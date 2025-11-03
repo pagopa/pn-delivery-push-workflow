@@ -56,7 +56,7 @@ public class PaperTrackerClientMock implements PaperTrackerClient {
     }
 
     @Override
-    public TrackingsResponse getTrackingResponse(String prepareRequestId) {
+    public TrackingsResponse retrieveTrackingsByAttemptId(String prepareRequestId) {
         return getTrackingResponseAndTimelineFeedback(prepareRequestId);
     }
 
