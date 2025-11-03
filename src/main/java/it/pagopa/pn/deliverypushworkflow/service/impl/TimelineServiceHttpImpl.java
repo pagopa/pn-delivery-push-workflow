@@ -83,6 +83,7 @@ public class TimelineServiceHttpImpl implements TimelineService {
 
     @Override
     public Set<TimelineElementInternal> getTimeline(String iun, boolean confidentialInfoRequired) {
+
         log.debug("getTimeline - IUN={} and confidentialInfoRequired={}", iun, confidentialInfoRequired);
 
         return new HashSet<>(Optional.ofNullable(timelineClient.getTimeline(iun, confidentialInfoRequired, false, null))

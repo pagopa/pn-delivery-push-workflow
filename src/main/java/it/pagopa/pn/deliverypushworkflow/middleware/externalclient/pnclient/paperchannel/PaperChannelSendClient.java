@@ -8,6 +8,7 @@ public interface PaperChannelSendClient {
     String CLIENT_NAME = PnLogger.EXTERNAL_SERVICES.PN_PAPER_CHANNEL;
     String PREPARE_ANALOG_NOTIFICATION = "PREPARE ANALOG NOTIFICATION";
     String SEND_ANALOG_NOTIFICATION = "SEND ANALOG NOTIFICATION";
+    String INIT_ANALOG_NOTIFICATION_REWORK = "INIT ANALOG NOTIFICATION REWORK";
 
 
     /**
@@ -25,5 +26,7 @@ public interface PaperChannelSendClient {
      * @param paperChannelSendRequest@return ritorna il costo dell'invio in euro-cent
      */
     SendResponse send(PaperChannelSendRequest paperChannelSendRequest);
+
+    void init(String requestId, String reworkId);
 
 }

@@ -90,6 +90,23 @@ public class PaperChannelMock implements PaperChannelSendClient {
                 .envelopeWeight(100);
     }
 
+    @Override
+    public void init(String requestId, String reworkId) {
+        log.info("[TEST] initRework requestId:{} reworkId:{}", requestId, reworkId);
+
+
+        ThreadPool.start(new Thread(() -> {
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+            Assertions.assertDoesNotThrow(() -> simulateSendResponse(requestId, reworkId));
+
+        }));
+    }
+
 
     private void simulatePrepareResponse(String timelineEventId,  String address) {
         PaperChannelUpdate singleStatusUpdate = new PaperChannelUpdate();
