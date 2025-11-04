@@ -14,7 +14,6 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.Notificat
 import it.pagopa.pn.deliverypushworkflow.dto.ext.publicregistry.NationalRegistriesResponse;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ContactPhaseInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.DeliveryModeInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ProbableDateAnalogWorkflowDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ActionType;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.impl.TimeParams;
 import it.pagopa.pn.deliverypushworkflow.service.NationalRegistriesService;
@@ -245,8 +244,6 @@ class ChooseDeliveryModeHandlerTest {
         Integer recIndex = notificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
         when(chooseDeliveryUtils.retrieveSpecialAddress(notification, recIndex)).thenReturn(null);
         when(chooseDeliveryUtils.retrievePlatformAddress(notification, recIndex)).thenReturn(Optional.empty());
-        ProbableDateAnalogWorkflowDetailsInt probableDateAnalogWorkflowDetails = new ProbableDateAnalogWorkflowDetailsInt();
-        probableDateAnalogWorkflowDetails.setSchedulingAnalogDate(Instant.now());
 
         CourtesyMessagesReport courtesyMessagesReport = new CourtesyMessagesReport();
         Instant expectedDate = Instant.now();
@@ -260,8 +257,8 @@ class ChooseDeliveryModeHandlerTest {
 
         verify(chooseDeliveryUtils, times(1)).addAvailabilitySourceToTimeline(anyInt(), any(NotificationInt.class), eq(DigitalAddressSourceInt.GENERAL), eq(false));
         verifyNoInteractions(digitalWorkFlowHandler);
-        verify(chooseDeliveryUtils, times(1)).addScheduleAnalogWorkflowToTimeline(recIndex, notification, probableDateAnalogWorkflowDetails.getSchedulingAnalogDate());
-        verify(schedulerService, times(1)).scheduleEvent(notification.getIun(), recIndex, probableDateAnalogWorkflowDetails.getSchedulingAnalogDate(), ActionType.ANALOG_WORKFLOW);
+        verify(chooseDeliveryUtils, times(1)).addScheduleAnalogWorkflowToTimeline(recIndex, notification, expectedDate);
+        verify(schedulerService, times(1)).scheduleEvent(notification.getIun(), recIndex, expectedDate, ActionType.ANALOG_WORKFLOW);
 
     }
 
@@ -278,8 +275,6 @@ class ChooseDeliveryModeHandlerTest {
         Integer recIndex = notificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
         when(chooseDeliveryUtils.retrieveSpecialAddress(notification, recIndex)).thenReturn(null);
         when(chooseDeliveryUtils.retrievePlatformAddress(notification, recIndex)).thenReturn(Optional.of(recipient.getDigitalDomicile()));
-        ProbableDateAnalogWorkflowDetailsInt probableDateAnalogWorkflowDetails = new ProbableDateAnalogWorkflowDetailsInt();
-        probableDateAnalogWorkflowDetails.setSchedulingAnalogDate(Instant.now());
 
         //WHEN
         handler.handleGeneralAddressResponse(response, notification, recIndex);
@@ -303,8 +298,6 @@ class ChooseDeliveryModeHandlerTest {
         NotificationRecipientInt recipient =notification.getRecipients().get(0);
         Integer recIndex = notificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
         when(chooseDeliveryUtils.retrieveSpecialAddress(notification, recIndex)).thenReturn(recipient.getDigitalDomicile());
-        ProbableDateAnalogWorkflowDetailsInt probableDateAnalogWorkflowDetails = new ProbableDateAnalogWorkflowDetailsInt();
-        probableDateAnalogWorkflowDetails.setSchedulingAnalogDate(Instant.now());
 
         //WHEN
         handler.handleGeneralAddressResponse(response, notification, recIndex);
