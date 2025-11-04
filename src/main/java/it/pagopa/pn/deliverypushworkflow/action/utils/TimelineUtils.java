@@ -21,6 +21,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventId;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventIdBuilder;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.*;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.SendResponse;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationStatusHistoryElementV26;
 import it.pagopa.pn.deliverypushworkflow.service.NotificationProcessCostService;
 import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import lombok.extern.slf4j.Slf4j;
@@ -1397,6 +1398,32 @@ public class TimelineUtils {
     public String getIunFromTimelineId(String timelineId) {
         //<timelineId = CATEGORY_VALUE>;IUN_<IUN_VALUE>;RECINDEX_<RECINDEX_VALUE>...
         return timelineId.split("\\" + TimelineEventIdBuilder.DELIMITER)[1].replace("IUN_", "");
+    }
+
+    public TimelineElementInternal buildNotificationTimelineReworkedTimelineElement(
+            NotificationInt notification,
+            Integer recIndex, Integer sentAttemptMade,
+            List<NotificationStatusHistoryElementV26> invalidatedTimelineAndStatusHistory,
+            String reason, String categoryType
+    ) {
+        log.debug("buildNotificationTimelineReworkedTimelineElement - iun={} and recIndex={}", notification.getIun(), recIndex);
+
+        String elementId = TimelineEventId.NOTIFICATION_TIMELINE_REWORKED.buildEventId(
+                EventId.builder()
+                        .iun(notification.getIun())
+                        .recIndex(recIndex)
+                        .build());
+
+        NotificationTimelineReworkedDetailsInt details = NotificationTimelineReworkedDetailsInt.builder()
+                .recIndex(recIndex)
+                .sentAttemptMade(sentAttemptMade)
+                .invalidatedTimelineAndStatusHistory(invalidatedTimelineAndStatusHistory)
+                .reason(reason)
+                .categoryType(categoryType)
+                .build();
+
+
+        return buildTimeline(notification, TimelineElementCategoryInt.NOTIFICATION_TIMELINE_REWORKED, elementId, details);
     }
 
 }
