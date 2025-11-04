@@ -69,10 +69,10 @@ class ReworkRequestedHandlerTest {
     void handleNotificationReworkRequested_OK() {
         // Arrange
         NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
-        details.setRecIndex("RECINDEX_0");
-        details.setAttempt("ATTEMPT_0");
+        details.setReworkRecIndex("RECINDEX_0");
+        details.setReworkAttempt("ATTEMPT_0");
         details.setCreatedAt(Instant.now());
-        details.setReworkrequestId("REQID");
+        details.setReworkRequestId("REQID");
         details.setReworkId("REWID");
 
         Action action = Action.builder()
@@ -110,10 +110,10 @@ class ReworkRequestedHandlerTest {
     void handleNotificationReworkRequested_OK_ATTEMPT1() {
         // Arrange
         NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
-        details.setRecIndex("RECINDEX_0");
-        details.setAttempt("ATTEMPT_1");
+        details.setReworkRecIndex("RECINDEX_0");
+        details.setReworkAttempt("ATTEMPT_1");
         details.setCreatedAt(Instant.now());
-        details.setReworkrequestId("REQID");
+        details.setReworkRequestId("REQID");
         details.setReworkId("REWID");
 
         Action action = Action.builder()
@@ -151,10 +151,10 @@ class ReworkRequestedHandlerTest {
     void handleNotificationReworkRequested_NoInvalidableElements() {
         // Arrange
         NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
-        details.setRecIndex("RECINDEX_0");
-        details.setAttempt("ATTEMPT_0");
+        details.setReworkRecIndex("RECINDEX_0");
+        details.setReworkAttempt("ATTEMPT_0");
         details.setCreatedAt(Instant.now());
-        details.setReworkrequestId("REQID");
+        details.setReworkRequestId("REQID");
         details.setReworkId("REWID");
 
         Action action = Action.builder()
@@ -183,10 +183,10 @@ class ReworkRequestedHandlerTest {
     void handleNotificationReworkRequested_AttachmentRetentionUpdate() {
         // Arrange
         NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
-        details.setRecIndex("RECINDEX_0");
-        details.setAttempt("ATTEMPT_0");
+        details.setReworkRecIndex("RECINDEX_0");
+        details.setReworkAttempt("ATTEMPT_0");
         details.setCreatedAt(Instant.now());
-        details.setReworkrequestId("REQID");
+        details.setReworkRequestId("REQID");
         details.setReworkId("REWID");
 
         Action action = Action.builder()

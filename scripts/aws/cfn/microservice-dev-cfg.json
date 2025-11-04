@@ -23,7 +23,7 @@
     "NotificationCancellationActionInsertLambdaBatchSize": "20",
     "NewWorkflowLambdasEnabledStart": "1753881000000",
     "NewWorkflowLambdasEnabledEnd": "4070908800000",
-    "ReworkTTLAddressRange": 10,
+    "ReworkTTLAddressRange": "10",
     "DeliveryPushToNotificationReworkUpdaterQueueName": "pn-delivery_push_to_notification_rework_updater",
     "NotificationReworkDocumentExpiringRange": "30",
     "InvalidableCategories": "PREPARE_ANALOG_DOMICILE,PREPARE_ANALOG_DOMICILE_FAILURE,SEND_ANALOG_DOMICILE,SEND_ANALOG_PROGRESS,SEND_ANALOG_FEEDBACK,ANALOG_SUCCESS_WORKFLOW,ANALOG_FAILURE_WORKFLOW,SCHEDULE_REFINEMENT,REFINEMENT,COMPLETELY_UNREACHABLE_CREATION_REQUEST,COMPLETELY_UNREACHABLE,ANALOG_WORKFLOW_RECIPIENT_DECEASED"

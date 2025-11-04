@@ -341,7 +341,7 @@ public class ReworkValidationHandler {
         newAction.setNotBefore(Instant.now());
         NotificationReworkRequestedDetails request = new NotificationReworkRequestedDetails();
         request.setReworkId(action.getActionId());
-        request.setReworkrequestId(requestId);
+        request.setReworkRequestId(requestId);
         newAction.setDetails(request.toString());
         return newAction;
     }
