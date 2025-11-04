@@ -44,7 +44,7 @@ public class ReworkRequestedHandler {
     public Mono<Void> handleNotificationReworkRequested(Action action) {
         NotificationReworkRequestedDetails detail = (NotificationReworkRequestedDetails) action.getDetails();
         return Mono.just(timelineService.getTimeline(action.getIun(), true))
-                .flatMap(timeline -> computeTimelineElementToInvalidate(timeline, detail.getRecIndex(), detail.getAttempt()))
+                .flatMap(timeline -> computeTimelineElementToInvalidate(timeline, detail.getReworkRecIndex(), detail.getReworkAttempt()))
                 .doOnNext(list -> startNotificationReworkProcess(detail))
                 .thenReturn(notificationService.getNotificationByIun(action.getIun()).getDocuments())
                 .flatMap(documents -> updateAttachmentRetention(detail.getCreatedAt(), action.getIun(), documents))
@@ -120,7 +120,7 @@ public class ReworkRequestedHandler {
     }
 
     public void startNotificationReworkProcess(NotificationReworkRequestedDetails details) {
-        log.info("Starting rework process for reworkRequestId {} and reworkId {}", details.getReworkrequestId(), details.getReworkId());
-        paperChannelService.initNotificationRework(details.getReworkrequestId(), details.getReworkId());
+        log.info("Starting rework process for reworkRequestId {} and reworkId {}", details.getReworkRequestId(), details.getReworkId());
+        paperChannelService.initNotificationRework(details.getReworkRequestId(), details.getReworkId());
     }
 }

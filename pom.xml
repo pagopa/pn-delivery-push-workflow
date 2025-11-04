@@ -246,7 +246,7 @@
 						</goals>
 						<phase>generate-resources</phase>
 						<configuration>
-							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-paper-channel/364a222b71f4874f14ae5d3b43d89e31fbfc799c/docs/openapi/api-internal-v1.yaml</inputSpec>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-paper-channel/2dba088bd2b712d86a5c643274e3e0ab25816448/docs/openapi/api-internal-v1.yaml</inputSpec>
 							<templateDirectory>${project.build.directory}/dependency-resources/scripts/openapi/templates/7.4.0/client</templateDirectory>
 							<generatorName>java</generatorName>
 							<library>resttemplate</library>
@@ -810,9 +810,7 @@
 							<typeMappings>
 								<typeMapping>OffsetDateTime=java.time.Instant</typeMapping>
 							</typeMappings>
-							<inputSpec>
-								https://raw.githubusercontent.com/pagopa/pn-paper-tracker/2a00ee94cc022dd154848be0d08dfe119c79ec63/docs/openapi/api-internal-v1.yaml
-							</inputSpec>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-paper-tracker/984506ea290281aa9506f327250021c66b1cd0fd/docs/openapi/api-internal-v1.yaml</inputSpec>
 							<generatorName>java</generatorName>
 							<library>resttemplate</library>
 							<generateApiTests>false</generateApiTests>
