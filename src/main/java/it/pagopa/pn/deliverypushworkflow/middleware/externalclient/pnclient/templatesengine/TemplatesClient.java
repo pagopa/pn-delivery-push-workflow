@@ -94,7 +94,7 @@ public interface TemplatesClient {
      * @param notificationAarForSms The notification AAR for SMS to generate.
      * @return A string representing the generated legal fact.
      */
-    String notificationAarForSmsAnalog(LanguageEnum xLanguage, NotificationAarForSms notificationAarForSms);
+    String notificationAarForSmsAnalog(LanguageEnum xLanguage, NotificationAarForSmsAnalog notificationAarForSms);
 
     /**
      * Generates an AAR (Accountability and Receipt) for SMS for a digital notification in the specified language.
@@ -103,7 +103,7 @@ public interface TemplatesClient {
      * @param notificationAarForSms The notification AAR for SMS to generate.
      * @return A string representing the generated legal fact.
      */
-    String notificationAarForSmsDigital(LanguageEnum xLanguage, NotificationAarForSms notificationAarForSms);
+    String notificationAarForSmsDigital(LanguageEnum xLanguage, NotificationAarForSmsDigital notificationAarForSms);
 
     /**
      * Generates an AAR (Accountability and Receipt) for email for an analog notification in the specified language.
@@ -112,7 +112,7 @@ public interface TemplatesClient {
      * @param notificationAarForEmail The notification AAR for email to generate.
      * @return A string representing the generated legal fact.
      */
-    String notificationAarForEmailAnalog(LanguageEnum xLanguage, NotificationAarForEmail notificationAarForEmail);
+    String notificationAarForEmailAnalog(LanguageEnum xLanguage, NotificationAarForEmailAnalog notificationAarForEmail);
 
     /**
      * Generates an AAR (Accountability and Receipt) for email for a digital notification in the specified language.
@@ -121,7 +121,7 @@ public interface TemplatesClient {
      * @param notificationAarForEmail The notification AAR for email to generate.
      * @return A string representing the generated legal fact.
      */
-    String notificationAarForEmailDigital(LanguageEnum xLanguage, NotificationAarForEmail notificationAarForEmail);
+    String notificationAarForEmailDigital(LanguageEnum xLanguage, NotificationAarForEmailDigital notificationAarForEmail);
 
     /**
      * Generates a PDF based on AnalogDeliveryWorkflowTimeoutLegalFact template.

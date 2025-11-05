@@ -5,6 +5,7 @@ import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.address.CourtesyDigitalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.address.LegalDigitalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.datavault.RecipientTypeInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationDocumentInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
@@ -131,14 +132,14 @@ class ExternalChannelSendClientImplTest {
 
         assertDoesNotThrow(() -> client.sendCourtesyNotification(notificationInt, notificationRecipientInt, courtesyDigitalAddressInt, timelineEventId, aarKey, "", deliveryMode));
         Mockito.verify(legalFactGenerator, Mockito.times(deliveryMode == DeliveryModeInt.ANALOG ? 1 : 0))
-                .generateNotificationAARForSMSAnalog(notificationInt);
+                .generateNotificationAARForSMSAnalog(notificationInt, notificationRecipientInt);
         Mockito.verify(legalFactGenerator, Mockito.times(deliveryMode == DeliveryModeInt.DIGITAL ? 1 : 0))
-                .generateNotificationAARForSMSDigital(notificationInt);
+                .generateNotificationAARForSMSDigital(notificationInt, notificationRecipientInt);
 
         // Test for deliveryMode = null
         assertDoesNotThrow(() -> client.sendCourtesyNotification(notificationInt, notificationRecipientInt, courtesyDigitalAddressInt, timelineEventId, aarKey, "", null));
         Mockito.verify(legalFactGenerator, Mockito.atLeastOnce())
-                .generateNotificationAARForSMSAnalog(notificationInt);
+                .generateNotificationAARForSMSAnalog(notificationInt, notificationRecipientInt);
     }
 
     @ParameterizedTest
@@ -168,6 +169,7 @@ class ExternalChannelSendClientImplTest {
     private NotificationRecipientInt buildNotificationRecipientInt() {
         return NotificationRecipientInt.builder()
                 .taxId("CDCFSC11R99X001Z")
+                .recipientType(RecipientTypeInt.PF)
                 .denomination("Galileo Bruno")
                 .digitalDomicile(LegalDigitalAddressInt.builder()
                         .address("test@dominioPec.it")
