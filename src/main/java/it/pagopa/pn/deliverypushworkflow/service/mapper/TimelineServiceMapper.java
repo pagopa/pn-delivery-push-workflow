@@ -35,6 +35,7 @@ public class TimelineServiceMapper {
         TimelineElementCategoryInt category = TimelineElementCategoryInt.valueOf(timelineElement.getCategory().getValue());
 
         return TimelineElementInternal.builder()
+                //TODO .reworkId(timelineElement.getReworkId()) ADD SU TIMELINE SERVICE E DECOMMENTA
                 .iun(timelineElement.getIun())
                 .elementId(timelineElement.getElementId())
                 .timestamp(timelineElement.getTimestamp())
@@ -66,6 +67,7 @@ public class TimelineServiceMapper {
                 .legalFactsIds(timelineElementInternal.getLegalFactsIds() != null ? toLegalFactsIdList(timelineElementInternal.getLegalFactsIds()) : null)
                 .category(TimelineCategory.valueOf(timelineElementInternal.getCategory().name()))
                 .details(toTimelineElementDetails(timelineElementInternal.getDetails(), timelineElementInternal.getCategory().name()))
+                //TODO .reworkId(timelineElementInternal.getReworkId()) ADD SU TIMELINE SERVICE E DECOMMENTA
                 .notificationSentAt(timelineElementInternal.getNotificationSentAt());
     }
 

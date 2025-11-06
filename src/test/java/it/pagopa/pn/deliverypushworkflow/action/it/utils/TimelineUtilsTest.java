@@ -22,7 +22,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventId;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventIdBuilder;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.*;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.SendResponse;
-import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationStatusHistoryElementV26;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationStatusHistoryElement;
 import it.pagopa.pn.deliverypushworkflow.service.NotificationProcessCostService;
 import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import org.junit.jupiter.api.Assertions;
@@ -1575,13 +1575,12 @@ class TimelineUtilsTest {
         NotificationInt notification = buildNotification();
         Integer recIndex = 1;
         Integer sentAttemptMade = 1;
-        List<NotificationStatusHistoryElementV26> invalidatedTimelineAndStatusHistory = new ArrayList<>();
-        invalidatedTimelineAndStatusHistory.add(new NotificationStatusHistoryElementV26());
-        String reason = "reason";
-        String categoryType = "categoryType";
+        List<NotificationStatusHistoryElement> invalidatedTimelineAndStatusHistory = new ArrayList<>();
+        invalidatedTimelineAndStatusHistory.add(new NotificationStatusHistoryElement());
+        String reworkId = "REWORK_0_1234";
 
-        TimelineElementInternal actual = timelineUtils.buildNotificationTimelineReworkedTimelineElement(notification, recIndex, sentAttemptMade, invalidatedTimelineAndStatusHistory, reason, categoryType);
-        String timelineEventIdExpected = "NOTIFICATION_TIMELINE_REWORKED.IUN_Example_IUN_1234_Test.RECINDEX_1";
+        TimelineElementInternal actual = timelineUtils.buildNotificationTimelineReworkedTimelineElement(notification, invalidatedTimelineAndStatusHistory, recIndex, sentAttemptMade, reworkId);
+        String timelineEventIdExpected = "NOTIFICATION_TIMELINE_REWORKED.IUN_Example_IUN_1234_Test.RECINDEX_1.ATTEMPT_1.REWORK_0";
 
         Assertions.assertAll(
                 () -> Assertions.assertEquals("Example_IUN_1234_Test", actual.getIun()),

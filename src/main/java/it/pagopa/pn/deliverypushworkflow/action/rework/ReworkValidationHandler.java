@@ -342,6 +342,8 @@ public class ReworkValidationHandler {
         NotificationReworkRequestedDetails request = new NotificationReworkRequestedDetails();
         request.setReworkId(action.getActionId());
         request.setReworkRequestId(requestId);
+        request.setReworkRecIndex(detail.getReworkRecIndex());
+        request.setReworkAttempt(detail.getReworkAttempt());
         newAction.setDetails(request.toString());
         return newAction;
     }
