@@ -2,7 +2,7 @@
 
 echo "### CREATE QUEUES ###"
 
-queues="local-delivery-push-inputs.fifo local-delivery-push-actions-done local-ext-channels-outputs local-national-registries-gateway delivery-push-to-notification-rework-updater"
+queues="local-delivery-push-inputs-fifo local-delivery-push-actions-done local-ext-channels-outputs local-national-registries-gateway delivery-push-to-notification-rework-updater"
 
 for qn in  $( echo $queues | tr " " "\n" ) ; do
 
@@ -38,5 +38,11 @@ aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
         AttributeName=iun,KeyType=RANGE \
     --provisioned-throughput \
         ReadCapacityUnits=10,WriteCapacityUnits=5
+
+aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
+	ssm put-parameter \
+	--name "/config/timeline/invalidable-categories" \
+	--value "PREPARE_ANALOG_DOMICILE,PREPARE_ANALOG_DOMICILE_FAILURE,SEND_ANALOG_DOMICILE,SEND_ANALOG_PROGRESS,SEND_ANALOG_FEEDBACK,ANALOG_SUCCESS_WORKFLOW,ANALOG_FAILURE_WORKFLOW,SCHEDULE_REFINEMENT,REFINEMENT,COMPLETELY_UNREACHABLE_CREATION_REQUEST,COMPLETELY_UNREACHABLE,ANALOG_WORKFLOW_RECIPIENT_DECEASED"\
+	--type String \
 
 echo "Initialization terminated"

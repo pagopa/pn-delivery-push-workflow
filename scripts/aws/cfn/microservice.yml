@@ -357,11 +357,6 @@ Parameters:
     Default: 30
     Description: 'Number of days before document expiration is still valid for notification rework'
 
-  InvalidableCategories:
-    Type: CommaDelimitedList
-    Description: 'Categories which can be invalidated during a notification rework'
-
-
 Conditions:
     UseExternalChannelMock: !Equals [ !Ref ExternalChannelBaseUrl, "Mock" ]
 
@@ -421,7 +416,7 @@ Resources:
         ContainerEnvEntry25: !Sub 'PN_DELIVERYPUSHWORKFLOW_REWORKTTLADDRESSRANGE=${ReworkTTLAddressRange}'
         ContainerEnvEntry26: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_NOTIFICATIONREWORKUPDATEREVENT=${DeliveryPushToNotificationReworkUpdaterQueueName}'
         ContainerEnvEntry27: !Sub 'PN_DELIVERYPUSHWORKFLOW_NOTIFICATIONREWORKDOCUMENTEXPIRINGRANGE=${NotificationReworkDocumentExpiringRange}'
-        ContainerEnvEntry28: !Sub 'PN_DELIVERYPUSHWORKFLOW_INVALIDABLECATEGORIES=${InvalidableCategories}'
+        ContainerEnvEntry28: !Sub 'PN_DELIVERYPUSHWORKFLOW_INVALIDABLECATEGORIES={{resolve:ssm:/config/timeline/invalidable-categories}}'
         ApplicativeEnvFileChecksum: !Ref ApplicativeEnvFileChecksum
         ParentMicroserviceName: !Sub '${ProjectName}-delivery-push-workflow'
         JavaToolOptions: '-Dreactor.netty.ioWorkerCount=50'
@@ -519,7 +514,13 @@ Resources:
             Resource:
               - !Sub "${PaperNotificationFailedDynamoTableArn}"
               - !Sub "${DocumentCreationRequestTableArn}"
-  
+          - Effect: Allow
+            Action:
+              - 'ssm:GetParameter'
+              - 'ssm:GetParameters'
+            Resource:
+              - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/config/timeline/invalidable-categories'
+
   #### Alarm for custom metric Autoscaling
   AlarmCustomAutoscalingWorkflow:
     Type: "AWS::CloudWatch::Alarm"
