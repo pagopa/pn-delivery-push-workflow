@@ -1,19 +1,13 @@
 package it.pagopa.pn.deliverypushworkflow.service.mapper;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.raddalt.model.CheckCoverageRequest;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
+@AllArgsConstructor
 public class RaddAltMapper {
-    private final ObjectMapper objectMapper;
-
-    public RaddAltMapper(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper.copy();
-        this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-    }
 
     public CheckCoverageRequest fromRequestIntToRequestExt(PhysicalAddressInt physicalAddressInt) {
         if (physicalAddressInt == null) return null;

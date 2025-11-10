@@ -1,6 +1,5 @@
 package it.pagopa.pn.deliverypushworkflow.service.mapper;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.raddalt.model.CheckCoverageRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,7 +13,7 @@ class RaddAltMapperTest {
 
     @BeforeEach
     void setUp() {
-        mapper = new RaddAltMapper(new ObjectMapper());
+        mapper = new RaddAltMapper();
     }
 
     @Test

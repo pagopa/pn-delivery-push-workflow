@@ -19,7 +19,7 @@ public class RaddAltClientImpl extends CommonBaseClient implements RaddAltClient
 
     @Override
     public CheckCoverageResponse checkCoverage(SearchMode searchMode, CheckCoverageRequest checkCoverageRequest, LocalDate searchDate) {
-        log.logInvokingAsyncExternalService(CLIENT_NAME, CHECK_COVERAGE_PROCESS_NAME, null);
+        log.logInvokingExternalDownstreamService(CLIENT_NAME, CHECK_COVERAGE_PROCESS_NAME);
         return coveragePrivateApi.checkCoverage(searchMode, checkCoverageRequest, searchDate);
     }
 }
