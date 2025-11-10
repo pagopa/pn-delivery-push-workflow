@@ -103,8 +103,6 @@ public class PnDeliveryPushWorkflowConfigs {
 
     private Instant startAnalogWorkflowTimeoutFeatureDate;
 
-    private Instant sendCourtesyAtChooseDeliveryActivationDate;
-
     @Data
     public static class Topics {
         private String newNotifications;

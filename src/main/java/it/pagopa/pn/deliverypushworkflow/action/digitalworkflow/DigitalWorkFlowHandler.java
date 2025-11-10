@@ -81,9 +81,7 @@ public class DigitalWorkFlowHandler {
                 null,
                 false);
 
-        if (featureEnabledUtils.isSendCourtesyAtChooseDeliveryEnabled(notification.getSentAt())) {
-            courtesyMessageUtils.checkAddressesAndSendCourtesyMessage(notification, recIndex, DeliveryModeInt.DIGITAL);
-        }
+        courtesyMessageUtils.checkAddressesAndSendCourtesyMessage(notification, recIndex, DeliveryModeInt.DIGITAL);
     }
 
     /**

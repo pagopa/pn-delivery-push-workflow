@@ -9,12 +9,10 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.Notificat
 import it.pagopa.pn.deliverypushworkflow.dto.ext.publicregistry.NationalRegistriesResponse;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ContactPhaseInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.DeliveryModeInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ProbableDateAnalogWorkflowDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ActionType;
 import it.pagopa.pn.deliverypushworkflow.service.NationalRegistriesService;
 import it.pagopa.pn.deliverypushworkflow.service.NotificationService;
 import it.pagopa.pn.deliverypushworkflow.service.SchedulerService;
-import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import it.pagopa.pn.deliverypushworkflow.utils.FeatureEnabledUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,8 +21,6 @@ import org.springframework.util.StringUtils;
 
 import java.time.Instant;
 import java.util.Optional;
-
-import static it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt.PROBABLE_SCHEDULING_ANALOG_DATE;
 
 @Component
 @Slf4j
@@ -35,7 +31,6 @@ public class ChooseDeliveryModeHandler {
     private final NationalRegistriesService nationalRegistriesService;
     private final ChooseDeliveryModeUtils chooseDeliveryUtils;
     private final NotificationService notificationService;
-    private final TimelineService timelineService;
     private final FeatureEnabledUtils featureEnabledUtils;
     private final CourtesyMessageUtils courtesyMessageUtils;
     private static final String PROBABLE_SCHEDULING_ANALOG_DATE_FOUND = "ProbableSchedulingAnalogDate is present, need to schedule analog workflow at";
@@ -139,35 +134,10 @@ public class ChooseDeliveryModeHandler {
         String iun = notification.getIun();
         log.debug("Scheduling analog workflow for iun={} id={} ", iun, recIndex);
 
-        Instant schedulingDate = null;
-
-        // In base alla data di creazione della notifica, verifichiamo se il flusso di invio dei messaggi di cortesia è già stato eseguito
-        // durante la generazione dell'AAR (recuperiamo la data di scheduling se almeno un messaggio è stato inviato),
-        // oppure se il messaggio di cortesia deve essere inviato in questa fase (recuperiamo la data di scheduling se almeno un messaggio è stato inviato),
-        // oppure se occorre schedulare subito l'analog workflow (in caso non siano stati inviati messaggi di cortesia).
-        if (featureEnabledUtils.isSendCourtesyAtAARGenerationEnabled(notification.getSentAt())) {
-            schedulingDate = retrieveProbableSchedulingAnalogDate(notification, recIndex, iun);
-        } else if (featureEnabledUtils.isSendCourtesyAtChooseDeliveryEnabled(notification.getSentAt())) {
-            schedulingDate = sendCourtesyMessagesAndRetrieveProbableSchedulingAnalogDate(notification, recIndex, iun);
-        }
+        Instant schedulingDate = sendCourtesyMessagesAndRetrieveProbableSchedulingAnalogDate(notification, recIndex, iun);
 
         chooseDeliveryUtils.addScheduleAnalogWorkflowToTimeline(recIndex, notification, schedulingDate);
         schedulerService.scheduleEvent(iun, recIndex, schedulingDate, ActionType.ANALOG_WORKFLOW);
-    }
-
-    private Instant retrieveProbableSchedulingAnalogDate(NotificationInt notification, Integer recIndex, String iun) {
-        Instant schedulingDate;
-        schedulingDate = timelineService.getTimelineElementDetailForSpecificRecipient(notification.getIun(),
-                        recIndex, false, PROBABLE_SCHEDULING_ANALOG_DATE, ProbableDateAnalogWorkflowDetailsInt.class )
-                .map(details -> {
-                    log.info(PROBABLE_SCHEDULING_ANALOG_DATE_FOUND + " ={} - iun={} id={} ", details.getSchedulingAnalogDate(), iun, recIndex);
-                    return details.getSchedulingAnalogDate();
-                })
-                .orElseGet(() -> {
-                    log.info(PROBABLE_SCHEDULING_ANALOG_DATE_NOT_FOUND + " - iun={} id={} ", iun, recIndex);
-                    return Instant.now();
-                });
-        return schedulingDate;
     }
 
     private Instant sendCourtesyMessagesAndRetrieveProbableSchedulingAnalogDate(NotificationInt notification, Integer recIndex, String iun) {
