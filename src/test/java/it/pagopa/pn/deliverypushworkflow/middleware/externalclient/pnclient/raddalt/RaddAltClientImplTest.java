@@ -47,7 +47,7 @@ import static org.mockserver.model.HttpResponse.response;
         PnDeliveryPushWorkflowConfigs.class,
         RestTemplateFactory.class,
         RaddAltApiConfigurator.class})
-public class RaddAltClientImplTest extends MockAWSObjectsTest {
+class RaddAltClientImplTest extends MockAWSObjectsTest {
     @Autowired
     private RaddAltClient raddAltClient;
 

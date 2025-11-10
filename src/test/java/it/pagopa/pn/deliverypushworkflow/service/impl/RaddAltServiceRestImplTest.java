@@ -52,9 +52,9 @@ class RaddAltServiceRestImplTest {
 
         assertTrue(result);
         verify(raddAltClient).checkCoverage(
-                eq(SearchMode.fromValue(searchMode.name())),
-                eq(mappedAddress),
-                eq(LocalDateTime.ofInstant(searchDate, ZoneOffset.UTC).toLocalDate())
+                SearchMode.fromValue(searchMode.name()),
+                mappedAddress,
+                LocalDateTime.ofInstant(searchDate, ZoneOffset.UTC).toLocalDate()
         );
     }
 
