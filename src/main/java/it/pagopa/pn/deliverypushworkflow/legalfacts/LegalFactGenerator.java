@@ -123,7 +123,7 @@ public interface LegalFactGenerator {
      * @return a {@link String} representing the AAR notification for SMS.
      */
 
-    String generateNotificationAARForSMSAnalog(NotificationInt notification);
+    String generateNotificationAARForSMSAnalog(NotificationInt notification, NotificationRecipientInt recipientInt);
 
     /**
      * Generates the AAR digital notification for SMS.
@@ -131,7 +131,7 @@ public interface LegalFactGenerator {
      * @param notification the notification object containing details about the notification.
      * @return a {@link String} representing the AAR notification for SMS.
      */
-    String generateNotificationAARForSMSDigital(NotificationInt notification);
+    String generateNotificationAARForSMSDigital(NotificationInt notification, NotificationRecipientInt recipientInt);
 
     /**
      * Generates a PDF based on AnalogDeliveryWorkflowTimeoutLegalFact template.
