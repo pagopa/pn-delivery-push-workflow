@@ -21,7 +21,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventId;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventIdBuilder;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.*;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.SendResponse;
-import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationStatusHistoryElementV26;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationStatusHistoryElement;
 import it.pagopa.pn.deliverypushworkflow.service.NotificationProcessCostService;
 import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import lombok.extern.slf4j.Slf4j;
@@ -1400,30 +1400,31 @@ public class TimelineUtils {
         return timelineId.split("\\" + TimelineEventIdBuilder.DELIMITER)[1].replace("IUN_", "");
     }
 
-    public TimelineElementInternal buildNotificationTimelineReworkedTimelineElement(
-            NotificationInt notification,
-            Integer recIndex, Integer sentAttemptMade,
-            List<NotificationStatusHistoryElementV26> invalidatedTimelineAndStatusHistory,
-            String reason, String categoryType
-    ) {
-        log.debug("buildNotificationTimelineReworkedTimelineElement - iun={} and recIndex={}", notification.getIun(), recIndex);
+    public TimelineElementInternal buildNotificationTimelineReworkedTimelineElement(NotificationInt notification,
+                                                                                    List<NotificationStatusHistoryElement> invalidatedTimelineElements,
+                                                                                    Integer recIndex, Integer sentAttemptMade, String reworkId) {
+        log.debug("buildNotificationTimelineReworkedElement - IUN={} and id={}", notification.getIun(), recIndex);
+
+        Integer reworkIdx = Integer.parseInt(reworkId.split("_")[1]);
 
         String elementId = TimelineEventId.NOTIFICATION_TIMELINE_REWORKED.buildEventId(
                 EventId.builder()
                         .iun(notification.getIun())
                         .recIndex(recIndex)
-                        .build());
+                        .sentAttemptMade(sentAttemptMade)
+                        .reworkIdx(reworkIdx)
+                        .build()
+        );
 
         NotificationTimelineReworkedDetailsInt details = NotificationTimelineReworkedDetailsInt.builder()
                 .recIndex(recIndex)
                 .sentAttemptMade(sentAttemptMade)
-                .invalidatedTimelineAndStatusHistory(invalidatedTimelineAndStatusHistory)
-                .reason(reason)
-                .categoryType(categoryType)
+                .invalidatedTimelineAndStatusHistory(invalidatedTimelineElements)
                 .build();
 
-
-        return buildTimeline(notification, TimelineElementCategoryInt.NOTIFICATION_TIMELINE_REWORKED, elementId, details);
+        TimelineElementInternal timelineElementInternal = buildTimeline(notification, TimelineElementCategoryInt.NOTIFICATION_TIMELINE_REWORKED, elementId, details);
+        timelineElementInternal.setReworkId(reworkId);
+        return timelineElementInternal;
     }
 
 }

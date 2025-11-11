@@ -3,12 +3,15 @@ package it.pagopa.pn.deliverypushworkflow.action.rework;
 import it.pagopa.pn.deliverypushworkflow.action.checkattachmentretention.CheckAttachmentRetentionHandler;
 import it.pagopa.pn.deliverypushworkflow.action.details.NotificationReworkRequestedDetails;
 import it.pagopa.pn.deliverypushworkflow.action.startworkflow.notificationvalidation.AttachmentUtils;
+import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationDocumentInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendAnalogProgressDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationHistoryResponse;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationStatusHistoryElement;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.Action;
 import it.pagopa.pn.deliverypushworkflow.service.NotificationService;
 import it.pagopa.pn.deliverypushworkflow.service.PaperChannelService;
@@ -22,7 +25,9 @@ import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkConstant.*;
@@ -39,19 +44,20 @@ public class ReworkRequestedHandler {
     private final PnDeliveryPushWorkflowConfigs pnDeliveryPushWorkflowConfigs;
     private final CheckAttachmentRetentionHandler checkAttachmentRetentionHandler;
     private final AttachmentUtils attachmentUtils;
-
+    private final TimelineUtils timelineUtils;
 
     public Mono<Void> handleNotificationReworkRequested(Action action) {
         NotificationReworkRequestedDetails detail = (NotificationReworkRequestedDetails) action.getDetails();
+        List<String> timelineElementsToInvalidate = new ArrayList<>();
+        NotificationInt notificationInt = notificationService.getNotificationByIun(action.getIun());
         return Mono.just(timelineService.getTimeline(action.getIun(), true))
                 .flatMap(timeline -> computeTimelineElementToInvalidate(timeline, detail.getReworkRecIndex(), detail.getReworkAttempt()))
-                .doOnNext(list -> startNotificationReworkProcess(detail))
-                .thenReturn(notificationService.getNotificationByIun(action.getIun()).getDocuments())
-                .flatMap(documents -> updateAttachmentRetention(detail.getCreatedAt(), action.getIun(), documents))
-                .thenReturn(action)
-                .flatMap(this::buildTimelineElement)
-                .zipWith(Mono.just(notificationService.getNotificationByIun(action.getIun())))
-                .flatMap(tuple -> addTimelineElement(tuple.getT1(), tuple.getT2()));
+                .doOnNext(timelineElementsToInvalidate::addAll)
+                .doOnNext(timelineElementIds -> startNotificationReworkProcess(detail))
+                .flatMap(strings -> updateAttachmentRetention(detail.getCreatedAt(), notificationInt.getIun(), notificationInt.getDocuments()))
+                .map(internalAction -> buildTimelineElement(notificationInt, timelineElementsToInvalidate, detail))
+                .map(timelineElementInternal -> timelineService.addTimelineElement(timelineElementInternal, notificationInt))
+                .then();
     }
 
     private Mono<List<String>> computeTimelineElementToInvalidate(Set<TimelineElementInternal> timelineElementInternalList, String recIndex, String attemptId) {
@@ -61,6 +67,7 @@ public class ReworkRequestedHandler {
                 .filter(elem -> elem.getElementId().contains(recIndex))
                 .filter(elem -> checkAttemptId(elem, attemptId))
                 .filter(elem -> checkPrepareAnalogDomicile(elem, attemptId))
+                .filter(elem -> checkSendAnalogDomicile(elem, attemptId))
                 .filter(this::checkDeliveryDetailCode)
                 .map(TimelineElementInternal::getElementId)
                 .collectList()
@@ -86,22 +93,39 @@ public class ReworkRequestedHandler {
                 .thenReturn(iun);
     }
 
-    private Mono<Void> addTimelineElement(TimelineElementInternal element, NotificationInt notification) {
-        log.debug("Added timeline element {} for iun {}", element, notification.getIun());
-        return Mono.just(timelineService.addTimelineElement(element, notification)).then();
-    }
-
-    private Mono<TimelineElementInternal> buildTimelineElement(Action action) {
-        //TODO to be implemented when logic will be available
-        return Mono.just(new TimelineElementInternal());
+    private TimelineElementInternal buildTimelineElement(NotificationInt notification,  List<String> elementsToInvalidate, NotificationReworkRequestedDetails internalDetail) {
+        Integer recIndex = Objects.nonNull(internalDetail.getReworkRecIndex().split("_")[1]) ? Integer.parseInt(internalDetail.getReworkRecIndex().split("_")[1]) : null;
+        Integer attempt = Objects.nonNull(internalDetail.getReworkAttempt().split("_")[1]) ? Integer.parseInt(internalDetail.getReworkAttempt().split("_")[1]) : null;
+        NotificationHistoryResponse notificationHistoryResponse = timelineService.getTimelineAndStatusHistory(notification.getIun(), notification.getRecipients().size(), notification.getSentAt());
+        List<NotificationStatusHistoryElement> statusHistoryElements = new ArrayList<>();
+        if(Objects.nonNull(notificationHistoryResponse.getNotificationStatusHistory())) {
+            statusHistoryElements = notificationHistoryResponse.getNotificationStatusHistory()
+                    .stream()
+                    .peek(notificationStatusHistoryElement -> {
+                        List<String> filteredRelatedTimelineElements = notificationStatusHistoryElement.getRelatedTimelineElements()
+                                .stream().filter(elementsToInvalidate::contains).toList();
+                        notificationStatusHistoryElement.setRelatedTimelineElements(filteredRelatedTimelineElements);
+                    })
+                    .toList();
+        }
+        return timelineUtils.buildNotificationTimelineReworkedTimelineElement(notification, statusHistoryElements, recIndex, attempt, internalDetail.getReworkId());
     }
 
 
     private boolean checkPrepareAnalogDomicile(TimelineElementInternal elem, String attempt) {
-        if (ATTEMPT_0.equals(attempt)) {
-            return !TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE.name().equals(elem.getCategory().name()) && elem.getElementId().contains(ATTEMPT_0);
+        if (ATTEMPT_1.equals(attempt)) {
+            return !TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE.equals(elem.getCategory());
         } else {
-            return !TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE.name().equals(elem.getCategory().name()) && elem.getElementId().contains(ATTEMPT_1);
+            return !TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE.equals(elem.getCategory()) || elem.getElementId().contains(ATTEMPT_1);
+        }
+    }
+
+
+    private boolean checkSendAnalogDomicile(TimelineElementInternal elem, String attempt) {
+        if (ATTEMPT_1.equals(attempt)) {
+            return !TimelineElementCategoryInt.SEND_ANALOG_DOMICILE.equals(elem.getCategory());
+        } else {
+            return !TimelineElementCategoryInt.SEND_ANALOG_DOMICILE.equals(elem.getCategory()) || elem.getElementId().contains(ATTEMPT_1);
         }
     }
 

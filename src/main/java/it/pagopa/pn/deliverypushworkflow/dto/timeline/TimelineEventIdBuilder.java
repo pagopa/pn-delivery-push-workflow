@@ -46,6 +46,8 @@ public class TimelineEventIdBuilder {
 
     private String isFirstSendRetry = "";
 
+    private String reworkIdx = "";
+
     private String optin = "";
     
     public TimelineEventIdBuilder withIun(@Nullable String iun) {
@@ -57,6 +59,12 @@ public class TimelineEventIdBuilder {
     public TimelineEventIdBuilder withRecIndex(@Nullable Integer recIndex) {
         if(recIndex != null)
             this.recIndex = DELIMITER.concat("RECINDEX_").concat(recIndex + "");
+        return this;
+    }
+
+    public TimelineEventIdBuilder withReworkIdx(@Nullable Integer reworkIdx) {
+        if(reworkIdx != null)
+            this.reworkIdx = DELIMITER.concat("REWORK_").concat(reworkIdx + "");
         return this;
     }
 
@@ -144,6 +152,7 @@ public class TimelineEventIdBuilder {
                 .append(correlationId)
                 .append(paymentCode)
                 .append(optin)
+                .append(reworkIdx)
                 .toString();
     }
 

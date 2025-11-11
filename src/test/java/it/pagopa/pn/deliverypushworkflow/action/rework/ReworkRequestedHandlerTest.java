@@ -3,33 +3,32 @@ package it.pagopa.pn.deliverypushworkflow.action.rework;
 import it.pagopa.pn.deliverypushworkflow.action.checkattachmentretention.CheckAttachmentRetentionHandler;
 import it.pagopa.pn.deliverypushworkflow.action.details.NotificationReworkRequestedDetails;
 import it.pagopa.pn.deliverypushworkflow.action.startworkflow.notificationvalidation.AttachmentUtils;
+import it.pagopa.pn.deliverypushworkflow.action.utils.InstantNowSupplier;
+import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
-import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationDocumentInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationSenderInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationTimelineReworkedDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendAnalogProgressDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
-import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.model.FileDownloadResponse;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.*;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.Action;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.impl.TimeParams;
-import it.pagopa.pn.deliverypushworkflow.service.NotificationService;
-import it.pagopa.pn.deliverypushworkflow.service.PaperChannelService;
-import it.pagopa.pn.deliverypushworkflow.service.SafeStorageService;
-import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
+import it.pagopa.pn.deliverypushworkflow.service.*;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import reactor.core.publisher.Mono;
 
 import java.time.Instant;
-import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.*;
 
 @org.junit.jupiter.api.extension.ExtendWith(MockitoExtension.class)
@@ -54,6 +53,7 @@ class ReworkRequestedHandlerTest {
 
     @BeforeEach
     void setup() {
+        TimelineUtils timelineUtils = new TimelineUtils(mock(InstantNowSupplier.class), timelineService, mock(NotificationProcessCostService.class));
         handler = new ReworkRequestedHandler(
                 timelineService,
                 notificationService,
@@ -61,270 +61,225 @@ class ReworkRequestedHandlerTest {
                 safeStorageService,
                 pnDeliveryPushWorkflowConfigs,
                 checkAttachmentRetentionHandler,
-                attachmentUtils
+                attachmentUtils,
+                timelineUtils
         );
     }
 
     @Test
-    void handleNotificationReworkRequested_OK() {
+    void handleNotificationReworkRequestedAttempt0() {
         // Arrange
         NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
         details.setReworkRecIndex("RECINDEX_0");
         details.setReworkAttempt("ATTEMPT_0");
         details.setCreatedAt(Instant.now());
         details.setReworkRequestId("REQID");
-        details.setReworkId("REWID");
+        details.setReworkId("REWORK_0_UUID");
 
         Action action = Action.builder()
-                .iun("IUN_1")
+                .iun("IUN_2")
                 .details(details)
                 .build();
 
-        when(timelineService.getTimeline(anyString(), anyBoolean())).thenReturn(buildTimeline());
+        NotificationHistoryResponse historyResponse = new NotificationHistoryResponse();
+
+        List<TimelineElement> timeline = buildTimeline();
+        historyResponse.setTimeline(timeline);
+        historyResponse.setNotificationStatus(NotificationStatus.DELIVERED);
+        List<NotificationStatusHistoryElement> notificationStatusHistory = new ArrayList<>();
+        NotificationStatusHistoryElement historyElement = new NotificationStatusHistoryElement();
+        historyElement.setStatus(NotificationStatus.DELIVERED);
+        historyElement.setRelatedTimelineElements(timeline.stream().map(TimelineElement::getElementId).toList());
+        notificationStatusHistory.add(historyElement);
+        historyResponse.setNotificationStatusHistory(notificationStatusHistory);
+        when(timelineService.getTimelineAndStatusHistory(anyString(), anyInt(), any())).thenReturn(historyResponse);
+        when(timelineService.getTimeline(any(), anyBoolean())).thenReturn(buildTimeline().stream().map(t -> {;
+            TimelineElementInternal tei = new TimelineElementInternal();
+            tei.setCategory(TimelineElementCategoryInt.valueOf(t.getCategory().name()));
+            tei.setElementId(t.getElementId());
+            tei.setDetails(switch (t.getCategory()) {
+                case SEND_ANALOG_PROGRESS -> {
+                    SendAnalogProgressDetails details1 = (SendAnalogProgressDetails) t.getDetails();
+                    SendAnalogProgressDetailsInt detailsInt = new SendAnalogProgressDetailsInt();
+                    detailsInt.setDeliveryDetailCode(details1.getDeliveryDetailCode());
+                    yield detailsInt;
+                }
+                default -> null;
+            });
+            return tei;
+        }).collect(java.util.stream.Collectors.toSet()));
 
         NotificationInt notification = NotificationInt.builder()
-                .iun("IUN_1")
-                .documents(List.of(NotificationDocumentInt.builder().ref(NotificationDocumentInt.Ref.builder().key("fileKey").build()).build()))
+                .sentAt(Instant.now())
+                .recipients(List.of(new NotificationRecipientInt()))
+                .iun("IUN_2")
+                .sender(NotificationSenderInt.builder().paId("paId").build())
+                .documents(Collections.emptyList())
                 .build();
         when(notificationService.getNotificationByIun(anyString())).thenReturn(notification);
+        ArgumentCaptor<TimelineElementInternal> argumentCaptor = ArgumentCaptor.forClass(TimelineElementInternal.class);
+        when(timelineService.addTimelineElement(any(), any())).thenReturn(true);
 
         when(pnDeliveryPushWorkflowConfigs.getTimeParams()).thenReturn(mock(TimeParams.class));
         when(pnDeliveryPushWorkflowConfigs.getTimeParams().getAttachmentTimeToAddAfterExpiration()).thenReturn(java.time.Duration.ofDays(30));
         when(pnDeliveryPushWorkflowConfigs.getInvalidableCategories()).thenReturn(List.of("PREPARE_ANALOG_DOMICILE","PREPARE_ANALOG_DOMICILE_FAILURE","SEND_ANALOG_DOMICILE","SEND_ANALOG_PROGRESS","SEND_ANALOG_FEEDBACK","ANALOG_SUCCESS_WORKFLOW","ANALOG_FAILURE_WORKFLOW","SCHEDULE_REFINEMENT","REFINEMENT","COMPLETELY_UNREACHABLE_CREATION_REQUEST","COMPLETELY_UNREACHABLE","ANALOG_WORKFLOW_RECIPIENT_DECEASED"));
 
-        FileDownloadResponse response = new FileDownloadResponse();
-        response.key("fileKey");
-        response.retentionUntil(OffsetDateTime.now().plusDays(10));
-
-        when(safeStorageService.getFile(anyString(), anyBoolean(), anyBoolean()))
-                .thenReturn(Mono.just(response));
-
-        when(attachmentUtils.changeAttachmentRetention(anyString(), any())).thenReturn(Mono.just("fileKey"));
-
         // Act & Assert
-        assertDoesNotThrow(() -> handler.handleNotificationReworkRequested(action).block());
-        verify(checkAttachmentRetentionHandler, atLeastOnce()).scheduleCheckAttachmentRetentionBeforeExpiration(anyString(), any());
+        handler.handleNotificationReworkRequested(action).block();
+
+        verify(timelineService).addTimelineElement(argumentCaptor.capture(), eq(notification));
+        TimelineElementInternal capturedElement = argumentCaptor.getValue();
+        Assertions.assertEquals("NOTIFICATION_TIMELINE_REWORKED", capturedElement.getCategory().name());
+        Assertions.assertEquals("NOTIFICATION_TIMELINE_REWORKED.IUN_IUN_2.RECINDEX_0.ATTEMPT_0.REWORK_0", capturedElement.getElementId());
+        NotificationTimelineReworkedDetailsInt detailsInt = (NotificationTimelineReworkedDetailsInt) capturedElement.getDetails();
+        Assertions.assertEquals(1, detailsInt.getInvalidatedTimelineAndStatusHistory().size());
+        Assertions.assertEquals(7, detailsInt.getInvalidatedTimelineAndStatusHistory().getFirst().getRelatedTimelineElements().size());
+
     }
 
     @Test
-    void handleNotificationReworkRequested_OK_ATTEMPT1() {
+    void handleNotificationReworkRequestedAttempt1() {
         // Arrange
         NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
         details.setReworkRecIndex("RECINDEX_0");
         details.setReworkAttempt("ATTEMPT_1");
         details.setCreatedAt(Instant.now());
         details.setReworkRequestId("REQID");
-        details.setReworkId("REWID");
-
-        Action action = Action.builder()
-                .iun("IUN_1")
-                .details(details)
-                .build();
-
-        when(timelineService.getTimeline(anyString(), anyBoolean())).thenReturn(buildTimeline());
-
-        NotificationInt notification = NotificationInt.builder()
-                .iun("IUN_1")
-                .documents(List.of(NotificationDocumentInt.builder().ref(NotificationDocumentInt.Ref.builder().key("fileKey").build()).build()))
-                .build();
-        when(notificationService.getNotificationByIun(anyString())).thenReturn(notification);
-
-        when(pnDeliveryPushWorkflowConfigs.getTimeParams()).thenReturn(mock(TimeParams.class));
-        when(pnDeliveryPushWorkflowConfigs.getTimeParams().getAttachmentTimeToAddAfterExpiration()).thenReturn(java.time.Duration.ofDays(30));
-        when(pnDeliveryPushWorkflowConfigs.getInvalidableCategories()).thenReturn(List.of("PREPARE_ANALOG_DOMICILE","PREPARE_ANALOG_DOMICILE_FAILURE","SEND_ANALOG_DOMICILE","SEND_ANALOG_PROGRESS","SEND_ANALOG_FEEDBACK","ANALOG_SUCCESS_WORKFLOW","ANALOG_FAILURE_WORKFLOW","SCHEDULE_REFINEMENT","REFINEMENT","COMPLETELY_UNREACHABLE_CREATION_REQUEST","COMPLETELY_UNREACHABLE","ANALOG_WORKFLOW_RECIPIENT_DECEASED"));
-
-        FileDownloadResponse response = new FileDownloadResponse();
-        response.key("fileKey");
-        response.retentionUntil(OffsetDateTime.now().plusDays(10));
-
-        when(safeStorageService.getFile(anyString(), anyBoolean(), anyBoolean()))
-                .thenReturn(Mono.just(response));
-
-        when(attachmentUtils.changeAttachmentRetention(anyString(), any())).thenReturn(Mono.just("fileKey"));
-
-        // Act & Assert
-        assertDoesNotThrow(() -> handler.handleNotificationReworkRequested(action).block());
-        verify(checkAttachmentRetentionHandler, atLeastOnce()).scheduleCheckAttachmentRetentionBeforeExpiration(anyString(), any());
-    }
-
-    @Test
-    void handleNotificationReworkRequested_NoInvalidableElements() {
-        // Arrange
-        NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
-        details.setReworkRecIndex("RECINDEX_0");
-        details.setReworkAttempt("ATTEMPT_0");
-        details.setCreatedAt(Instant.now());
-        details.setReworkRequestId("REQID");
-        details.setReworkId("REWID");
+        details.setReworkId("REWORK_0_UUID");
 
         Action action = Action.builder()
                 .iun("IUN_2")
                 .details(details)
                 .build();
 
-        // No elements matching invalidable categories
-        when(timelineService.getTimeline(anyString(), anyBoolean())).thenReturn(buildTimelineNoInvalidableElements());
+        NotificationHistoryResponse historyResponse = new NotificationHistoryResponse();
+
+        List<TimelineElement> timeline = buildTimeline();
+        historyResponse.setTimeline(timeline);
+        historyResponse.setNotificationStatus(NotificationStatus.DELIVERED);
+        List<NotificationStatusHistoryElement> notificationStatusHistory = new ArrayList<>();
+        NotificationStatusHistoryElement historyElement = new NotificationStatusHistoryElement();
+        historyElement.setStatus(NotificationStatus.DELIVERED);
+        historyElement.setRelatedTimelineElements(timeline.stream().map(TimelineElement::getElementId).toList());
+        notificationStatusHistory.add(historyElement);
+        historyResponse.setNotificationStatusHistory(notificationStatusHistory);
+        when(timelineService.getTimelineAndStatusHistory(anyString(), anyInt(), any())).thenReturn(historyResponse);
+        when(timelineService.getTimeline(any(), anyBoolean())).thenReturn(buildTimeline().stream().map(t -> {;
+            TimelineElementInternal tei = new TimelineElementInternal();
+            tei.setCategory(TimelineElementCategoryInt.valueOf(t.getCategory().name()));
+            tei.setElementId(t.getElementId());
+            tei.setDetails(switch (t.getCategory()) {
+                case SEND_ANALOG_PROGRESS -> {
+                    SendAnalogProgressDetails details1 = (SendAnalogProgressDetails) t.getDetails();
+                    SendAnalogProgressDetailsInt detailsInt = new SendAnalogProgressDetailsInt();
+                    detailsInt.setDeliveryDetailCode(details1.getDeliveryDetailCode());
+                    yield detailsInt;
+                }
+                default -> null;
+            });
+            return tei;
+        }).collect(java.util.stream.Collectors.toSet()));
 
         NotificationInt notification = NotificationInt.builder()
+                .sentAt(Instant.now())
+                .recipients(List.of(new NotificationRecipientInt()))
                 .iun("IUN_2")
+                .sender(NotificationSenderInt.builder().paId("paId").build())
                 .documents(Collections.emptyList())
                 .build();
         when(notificationService.getNotificationByIun(anyString())).thenReturn(notification);
+        ArgumentCaptor<TimelineElementInternal> argumentCaptor = ArgumentCaptor.forClass(TimelineElementInternal.class);
+        when(timelineService.addTimelineElement(any(), any())).thenReturn(true);
 
         when(pnDeliveryPushWorkflowConfigs.getTimeParams()).thenReturn(mock(TimeParams.class));
         when(pnDeliveryPushWorkflowConfigs.getTimeParams().getAttachmentTimeToAddAfterExpiration()).thenReturn(java.time.Duration.ofDays(30));
         when(pnDeliveryPushWorkflowConfigs.getInvalidableCategories()).thenReturn(List.of("PREPARE_ANALOG_DOMICILE","PREPARE_ANALOG_DOMICILE_FAILURE","SEND_ANALOG_DOMICILE","SEND_ANALOG_PROGRESS","SEND_ANALOG_FEEDBACK","ANALOG_SUCCESS_WORKFLOW","ANALOG_FAILURE_WORKFLOW","SCHEDULE_REFINEMENT","REFINEMENT","COMPLETELY_UNREACHABLE_CREATION_REQUEST","COMPLETELY_UNREACHABLE","ANALOG_WORKFLOW_RECIPIENT_DECEASED"));
 
         // Act & Assert
-        assertDoesNotThrow(() -> handler.handleNotificationReworkRequested(action).block());
-    }
-
-    @Test
-    void handleNotificationReworkRequested_AttachmentRetentionUpdate() {
-        // Arrange
-        NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
-        details.setReworkRecIndex("RECINDEX_0");
-        details.setReworkAttempt("ATTEMPT_0");
-        details.setCreatedAt(Instant.now());
-        details.setReworkRequestId("REQID");
-        details.setReworkId("REWID");
-
-        Action action = Action.builder()
-                .iun("IUN_3")
-                .details(details)
-                .build();
-
-        when(timelineService.getTimeline(anyString(), anyBoolean())).thenReturn(buildTimeline());
-
-        NotificationDocumentInt doc = NotificationDocumentInt.builder()
-                .ref(NotificationDocumentInt.Ref.builder().key("fileKey").build())
-                .build();
-        NotificationInt notification = NotificationInt.builder()
-                .iun("IUN_3")
-                .documents(List.of(doc))
-                .build();
-        when(notificationService.getNotificationByIun(anyString())).thenReturn(notification);
-
-        when(pnDeliveryPushWorkflowConfigs.getTimeParams()).thenReturn(mock(TimeParams.class));
-        when(pnDeliveryPushWorkflowConfigs.getTimeParams().getAttachmentTimeToAddAfterExpiration()).thenReturn(java.time.Duration.ofDays(30));
-        when(pnDeliveryPushWorkflowConfigs.getInvalidableCategories()).thenReturn(List.of("PREPARE_ANALOG_DOMICILE","PREPARE_ANALOG_DOMICILE_FAILURE","SEND_ANALOG_DOMICILE","SEND_ANALOG_PROGRESS","SEND_ANALOG_FEEDBACK","ANALOG_SUCCESS_WORKFLOW","ANALOG_FAILURE_WORKFLOW","SCHEDULE_REFINEMENT","REFINEMENT","COMPLETELY_UNREACHABLE_CREATION_REQUEST","COMPLETELY_UNREACHABLE","ANALOG_WORKFLOW_RECIPIENT_DECEASED"));
-
-        OffsetDateTime oldRetention = OffsetDateTime.now().minusDays(1);
-
-        FileDownloadResponse response = new FileDownloadResponse();
-        response.key("fileKey");
-        response.retentionUntil(oldRetention);
-
-        when(safeStorageService.getFile(anyString(), anyBoolean(), anyBoolean()))
-                .thenReturn(Mono.just(response));
-
-        when(attachmentUtils.changeAttachmentRetention(anyString(), any())).thenReturn(Mono.just("fileKey"));
-
-        // Act
         handler.handleNotificationReworkRequested(action).block();
 
-        // Assert
-        verify(attachmentUtils, atLeastOnce()).changeAttachmentRetention(eq("fileKey"), any());
-        verify(checkAttachmentRetentionHandler, atLeastOnce()).scheduleCheckAttachmentRetentionBeforeExpiration(anyString(), any());
+        verify(timelineService).addTimelineElement(argumentCaptor.capture(), eq(notification));
+        TimelineElementInternal capturedElement = argumentCaptor.getValue();
+        Assertions.assertEquals("NOTIFICATION_TIMELINE_REWORKED", capturedElement.getCategory().name());
+        Assertions.assertEquals("NOTIFICATION_TIMELINE_REWORKED.IUN_IUN_2.RECINDEX_0.ATTEMPT_1.REWORK_0", capturedElement.getElementId());
+        NotificationTimelineReworkedDetailsInt detailsInt = (NotificationTimelineReworkedDetailsInt) capturedElement.getDetails();
+        Assertions.assertEquals(1, detailsInt.getInvalidatedTimelineAndStatusHistory().size());
+        Assertions.assertEquals(3, detailsInt.getInvalidatedTimelineAndStatusHistory().getFirst().getRelatedTimelineElements().size());
+
     }
 
-    private Set<TimelineElementInternal> buildTimeline() {
-        Set<TimelineElementInternal> timeline = new HashSet<>();
-        TimelineElementInternal timelineElement = TimelineElementInternal.builder()
-                .elementId("RECINDEX_0.ATTEMPT_0")
-                .category(TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK)
-                .build();
+    private List<TimelineElement> buildTimeline() {
+        List<TimelineElement> timeline = new ArrayList<>();
+        TimelineElement timelineElement = new TimelineElement();
+        timelineElement.elementId("SEND_ANALOG_FEEDBACK.RECINDEX_0.ATTEMPT_0");
+        timelineElement.category(TimelineCategory.SEND_ANALOG_FEEDBACK);
         timeline.add(timelineElement);
 
-        timelineElement = TimelineElementInternal.builder()
-                .elementId("RECINDEX_0.ATTEMPT_0")
-                .category(TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE)
-                .build();
+        timelineElement = new TimelineElement();
+        timelineElement.elementId("SEND_ANALOG_DOMICILE.RECINDEX_0.ATTEMPT_1");
+        timelineElement.category(TimelineCategory.SEND_ANALOG_DOMICILE);
         timeline.add(timelineElement);
 
-        timelineElement = TimelineElementInternal.builder()
-                .elementId("RECINDEX_0.ATTEMPT_0")
-                .category(TimelineElementCategoryInt.PAYMENT)
-                .build();
+        timelineElement = new TimelineElement();
+        timelineElement.elementId("SEND_ANALOG_DOMICILE.RECINDEX_0.ATTEMPT_0");
+        timelineElement.category(TimelineCategory.SEND_ANALOG_DOMICILE);
         timeline.add(timelineElement);
 
-        SendAnalogProgressDetailsInt detail = new SendAnalogProgressDetailsInt();
+        timelineElement = new TimelineElement();
+        timelineElement.elementId("PREPARE_ANALOG_DOMICILE.RECINDEX_0.ATTEMPT_0");
+        timelineElement.category(TimelineCategory.PREPARE_ANALOG_DOMICILE);
+
+        timeline.add(timelineElement);
+
+        timelineElement = new TimelineElement();
+        timelineElement.elementId("GET_ADDRESS.RECINDEX_0.ATTEMPT_0");
+        timelineElement.category(TimelineCategory.PAYMENT);
+
+        timeline.add(timelineElement);
+
+        SendAnalogProgressDetails detail = new SendAnalogProgressDetails();
         detail.setDeliveryDetailCode("RECRN");
-        timelineElement = TimelineElementInternal.builder()
-                .elementId("RECINDEX_0.ATTEMPT_0")
-                .category(TimelineElementCategoryInt.SEND_ANALOG_PROGRESS)
-                .details(detail)
-                .build();
+        timelineElement = new TimelineElement();
+        timelineElement.elementId("SEND_ANALOG_PROGRESS.RECINDEX_0.ATTEMPT_0.IDX_0");
+        timelineElement.category(TimelineCategory.SEND_ANALOG_PROGRESS);
+        timelineElement.details(detail);
+
         timeline.add(timelineElement);
 
-        timelineElement = TimelineElementInternal.builder()
-                .elementId("RECINDEX_0.ATTEMPT_1")
-                .category(TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK)
-                .build();
+        timelineElement = new TimelineElement();
+        timelineElement.elementId("SEND_ANALOG_FEEDBACK.RECINDEX_0.ATTEMPT_1");
+        timelineElement.category(TimelineCategory.SEND_ANALOG_FEEDBACK);
         timeline.add(timelineElement);
 
-        timelineElement = TimelineElementInternal.builder()
-                .elementId("RECINDEX_0.ATTEMPT_1")
-                .category(TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE)
-                .build();
+        timelineElement = new TimelineElement();
+        timelineElement.elementId("PREPARE_ANALOG_DOMICILE.RECINDEX_0.ATTEMPT_1");
+        timelineElement.category(TimelineCategory.PREPARE_ANALOG_DOMICILE);
         timeline.add(timelineElement);
 
-        timelineElement = TimelineElementInternal.builder()
-                .elementId("RECINDEX_0.ATTEMPT_1")
-                .category(TimelineElementCategoryInt.PAYMENT)
-                .build();
+        timelineElement = new TimelineElement();
+        timelineElement.elementId("REFINEMENT.RECINDEX_0");
+        timelineElement.category(TimelineCategory.REFINEMENT);
         timeline.add(timelineElement);
 
-        detail = new SendAnalogProgressDetailsInt();
+        timelineElement = new TimelineElement();
+        timelineElement.elementId("REFINEMENT.RECINDEX_1");
+        timelineElement.category(TimelineCategory.REFINEMENT);
+        timeline.add(timelineElement);
+
+        detail = new SendAnalogProgressDetails();
         detail.setDeliveryDetailCode("RECRN");
-        timelineElement = TimelineElementInternal.builder()
-                .elementId("RECINDEX_0.ATTEMPT_1")
-                .category(TimelineElementCategoryInt.SEND_ANALOG_PROGRESS)
-                .details(detail)
-                .build();
+        timelineElement = new TimelineElement();
+        timelineElement.elementId("SEND_ANALOG_PROGRESS.RECINDEX_0.ATTEMPT_1.IDX_0");
+        timelineElement.category(TimelineCategory.SEND_ANALOG_PROGRESS);
+        timelineElement.details(detail);
         timeline.add(timelineElement);
 
-        return timeline;
-    }
-
-    private Set<TimelineElementInternal> buildTimelineNoInvalidableElements() {
-        Set<TimelineElementInternal> timeline = new HashSet<>();
-
-        TimelineElementInternal timelineElement = TimelineElementInternal.builder()
-                .elementId("RECINDEX_0.ATTEMPT_0")
-                .category(TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE)
-                .build();
-        timeline.add(timelineElement);
-
-        SendAnalogProgressDetailsInt detail = new SendAnalogProgressDetailsInt();
-        detail.setDeliveryDetailCode("CON");
-        timelineElement = TimelineElementInternal.builder()
-                .elementId("RECINDEX_0.ATTEMPT_0")
-                .category(TimelineElementCategoryInt.SEND_ANALOG_PROGRESS)
-                .details(detail)
-                .build();
-        timeline.add(timelineElement);
-
-        timelineElement = TimelineElementInternal.builder()
-                .elementId("RECINDEX_0.ATTEMPT_1")
-                .category(TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK)
-                .build();
-        timeline.add(timelineElement);
-
-        timelineElement = TimelineElementInternal.builder()
-                .elementId("RECINDEX_0.ATTEMPT_1")
-                .category(TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE)
-                .build();
-        timeline.add(timelineElement);
-
-
-        detail = new SendAnalogProgressDetailsInt();
-        detail.setDeliveryDetailCode("CON");
-        timelineElement = TimelineElementInternal.builder()
-                .elementId("RECINDEX_0.ATTEMPT_1")
-                .category(TimelineElementCategoryInt.SEND_ANALOG_PROGRESS)
-                .details(detail)
-                .build();
+        detail = new SendAnalogProgressDetails();
+        detail.setDeliveryDetailCode("CON996");
+        timelineElement = new TimelineElement();
+        timelineElement.elementId("SEND_ANALOG_PROGRESS.RECINDEX_0.ATTEMPT_0.IDX_2");
+        timelineElement.category(TimelineCategory.SEND_ANALOG_PROGRESS);
+        timelineElement.details(detail);
         timeline.add(timelineElement);
 
         return timeline;
