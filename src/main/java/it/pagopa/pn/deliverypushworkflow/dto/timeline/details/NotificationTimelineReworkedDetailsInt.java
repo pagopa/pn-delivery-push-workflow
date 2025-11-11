@@ -20,7 +20,7 @@ public class NotificationTimelineReworkedDetailsInt extends CategoryTypeTimeline
     @Override
     public String toLog() {
         return String.format(
-                "NotificationTimelineReworkedDetailsInt{recIndex=%d, sentAttemptMade=%d, reason='%s', categoryType='%s'}",
+                "NotificationTimelineReworkedDetailsInt{recIndex=%d, sentAttemptMade=%d}",
                 recIndex,
                 sentAttemptMade
         );
