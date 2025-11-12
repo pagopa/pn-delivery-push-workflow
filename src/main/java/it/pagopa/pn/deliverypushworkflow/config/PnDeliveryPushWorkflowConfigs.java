@@ -39,6 +39,8 @@ public class PnDeliveryPushWorkflowConfigs {
 
     private String safeStorageBaseUrl;
 
+    private String raddAltBaseUrl;
+
     private String userAttributesBaseUrl;
 
     private String externalRegistryBaseUrl;
