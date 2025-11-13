@@ -40,7 +40,7 @@ import static org.awaitility.Awaitility.await;
 @TestPropertySource(properties = {
         "pn.delivery-push-workflow.radd-search-mode=OLD"
 })
-class RaddExperimentationDynamicAARITSearchModeOLD extends SendAarAttachment {
+class RaddExperimentationDynamicAARITSearchModeOLDTest extends SendAarAttachment {
     @Autowired
     private static CheckRADDExperimentation checkRADDExperimentation;
 
