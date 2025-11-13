@@ -38,7 +38,7 @@ class CheckCoverageAreaServiceRADDTest {
                 Instant.parse("2024-06-01T10:00:00Z")
         )).thenReturn(true);
 
-        boolean result = service.isAreaCovered(address, notification);
+        boolean result = service.isAreaCovered(address, notification.getSentAt());
         assertTrue(result);
     }
 
@@ -54,7 +54,7 @@ class CheckCoverageAreaServiceRADDTest {
                 Instant.parse("2024-06-02T11:00:00Z")
         )).thenReturn(false);
 
-        boolean result = service.isAreaCovered(address, notification);
+        boolean result = service.isAreaCovered(address, notification.getSentAt());
         assertFalse(result);
     }
 }

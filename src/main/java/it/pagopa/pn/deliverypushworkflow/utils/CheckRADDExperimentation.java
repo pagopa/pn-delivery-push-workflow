@@ -29,7 +29,9 @@ public class CheckRADDExperimentation {
     public boolean checkAddress(PhysicalAddressInt toCheck, NotificationInt notificationInt) {
 
         if (isAnExperimentalCountry(toCheck.getForeignState())) {
-            return checkCoverageAreaService.isAreaCovered(toCheck, notificationInt);
+            log.info("CheckAreaService initialized with iun={}, notificationSentAt={}",
+                    notificationInt.getIun(),notificationInt.getSentAt());
+            return checkCoverageAreaService.isAreaCovered(toCheck, notificationInt.getSentAt());
         } else {
             log.trace("Country {} not in admitted countries", toCheck.getForeignState());
         }

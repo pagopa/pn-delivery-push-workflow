@@ -1,8 +1,9 @@
 package it.pagopa.pn.deliverypushworkflow.service;
 
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
-import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
+
+import java.time.Instant;
 
 public interface CheckCoverageAreaService {
-    boolean isAreaCovered(PhysicalAddressInt toCheck, NotificationInt notificationInt);
+    boolean isAreaCovered(PhysicalAddressInt toCheck, Instant dateToCheck);
 }

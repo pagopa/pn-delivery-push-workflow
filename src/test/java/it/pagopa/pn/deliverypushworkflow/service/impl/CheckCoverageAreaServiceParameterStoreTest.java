@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -66,9 +67,11 @@ class CheckCoverageAreaServiceParameterStoreTest {
                 .thenReturn(Optional.of(zipSet));
 
         PhysicalAddressInt address = PhysicalAddressInt.builder().zip("1000").build();
-        NotificationInt notification = NotificationInt.builder().build();
+        NotificationInt notification = NotificationInt.builder()
+                .sentAt(Instant.now())
+                .build();
 
-        boolean result = service.isAreaCovered(address, notification);
+        boolean result = service.isAreaCovered(address, notification.getSentAt());
         assertTrue(result);
     }
 
@@ -79,8 +82,9 @@ class CheckCoverageAreaServiceParameterStoreTest {
         Mockito.when(parameterConsumer.getParameterValue(Mockito.anyString(), Mockito.any())).thenReturn(Optional.of(zip));
 
         PhysicalAddressInt addressToCheck = PhysicalAddressInt.builder().foreignState("iTaLia").zip("21").build();
-        NotificationInt notificationInt = NotificationInt.builder().build();
-        boolean isEnabled = service.isAreaCovered(addressToCheck,notificationInt);
+        NotificationInt notification = NotificationInt.builder()
+                .sentAt(Instant.now()).build();
+        boolean isEnabled = service.isAreaCovered(addressToCheck,notification.getSentAt());
         Assertions.assertFalse(isEnabled);
     }
 
@@ -90,9 +94,10 @@ class CheckCoverageAreaServiceParameterStoreTest {
         when(configs.getRaddExperimentationStoresName()).thenReturn(null);
 
         PhysicalAddressInt address = PhysicalAddressInt.builder().zip("1000").build();
-        NotificationInt notification = NotificationInt.builder().build();
+        NotificationInt notification = NotificationInt.builder()
+                .sentAt(Instant.now()).build();
 
-        boolean result = service.isAreaCovered(address, notification);
+        boolean result = service.isAreaCovered(address, notification.getSentAt());
         assertFalse(result);
     }
 
@@ -105,8 +110,9 @@ class CheckCoverageAreaServiceParameterStoreTest {
         Mockito.when(parameterConsumer.getParameterValue(Mockito.anyString(), Mockito.any())).thenReturn(Optional.of(zip));
 
         PhysicalAddressInt addressToCheck = PhysicalAddressInt.builder().foreignState("iTaLia").build();
-        NotificationInt notificationInt = NotificationInt.builder().build();
-        boolean isEnabled = service.isAreaCovered(addressToCheck, notificationInt);
+        NotificationInt notification = NotificationInt.builder()
+                .sentAt(Instant.now()).build();
+        boolean isEnabled = service.isAreaCovered(addressToCheck, notification.getSentAt());
         Assertions.assertFalse(isEnabled);
     }
 
@@ -123,8 +129,9 @@ class CheckCoverageAreaServiceParameterStoreTest {
         Mockito.when(parameterConsumer.getParameterValue(Mockito.eq(PARAMETER_STORES_MAP_ZIP_EXPERIMENTATION_LIST[2]), Mockito.any())).thenReturn(Optional.of(zip2));
 
         PhysicalAddressInt addressToCheck = PhysicalAddressInt.builder().foreignState("iTaLia").zip("22").build();
-        NotificationInt notificationInt = NotificationInt.builder().build();
-        boolean isEnabled = service.isAreaCovered(addressToCheck, notificationInt);
+        NotificationInt notification = NotificationInt.builder()
+                .sentAt(Instant.now()).build();
+        boolean isEnabled = service.isAreaCovered(addressToCheck, notification.getSentAt());
         Assertions.assertTrue(isEnabled);
     }
 
@@ -148,8 +155,9 @@ class CheckCoverageAreaServiceParameterStoreTest {
         Mockito.when(parameterConsumer.getParameterValue(Mockito.eq(PARAMETER_STORES_MAP_ZIP_EXPERIMENTATION_LIST[4]), Mockito.any())).thenReturn(Optional.of(zip5));
 
         PhysicalAddressInt addressToCheck = PhysicalAddressInt.builder().foreignState("iTaLia").zip("224").build();
-        NotificationInt notificationInt = NotificationInt.builder().build();
-        boolean isEnabled = service.isAreaCovered(addressToCheck, notificationInt);
+        NotificationInt notification = NotificationInt.builder()
+                .sentAt(Instant.now()).build();
+        boolean isEnabled = service.isAreaCovered(addressToCheck, notification.getSentAt());
         Assertions.assertFalse(isEnabled);
     }
 

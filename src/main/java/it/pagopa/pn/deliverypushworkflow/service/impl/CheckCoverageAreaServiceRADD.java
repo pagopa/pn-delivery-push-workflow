@@ -2,13 +2,14 @@ package it.pagopa.pn.deliverypushworkflow.service.impl;
 
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
-import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.service.CheckCoverageAreaService;
 import it.pagopa.pn.deliverypushworkflow.service.RaddAltService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Service;
+
+import java.time.Instant;
 
 @Slf4j
 @Service
@@ -23,10 +24,9 @@ public class CheckCoverageAreaServiceRADD implements CheckCoverageAreaService {
 
 
     @Override
-    public boolean isAreaCovered(PhysicalAddressInt toCheck, NotificationInt notificationInt) {
-        log.info("CheckAreaServiceWithRadd initialized with searchMode={}, iun={}, notificationSentAt={}", pnDeliveryPushWorkflowConfigs.getRaddSearchMode()
-                ,notificationInt.getIun(),notificationInt.getSentAt());
+    public boolean isAreaCovered(PhysicalAddressInt toCheck, Instant dateToCheck) {
+        log.info("CheckAreaServiceWithRadd initialized with searchMode={}, dateToCheck={}", pnDeliveryPushWorkflowConfigs.getRaddSearchMode(),dateToCheck);
         return raddAltClient.checkCoverage(pnDeliveryPushWorkflowConfigs.getRaddSearchMode()
-                ,toCheck,notificationInt.getSentAt());
+                ,toCheck,dateToCheck);
     }
 }

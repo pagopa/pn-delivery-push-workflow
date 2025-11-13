@@ -3,13 +3,13 @@ package it.pagopa.pn.deliverypushworkflow.service.impl;
 import it.pagopa.pn.commons.abstractions.ParameterConsumer;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
-import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.service.CheckCoverageAreaService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -24,9 +24,9 @@ public class CheckCoverageAreaServiceParameterStore implements CheckCoverageArea
     private final ParameterConsumer parameterConsumer;
 
     @Override
-    public boolean isAreaCovered(PhysicalAddressInt toCheck, NotificationInt notificationInt) {
-        log.info("CheckAreaService initialized with searchMode={}, iun={}, notificationSentAt={}", pnDeliveryPushWorkflowConfigs.getRaddSearchMode()
-                ,notificationInt.getIun(),notificationInt.getSentAt());
+    public boolean isAreaCovered(PhysicalAddressInt toCheck, Instant dateToCheck) {
+        log.info("CheckAreaService initialized with searchMode={}, dateToCheck={}", pnDeliveryPushWorkflowConfigs.getRaddSearchMode()
+                ,dateToCheck);
         // country in admitted countries
         List<String> storeNames = pnDeliveryPushWorkflowConfigs.getRaddExperimentationStoresName();
         if (storeNames == null) return false;
