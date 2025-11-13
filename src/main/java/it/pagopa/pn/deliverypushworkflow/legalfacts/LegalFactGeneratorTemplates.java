@@ -234,7 +234,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
         String accessLink = this.getAccessLink();
         if (pnSendMode != null) {
             final AarTemplateChooseStrategy aarTemplateTypeChooseStrategy = pnSendMode.getAarTemplateTypeChooseStrategy();
-            final AarTemplateType aarTemplateType = aarTemplateTypeChooseStrategy.choose(recipient.getPhysicalAddress());
+            final AarTemplateType aarTemplateType = aarTemplateTypeChooseStrategy.choose(recipient.getPhysicalAddress(),notification);
             log.debug("aarTemplateType generated is ={} - iun={}", aarTemplateType, notification.getIun());
             byte[] bytesArrayGeneratedAar = new byte[0];
             switch (aarTemplateType) {

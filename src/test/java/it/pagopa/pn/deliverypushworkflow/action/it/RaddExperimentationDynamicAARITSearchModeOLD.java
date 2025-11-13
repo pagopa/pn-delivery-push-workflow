@@ -38,9 +38,9 @@ import static org.awaitility.Awaitility.await;
 
 @ContextConfiguration(classes = RaddExperimentationDynamicAARIT.InnerTestConfiguration.class)
 @TestPropertySource(properties = {
-        "pn.delivery-push-workflow.radd-search-mode=LIGHT"
+        "pn.delivery-push-workflow.radd-search-mode=OLD"
 })
-class RaddExperimentationDynamicAARIT extends SendAarAttachment {
+class RaddExperimentationDynamicAARITSearchModeOLD extends SendAarAttachment {
     @Autowired
     private static CheckRADDExperimentation checkRADDExperimentation;
 
@@ -58,7 +58,7 @@ class RaddExperimentationDynamicAARIT extends SendAarAttachment {
 
     //Viene valorizzata la configurazione attuale, cioè INSTANT.NOW meno 1 giorni
     static String currentConfAARTemplateType = START_DYNAMIC_PROPERTY_CHARACTER + RADD_DYNAMIC_TEMPLATE_VALUE + END_DYNAMIC_PROPERTY_CHARACTER;
-    
+
     static PnSendMode currentConf = PnSendMode.builder()
             .startConfigurationTime(sentNotificationTime.minus(1, ChronoUnit.DAYS))
             .analogSendAttachmentMode(SendAttachmentMode.AAR)
@@ -86,7 +86,7 @@ class RaddExperimentationDynamicAARIT extends SendAarAttachment {
             pnSendModeList.add(currentConfString);
 
             Mockito.when(pnDeliveryPushConfigs.getPnSendMode()).thenReturn(pnSendModeList);
-            
+
             return pnDeliveryPushConfigs;
         }
     }
@@ -97,10 +97,10 @@ class RaddExperimentationDynamicAARIT extends SendAarAttachment {
        - Platform address vuoto (Ottenuto non valorizzando il platformAddress in addressBookEntry)
        - Special address vuoto (Ottenuto non valorizzando il digitalDomicile del recipient)
        - General address vuoto (Ottenuto non valorizzando nessun digital address per il recipient in PUB_REGISTRY_DIGITAL)
-       
+
        - Pa physical address presente ed effettua invio con successo
         */
-        
+
         PhysicalAddressInt paPhysicalAddress = PhysicalAddressBuilder.builder()
                 .withAddress(ExternalChannelMock.EXTCHANNEL_SEND_SUCCESS + " Via Nuova")
                 .withZip("80078")
@@ -154,7 +154,7 @@ class RaddExperimentationDynamicAARIT extends SendAarAttachment {
 
         // Viene atteso fino all'inserimento dell'elemento di REFINEMENT (che dovrebbe portare la notifica in EFFECTIVE DATE)
         await().untilAsserted(() -> Assertions.assertTrue(TestUtils.isRefinementPresent(iun, 0, timelineService)));
-        
+
         ArgumentCaptor<PaperChannelPrepareRequest> paperChannelPrepareRequestCaptor = ArgumentCaptor.forClass(PaperChannelPrepareRequest.class);
         Mockito.verify(paperChannelMock, Mockito.times(1)).prepare(paperChannelPrepareRequestCaptor.capture());
         PaperChannelPrepareRequest paperChannelPrepareRequest = paperChannelPrepareRequestCaptor.getValue();
@@ -167,7 +167,7 @@ class RaddExperimentationDynamicAARIT extends SendAarAttachment {
        - Platform address vuoto (Ottenuto non valorizzando il platformAddress in addressBookEntry)
        - Special address vuoto (Ottenuto non valorizzando il digitalDomicile del recipient)
        - General address vuoto (Ottenuto non valorizzando nessun digital address per il recipient in PUB_REGISTRY_DIGITAL)
-       
+
        - Pa physical address presente ed effettua invio con successo
         */
 

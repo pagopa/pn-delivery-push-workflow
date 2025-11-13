@@ -1,6 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.legalfacts;
 
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.utils.CheckRADDExperimentation;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,9 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 public class DynamicRADDExperimentationChooseStrategy implements AarTemplateChooseStrategy {
     private final CheckRADDExperimentation checkRADDExperimentation;
     @Override
-    public AarTemplateType choose(PhysicalAddressInt address) {
+    public AarTemplateType choose(PhysicalAddressInt address, NotificationInt notificationInt) {
         log.trace("Choosing Dynamic AAR type for zip={}", address.getZip());
-        boolean isAddressInExperimentation = checkRADDExperimentation.checkAddress(address);
+        boolean isAddressInExperimentation = checkRADDExperimentation.checkAddress(address,notificationInt);
         log.trace("zip={} isAddressInExperimentation={}", address.getZip(), isAddressInExperimentation);
 
         if(isAddressInExperimentation){

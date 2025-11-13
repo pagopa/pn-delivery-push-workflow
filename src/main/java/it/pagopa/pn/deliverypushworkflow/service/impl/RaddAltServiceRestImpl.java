@@ -1,9 +1,8 @@
 package it.pagopa.pn.deliverypushworkflow.service.impl;
 
-import it.pagopa.pn.deliverypushworkflow.dto.RaddSearchModeInt;
+import it.pagopa.pn.deliverypushworkflow.dto.raddalt.RaddSearchModeInt;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.raddalt.model.CheckCoverageResponse;
-import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.raddalt.model.SearchMode;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.raddalt.RaddAltClient;
 import it.pagopa.pn.deliverypushworkflow.service.RaddAltService;
 import it.pagopa.pn.deliverypushworkflow.service.mapper.RaddAltMapper;
@@ -25,7 +24,7 @@ public class RaddAltServiceRestImpl implements RaddAltService {
     @Override
     public Boolean checkCoverage(RaddSearchModeInt searchMode, PhysicalAddressInt physicalAddressInt, Instant searchDate) {
         log.info("Starting to check RADD coverage");
-        CheckCoverageResponse response = raddAltClient.checkCoverage(SearchMode.fromValue(searchMode.name()),
+        CheckCoverageResponse response = raddAltClient.checkCoverage(searchMode.toClientSearchMode(),
                 raddAltMapper.fromRequestIntToRequestExt(physicalAddressInt), LocalDateTime.ofInstant(searchDate, ZoneOffset.UTC).toLocalDate());
         return response.getHasCoverage();
     }
