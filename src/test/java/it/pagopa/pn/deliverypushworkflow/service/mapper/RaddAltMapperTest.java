@@ -21,6 +21,12 @@ class RaddAltMapperTest {
         PhysicalAddressInt address = PhysicalAddressInt.builder()
                 .zip("12345")
                 .municipality("Milano")
+                .address("Via Roma 1")
+                .fullname("fullname")
+                .province("NA")
+                .municipalityDetails("details")
+                .foreignState("ROM")
+                .addressDetails("details")
                 .build();
 
         CheckCoverageRequest result = mapper.fromRequestIntToRequestExt(address);
@@ -28,8 +34,12 @@ class RaddAltMapperTest {
         assertNotNull(result);
         assertEquals("12345", result.getCap());
         assertEquals("Milano", result.getCity());
-        assertNull(result.getPr());
-        assertNull(result.getCountry());
+        assertEquals("Via Roma 1", result.getAddressRow());
+        assertEquals("fullname", result.getNameRow2());
+        assertEquals("NA", result.getPr());
+        assertEquals("ROM", result.getCountry());
+        assertEquals("12345",result.getCap());
+        assertEquals("details", result.getAddressRow2());
     }
 
     @Test
