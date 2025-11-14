@@ -1,5 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.raddalt;
 
+import it.pagopa.pn.commons.log.PnLogger;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.raddalt.model.CheckCoverageRequest;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.raddalt.model.CheckCoverageResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.raddalt.model.SearchMode;
@@ -7,7 +8,7 @@ import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.raddalt.mode
 import java.time.LocalDate;
 
 public interface RaddAltClient {
-    String CLIENT_NAME = "pn-radd-alt"; //Todo: sostituire con riferimento alla commons
+    String CLIENT_NAME = PnLogger.EXTERNAL_SERVICES.PN_RADD_ALT;
     String CHECK_COVERAGE_PROCESS_NAME = "CHECK COVERAGE";
     CheckCoverageResponse checkCoverage(SearchMode searchMode, CheckCoverageRequest checkCoverageRequest, LocalDate searchDate);
 }
