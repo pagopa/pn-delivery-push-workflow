@@ -1,28 +1,20 @@
 package it.pagopa.pn.deliverypushworkflow.utils;
 
-import it.pagopa.pn.commons.abstractions.ParameterConsumer;
-import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
+import it.pagopa.pn.deliverypushworkflow.service.CheckCoverageAreaService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 
 @Slf4j
 @Component
 public class CheckRADDExperimentation {
     private static final String[] EXPERIMENTAL_COUNTRIES = {"it", "italia", "italy"};
+    private final CheckCoverageAreaService checkCoverageAreaService;
 
-
-    private final PnDeliveryPushWorkflowConfigs pnDeliveryPushWorkflowConfigs;
-    private final ParameterConsumer parameterConsumer;
-
-    public CheckRADDExperimentation(ParameterConsumer parameterConsumer, PnDeliveryPushWorkflowConfigs pnDeliveryPushWorkflowConfigs) {
-        this.parameterConsumer = parameterConsumer;
-        this.pnDeliveryPushWorkflowConfigs = pnDeliveryPushWorkflowConfigs;
+    public CheckRADDExperimentation(CheckCoverageAreaService checkCoverageAreaService) {
+        this.checkCoverageAreaService = checkCoverageAreaService;
     }
 
     private boolean isAnExperimentalCountry(final String countryToCheck) {
@@ -34,33 +26,16 @@ public class CheckRADDExperimentation {
         return false;
     }
 
-    public boolean checkAddress(PhysicalAddressInt toCheck) {
+    public boolean checkAddress(PhysicalAddressInt toCheck, NotificationInt notificationInt) {
 
         if (isAnExperimentalCountry(toCheck.getForeignState())) {
-            // country in admitted countries
-            List<String> storeNames = pnDeliveryPushWorkflowConfigs.getRaddExperimentationStoresName();
-            if (storeNames == null) return false;
-            for (String currentStore : storeNames) {
-                log.info("Current Store {}", currentStore);
-                if (isInStore(toCheck.getZip(), currentStore)){
-                    return true;
-                }
-            }
-        }else {
+            log.info("CheckAreaService initialized with iun={}, notificationSentAt={}",
+                    notificationInt.getIun(),notificationInt.getSentAt());
+            return checkCoverageAreaService.isAreaCovered(toCheck, notificationInt.getSentAt());
+        } else {
             log.trace("Country {} not in admitted countries", toCheck.getForeignState());
         }
         return false;
     }
 
-    private boolean isInStore(String zipCode, String storeName) {
-        log.trace("Looking for zip code={} in store {}", zipCode, storeName);
-        @SuppressWarnings("unchecked") Optional<Set<String>> zipLists = parameterConsumer.getParameterValue(storeName, (Class<Set<String>>) (Object) Set.class);
-        if (zipLists.isPresent()) {
-            Set<String> experimentalZipList = zipLists.get();
-            log.trace("ZipCode ({}) in experimental list? {}", zipCode, experimentalZipList.contains(zipCode));
-            return experimentalZipList.contains(zipCode);
-        }
-        log.trace("ZipCode ({}) not found in experimental list", zipCode);
-        return false;
-    }
 }

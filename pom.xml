@@ -42,7 +42,7 @@
         <dependency>
 			<groupId>it.pagopa.pn</groupId>
 			<artifactId>pn-commons</artifactId>
-			<version>2.15.0-SPRINGBOOT3</version>
+			<version>2.16.0-SPRINGBOOT3</version>
 		</dependency>
 
 		<dependency>
@@ -402,7 +402,7 @@
                         <phase>generate-resources</phase>
                         <configuration>
                             <inputSpec>
-                                https://raw.githubusercontent.com/pagopa/pn-radd-alt/36d7e139830a1d6c95dd9361fae65fb016552a53/docs/openapi/pn-radd-alt-private.yaml                            </inputSpec>
+                                https://raw.githubusercontent.com/pagopa/pn-radd-alt/949aa396b5e621df1fc86814d3f69dc7960682fd/docs/openapi/pn-radd-alt-private.yaml                            </inputSpec>
                             <templateDirectory>${project.build.directory}/dependency-resources/scripts/openapi/templates/7.4.0/client</templateDirectory>
                             <generatorName>java</generatorName>
                             <library>resttemplate</library>

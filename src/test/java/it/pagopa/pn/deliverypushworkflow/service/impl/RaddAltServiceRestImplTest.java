@@ -1,6 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.service.impl;
 
-import it.pagopa.pn.deliverypushworkflow.dto.RaddSearchModeInt;
+import it.pagopa.pn.deliverypushworkflow.dto.raddalt.RaddSearchModeInt;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.raddalt.model.CheckCoverageRequest;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.raddalt.model.CheckCoverageResponse;
