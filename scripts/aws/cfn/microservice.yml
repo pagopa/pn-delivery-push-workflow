@@ -400,7 +400,7 @@ Resources:
         ContainerEnvEntry23: !Sub 'WIRE_TAP_LOG=${WireTapLogActivation}'
         ContainerEnvEntry24: !Sub 'PN_DELIVERYPUSHWORKFLOW_PAPERTRACKERBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
         ContainerEnvEntry25: !Sub 'PN_DELIVERYPUSHWORKFLOW_RADDALTBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
-        ContainerEnvEntry26: 'PN_DELIVERYPUSHWORKFLOW_RADDSEARCHMODE={{resolve:ssm:config/radd-coverage/search-mode}}'
+        ContainerEnvEntry26: 'PN_DELIVERYPUSHWORKFLOW_RADDSEARCHMODE={{resolve:ssm:/config/radd-coverage/search-mode}}'
         ApplicativeEnvFileChecksum: !Ref ApplicativeEnvFileChecksum
         ParentMicroserviceName: !Sub '${ProjectName}-delivery-push-workflow'
         JavaToolOptions: '-Dreactor.netty.ioWorkerCount=50'
@@ -484,7 +484,6 @@ Resources:
               - 'ssm:GetParameter'
               - 'ssm:GetParameters'
             Resource:
-              - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/config/radd-coverage/search-mode'
               - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/radd-experimentation-zip-*'
               - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/AARQrUrlConfigs'
           - Effect: Allow
