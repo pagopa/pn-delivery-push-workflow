@@ -417,6 +417,8 @@ Resources:
         ContainerEnvEntry26: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_NOTIFICATIONREWORKUPDATEREVENT=${DeliveryPushToNotificationReworkUpdaterQueueName}'
         ContainerEnvEntry27: !Sub 'PN_DELIVERYPUSHWORKFLOW_NOTIFICATIONREWORKDOCUMENTEXPIRINGRANGE=${NotificationReworkDocumentExpiringRange}'
         ContainerEnvEntry28: !Sub 'PN_DELIVERYPUSHWORKFLOW_INVALIDABLECATEGORIES={{resolve:ssm:/config/timeline/invalidable-categories}}'
+        ContainerEnvEntry29: !Sub 'PN_DELIVERYPUSHWORKFLOW_RADDALTBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
+        ContainerEnvEntry30: 'PN_DELIVERYPUSHWORKFLOW_RADDSEARCHMODE={{resolve:ssm:/config/radd-coverage/search-mode}}'
         ApplicativeEnvFileChecksum: !Ref ApplicativeEnvFileChecksum
         ParentMicroserviceName: !Sub '${ProjectName}-delivery-push-workflow'
         JavaToolOptions: '-Dreactor.netty.ioWorkerCount=50'
