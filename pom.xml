@@ -402,7 +402,7 @@
                         <phase>generate-resources</phase>
                         <configuration>
                             <inputSpec>
-                                https://raw.githubusercontent.com/pagopa/pn-radd-alt/a2b743cb4c17244d12eb3a9e856597e1813083b9/docs/openapi/pn-radd-alt-private.yaml                            </inputSpec>
+                                https://raw.githubusercontent.com/pagopa/pn-radd-alt/bb9a96390a5281af0d4f3a4df3e5675450e8d2ca/docs/openapi/pn-radd-alt-private.yaml                            </inputSpec>
                             <templateDirectory>${project.build.directory}/dependency-resources/scripts/openapi/templates/7.4.0/client</templateDirectory>
                             <generatorName>java</generatorName>
                             <library>resttemplate</library>
