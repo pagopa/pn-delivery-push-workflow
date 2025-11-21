@@ -2028,33 +2028,15 @@ class DigitalWorkFlowHandlerTest {
 
     @ExtendWith(MockitoExtension.class)
     @Test
-    void startDigitalWorkflow_CourtesyMessageSent() {
+    void startDigitalWorkflowAndCourtesyMessageSent() {
         NotificationInt notification = getNotification();
         LegalDigitalAddressInt address = LegalDigitalAddressInt.builder().address("test@example.com").build();
         int recIndex = 0;
 
-        when(pnDeliveryPushConfigs.getSendCourtesyAtChooseDeliveryActivationDate()).thenReturn(notification.getSentAt());
-        Mockito.lenient().when(featureEnabledUtils.isSendCourtesyAtChooseDeliveryEnabled(notification.getSentAt())).thenReturn(true);
         handler.startDigitalWorkflow(notification, address, DigitalAddressSourceInt.PLATFORM, recIndex);
 
         verify(courtesyMessageUtils, Mockito.times(1))
                 .checkAddressesAndSendCourtesyMessage(notification, recIndex, DeliveryModeInt.DIGITAL);
-    }
-
-    @ExtendWith(MockitoExtension.class)
-    @Test
-    void startDigitalWorkflow_CourtesyMessageNotSent() {
-        NotificationInt notification = getNotification();
-        LegalDigitalAddressInt address = LegalDigitalAddressInt.builder().address("test@example.com").build();
-        int recIndex = 0;
-
-        when(pnDeliveryPushConfigs.getSendCourtesyAtChooseDeliveryActivationDate()).thenReturn(notification.getSentAt().plus(Duration.ofDays(1)));
-        Mockito.lenient().when(featureEnabledUtils.isSendCourtesyAtChooseDeliveryEnabled(notification.getSentAt())).thenReturn(false);
-
-        handler.startDigitalWorkflow(notification, address, DigitalAddressSourceInt.PLATFORM, recIndex);
-
-        Mockito.verify(courtesyMessageUtils, Mockito.never())
-                .checkAddressesAndSendCourtesyMessage(Mockito.any(), Mockito.anyInt(), Mockito.any());
     }
 
 
