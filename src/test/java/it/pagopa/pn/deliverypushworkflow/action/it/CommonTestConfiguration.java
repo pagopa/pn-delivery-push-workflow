@@ -24,6 +24,7 @@ import it.pagopa.pn.deliverypushworkflow.action.startworkflowrecipient.AarCreati
 import it.pagopa.pn.deliverypushworkflow.action.startworkflowrecipient.StartWorkflowForRecipientHandler;
 import it.pagopa.pn.deliverypushworkflow.action.utils.*;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
+import it.pagopa.pn.deliverypushworkflow.dto.raddalt.RaddSearchModeInt;
 import it.pagopa.pn.deliverypushworkflow.legalfacts.AarTemplateStrategyFactory;
 import it.pagopa.pn.deliverypushworkflow.legalfacts.DynamicRADDExperimentationChooseStrategy;
 import it.pagopa.pn.deliverypushworkflow.logtest.ConsoleAppenderCustom;
@@ -36,6 +37,7 @@ import it.pagopa.pn.deliverypushworkflow.middleware.responsehandler.ExternalChan
 import it.pagopa.pn.deliverypushworkflow.middleware.responsehandler.NationalRegistriesResponseHandler;
 import it.pagopa.pn.deliverypushworkflow.middleware.responsehandler.PaperChannelResponseHandler;
 import it.pagopa.pn.deliverypushworkflow.service.impl.*;
+import it.pagopa.pn.deliverypushworkflow.service.mapper.RaddAltMapper;
 import it.pagopa.pn.deliverypushworkflow.service.mapper.SmartMapper;
 import it.pagopa.pn.deliverypushworkflow.service.utils.PublicRegistryUtils;
 import it.pagopa.pn.deliverypushworkflow.utils.CheckRADDExperimentation;
@@ -158,7 +160,11 @@ import static org.awaitility.Awaitility.setDefaultTimeout;
         AnalogWorkflowTimeoutHandler.class,
         AnalogWorkflowTimeoutActionHandler.class,
         PaperTrackerServiceImpl.class,
-        AnalogWorkflowDeliveryTimeoutHandler.class
+        AnalogWorkflowDeliveryTimeoutHandler.class,
+        CheckCoverageAreaServiceParameterStore.class,
+        CheckCoverageAreaServiceRADD.class,
+        RaddAltServiceRestImpl.class,
+        RaddAltMapper.class
 })
 @ExtendWith(SpringExtension.class)
 @TestPropertySource(value = "classpath:/application-testIT.properties")
@@ -238,6 +244,8 @@ public class CommonTestConfiguration {
         times.setScheduleAnalogWorkflowTimeoutOffset(Duration.ofSeconds(5));
         
         Mockito.when(cfg.getTimeParams()).thenReturn(times);
+
+        Mockito.when(cfg.getRaddSearchMode()).thenReturn(RaddSearchModeInt.LIGHT);
 
         // Impostazione delle proprietà PaperChannel
         PnDeliveryPushWorkflowConfigs.PaperChannel paperChannel = new PnDeliveryPushWorkflowConfigs.PaperChannel();

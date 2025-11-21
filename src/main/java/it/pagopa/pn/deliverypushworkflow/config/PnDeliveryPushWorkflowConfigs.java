@@ -2,6 +2,7 @@ package it.pagopa.pn.deliverypushworkflow.config;
 
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import it.pagopa.pn.commons.conf.SharedAutoConfiguration;
+import it.pagopa.pn.deliverypushworkflow.dto.raddalt.RaddSearchModeInt;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.impl.TimeParams;
 import jakarta.annotation.PostConstruct;
@@ -38,6 +39,8 @@ public class PnDeliveryPushWorkflowConfigs {
     private String dataVaultBaseUrl;
 
     private String safeStorageBaseUrl;
+
+    private String raddAltBaseUrl;
 
     private String userAttributesBaseUrl;
 
@@ -102,6 +105,8 @@ public class PnDeliveryPushWorkflowConfigs {
     private String paperTrackerBaseUrl;
 
     private Instant startAnalogWorkflowTimeoutFeatureDate;
+
+    private RaddSearchModeInt raddSearchMode;
 
     @Data
     public static class Topics {

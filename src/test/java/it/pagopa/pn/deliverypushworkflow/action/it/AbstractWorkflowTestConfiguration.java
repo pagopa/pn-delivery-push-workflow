@@ -19,6 +19,7 @@ import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.deli
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.externalregistry.PnExternalRegistriesClientReactive;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.externalregistry.PnExternalRegistryClient;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.externalregistry.PnExternalRegistryClientImpl;
+import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.raddalt.RaddAltClient;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.safestorage.PnSafeStorageClient;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.templatesengine.TemplatesClient;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.templatesengine.TemplatesClientPec;
@@ -85,6 +86,9 @@ public class AbstractWorkflowTestConfiguration {
     public UserAttributesClient testAddressBook() {
         return new UserAttributesClientMock();
     }
+
+    @Bean
+    public RaddAltClient raddAltClientTest() { return new RaddAltClientMock();}
 
     @Bean
     public PnSafeStorageClient safeStorageTest(@Lazy SchedulerService schedulerService, @Lazy DocumentCreationRequestDaoMock documentCreationRequestDaoMock) {

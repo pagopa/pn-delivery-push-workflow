@@ -2,6 +2,7 @@ package it.pagopa.pn.deliverypushworkflow.utils;
 
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.legalfacts.AarTemplateChooseStrategy;
 import it.pagopa.pn.deliverypushworkflow.legalfacts.AarTemplateStrategyFactory;
 import it.pagopa.pn.deliverypushworkflow.legalfacts.AarTemplateType;
@@ -78,7 +79,7 @@ class PnSendModeUtilsTest {
         Assertions.assertEquals(correctAnalogSendAttachmentMode, pnSendMode.getAnalogSendAttachmentMode());
         Assertions.assertEquals(correctSimpleRegisteredLetterSendAttachmentMode, pnSendMode.getSimpleRegisteredLetterSendAttachmentMode());
         
-        AarTemplateType actualAaarTemplateType = pnSendMode.getAarTemplateTypeChooseStrategy().choose(PhysicalAddressInt.builder().build());
+        AarTemplateType actualAaarTemplateType = pnSendMode.getAarTemplateTypeChooseStrategy().choose(PhysicalAddressInt.builder().build(), NotificationInt.builder().build());
         Assertions.assertEquals(correctAarTemplateType, actualAaarTemplateType);
     }
 
@@ -114,7 +115,7 @@ class PnSendModeUtilsTest {
         Assertions.assertEquals(correctConfigStartDate, pnSendMode.getStartConfigurationTime());
         Assertions.assertEquals(correctAnalogSendAttachmentMode, pnSendMode.getAnalogSendAttachmentMode());
         Assertions.assertEquals(correctSimpleRegisteredLetterSendAttachmentMode, pnSendMode.getSimpleRegisteredLetterSendAttachmentMode());
-        AarTemplateType actualAaarTemplateType = pnSendMode.getAarTemplateTypeChooseStrategy().choose(PhysicalAddressInt.builder().build());
+        AarTemplateType actualAaarTemplateType = pnSendMode.getAarTemplateTypeChooseStrategy().choose(PhysicalAddressInt.builder().build(),NotificationInt.builder().build());
         Assertions.assertEquals(correctAarTemplateType, actualAaarTemplateType);
     }
     
@@ -148,7 +149,7 @@ class PnSendModeUtilsTest {
         Assertions.assertEquals(correctConfigStartDate, pnSendMode.getStartConfigurationTime());
         Assertions.assertEquals(correctAnalogSendAttachmentMode, pnSendMode.getAnalogSendAttachmentMode());
         Assertions.assertEquals(correctSimpleRegisteredLetterSendAttachmentMode, pnSendMode.getSimpleRegisteredLetterSendAttachmentMode());
-        AarTemplateType actualAaarTemplateType = pnSendMode.getAarTemplateTypeChooseStrategy().choose(PhysicalAddressInt.builder().build());
+        AarTemplateType actualAaarTemplateType = pnSendMode.getAarTemplateTypeChooseStrategy().choose(PhysicalAddressInt.builder().build(),NotificationInt.builder().build());
         Assertions.assertEquals(correctAarTemplateType, actualAaarTemplateType);
     }
 
@@ -184,7 +185,7 @@ class PnSendModeUtilsTest {
         Assertions.assertEquals(correctConfigStartDate, pnSendMode.getStartConfigurationTime());
         Assertions.assertEquals(correctAnalogSendAttachmentMode, pnSendMode.getAnalogSendAttachmentMode());
         Assertions.assertEquals(correctSimpleRegisteredLetterSendAttachmentMode, pnSendMode.getSimpleRegisteredLetterSendAttachmentMode());
-        AarTemplateType actualAaarTemplateType = pnSendMode.getAarTemplateTypeChooseStrategy().choose(PhysicalAddressInt.builder().build());
+        AarTemplateType actualAaarTemplateType = pnSendMode.getAarTemplateTypeChooseStrategy().choose(PhysicalAddressInt.builder().build(),NotificationInt.builder().build());
         Assertions.assertEquals(correctAarTemplateType, actualAaarTemplateType);
     }
 
@@ -222,7 +223,7 @@ class PnSendModeUtilsTest {
         Assertions.assertEquals(correctConfigStartDate, pnSendMode.getStartConfigurationTime());
         Assertions.assertEquals(correctAnalogSendAttachmentMode, pnSendMode.getAnalogSendAttachmentMode());
         Assertions.assertEquals(correctSimpleRegisteredLetterSendAttachmentMode, pnSendMode.getSimpleRegisteredLetterSendAttachmentMode());
-        AarTemplateType actualAaarTemplateType = pnSendMode.getAarTemplateTypeChooseStrategy().choose(PhysicalAddressInt.builder().build());
+        AarTemplateType actualAaarTemplateType = pnSendMode.getAarTemplateTypeChooseStrategy().choose(PhysicalAddressInt.builder().build(),NotificationInt.builder().build());
         Assertions.assertEquals(correctAarTemplateType, actualAaarTemplateType);
     }
 
@@ -243,7 +244,7 @@ class PnSendModeUtilsTest {
         SendAttachmentMode correctAnalogSendAttachmentMode = SendAttachmentMode.fromValue(arrayObj[ANALOG_SEND_ATTACHMENT_MODE_INDEX]);
         SendAttachmentMode correctSimpleRegisteredLetterSendAttachmentMode = SendAttachmentMode.fromValue(arrayObj[SIMPLE_REGISTERED_LETTER_SEND_ATTACHMENT_MODE_INDEX]);
         
-        Mockito.when(checkRADDExperimentation.checkAddress(Mockito.any())).thenReturn(true);
+        Mockito.when(checkRADDExperimentation.checkAddress(Mockito.any(),Mockito.any())).thenReturn(true);
         AarTemplateChooseStrategy aarTemplateChooseStrategy = new DynamicRADDExperimentationChooseStrategy(checkRADDExperimentation);
         Mockito.when(aarTemplateStrategyFactory.getAarTemplateStrategy(Mockito.anyString())).thenReturn(aarTemplateChooseStrategy);
         
@@ -261,7 +262,7 @@ class PnSendModeUtilsTest {
         Assertions.assertEquals(correctConfigStartDate, pnSendMode.getStartConfigurationTime());
         Assertions.assertEquals(correctAnalogSendAttachmentMode, pnSendMode.getAnalogSendAttachmentMode());
         Assertions.assertEquals(correctSimpleRegisteredLetterSendAttachmentMode, pnSendMode.getSimpleRegisteredLetterSendAttachmentMode());
-        AarTemplateType actualAaarTemplateType = pnSendMode.getAarTemplateTypeChooseStrategy().choose(PhysicalAddressInt.builder().build());
+        AarTemplateType actualAaarTemplateType = pnSendMode.getAarTemplateTypeChooseStrategy().choose(PhysicalAddressInt.builder().build(),NotificationInt.builder().build());
         Assertions.assertEquals(AarTemplateType.AAR_NOTIFICATION_RADD_ALT, actualAaarTemplateType);
     }
 
