@@ -44,12 +44,6 @@ public class AarCreationResponseHandler {
         
         storingAarResponse(iun, recIndex, actionDetails, notification);
 
-        
-        //... Invio messaggio di cortesia ...
-        if (featureEnabledUtils.isSendCourtesyAtAARGenerationEnabled(notification.getSentAt())) {
-            courtesyMessageUtils.checkAddressesAndSendCourtesyMessage(notification, recIndex, null);
-        }
-
         //... e viene schedulato il processo di scelta della tipologia di notificazione
         scheduleChooseDeliveryMode(iun, recIndex);
     }

@@ -106,8 +106,6 @@ public class PnDeliveryPushWorkflowConfigs {
 
     private Instant startAnalogWorkflowTimeoutFeatureDate;
 
-    private Instant sendCourtesyAtChooseDeliveryActivationDate;
-
     private RaddSearchModeInt raddSearchMode;
 
     @Data
