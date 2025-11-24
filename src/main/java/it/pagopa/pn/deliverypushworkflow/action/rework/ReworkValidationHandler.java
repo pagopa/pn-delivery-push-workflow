@@ -162,8 +162,8 @@ public class ReworkValidationHandler {
         log.debug("computeRequestId for iun {}", info.getAction().getIun());
         return info.getTimeline().stream()
                 .filter(timelineElement -> timelineElement.getCategory().equals(TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE))
-                .filter(timelineElement -> timelineElement.getElementId().contains(ATTEMPT + info.getActionDetail().getReworkAttempt()))
-                .filter(timelineElement -> timelineElement.getElementId().contains(REC_INDEX + info.getActionDetail().getReworkRecIndex()))
+                .filter(timelineElement -> timelineElement.getElementId().contains(info.getActionDetail().getReworkAttempt()))
+                .filter(timelineElement -> timelineElement.getElementId().contains(info.getActionDetail().getReworkRecIndex()))
                 .findFirst()
                 .map(timelineElementInternal -> timelineElementInternal.getElementId() + "." + info.getActionDetail().getReworkPcRetry())
                 .orElse(StringUtils.EMPTY);
