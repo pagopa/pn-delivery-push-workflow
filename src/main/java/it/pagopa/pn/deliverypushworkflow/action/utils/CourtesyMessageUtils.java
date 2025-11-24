@@ -117,7 +117,7 @@ public class CourtesyMessageUtils {
         switch (courtesyAddress.getType()) {
             case EMAIL, SMS -> messageSent = manageCourtesyMessage(notification, recIndex, courtesyAddress, deliveryMode);
             case APPIO -> messageSent = manageIOMessage(notification, recIndex, courtesyAddress, schedulingAnalogDate, deliveryMode);
-            case TPP -> messageSent = manageTPPMessage(notification, recIndex, courtesyAddress);
+            case TPP -> messageSent = manageTPPMessage(notification, recIndex, courtesyAddress, deliveryMode, schedulingAnalogDate);
             default -> handleCourtesyTypeError(notification, recIndex, courtesyAddress);
         }
 
@@ -218,12 +218,12 @@ public class CourtesyMessageUtils {
         }
     }
 
-    private boolean manageTPPMessage(NotificationInt notification, Integer recIndex, CourtesyDigitalAddressInt courtesyAddress) {
+    private boolean manageTPPMessage(NotificationInt notification, Integer recIndex, CourtesyDigitalAddressInt courtesyAddress, DeliveryModeInt deliveryMode, Instant schedulingAnalogDate) {
         final String iun = notification.getIun();
         log.info("manageTPPMessage - iun={} id={} ", iun, recIndex);
 
         String eventId = getSendCourtesyTimelineElementId(recIndex, iun, courtesyAddress.getType(), Boolean.FALSE);
-        SendMessageRequestBody request = buildSendMessageRequest(notification, recIndex);
+        SendMessageRequestBody request = buildSendMessageRequest(notification, recIndex, deliveryMode, schedulingAnalogDate);
         PnAuditLogEvent logEvent = buildAuditLogEvent(iun, recIndex, eventId);
 
         it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.emd.integration.model.SendMessageResponse response = pnEmdIntegrationClient.sendMessage(request);
@@ -238,13 +238,15 @@ public class CourtesyMessageUtils {
         }
     }
 
-    private SendMessageRequestBody buildSendMessageRequest(NotificationInt notification, Integer recIndex) {
+    private SendMessageRequestBody buildSendMessageRequest(NotificationInt notification, Integer recIndex, DeliveryModeInt deliveryMode, Instant schedulingAnalogDate) {
         return new SendMessageRequestBody()
                 .recipientId(notification.getRecipients().get(recIndex).getTaxId())
                 .internalRecipientId(notification.getRecipients().get(recIndex).getInternalId())
                 .originId(notification.getIun())
                 .senderDescription(notification.getSender().getPaDenomination())
-                .associatedPayment(hasRecipientPagoPaPayment(notification, recIndex));
+                .associatedPayment(hasRecipientPagoPaPayment(notification, recIndex))
+                .deliveryMode(SendMessageRequestBody.DeliveryModeEnum.fromValue(deliveryMode.getValue()))
+                .schedulingAnalogDate(deliveryMode == DeliveryModeInt.ANALOG ? schedulingAnalogDate : null);
     }
 
     private PnAuditLogEvent buildAuditLogEvent(String iun, int recIndex, String eventId) {
