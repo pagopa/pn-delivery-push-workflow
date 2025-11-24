@@ -108,12 +108,19 @@ public class PnDeliveryPushWorkflowConfigs {
 
     private RaddSearchModeInt raddSearchMode;
 
+    private int reworkTTLAddressRange;
+
+    private int notificationReworkDocumentExpiringRange;
+
+    private List<String> invalidableCategories;
+
     @Data
     public static class Topics {
         private String newNotifications;
         private String fromExternalChannel;
         private String scheduledActions;
         private String nationalRegistriesEvents;
+        private String notificationReworkUpdaterEvent;
     }
 
     @Data

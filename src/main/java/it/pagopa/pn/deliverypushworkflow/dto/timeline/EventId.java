@@ -29,4 +29,5 @@ public class EventId {
     private Boolean isFirstSendRetry;
     private String relatedTimelineId;
     private Boolean optin;
+    private Integer reworkIdx;
 }

@@ -4,6 +4,7 @@ import it.pagopa.pn.commons.exceptions.PnHttpResponseException;
 import it.pagopa.pn.commons.utils.LogUtils;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.exceptions.PnPaperChannelChangedCostException;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.api.NotificationReworkApi;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.api.PaperMessagesApi;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.*;
 import lombok.CustomLog;
@@ -19,7 +20,21 @@ import java.time.Instant;
 public class PaperChannelSendClientImpl implements PaperChannelSendClient {
     public static final String PRINT_TYPE_BN_FRONTE_RETRO = "BN_FRONTE_RETRO";
     private final PaperMessagesApi paperMessagesApi;
-    
+    private final NotificationReworkApi notificationReworkApi;
+
+    @Override
+    public void init(String requestId, String reworkId) {
+        log.logInvokingAsyncExternalService(CLIENT_NAME, INIT_ANALOG_NOTIFICATION_REWORK, requestId);
+        log.debug("[enter] init requestId={} reworkId={}", requestId, reworkId);
+        try {
+            notificationReworkApi.initNotificationRework(requestId, reworkId);
+        } catch (PnHttpResponseException e) {
+            log.error("Error while invoking {}: {}", INIT_ANALOG_NOTIFICATION_REWORK, e.getMessage(), e);
+            throw e;
+        }
+        log.debug("[exit] init requestId={} reworkId={}", requestId, reworkId);
+    }
+
     @Override
     public void prepare(PaperChannelPrepareRequest paperChannelPrepareRequest) {
         log.logInvokingAsyncExternalService(CLIENT_NAME, PREPARE_ANALOG_NOTIFICATION, paperChannelPrepareRequest.getRequestId());

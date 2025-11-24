@@ -61,6 +61,14 @@ public class PaperChannelServiceImpl implements PaperChannelService {
     private final TimelineService timelineService;
     private final AnalogDeliveryTimeoutUtils analogDeliveryTimeoutUtils;
 
+
+    @Override
+    public void initNotificationRework(String requestId, String reworkId) {
+        log.debug("Start initNotificationRework - requestId={} reworkId={}", requestId, reworkId);
+
+        paperChannelSendClient.init(requestId, reworkId);
+    }
+
     /**
      * Send registered letter to external channel
      * to use when all pec send fails

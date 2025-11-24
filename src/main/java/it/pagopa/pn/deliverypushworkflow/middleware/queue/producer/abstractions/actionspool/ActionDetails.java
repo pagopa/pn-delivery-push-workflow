@@ -21,7 +21,9 @@ import it.pagopa.pn.deliverypushworkflow.action.details.*;
         @JsonSubTypes.Type(value = NotHandledDetails.class, name = "SENDER_ACK"),
         @JsonSubTypes.Type(value = DocumentCreationResponseActionDetails.class, name = "DOCUMENT_CREATION_RESPONSE"),
         @JsonSubTypes.Type(value = SendDigitalFinalStatusResponseDetails.class, name = "SEND_DIGITAL_FINAL_STATUS_RESPONSE"),
-        @JsonSubTypes.Type(value = AnalogWorkflowTimeoutDetails.class, name = "ANALOG_WORKFLOW_NO_FEEDBACK_TIMEOUT")
+        @JsonSubTypes.Type(value = AnalogWorkflowTimeoutDetails.class, name = "ANALOG_WORKFLOW_NO_FEEDBACK_TIMEOUT"),
+        @JsonSubTypes.Type(value = NotificationReworkValidationDetails.class, name = "NOTIFICATION_REWORK_VALIDATION"),
+        @JsonSubTypes.Type(value = NotificationReworkRequestedDetails.class, name = "NOTIFICATION_REWORK_REQUESTED")
 })
 public interface ActionDetails {
 

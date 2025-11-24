@@ -246,7 +246,7 @@
 						</goals>
 						<phase>generate-resources</phase>
 						<configuration>
-							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-paper-channel/11f0b33722fa92e44c5c37032e6ebc938b1cb713/docs/openapi/api-internal-v1.yaml</inputSpec>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-paper-channel/2dba088bd2b712d86a5c643274e3e0ab25816448/docs/openapi/api-internal-v1.yaml</inputSpec>
 							<templateDirectory>${project.build.directory}/dependency-resources/scripts/openapi/templates/7.4.0/client</templateDirectory>
 							<generatorName>java</generatorName>
 							<library>resttemplate</library>
@@ -286,7 +286,7 @@
 						</goals>
 						<phase>generate-resources</phase>
 						<configuration>
-							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-action-manager/17a1a2ec39024240fc51f12b4577af10ecdeb353/docs/openapi/api-private.yaml</inputSpec>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-action-manager/da5241669d2bb7fe89e44e51ebb1310352d2ae99/docs/openapi/api-private.yaml</inputSpec>
 							<templateDirectory>${project.build.directory}/dependency-resources/scripts/openapi/templates/7.4.0/client</templateDirectory>
 							<generatorName>java</generatorName>
 							<library>resttemplate</library>
@@ -364,7 +364,7 @@
 						<phase>generate-resources</phase>
 						<configuration>
 							<inputSpec>
-								https://raw.githubusercontent.com/pagopa/pn-timeline-service/3507fc7ef2c651ce9a206cb4eda068dbb5656e8a/docs/openapi/pn-timeline-service-private.yaml
+								https://raw.githubusercontent.com/pagopa/pn-timeline-service/7cc3d3b3703a105cd9745ba4d10d5559e79671ac/docs/openapi/pn-timeline-service-private.yaml
 							</inputSpec>
 							<templateDirectory>${project.build.directory}/dependency-resources/scripts/openapi/templates/7.4.0/client</templateDirectory>
 							<generatorName>java</generatorName>
@@ -847,9 +847,7 @@
 							<typeMappings>
 								<typeMapping>OffsetDateTime=java.time.Instant</typeMapping>
 							</typeMappings>
-							<inputSpec>
-								https://raw.githubusercontent.com/pagopa/pn-paper-tracker/2a00ee94cc022dd154848be0d08dfe119c79ec63/docs/openapi/api-internal-v1.yaml
-							</inputSpec>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-paper-tracker/984506ea290281aa9506f327250021c66b1cd0fd/docs/openapi/api-internal-v1.yaml</inputSpec>
 							<generatorName>java</generatorName>
 							<library>resttemplate</library>
 							<generateApiTests>false</generateApiTests>
