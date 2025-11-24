@@ -48,8 +48,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkConstant.*;
-import static it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt.ANALOG_FAILURE_WORKFLOW;
-import static it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt.ANALOG_SUCCESS_WORKFLOW;
+import static it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt.*;
 
 @Slf4j
 @Component
@@ -65,6 +64,8 @@ public class ReworkValidationHandler {
     private final ReworkRequestEventPool reworkRequestEventPool;
     private final PnDeliveryPushWorkflowConfigs pnDeliveryPushWorkflowConfigs;
     private final SafeStorageService safeStorageService;
+
+    private final List<TimelineElementCategoryInt> ELEMENTS_WITHOUT_ATTEMPT_ID = List.of(NOTIFICATION_VIEWED_CREATION_REQUEST, SCHEDULE_REFINEMENT, ANALOG_FAILURE_WORKFLOW, ANALOG_SUCCESS_WORKFLOW, REFINEMENT, ANALOG_WORKFLOW_RECIPIENT_DECEASED);
 
     public Mono<Void> handleNotificationRework(Action action) {
         log.info("Start handleRework - iun {} id {}", action.getIun(), action.getRecipientIndex());
@@ -221,7 +222,9 @@ public class ReworkValidationHandler {
         String recIndex = info.getActionDetail().getReworkRecIndex();
         String attempt = info.getActionDetail().getReworkAttempt();
 
-        return Mono.just(info.getTimeline().stream().filter(timelineElementInternal -> timelineElementInternal.getElementId().contains(attempt)).collect(Collectors.toSet()))
+        return Mono.just(info.getTimeline().stream().filter(timelineElementInternal -> timelineElementInternal.getElementId().contains(attempt)
+                        || ELEMENTS_WITHOUT_ATTEMPT_ID.contains(timelineElementInternal.getCategory()))
+                .collect(Collectors.toSet()))
                 .filter(timelineElementInternals -> !timelineElementInternals.isEmpty())
                 .switchIfEmpty(fail(NotificationReworkErrorCause.INVALID_ATTEMPT_ID, NotificationReworkErrorCause.INVALID_ATTEMPT_ID.getErrorDetails()))
                 .map(timelineElement -> timelineElement.stream().filter(timelineElementInternal -> timelineElementInternal.getElementId().contains(recIndex)).collect(Collectors.toSet()))
@@ -258,7 +261,7 @@ public class ReworkValidationHandler {
             }
         } else {
             log.warn("Timeline does not contain the final elements (REFINEMENT or ANALOG_WORKFLOW_RECIPIENT_DECEASED) required to proceed with the invalidation request for iun: [{}], recIndex: [{}], attemptId: [{}]", info.getAction().getIun(), recIndex, attempt);
-            return fail(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT, "REFINEMENT and ANALOG_WORKFLOW_RECIPIENT_DECEASED missing");
+            return fail(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT, "REFINEMENT or ANALOG_WORKFLOW_RECIPIENT_DECEASED missing");
         }
     }
 
@@ -275,7 +278,7 @@ public class ReworkValidationHandler {
 
     private static Instant retrieveViewedDate(Set<TimelineElementInternal> timeline) {
         return timeline.stream()
-                .filter(e -> e.getCategory() == TimelineElementCategoryInt.NOTIFICATION_VIEWED_CREATION_REQUEST)
+                .filter(e -> e.getCategory() == NOTIFICATION_VIEWED_CREATION_REQUEST)
                 .map(TimelineElementInternal::getDetails)
                 .filter(details -> details instanceof NotificationViewedCreationRequestDetailsInt)
                 .map(details -> (NotificationViewedCreationRequestDetailsInt) details)
@@ -320,7 +323,7 @@ public class ReworkValidationHandler {
     }
 
     private boolean containsCategory(Set<TimelineElementInternal> timeline, TimelineElementCategoryInt category) {
-        return timeline.stream().anyMatch(e -> e.getCategory() == category);
+        return timeline.stream().anyMatch(e -> e.getCategory().equals(category));
     }
 
     private int getRecIndexFromAction(NotificationReworkValidationDetails actionDetail) {

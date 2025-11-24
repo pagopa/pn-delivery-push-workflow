@@ -297,12 +297,6 @@ class ReworkValidationHandlerTest {
         timelineElement.setElementId("SEND_ANALOG_FEEDBACK.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0");
         timeline.add(timelineElement);
 
-        timelineElement = new TimelineElementInternal();
-        timelineElement.setCategory(TimelineElementCategoryInt.REFINEMENT);
-        timelineElement.setElementId("REFINEMENT.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0");
-        timeline.add(timelineElement);
-
-
         NotificationHistoryResponse notificationHistoryResponse = new NotificationHistoryResponse();
         notificationHistoryResponse.setNotificationStatus(NotificationStatus.EFFECTIVE_DATE);
 
@@ -476,7 +470,7 @@ class ReworkValidationHandlerTest {
         verify(reworkRequestEventPool, times(1)).scheduleFutureAction(captor.capture(), any());
         List<NotificationReworkError> capturedErrorList = captor.getValue().getError();
         Assertions.assertEquals(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT.getCause(), capturedErrorList.getFirst().getCause());
-        Assertions.assertEquals("REFINEMENT and ANALOG_WORKFLOW_RECIPIENT_DECEASED missing", capturedErrorList.getFirst().getDescription());
+        Assertions.assertEquals("REFINEMENT or ANALOG_WORKFLOW_RECIPIENT_DECEASED missing", capturedErrorList.getFirst().getDescription());
     }
 
     @Test
