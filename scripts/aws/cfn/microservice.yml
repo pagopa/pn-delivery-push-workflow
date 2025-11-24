@@ -516,12 +516,6 @@ Resources:
             Resource:
               - !Sub "${PaperNotificationFailedDynamoTableArn}"
               - !Sub "${DocumentCreationRequestTableArn}"
-          - Effect: Allow
-            Action:
-              - 'ssm:GetParameter'
-              - 'ssm:GetParameters'
-            Resource:
-              - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/config/timeline/invalidable-categories'
 
   #### Alarm for custom metric Autoscaling
   AlarmCustomAutoscalingWorkflow:
