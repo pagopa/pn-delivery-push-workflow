@@ -1405,7 +1405,7 @@ public class TimelineUtils {
                                                                                     Integer recIndex, Integer sentAttemptMade, String reworkId) {
         log.debug("buildNotificationTimelineReworkedElement - IUN={} and id={}", notification.getIun(), recIndex);
 
-        Integer reworkIdx = Integer.parseInt(reworkId.split("_")[1]);
+        Integer reworkIdx = ReworkIdBuilder.extractReworkIdx(reworkId);
 
         String elementId = TimelineEventId.NOTIFICATION_TIMELINE_REWORKED.buildEventId(
                 EventId.builder()
