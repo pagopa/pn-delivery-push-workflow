@@ -1,6 +1,5 @@
 package it.pagopa.pn.deliverypushworkflow.action.rework;
 
-import it.pagopa.pn.commons.exceptions.PnHttpResponseException;
 import it.pagopa.pn.deliverypushworkflow.action.details.NotificationReworkRequestedDetails;
 import it.pagopa.pn.deliverypushworkflow.action.details.NotificationReworkValidationDetails;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
@@ -339,12 +338,12 @@ public class ReworkValidationHandler {
 
     private static NewAction getNewAction(Action action, NotificationReworkValidationDetails detail, String requestId) {
         NewAction newAction = new NewAction();
-        newAction.setActionId(detail.getReworkId());
+        newAction.setActionId(action.getActionId());
         newAction.setIun(action.getIun());
         newAction.setType(ActionType.NOTIFICATION_REWORK_REQUESTED);
         newAction.setNotBefore(Instant.now());
         NotificationReworkRequestedDetails request = new NotificationReworkRequestedDetails();
-        request.setReworkId(action.getActionId());
+        request.setReworkId(detail.getReworkId());
         request.setReworkRequestId(requestId);
         request.setReworkRecIndex(detail.getReworkRecIndex());
         request.setReworkAttempt(detail.getReworkAttempt());
