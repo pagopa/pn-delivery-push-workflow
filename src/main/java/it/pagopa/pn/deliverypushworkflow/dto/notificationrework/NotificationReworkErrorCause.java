@@ -13,7 +13,8 @@ public enum NotificationReworkErrorCause {
     INVALID_ATTEMPT_ID("INVALID_ATTEMPT_ID", "L'attempt per il quale è stata richiesta l'invalidazione non esiste"),
     INVALID_TIMELINE_ELEMENT("INVALID_TIMELINE_ELEMENT", "%s"),
     INVALID_ANALOG_ADDRESS("INVALID_ANALOG_ADDRESS", "L'indirizzo trovato ma scade nel %s"),
-    EXPIRED_ANALOG_ADDRESS("EXPIRED_ANALOG_ADDRESS", "Indirizzo non trovato");
+    EXPIRED_ANALOG_ADDRESS("EXPIRED_ANALOG_ADDRESS", "Indirizzo non trovato"),
+    DUPLICATED_ACTION_ERROR("DUPLICATED_ACTION_ERROR", "Errore inserimento azione duplicata");
 
     private final String cause;
     private final String errorDetails;
