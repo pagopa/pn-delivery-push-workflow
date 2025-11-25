@@ -2,6 +2,7 @@ package it.pagopa.pn.deliverypushworkflow.action.rework;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import it.pagopa.pn.commons.exceptions.PnHttpResponseException;
 import it.pagopa.pn.deliverypushworkflow.action.details.NotificationReworkRequestedDetails;
 import it.pagopa.pn.deliverypushworkflow.action.details.NotificationReworkValidationDetails;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
@@ -43,10 +44,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkConstant.*;
@@ -69,6 +67,7 @@ public class ReworkValidationHandler {
     private final ObjectMapper objectMapper;
 
     private final List<TimelineElementCategoryInt> ELEMENTS_WITHOUT_ATTEMPT_ID = List.of(NOTIFICATION_VIEWED_CREATION_REQUEST, SCHEDULE_REFINEMENT, ANALOG_FAILURE_WORKFLOW, ANALOG_SUCCESS_WORKFLOW, REFINEMENT, ANALOG_WORKFLOW_RECIPIENT_DECEASED);
+    private final String POST_VALIDATION_PROCESS = ".POST_VALIDATION_PROCESS";
 
     public Mono<Void> handleNotificationRework(Action action) {
         log.info("Start handleRework - iun {} id {}", action.getIun(), action.getRecipientIndex());
@@ -90,6 +89,15 @@ public class ReworkValidationHandler {
                 .onErrorResume(NotificationReworkValidationException.class, e -> {
                     log.error("Error during handleRework for iun {}: {}", action.getIun(), e.getMessage(), e);
                     return this.checkErrorList(e.getErrors(), action, reworkInfo.getActionDetail(), null);
+                })
+                .onErrorResume(PnHttpResponseException.class, e -> {
+                    log.error("Error inserting reworked action for iun {}: {}", action.getIun(), e.getMessage(), e);
+                    NotificationReworkError error = NotificationReworkError
+                            .builder()
+                            .cause(NotificationReworkErrorCause.DUPLICATED_ACTION_ERROR.getCause())
+                            .description(NotificationReworkErrorCause.DUPLICATED_ACTION_ERROR.getErrorDetails())
+                            .build();
+                    return this.checkErrorList(List.of(error), action, reworkInfo.getActionDetail(), null);
                 });
     }
 
@@ -341,7 +349,7 @@ public class ReworkValidationHandler {
 
     private NewAction getNewAction(Action action, NotificationReworkValidationDetails detail, String requestId) {
         NewAction newAction = new NewAction();
-        newAction.setActionId(action.getActionId());
+        newAction.setActionId(action.getActionId() + POST_VALIDATION_PROCESS);
         newAction.setIun(action.getIun());
         newAction.setType(ActionType.NOTIFICATION_REWORK_REQUESTED);
         newAction.setNotBefore(Instant.now());
