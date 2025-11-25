@@ -1,5 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.action.rework;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.deliverypushworkflow.action.details.NotificationReworkRequestedDetails;
 import it.pagopa.pn.deliverypushworkflow.action.details.NotificationReworkValidationDetails;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
@@ -64,6 +66,7 @@ public class ReworkValidationHandler {
     private final ReworkRequestEventPool reworkRequestEventPool;
     private final PnDeliveryPushWorkflowConfigs pnDeliveryPushWorkflowConfigs;
     private final SafeStorageService safeStorageService;
+    private final ObjectMapper objectMapper;
 
     private final List<TimelineElementCategoryInt> ELEMENTS_WITHOUT_ATTEMPT_ID = List.of(NOTIFICATION_VIEWED_CREATION_REQUEST, SCHEDULE_REFINEMENT, ANALOG_FAILURE_WORKFLOW, ANALOG_SUCCESS_WORKFLOW, REFINEMENT, ANALOG_WORKFLOW_RECIPIENT_DECEASED);
 
@@ -336,7 +339,7 @@ public class ReworkValidationHandler {
                 NotificationReworkError.builder().cause(cause.getCause()).description(details).build()));
     }
 
-    private static NewAction getNewAction(Action action, NotificationReworkValidationDetails detail, String requestId) {
+    private NewAction getNewAction(Action action, NotificationReworkValidationDetails detail, String requestId) {
         NewAction newAction = new NewAction();
         newAction.setActionId(action.getActionId());
         newAction.setIun(action.getIun());
@@ -347,7 +350,11 @@ public class ReworkValidationHandler {
         request.setReworkRequestId(requestId);
         request.setReworkRecIndex(detail.getReworkRecIndex());
         request.setReworkAttempt(detail.getReworkAttempt());
-        newAction.setDetails(request.toString());
+        try {
+            newAction.setDetails(objectMapper.writeValueAsString(request));
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("Error creating converting NotificationReworkRequestedDetails to json", e);
+        }
         return newAction;
     }
 

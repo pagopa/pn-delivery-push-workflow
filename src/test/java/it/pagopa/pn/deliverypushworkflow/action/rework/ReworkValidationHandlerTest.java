@@ -1,6 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.action.rework;
 
-import it.pagopa.pn.commons.exceptions.PnHttpResponseException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.deliverypushworkflow.action.details.NotificationReworkValidationDetails;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
@@ -65,12 +65,14 @@ class ReworkValidationHandlerTest {
     private TimelineUtils timelineUtils;
     @Mock
     private SafeStorageService safeStorageService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
 
     private ReworkValidationHandler notificationReworkHandler;
 
     @BeforeEach
     void setup() {
-        notificationReworkHandler = new ReworkValidationHandler(checkAddressApi, actionManagerApi, notificationService, timelineService, timelineUtils, reworkRequestEventPool, pnDeliveryPushWorkflowConfigs, safeStorageService);
+        notificationReworkHandler = new ReworkValidationHandler(checkAddressApi, actionManagerApi, notificationService, timelineService, timelineUtils, reworkRequestEventPool, pnDeliveryPushWorkflowConfigs, safeStorageService, objectMapper);
     }
 
     @Test
