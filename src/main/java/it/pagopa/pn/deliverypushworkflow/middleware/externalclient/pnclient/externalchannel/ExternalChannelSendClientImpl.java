@@ -70,7 +70,7 @@ public class ExternalChannelSendClientImpl implements ExternalChannelSendClient 
         if (digitalAddress.getType() == CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.EMAIL) {
             sendNotificationEMAIL(timelineEventId, notificationInt, recipientInt, digitalAddress, aarKey, quickAccessToken, deliveryMode);
         } else if (digitalAddress.getType() == CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.SMS) {
-            sendNotificationSMS(timelineEventId, notificationInt, digitalAddress, deliveryMode);
+            sendNotificationSMS(timelineEventId, notificationInt, digitalAddress, deliveryMode, recipientInt);
         } else {
             log.error("channel type not supported for iun={}", notificationInt.getIun());
             throw new PnInternalException("channel type not supported", ERROR_CODE_DELIVERYPUSH_CHANNELTYPENOTSUPPORTED);
@@ -168,7 +168,7 @@ public class ExternalChannelSendClientImpl implements ExternalChannelSendClient 
         }
     }
 
-    private void sendNotificationSMS(String requestId, NotificationInt notificationInt, DigitalAddressInt digitalAddress, DeliveryModeInt deliveryMode)
+    private void sendNotificationSMS(String requestId, NotificationInt notificationInt, DigitalAddressInt digitalAddress, DeliveryModeInt deliveryMode, NotificationRecipientInt recipientInt)
     {
         try {
             log.logInvokingAsyncExternalService(CLIENT_NAME, COURTESY_NOTIFICATION_REQUEST + "[SMS]", requestId);
@@ -176,9 +176,9 @@ public class ExternalChannelSendClientImpl implements ExternalChannelSendClient 
             String smsbody = "";
 
             if (deliveryMode == null || deliveryMode == DeliveryModeInt.ANALOG) {
-                smsbody = legalFactGenerator.generateNotificationAARForSMSAnalog(notificationInt);
+                smsbody = legalFactGenerator.generateNotificationAARForSMSAnalog(notificationInt, recipientInt);
             } else {
-                smsbody = legalFactGenerator.generateNotificationAARForSMSDigital(notificationInt);
+                smsbody = legalFactGenerator.generateNotificationAARForSMSDigital(notificationInt, recipientInt);
             }
 
             DigitalCourtesySmsRequest digitalNotificationRequest = new DigitalCourtesySmsRequest();

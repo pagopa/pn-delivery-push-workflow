@@ -325,7 +325,7 @@
 						<phase>generate-resources</phase>
 						<configuration>
 							<inputSpec>
-								https://raw.githubusercontent.com/pagopa/pn-templates-engine/b1b50209c1635e4faf04285abd93514c5af4b909/docs/openapi/pn-internal-templates-v1.yaml
+								https://raw.githubusercontent.com/pagopa/pn-templates-engine/a7f5ce1a4997988f088a37bfb1afd49f8995cf7c/docs/openapi/pn-internal-templates-v1.yaml
 							</inputSpec>
 							<templateDirectory>${project.build.directory}/dependency-resources/scripts/openapi/templates/7.4.0/client</templateDirectory>
 							<skipValidateSpec>true</skipValidateSpec>

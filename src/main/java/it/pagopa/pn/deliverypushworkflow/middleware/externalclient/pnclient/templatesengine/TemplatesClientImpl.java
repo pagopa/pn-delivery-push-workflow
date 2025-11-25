@@ -99,7 +99,7 @@ public class TemplatesClientImpl implements TemplatesClient {
      * @return A string representing the generated legal fact.
      */
     @Override
-    public String notificationAarForSmsAnalog(LanguageEnum xLanguage, NotificationAarForSms notificationAarForSms) {
+    public String notificationAarForSmsAnalog(LanguageEnum xLanguage, NotificationAarForSmsAnalog notificationAarForSms) {
         return templateEngineClient.notificationAarForSmsAnalog(xLanguage, notificationAarForSms);
     }
 
@@ -111,7 +111,7 @@ public class TemplatesClientImpl implements TemplatesClient {
      * @return A string representing the generated legal fact.
      */
     @Override
-    public String notificationAarForSmsDigital(LanguageEnum xLanguage, NotificationAarForSms notificationAarForSms) {
+    public String notificationAarForSmsDigital(LanguageEnum xLanguage, NotificationAarForSmsDigital notificationAarForSms) {
         return templateEngineClient.notificationAarForSmsDigital(xLanguage, notificationAarForSms);
     }
 
@@ -123,7 +123,7 @@ public class TemplatesClientImpl implements TemplatesClient {
      * @return A string representing the generated legal fact.
      */
     @Override
-    public String notificationAarForEmailAnalog(LanguageEnum xLanguage, NotificationAarForEmail notificationAarForEmail) {
+    public String notificationAarForEmailAnalog(LanguageEnum xLanguage, NotificationAarForEmailAnalog notificationAarForEmail) {
         return templateEngineClient.notificationAarForEmailAnalog(xLanguage, notificationAarForEmail);
     }
 
@@ -135,7 +135,7 @@ public class TemplatesClientImpl implements TemplatesClient {
      * @return A string representing the generated legal fact.
      */
     @Override
-    public String notificationAarForEmailDigital(LanguageEnum xLanguage, NotificationAarForEmail notificationAarForEmail) {
+    public String notificationAarForEmailDigital(LanguageEnum xLanguage, NotificationAarForEmailDigital notificationAarForEmail) {
         return templateEngineClient.notificationAarForEmailDigital(xLanguage, notificationAarForEmail);
     }
 

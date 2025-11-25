@@ -112,8 +112,8 @@ class LegalFactGeneratorTemplatesTest extends CommonTestConfiguration {
 
     @Test
     void generateNotificationAARBodyForEmailAnalog() {
-        Mockito.when(templatesClient.notificationAarForEmailAnalog(Mockito.any(LanguageEnum.class), Mockito.any(NotificationAarForEmail.class)))
-                .thenReturn(templatesClientMock.notificationAarForEmailAnalog(LanguageEnum.IT, new NotificationAarForEmail()));
+        Mockito.when(templatesClient.notificationAarForEmailAnalog(Mockito.any(LanguageEnum.class), Mockito.any(NotificationAarForEmailAnalog.class)))
+                .thenReturn(templatesClientMock.notificationAarForEmailAnalog(LanguageEnum.IT, new NotificationAarForEmailAnalog()));
         var result = Assertions.assertDoesNotThrow(() -> legalFactGeneratorTemplatesTest.generateNotificationAARBodyForEmailAnalog(
                 notificationInt(), notificationRecipientInt(), QUICK_ACCESS_TOKEN));
         Assertions.assertEquals(TEST_RETURN, result);
@@ -121,8 +121,8 @@ class LegalFactGeneratorTemplatesTest extends CommonTestConfiguration {
 
     @Test
     void generateNotificationAARBodyForEmailDigital() {
-        Mockito.when(templatesClient.notificationAarForEmailDigital(Mockito.any(LanguageEnum.class), Mockito.any(NotificationAarForEmail.class)))
-                .thenReturn(templatesClientMock.notificationAarForEmailDigital(LanguageEnum.IT, new NotificationAarForEmail()));
+        Mockito.when(templatesClient.notificationAarForEmailDigital(Mockito.any(LanguageEnum.class), Mockito.any(NotificationAarForEmailDigital.class)))
+                .thenReturn(templatesClientMock.notificationAarForEmailDigital(LanguageEnum.IT, new NotificationAarForEmailDigital()));
         var result = Assertions.assertDoesNotThrow(() -> legalFactGeneratorTemplatesTest.generateNotificationAARBodyForEmailDigital(
                 notificationInt(), notificationRecipientInt(), QUICK_ACCESS_TOKEN));
         Assertions.assertEquals(TEST_RETURN, result);
@@ -139,17 +139,17 @@ class LegalFactGeneratorTemplatesTest extends CommonTestConfiguration {
 
     @Test
     void generateNotificationAARForSMSAnalog() {
-        Mockito.when(templatesClient.notificationAarForSmsAnalog(Mockito.any(LanguageEnum.class), Mockito.any(NotificationAarForSms.class)))
-                .thenReturn(templatesClientMock.notificationAarForSmsAnalog(LanguageEnum.IT, new NotificationAarForSms()));
-        var result = Assertions.assertDoesNotThrow(() -> legalFactGeneratorTemplatesTest.generateNotificationAARForSMSAnalog(notificationInt()));
+        Mockito.when(templatesClient.notificationAarForSmsAnalog(Mockito.any(LanguageEnum.class), Mockito.any(NotificationAarForSmsAnalog.class)))
+                .thenReturn(templatesClientMock.notificationAarForSmsAnalog(LanguageEnum.IT, new NotificationAarForSmsAnalog()));
+        var result = Assertions.assertDoesNotThrow(() -> legalFactGeneratorTemplatesTest.generateNotificationAARForSMSAnalog(notificationInt(), notificationRecipientInt()));
         Assertions.assertEquals(TEST_RETURN, result);
     }
 
     @Test
     void generateNotificationAARForSMSDigital() {
-        Mockito.when(templatesClient.notificationAarForSmsDigital(Mockito.any(LanguageEnum.class), Mockito.any(NotificationAarForSms.class)))
-                .thenReturn(templatesClientMock.notificationAarForSmsDigital(LanguageEnum.IT, new NotificationAarForSms()));
-        var result = Assertions.assertDoesNotThrow(() -> legalFactGeneratorTemplatesTest.generateNotificationAARForSMSDigital(notificationInt()));
+        Mockito.when(templatesClient.notificationAarForSmsDigital(Mockito.any(LanguageEnum.class), Mockito.any(NotificationAarForSmsDigital.class)))
+                .thenReturn(templatesClientMock.notificationAarForSmsDigital(LanguageEnum.IT, new NotificationAarForSmsDigital()));
+        var result = Assertions.assertDoesNotThrow(() -> legalFactGeneratorTemplatesTest.generateNotificationAARForSMSDigital(notificationInt(), notificationRecipientInt()));
         Assertions.assertEquals(TEST_RETURN, result);
     }
 

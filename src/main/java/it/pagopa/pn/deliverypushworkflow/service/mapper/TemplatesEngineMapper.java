@@ -91,16 +91,36 @@ public class TemplatesEngineMapper {
                 .senderLogoBase64(senderLogoBase64);
     }
 
-    public static NotificationAarForSms notificationAarForSms(NotificationInt notification) {
-        AarForSmsSender sender = new AarForSmsSender()
+    public static NotificationAarForSmsAnalog notificationAarForSmsAnalog(NotificationInt notification, NotificationRecipientInt recipientInt) {
+        AarForSmsSenderAnalog sender = new AarForSmsSenderAnalog()
                 .paDenomination(notification.getSender().getPaDenomination());
 
-        AarForSmsNotification aarForSmsNotification = new AarForSmsNotification()
+        AarForSmsRecipientAnalog recipientAnalog = new AarForSmsRecipientAnalog()
+                .recipientType(String.valueOf(recipientInt.getRecipientType()));
+
+        AarForSmsNotificationAnalog aarForSmsNotification = new AarForSmsNotificationAnalog()
                 .iun(notification.getIun())
                 .sender(sender);
 
-        return new NotificationAarForSms()
-                .notification(aarForSmsNotification);
+        return new NotificationAarForSmsAnalog()
+                .notification(aarForSmsNotification)
+                .recipient(recipientAnalog);
+    }
+
+    public static NotificationAarForSmsDigital notificationAarForSmsDigital(NotificationInt notification, NotificationRecipientInt recipientInt) {
+        AarForSmsSenderDigital sender = new AarForSmsSenderDigital()
+                .paDenomination(notification.getSender().getPaDenomination());
+
+        AarForSmsRecipientDigital recipientDigital = new AarForSmsRecipientDigital()
+                .recipientType(String.valueOf(recipientInt.getRecipientType()));
+
+        AarForSmsNotificationDigital aarForSmsNotification = new AarForSmsNotificationDigital()
+                .iun(notification.getIun())
+                .sender(sender);
+
+        return new NotificationAarForSmsDigital()
+                .notification(aarForSmsNotification)
+                .recipient(recipientDigital);
     }
 
     public static NotificationAarForPec notificationAarForPec(NotificationInt notification,
@@ -131,24 +151,54 @@ public class TemplatesEngineMapper {
                 .recipientType(recipientTypeForHTMLTemplate);
     }
 
-    public static NotificationAarForEmail notificationAarForEmail(NotificationInt notification,
+    public static NotificationAarForEmailAnalog notificationAarForEmailAnalog(NotificationInt notification,
                                                                   String perfezionamentoLink,
                                                                   String quickAccessLink,
                                                                   String faqSendURL,
-                                                                  String piattaformaNotificheURL) {
-        AarForEmailSender sender = new AarForEmailSender()
+                                                                  String piattaformaNotificheURL,
+                                                                  NotificationRecipientInt recipient) {
+        AarForEmailSenderAnalog sender = new AarForEmailSenderAnalog()
                 .paDenomination(notification.getSender().getPaDenomination());
 
-        AarForEmailNotification aarForEmailNotification = new AarForEmailNotification()
+        AarForEmailRecipientAnalog recipientAnalog = new AarForEmailRecipientAnalog()
+                .recipientType(String.valueOf(recipient.getRecipientType()));
+
+        AarForEmailNotificationAnalog aarForEmailNotification = new AarForEmailNotificationAnalog()
                 .iun(notification.getIun())
                 .sender(sender);
 
-        return new NotificationAarForEmail()
+        return new NotificationAarForEmailAnalog()
                 .perfezionamentoURL(perfezionamentoLink)
                 .quickAccessLink(quickAccessLink)
                 .pnFaqSendURL(faqSendURL)
                 .piattaformaNotificheURL(piattaformaNotificheURL)
-                .notification(aarForEmailNotification);
+                .notification(aarForEmailNotification)
+                .recipient(recipientAnalog);
+    }
+
+    public static NotificationAarForEmailDigital notificationAarForEmailDigital(NotificationInt notification,
+                                                                  String perfezionamentoLink,
+                                                                  String quickAccessLink,
+                                                                  String faqSendURL,
+                                                                  String piattaformaNotificheURL,
+                                                                  NotificationRecipientInt recipient) {
+        AarForEmailSenderDigital sender = new AarForEmailSenderDigital()
+                .paDenomination(notification.getSender().getPaDenomination());
+
+        AarForEmailRecipientDigital recipientDigital = new AarForEmailRecipientDigital()
+                .recipientType(String.valueOf(recipient.getRecipientType()));
+
+        AarForEmailNotificationDigital aarForEmailNotification = new AarForEmailNotificationDigital()
+                .iun(notification.getIun())
+                .sender(sender);
+
+        return new NotificationAarForEmailDigital()
+                .perfezionamentoURL(perfezionamentoLink)
+                .quickAccessLink(quickAccessLink)
+                .pnFaqSendURL(faqSendURL)
+                .piattaformaNotificheURL(piattaformaNotificheURL)
+                .notification(aarForEmailNotification)
+                .recipient(recipientDigital);
     }
 
     public static NotificationAarForSubject notificationAARSubject(NotificationInt notification) {
