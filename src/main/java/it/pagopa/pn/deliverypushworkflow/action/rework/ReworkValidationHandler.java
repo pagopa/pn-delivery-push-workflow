@@ -32,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -142,8 +143,8 @@ public class ReworkValidationHandler {
                         .cause(NotificationReworkErrorCause.INVALID_ATTACHMENT.getCause())
                         .description(String.format(NotificationReworkErrorCause.INVALID_ATTACHMENT.getErrorDetails(), response.getKey(), response.getRetentionUntil()))
                         .build())
-                .onErrorResume(PnHttpResponseException.class, ex ->
-                        ex.getStatusCode() == HttpStatus.GONE.value()
+                .onErrorResume(WebClientResponseException.class, ex ->
+                        ex.getStatusCode().equals(HttpStatus.GONE)
                                 ? Mono.just(NotificationReworkError.builder()
                                 .cause(NotificationReworkErrorCause.EXPIRED_ATTACHMENT.getCause())
                                 .description(NotificationReworkErrorCause.EXPIRED_ATTACHMENT.getErrorDetails())

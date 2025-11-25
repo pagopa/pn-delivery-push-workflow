@@ -32,6 +32,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
@@ -667,7 +668,7 @@ class ReworkValidationHandlerTest {
         fileResponse.setRetentionUntil(OffsetDateTime.now().plusDays(1));
         fileResponse.setKey("key");
 
-        when(safeStorageService.getFile(any(),any(),any())).thenReturn(Mono.error(new PnHttpResponseException("Document not found", HttpStatus.GONE.value())));
+        when(safeStorageService.getFile(any(),any(),any())).thenReturn(Mono.error(new WebClientResponseException(HttpStatus.GONE.value(), "Document not found", null, null, null)));
 
         CheckAddressResponse response = new CheckAddressResponse();
         response.setFound(true);
