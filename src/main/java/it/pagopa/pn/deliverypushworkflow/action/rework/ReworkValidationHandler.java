@@ -2,6 +2,7 @@ package it.pagopa.pn.deliverypushworkflow.action.rework;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import it.pagopa.pn.commons.exceptions.PnHttpResponseException;
 import it.pagopa.pn.deliverypushworkflow.action.details.NotificationReworkRequestedDetails;
 import it.pagopa.pn.deliverypushworkflow.action.details.NotificationReworkValidationDetails;
@@ -44,7 +45,10 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkConstant.*;
@@ -358,7 +362,9 @@ public class ReworkValidationHandler {
         request.setReworkRequestId(requestId);
         request.setReworkRecIndex(detail.getReworkRecIndex());
         request.setReworkAttempt(detail.getReworkAttempt());
+        request.setCreatedAt(Instant.now());
         try {
+            objectMapper.registerModule(new JavaTimeModule());
             newAction.setDetails(objectMapper.writeValueAsString(request));
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("Error creating converting NotificationReworkRequestedDetails to json", e);
