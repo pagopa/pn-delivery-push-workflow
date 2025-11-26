@@ -1,6 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.action.rework;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import it.pagopa.pn.commons.exceptions.PnHttpResponseException;
 import it.pagopa.pn.deliverypushworkflow.action.details.NotificationReworkValidationDetails;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
@@ -14,11 +15,11 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationViewed
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ScheduleRefinementDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.actionmanager.api.ActionApi;
-import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.api.CheckAddressApi;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.CheckAddressResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.model.FileDownloadResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationHistoryResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationStatus;
+import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.paperchannel.PaperChannelAddressClient;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.Action;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ReworkRequestEventAction;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ReworkRequestEventPool;
@@ -50,7 +51,7 @@ import static org.mockito.Mockito.*;
 class ReworkValidationHandlerTest {
 
     @Mock
-    private CheckAddressApi checkAddressApi;
+    private PaperChannelAddressClient paperChannelAddressClient;
     @Mock
     private ActionApi actionManagerApi;
     @Mock
@@ -72,7 +73,7 @@ class ReworkValidationHandlerTest {
 
     @BeforeEach
     void setup() {
-        notificationReworkHandler = new ReworkValidationHandler(checkAddressApi, actionManagerApi, notificationService, timelineService, timelineUtils, reworkRequestEventPool, pnDeliveryPushWorkflowConfigs, safeStorageService, objectMapper);
+        notificationReworkHandler = new ReworkValidationHandler(paperChannelAddressClient, actionManagerApi, notificationService, timelineService, timelineUtils, reworkRequestEventPool, pnDeliveryPushWorkflowConfigs, safeStorageService, objectMapper);
     }
 
     @Test
@@ -129,9 +130,8 @@ class ReworkValidationHandlerTest {
         when(safeStorageService.getFile(any(),any(),any())).thenReturn(Mono.just(fileResponse));
 
         CheckAddressResponse response = new CheckAddressResponse();
-        response.setFound(true);
         response.setEndValidity(Instant.now().plus(20, java.time.temporal.ChronoUnit.DAYS));
-        when(checkAddressApi.checkAddress(anyString())).thenReturn(response);
+        when(paperChannelAddressClient.checkAddress(anyString())).thenReturn(Mono.just(response));
 
         notificationReworkHandler.handleNotificationRework(action).block();
 
@@ -602,9 +602,8 @@ class ReworkValidationHandlerTest {
         when(safeStorageService.getFile(any(),any(),any())).thenReturn(Mono.just(fileResponse));
 
         CheckAddressResponse response = new CheckAddressResponse();
-        response.setFound(true);
         response.setEndValidity(Instant.now().plus(20, java.time.temporal.ChronoUnit.DAYS));
-        when(checkAddressApi.checkAddress(anyString())).thenReturn(response);
+        when(paperChannelAddressClient.checkAddress(anyString())).thenReturn(Mono.just(response));
 
         notificationReworkHandler.handleNotificationRework(action).block();
 
@@ -673,9 +672,8 @@ class ReworkValidationHandlerTest {
         when(safeStorageService.getFile(any(),any(),any())).thenReturn(Mono.error(new WebClientResponseException(HttpStatus.GONE.value(), "Document not found", null, null, null)));
 
         CheckAddressResponse response = new CheckAddressResponse();
-        response.setFound(true);
         response.setEndValidity(Instant.now().plus(20, java.time.temporal.ChronoUnit.DAYS));
-        when(checkAddressApi.checkAddress(anyString())).thenReturn(response);
+        when(paperChannelAddressClient.checkAddress(anyString())).thenReturn(Mono.just(response));
 
         notificationReworkHandler.handleNotificationRework(action).block();
 
@@ -731,7 +729,6 @@ class ReworkValidationHandlerTest {
         notificationHistoryResponse.setNotificationStatus(NotificationStatus.EFFECTIVE_DATE);
 
         when(timelineService.getTimeline(anyString(), anyBoolean())).thenReturn(timeline);
-        when(pnDeliveryPushWorkflowConfigs.getReworkTTLAddressRange()).thenReturn(10);
         when(timelineUtils.checkIsNotificationCancellationRequested(any())).thenReturn(false);
         when(notificationService.getNotificationByIun(any())).thenReturn(notification);
         when(timelineService.getTimelineAndStatusHistory(any(),anyInt(),any())).thenReturn(notificationHistoryResponse);
@@ -742,9 +739,8 @@ class ReworkValidationHandlerTest {
         when(safeStorageService.getFile(any(),any(),any())).thenReturn(Mono.just(fileResponse));
 
         CheckAddressResponse response = new CheckAddressResponse();
-        response.setFound(false);
         response.setEndValidity(Instant.now().plus(20, java.time.temporal.ChronoUnit.DAYS));
-        when(checkAddressApi.checkAddress(anyString())).thenReturn(response);
+        when(paperChannelAddressClient.checkAddress(anyString())).thenReturn(Mono.error(new PnHttpResponseException("empty", 404)));
 
         notificationReworkHandler.handleNotificationRework(action).block();
 
@@ -812,9 +808,8 @@ class ReworkValidationHandlerTest {
         when(safeStorageService.getFile(any(),any(),any())).thenReturn(Mono.just(fileResponse));
 
         CheckAddressResponse response = new CheckAddressResponse();
-        response.setFound(true);
         response.setEndValidity(Instant.now().plus(5, java.time.temporal.ChronoUnit.DAYS));
-        when(checkAddressApi.checkAddress(anyString())).thenReturn(response);
+        when(paperChannelAddressClient.checkAddress(anyString())).thenReturn(Mono.just(response));
 
         notificationReworkHandler.handleNotificationRework(action).block();
 

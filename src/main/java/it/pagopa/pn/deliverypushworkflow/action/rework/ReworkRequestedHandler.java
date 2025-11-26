@@ -20,6 +20,7 @@ import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -106,6 +107,7 @@ public class ReworkRequestedHandler {
                                 .stream().filter(elementsToInvalidate::contains).toList();
                         notificationStatusHistoryElement.setRelatedTimelineElements(filteredRelatedTimelineElements);
                     })
+                    .filter(element -> !CollectionUtils.isEmpty(element.getRelatedTimelineElements()))
                     .toList();
         }
         return timelineUtils.buildNotificationTimelineReworkedTimelineElement(notification, statusHistoryElements, recIndex, attempt, internalDetail.getReworkId());
