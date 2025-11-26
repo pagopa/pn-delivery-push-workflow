@@ -91,6 +91,12 @@ class ReworkRequestedHandlerTest {
         historyElement.setStatus(NotificationStatus.DELIVERED);
         historyElement.setRelatedTimelineElements(timeline.stream().map(TimelineElement::getElementId).toList());
         notificationStatusHistory.add(historyElement);
+
+        NotificationStatusHistoryElement historyElement2 = new NotificationStatusHistoryElement();
+        historyElement2.setStatus(NotificationStatus.ACCEPTED);
+        historyElement2.setRelatedTimelineElements(List.of("REQUEST_ACCEPTED.RECINDEX_0.ATTEMPT_0"));
+        notificationStatusHistory.add(historyElement2);
+
         historyResponse.setNotificationStatusHistory(notificationStatusHistory);
         when(timelineService.getTimelineAndStatusHistory(anyString(), anyInt(), any())).thenReturn(historyResponse);
         when(timelineService.getTimeline(any(), anyBoolean())).thenReturn(buildTimeline().stream().map(t -> {;

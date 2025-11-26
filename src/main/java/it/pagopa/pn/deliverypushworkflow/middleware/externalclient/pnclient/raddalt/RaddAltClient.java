@@ -8,7 +8,7 @@ import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.raddalt.mode
 import java.time.LocalDate;
 
 public interface RaddAltClient {
-    String CLIENT_NAME = PnLogger.EXTERNAL_SERVICES.PN_RADD_ALT;
+    String CLIENT_NAME = PnLogger.EXTERNAL_SERVICES.PN_PAPER_CHANNEL;
     String CHECK_COVERAGE_PROCESS_NAME = "CHECK COVERAGE";
     CheckCoverageResponse checkCoverage(SearchMode searchMode, CheckCoverageRequest checkCoverageRequest, LocalDate searchDate);
 }

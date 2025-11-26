@@ -20,9 +20,9 @@ import it.pagopa.pn.deliverypushworkflow.exceptions.NotificationReworkValidation
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.actionmanager.api.ActionApi;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.actionmanager.model.ActionType;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.actionmanager.model.NewAction;
-import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.api.CheckAddressApi;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.CheckAddressResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationHistoryResponse;
+import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.paperchannel.PaperChannelAddressClient;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.Action;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ReworkRequestEventAction;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ReworkRequestEventPool;
@@ -60,7 +60,7 @@ import static it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineEle
 public class ReworkValidationHandler {
 
 
-    private final CheckAddressApi checkAddressApi;
+    private final PaperChannelAddressClient paperChannelAddressClient;
     private final ActionApi actionManagerApi;
     private final NotificationService notificationService;
     private final TimelineService timelineService;
@@ -89,6 +89,7 @@ public class ReworkValidationHandler {
                 .map(this::computeRequestId)
                 .doOnNext(reworkInfo::setRequestId)
                 .flatMap(requestId -> checkNotificationAddress(reworkInfo))
+                .thenReturn(reworkInfo)
                 .flatMap(info -> this.checkErrorList(info.getErrorList(), info.getAction(), reworkInfo.getActionDetail(), info.getRequestId()))
                 .onErrorResume(NotificationReworkValidationException.class, e -> {
                     log.error("Error during handleRework for iun {}: {}", action.getIun(), e.getMessage(), e);
@@ -186,22 +187,39 @@ public class ReworkValidationHandler {
 
     private Mono<NotificationReworkInfo> checkNotificationAddress(NotificationReworkInfo externalInfo) {
         log.debug("checkNotificationAddress for iun {}, requestId {}", externalInfo.getAction().getIun(), externalInfo.getRequestId());
-        return Mono.just(externalInfo)
-                .flatMap(info -> {
-                    int range = pnDeliveryPushWorkflowConfigs.getReworkTTLAddressRange();
-                    CheckAddressResponse response = checkAddressApi.checkAddress(info.getRequestId());
-                    if (Boolean.TRUE.equals(response.getFound())) {
-                        log.info("Address found for requestId {}", info.getRequestId());
-                        if (response.getEndValidity() != null && response.getEndValidity().minus(range, ChronoUnit.DAYS).isBefore(Instant.now())) {
-                            log.warn("Address for requestId {} expires in less than {} days", info.getRequestId(), range);
-                            info.getErrorList().add(NotificationReworkError.builder().cause(NotificationReworkErrorCause.INVALID_ANALOG_ADDRESS.getCause()).description(String.format(NotificationReworkErrorCause.INVALID_ANALOG_ADDRESS.getErrorDetails(), DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneOffset.UTC).format(response.getEndValidity()))).build());
-                        }
-                    } else {
-                        log.warn("Address not found for requestId {}", info.getRequestId());
-                        info.getErrorList().add(NotificationReworkError.builder().cause(NotificationReworkErrorCause.EXPIRED_ANALOG_ADDRESS.getCause()).description(NotificationReworkErrorCause.EXPIRED_ANALOG_ADDRESS.getErrorDetails()).build());
+        return paperChannelAddressClient.checkAddress(externalInfo.getRequestId())
+                .doOnNext(checkAddressResponse -> checkTtl(checkAddressResponse, externalInfo))
+                .map(checkAddressResponse -> externalInfo)
+                .onErrorResume(PnHttpResponseException.class, ex -> {
+                    if(ex.getStatusCode() == 404) {
+                        log.warn("Address not found for requestId {}", externalInfo.getRequestId());
+                        return Mono.just(addErrorAddressNotFound(externalInfo));
                     }
-                    return Mono.just(info);
+                    return Mono.error(ex);
                 });
+    }
+
+    private NotificationReworkInfo addErrorAddressNotFound(NotificationReworkInfo externalInfo) {
+        externalInfo.getErrorList()
+                .add(NotificationReworkError.builder()
+                        .cause(NotificationReworkErrorCause.EXPIRED_ANALOG_ADDRESS.getCause())
+                        .description(String.format(NotificationReworkErrorCause.EXPIRED_ANALOG_ADDRESS.getErrorDetails()))
+                        .build());
+
+        return externalInfo;
+    }
+
+    private void checkTtl(CheckAddressResponse checkAddressResponse, NotificationReworkInfo notificationReworkInfo) {
+        int range = pnDeliveryPushWorkflowConfigs.getReworkTTLAddressRange();
+        if (checkAddressResponse.getEndValidity() != null && checkAddressResponse.getEndValidity().minus(range, ChronoUnit.DAYS).isBefore(Instant.now())) {
+            log.warn("Address for requestId {} expires in less than {} days", notificationReworkInfo.getRequestId(), range);
+            notificationReworkInfo.getErrorList()
+                    .add(NotificationReworkError.builder()
+                            .cause(NotificationReworkErrorCause.INVALID_ANALOG_ADDRESS.getCause())
+                            .description(String.format(NotificationReworkErrorCause.INVALID_ANALOG_ADDRESS.getErrorDetails(),
+                                    DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneOffset.UTC)
+                                            .format(checkAddressResponse.getEndValidity()))).build());
+        }
     }
 
     private Mono<Void> checkErrorList(List<NotificationReworkError> errorList, Action action, NotificationReworkValidationDetails detail, String requestId) {
@@ -238,8 +256,8 @@ public class ReworkValidationHandler {
         String attempt = info.getActionDetail().getReworkAttempt();
 
         return Mono.just(info.getTimeline().stream().filter(timelineElementInternal -> timelineElementInternal.getElementId().contains(attempt)
-                        || ELEMENTS_WITHOUT_ATTEMPT_ID.contains(timelineElementInternal.getCategory()))
-                .collect(Collectors.toSet()))
+                                || ELEMENTS_WITHOUT_ATTEMPT_ID.contains(timelineElementInternal.getCategory()))
+                        .collect(Collectors.toSet()))
                 .filter(timelineElementInternals -> !timelineElementInternals.isEmpty())
                 .switchIfEmpty(fail(NotificationReworkErrorCause.INVALID_ATTEMPT_ID, NotificationReworkErrorCause.INVALID_ATTEMPT_ID.getErrorDetails()))
                 .map(timelineElement -> timelineElement.stream().filter(timelineElementInternal -> timelineElementInternal.getElementId().contains(recIndex)).collect(Collectors.toSet()))
