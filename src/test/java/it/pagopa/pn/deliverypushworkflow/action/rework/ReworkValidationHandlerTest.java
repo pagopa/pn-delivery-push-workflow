@@ -542,7 +542,7 @@ class ReworkValidationHandlerTest {
         verify(reworkRequestEventPool, times(1)).scheduleFutureAction(captor.capture(), any());
         List<NotificationReworkError> capturedErrorList = captor.getValue().getError();
         Assertions.assertEquals(NotificationReworkErrorCause.INVALID_EXPECTED_STATUS_CODE.getCause(), capturedErrorList.getFirst().getCause());
-        Assertions.assertEquals("Lo stato finale atteso KO non è coerente con l'attempt ATTEMPT_0", capturedErrorList.getFirst().getDescription());
+        Assertions.assertEquals("Non è possibile correggere l'ATTEMPT_0 di una notifica con un KO se l'ATTEMPT_1 è già presente", capturedErrorList.getFirst().getDescription());
     }
 
     @Test

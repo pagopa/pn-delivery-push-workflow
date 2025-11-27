@@ -9,7 +9,7 @@ public enum NotificationReworkErrorCause {
     INVALID_NOTIFICATION_STATUS("INVALID_NOTIFICATION_STATUS", "La notifica è in stato %s, gli stati validi sono %s"),
     EXPIRED_ATTACHMENT("EXPIRED_ATTACHMENT", "l'allegato non è più disponibile."),
     INVALID_ATTACHMENT("INVALID_ATTACHMENT", "l'allegato %s scadenza: %s."),
-    INVALID_EXPECTED_STATUS_CODE("INVALID_EXPECTED_STATUS_CODE", "Lo stato finale atteso %s non è coerente con l'attempt %s"),
+    INVALID_EXPECTED_STATUS_CODE("INVALID_EXPECTED_STATUS_CODE", "Non è possibile correggere l'ATTEMPT_0 di una notifica con un KO se l'ATTEMPT_1 è già presente"),
     INVALID_ATTEMPT_ID("INVALID_ATTEMPT_ID", "L'attempt per il quale è stata richiesta l'invalidazione non esiste"),
     INVALID_TIMELINE_ELEMENT("INVALID_TIMELINE_ELEMENT", "%s"),
     INVALID_ANALOG_ADDRESS("INVALID_ANALOG_ADDRESS", "L'indirizzo trovato ma scade nel %s"),
