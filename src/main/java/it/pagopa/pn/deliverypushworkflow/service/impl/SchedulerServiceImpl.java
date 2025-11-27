@@ -103,5 +103,5 @@ public class SchedulerServiceImpl implements SchedulerService {
         ActionType actionType, String timelineId) {
       this.scheduleEvent(iun, recIndex, dateToSchedule, actionType, timelineId, null);
     }
-    
+
 }

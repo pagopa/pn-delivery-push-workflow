@@ -2,6 +2,7 @@ package it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.tim
 
 import it.pagopa.pn.commons.exceptions.PnHttpResponseException;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.AddTimelineElementResponse;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementDetailsInt;
@@ -9,6 +10,7 @@ import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineserv
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.*;
 import it.pagopa.pn.deliverypushworkflow.service.mapper.TimelineServiceMapper;
 import org.apache.http.HttpStatus;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,6 +22,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class TimelineClientImplTest {
@@ -38,7 +41,7 @@ class TimelineClientImplTest {
         NotificationInt notificationInt = Mockito.mock(NotificationInt.class);
 
         NewTimelineElement newTimelineElement = Mockito.mock(NewTimelineElement.class);
-        Mockito.when(timelineServiceMapper.getNewTimelineElement(timelineElementInternal, notificationInt))
+        when(timelineServiceMapper.getNewTimelineElement(timelineElementInternal, notificationInt))
                 .thenReturn(newTimelineElement);
 
         PnHttpResponseException exception = new PnHttpResponseException("Conflict", HttpStatus.SC_CONFLICT);
@@ -47,9 +50,9 @@ class TimelineClientImplTest {
                 .when(timelineControllerApi)
                 .addTimelineElement(newTimelineElement);
 
-        boolean result = timelineServiceClient.addTimelineElement(timelineElementInternal, notificationInt);
+        AddTimelineElementResponse result = timelineServiceClient.addTimelineElement(timelineElementInternal, notificationInt);
 
-        assertTrue(result);
+        assertTrue(result.isDuplicate());
     }
 
     @Test
@@ -58,14 +61,14 @@ class TimelineClientImplTest {
         NotificationInt notificationInt = Mockito.mock(NotificationInt.class);
 
         NewTimelineElement newTimelineElement = new NewTimelineElement();
-        Mockito.when(timelineServiceMapper.getNewTimelineElement(timelineElementInternal, notificationInt))
+        when(timelineServiceMapper.getNewTimelineElement(timelineElementInternal, notificationInt))
                 .thenReturn(newTimelineElement);
 
-        Mockito.doNothing().when(timelineControllerApi).addTimelineElement(Mockito.any());
+        when(timelineControllerApi.addTimelineElement(Mockito.any()))
+                .thenThrow(new RuntimeException("error generic"));
 
-        boolean result = timelineServiceClient.addTimelineElement(timelineElementInternal, notificationInt);
+        Assertions.assertThrows(RuntimeException.class, () -> timelineServiceClient.addTimelineElement(timelineElementInternal, notificationInt));
 
-        assertFalse(result);
     }
 
     @Test
@@ -75,7 +78,7 @@ class TimelineClientImplTest {
         NewTimelineElement newTimelineElement = Mockito.mock(NewTimelineElement.class);
         PnHttpResponseException exception = new PnHttpResponseException("Errore generico", HttpStatus.SC_INTERNAL_SERVER_ERROR);
 
-        Mockito.when(timelineServiceMapper.getNewTimelineElement(timelineElementInternal, notificationInt))
+        when(timelineServiceMapper.getNewTimelineElement(timelineElementInternal, notificationInt))
                 .thenReturn(newTimelineElement);
 
         Mockito.doThrow(exception)
@@ -94,7 +97,7 @@ class TimelineClientImplTest {
         String timelineId = "timeline123";
         Long expectedCounter = 42L;
 
-        Mockito.when(timelineControllerApi.retrieveAndIncrementCounterForTimelineEvent(timelineId))
+        when(timelineControllerApi.retrieveAndIncrementCounterForTimelineEvent(timelineId))
                 .thenReturn(expectedCounter);
 
         Long result = timelineServiceClient.retrieveAndIncrementCounterForTimelineEvent(timelineId);
@@ -111,10 +114,10 @@ class TimelineClientImplTest {
         TimelineElementInternal expectedElement = Mockito.mock(TimelineElementInternal.class);
         TimelineElement timelineElement = new TimelineElement();
 
-        Mockito.when(timelineControllerApi.getTimelineElement(iun, timelineId, strongly))
+        when(timelineControllerApi.getTimelineElement(iun, timelineId, strongly))
                 .thenReturn(timelineElement);
 
-        Mockito.when(timelineServiceMapper.toTimelineElementInternal(timelineElement)).thenReturn(expectedElement);
+        when(timelineServiceMapper.toTimelineElementInternal(timelineElement)).thenReturn(expectedElement);
 
         TimelineElementInternal result = timelineServiceClient.getTimelineElement(iun, timelineId, strongly);
 
@@ -129,10 +132,10 @@ class TimelineClientImplTest {
         TimelineElementDetails timelineElementDetails = new SendDigitalDetails().categoryType("SEND_DIGITAL_DOMICILE");
         TimelineElementDetailsInt expectedDetails = Mockito.mock(TimelineElementDetailsInt.class);
 
-        Mockito.when(timelineControllerApi.getTimelineElementDetails(iun, timelineId))
+        when(timelineControllerApi.getTimelineElementDetails(iun, timelineId))
                 .thenReturn(timelineElementDetails);
 
-        Mockito.when(timelineServiceMapper.toTimelineElementDetailsInt(timelineElementDetails, TimelineElementCategoryInt.SEND_DIGITAL_DOMICILE))
+        when(timelineServiceMapper.toTimelineElementDetailsInt(timelineElementDetails, TimelineElementCategoryInt.SEND_DIGITAL_DOMICILE))
                         .thenReturn(expectedDetails);
 
         TimelineElementDetailsInt result = timelineServiceClient.getTimelineElementDetails(iun, timelineId);
@@ -146,7 +149,7 @@ class TimelineClientImplTest {
         String iun = "iun123";
         String timelineId = "timeline123";
 
-        Mockito.when(timelineControllerApi.getTimelineElementDetails(iun, timelineId))
+        when(timelineControllerApi.getTimelineElementDetails(iun, timelineId))
                 .thenReturn(null);
 
         TimelineElementDetailsInt result = timelineServiceClient.getTimelineElementDetails(iun, timelineId);
@@ -166,10 +169,10 @@ class TimelineClientImplTest {
         TimelineElementDetails timelineElementDetails = new NotificationViewedDetails().categoryType("NOTIFICATION_VIEWED");
         TimelineElementDetailsInt expectedDetails = Mockito.mock(TimelineElementDetailsInt.class);
 
-        Mockito.when(timelineControllerApi.getTimelineElementDetailForSpecificRecipient(iun, recIndex, confidentialInfoRequired, category))
+        when(timelineControllerApi.getTimelineElementDetailForSpecificRecipient(iun, recIndex, confidentialInfoRequired, category))
                 .thenReturn(timelineElementDetails);
 
-        Mockito.when(timelineServiceMapper.toTimelineElementDetailsInt(timelineElementDetails, TimelineElementCategoryInt.NOTIFICATION_VIEWED))
+        when(timelineServiceMapper.toTimelineElementDetailsInt(timelineElementDetails, TimelineElementCategoryInt.NOTIFICATION_VIEWED))
                 .thenReturn(expectedDetails);
 
         TimelineElementDetailsInt result = timelineServiceClient.getTimelineElementDetailForSpecificRecipient(iun, recIndex, confidentialInfoRequired, categoryInt);
@@ -186,7 +189,7 @@ class TimelineClientImplTest {
         TimelineCategory category = TimelineCategory.NOTIFICATION_VIEWED;
         TimelineElementCategoryInt categoryInt = TimelineElementCategoryInt.NOTIFICATION_VIEWED;
 
-        Mockito.when(timelineControllerApi.getTimelineElementDetailForSpecificRecipient(iun, recIndex, confidentialInfoRequired, category))
+        when(timelineControllerApi.getTimelineElementDetailForSpecificRecipient(iun, recIndex, confidentialInfoRequired, category))
                 .thenThrow(new RuntimeException("Errore"));
 
         assertThrows(RuntimeException.class, () ->
@@ -203,10 +206,10 @@ class TimelineClientImplTest {
         TimelineElement timelineElement = new TimelineElement();
         TimelineElementInternal expectedElement = Mockito.mock(TimelineElementInternal.class);
 
-        Mockito.when(timelineControllerApi.getTimelineElementForSpecificRecipient(iun, recIndex, category))
+        when(timelineControllerApi.getTimelineElementForSpecificRecipient(iun, recIndex, category))
                 .thenReturn(timelineElement);
 
-        Mockito.when(timelineServiceMapper.toTimelineElementInternal(timelineElement)).thenReturn(expectedElement);
+        when(timelineServiceMapper.toTimelineElementInternal(timelineElement)).thenReturn(expectedElement);
 
         TimelineElementInternal result = timelineServiceClient.getTimelineElementForSpecificRecipient(iun, recIndex, categoryInt);
 
@@ -221,7 +224,7 @@ class TimelineClientImplTest {
         TimelineCategory category = TimelineCategory.NOTIFICATION_VIEWED;
         TimelineElementCategoryInt categoryInt = TimelineElementCategoryInt.NOTIFICATION_VIEWED;
 
-        Mockito.when(timelineControllerApi.getTimelineElementForSpecificRecipient(iun, recIndex, category))
+        when(timelineControllerApi.getTimelineElementForSpecificRecipient(iun, recIndex, category))
                 .thenThrow(new RuntimeException("Errore"));
 
         assertThrows(RuntimeException.class, () ->
@@ -239,10 +242,10 @@ class TimelineClientImplTest {
         TimelineElement timelineElementUnknown = new TimelineElement().category(TimelineCategory.NORMALIZED_ADDRESS);
         TimelineElementInternal expectedElement = new TimelineElementInternal();
 
-        Mockito.when(timelineControllerApi.getTimeline(iun, confidentialInfoRequired, strongly, timelineId))
+        when(timelineControllerApi.getTimeline(iun, confidentialInfoRequired, strongly, timelineId))
                 .thenReturn(List.of(timelineElementKnown, timelineElementUnknown));
 
-        Mockito.when(timelineServiceMapper.toTimelineElementInternal(timelineElementKnown)).thenReturn(expectedElement);
+        when(timelineServiceMapper.toTimelineElementInternal(timelineElementKnown)).thenReturn(expectedElement);
 
         List<TimelineElementInternal> result = timelineServiceClient.getTimeline(iun, confidentialInfoRequired, strongly, timelineId);
 
@@ -258,7 +261,7 @@ class TimelineClientImplTest {
         Boolean strongly = false;
         String timelineId = "timeline123";
 
-        Mockito.when(timelineControllerApi.getTimeline(iun, confidentialInfoRequired, strongly, timelineId))
+        when(timelineControllerApi.getTimeline(iun, confidentialInfoRequired, strongly, timelineId))
                 .thenThrow(new RuntimeException("Errore"));
 
         assertThrows(RuntimeException.class, () ->

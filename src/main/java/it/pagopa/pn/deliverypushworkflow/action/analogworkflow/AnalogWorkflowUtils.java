@@ -14,6 +14,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.BaseRegisteredLett
 import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 
@@ -36,9 +37,10 @@ public class AnalogWorkflowUtils {
                                                      BaseAnalogDetailsInt sendPaperDetails, SendEventInt sendEventInt, String sendRequestId) {
         TimelineElementInternal timelineElementInternal = timelineUtils.buildFailureAnalogFeedbackTimelineElement(notification, sentAttemptMade, attachments, sendPaperDetails, sendEventInt, sendRequestId);
 
-        addTimelineElement(timelineElementInternal,
-                notification);
-
+        String insertedElementId = addTimelineElement(timelineElementInternal, notification);
+        if(StringUtils.hasText(insertedElementId)){
+            return insertedElementId;
+        }
         return timelineElementInternal.getElementId();
     }
 
@@ -71,14 +73,15 @@ public class AnalogWorkflowUtils {
                 sendRequestId
         );
 
-        addTimelineElement(timelineElementInternal,
-                notification);
-
+        String insertedElementId = addTimelineElement(timelineElementInternal, notification);
+        if(StringUtils.hasText(insertedElementId)){
+            return insertedElementId;
+        }
         return timelineElementInternal.getElementId();
     }
 
-    private void addTimelineElement(TimelineElementInternal element, NotificationInt notification) {
-        timelineService.addTimelineElement(element, notification);
+    private String addTimelineElement(TimelineElementInternal element, NotificationInt notification) {
+        return timelineService.addTimelineElement(element, notification).getTimelineElementId();
     }
     
     public PhysicalAddressInt getPhysicalAddress(NotificationInt notification, Integer recIndex){

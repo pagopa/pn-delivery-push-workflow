@@ -2,6 +2,7 @@ package it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.tim
 
 import it.pagopa.pn.commons.log.PnLogger;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.AddTimelineElementResponse;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementDetailsInt;
@@ -21,7 +22,7 @@ public interface TimelineClient {
     String GET_TIMELINE = "GET TIMELINE";
     String GET_TIMELINE_AND_STATUS_HISTORY = "GET TIMELINE AND STATUS HISTORY";
 
-    boolean addTimelineElement(TimelineElementInternal element, NotificationInt notification);
+    AddTimelineElementResponse addTimelineElement(TimelineElementInternal element, NotificationInt notification);
 
     Long retrieveAndIncrementCounterForTimelineEvent(String timelineId);
 
