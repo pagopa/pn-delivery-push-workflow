@@ -1,6 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.service.impl;
 
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.AddTimelineElementResponse;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.StatusInfoInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendAnalogFeedbackDetailsInt;
@@ -33,11 +34,11 @@ class TimelineServiceHttpImplTest {
         TimelineElementInternal element = getTimelineElementInternal();
         NotificationInt notification = new NotificationInt();
 
-        Mockito.when(timelineClient.addTimelineElement(element, notification)).thenReturn(true);
+        Mockito.when(timelineClient.addTimelineElement(element, notification)).thenReturn(new AddTimelineElementResponse(null, true));
 
-        boolean result = timelineServiceHttp.addTimelineElement(element, notification);
+        AddTimelineElementResponse result = timelineServiceHttp.addTimelineElement(element, notification);
 
-        assertTrue(result);
+        assertTrue(result.isDuplicate());
     }
 
     @Test

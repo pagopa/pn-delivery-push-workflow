@@ -9,6 +9,7 @@ import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationSenderInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.AddTimelineElementResponse;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationTimelineReworkedDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendAnalogProgressDetailsInt;
@@ -124,7 +125,7 @@ class ReworkRequestedHandlerTest {
                 .build();
         when(notificationService.getNotificationByIun(anyString())).thenReturn(notification);
         ArgumentCaptor<TimelineElementInternal> argumentCaptor = ArgumentCaptor.forClass(TimelineElementInternal.class);
-        when(timelineService.addTimelineElement(any(), any())).thenReturn(true);
+        when(timelineService.addTimelineElement(any(), any())).thenReturn((new AddTimelineElementResponse(null, true)));
 
         when(pnDeliveryPushWorkflowConfigs.getTimeParams()).thenReturn(mock(TimeParams.class));
         when(pnDeliveryPushWorkflowConfigs.getTimeParams().getAttachmentTimeToAddAfterExpiration()).thenReturn(java.time.Duration.ofDays(30));
@@ -195,7 +196,7 @@ class ReworkRequestedHandlerTest {
                 .build();
         when(notificationService.getNotificationByIun(anyString())).thenReturn(notification);
         ArgumentCaptor<TimelineElementInternal> argumentCaptor = ArgumentCaptor.forClass(TimelineElementInternal.class);
-        when(timelineService.addTimelineElement(any(), any())).thenReturn(true);
+        when(timelineService.addTimelineElement(any(), any())).thenReturn(new AddTimelineElementResponse(null, true));
 
         when(pnDeliveryPushWorkflowConfigs.getTimeParams()).thenReturn(mock(TimeParams.class));
         when(pnDeliveryPushWorkflowConfigs.getTimeParams().getAttachmentTimeToAddAfterExpiration()).thenReturn(java.time.Duration.ofDays(30));

@@ -7,6 +7,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.documentcreation.DocumentCreationTy
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationSenderInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.AddTimelineElementResponse;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.AarCreationRequestDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.logtest.ConsoleAppenderCustom;
 import it.pagopa.pn.deliverypushworkflow.service.NotificationService;
@@ -43,7 +44,7 @@ class AarCreationResponseHandlerTest extends CommonTestConfiguration {
         DocumentCreationTypeInt docType = DocumentCreationTypeInt.AAR;
 
         Mockito.when(timelineService.addTimelineElement(Mockito.any(), Mockito.any()))
-            .thenReturn(true);
+            .thenReturn(new AddTimelineElementResponse(null, true));
 
         AarCreationRequestDetailsInt aarCreationRequestDetailsInt = AarCreationRequestDetailsInt.builder()
             .recIndex(0)

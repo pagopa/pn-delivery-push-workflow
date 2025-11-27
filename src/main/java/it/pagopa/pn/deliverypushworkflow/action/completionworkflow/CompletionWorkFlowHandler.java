@@ -13,6 +13,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.address.LegalDigitalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.documentcreation.DocumentCreationTypeInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.AddTimelineElementResponse;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.AarGenerationDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.DigitalDeliveryCreationRequestDetailsInt;
@@ -53,9 +54,9 @@ public class CompletionWorkFlowHandler {
 
         TimelineElementInternal timelineElementInternal = timelineUtils.buildDigitalDeliveryLegalFactCreationRequestTimelineElement(notification, recIndex,  EndWorkflowStatus.FAILURE, 
                 completionWorkflowDate, null, legalFactId);
-        boolean timelineInsertSkipped = timelineService.addTimelineElement(timelineElementInternal, notification);
+        AddTimelineElementResponse timelineInsertSkipped = timelineService.addTimelineElement(timelineElementInternal, notification);
         
-        if(timelineInsertSkipped){
+        if(timelineInsertSkipped.isDuplicate()){
             //Se l'elemento di timeline è stato inserito in precedenza, la data di completionWorkflow da utilizzare dovrà essere quella dell'elemento di timeline già presente.
             completionWorkflowDate = getCompletionWorkflowDate(notification, completionWorkflowDate, timelineElementInternal);
         }

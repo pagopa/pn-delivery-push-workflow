@@ -6,6 +6,7 @@ import it.pagopa.pn.deliverypushworkflow.action.utils.EndWorkflowStatus;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.AddTimelineElementResponse;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationViewedCreationRequestDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.exceptions.PnDeliveryPushExceptionCodes;
@@ -117,8 +118,8 @@ public class RefinementScheduler {
 
     private void addScheduledTimelineElementAndScheduleRefinement(NotificationInt notification, Integer recIndex, Instant schedulingDate) {
         log.info("Schedule refinement in date={} - iun={} id={}", schedulingDate, notification.getIun(), recIndex);
-        addTimelineElement( timelineUtils.buildScheduleRefinement(notification, recIndex, schedulingDate), notification);
-        scheduler.scheduleEvent(notification.getIun(), recIndex, schedulingDate, ActionType.REFINEMENT_NOTIFICATION);
+        AddTimelineElementResponse addTimelineElementResponse = addTimelineElement( timelineUtils.buildScheduleRefinement(notification, recIndex, schedulingDate), notification);
+        scheduler.scheduleEvent(notification.getIun(), recIndex, schedulingDate, ActionType.REFINEMENT_NOTIFICATION, addTimelineElementResponse.getTimelineElementId());
     }
 
     private Instant getSchedulingDate(Instant completionWorkflowDate, Duration scheduleTime, String iun, EndWorkflowStatus endWorkflowStatus) {
@@ -152,8 +153,8 @@ public class RefinementScheduler {
         return schedulingDate;
     }
 
-    private void addTimelineElement(TimelineElementInternal element, NotificationInt notification) {
-        timelineService.addTimelineElement(element, notification);
+    private AddTimelineElementResponse addTimelineElement(TimelineElementInternal element, NotificationInt notification) {
+        return timelineService.addTimelineElement(element, notification);
     }
     
     private void handleError(NotificationInt notification, Integer recIndex, EndWorkflowStatus endWorkflowStatus) {

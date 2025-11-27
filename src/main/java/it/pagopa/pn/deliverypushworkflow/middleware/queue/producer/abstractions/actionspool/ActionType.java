@@ -1,7 +1,12 @@
 package it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool;
 
 import it.pagopa.pn.deliverypushworkflow.action.details.*;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventIdParser;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.deliverypush.StringUtil;
 import lombok.Getter;
+import org.springframework.util.StringUtils;
+
+import java.util.Optional;
 
 @Getter
 public enum ActionType {
@@ -91,6 +96,11 @@ public enum ActionType {
   REFINEMENT_NOTIFICATION(NotHandledDetails.class) {
     @Override
     public String buildActionId(Action action) {
+      Optional<String> reworkIndexFull = TimelineEventIdParser.parse(action.getTimelineId()).reworkIndexFull();
+      if(StringUtils.hasText(action.getTimelineId()) && reworkIndexFull.isPresent()){
+        return String.format("%s_refinement_notification_%d_%s", action.getIun(),
+                action.getRecipientIndex(), reworkIndexFull);
+      }
       return String.format("%s_refinement_notification_%d", action.getIun(),
           action.getRecipientIndex());
     }

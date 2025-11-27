@@ -7,6 +7,7 @@ import it.pagopa.pn.deliverypushworkflow.action.utils.NotificationUtils;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notificationviewed.NotificationViewedInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.AddTimelineElementResponse;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.EventId;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationCancellationRequestDetailsInt;
@@ -152,9 +153,9 @@ public class TimelineClientMock implements TimelineClient {
     }
 
     @Override
-    public boolean addTimelineElement(TimelineElementInternal timelineElementInternal, NotificationInt notificationInt) {
+    public AddTimelineElementResponse addTimelineElement(TimelineElementInternal timelineElementInternal, NotificationInt notificationInt) {
         checkAndAddTimelineElement(timelineElementInternal);
-        return false;
+        return new AddTimelineElementResponse(timelineElementInternal.getElementId(), false);
     }
 
     @Override

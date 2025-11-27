@@ -1,6 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.service;
 
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.AddTimelineElementResponse;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationHistoryResponse;
@@ -11,7 +12,7 @@ import java.util.Set;
 
 public interface TimelineService {
 
-    boolean addTimelineElement(TimelineElementInternal element, NotificationInt notification);
+    AddTimelineElementResponse addTimelineElement(TimelineElementInternal element, NotificationInt notification);
 
     Long retrieveAndIncrementCounterForTimelineEvent(String timelineId);
 

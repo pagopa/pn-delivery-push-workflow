@@ -3,6 +3,7 @@ package it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.tim
 import it.pagopa.pn.commons.exceptions.PnHttpResponseException;
 
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.AddTimelineElementResponse;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementDetailsInt;
@@ -25,21 +26,22 @@ public class TimelineClientImpl implements TimelineClient {
     private final TimelineServiceMapper timelineServiceMapper;
 
     @Override
-    public boolean addTimelineElement(TimelineElementInternal element, NotificationInt notification) {
+    public AddTimelineElementResponse addTimelineElement(TimelineElementInternal element, NotificationInt notification) {
         log.logInvokingExternalService(CLIENT_NAME, ADD_TIMELINE_ELEMENT);
         NewTimelineElement newTimelineElement = timelineServiceMapper.getNewTimelineElement(element, notification);
         try {
-            timelineControllerApi.addTimelineElement(newTimelineElement);
+            TimelineElementIdResponse timelineElementIdResponse = timelineControllerApi.addTimelineElement(newTimelineElement);
+            return new AddTimelineElementResponse(timelineElementIdResponse.getElementId(), false);
         } catch (PnHttpResponseException ex) {
             if (ex.getStatusCode() == HttpStatus.SC_CONFLICT) {
                 log.warn("Exception idconflict is expected for retry, letting flow continue");
-                return true;
+                return new AddTimelineElementResponse(null, true);
             }
 
             log.error("Error while invoking {}: {}", ADD_TIMELINE_ELEMENT, ex.getMessage(), ex);
             throw ex;
         }
-        return false;
+
     }
 
     @Override

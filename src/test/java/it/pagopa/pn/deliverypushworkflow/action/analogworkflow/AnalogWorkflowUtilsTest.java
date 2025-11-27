@@ -24,16 +24,20 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
 class AnalogWorkflowUtilsTest {
 
     private static final String TAX_ID = "tax_id";
     private TimelineUtils timelineUtils;
+    private TimelineService timelineService;
     private NotificationUtils notificationUtils;
     private AnalogWorkflowUtils analogWorkflowUtils;
 
     @BeforeEach
     void setup() {
-        TimelineService timelineService = Mockito.mock(TimelineService.class);
+        timelineService = Mockito.mock(TimelineService.class);
         timelineUtils = Mockito.mock(TimelineUtils.class);
         notificationUtils = Mockito.mock(NotificationUtils.class);
         analogWorkflowUtils = new AnalogWorkflowUtils(timelineService, timelineUtils, notificationUtils);
@@ -67,11 +71,12 @@ class AnalogWorkflowUtilsTest {
 
         final String sendRequestId = "send_request_id";
 
-        Mockito.when(timelineUtils.buildFailureAnalogFeedbackTimelineElement(
-                Mockito.any(), Mockito.anyInt(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(Mockito.mock(TimelineElementInternal.class));
+        when(timelineUtils.buildFailureAnalogFeedbackTimelineElement(
+                any(), Mockito.anyInt(), any(), any(), any(), any())).thenReturn(Mockito.mock(TimelineElementInternal.class));
+        when(timelineService.addTimelineElement(any(), any()))
+                .thenReturn(new it.pagopa.pn.deliverypushworkflow.dto.timeline.AddTimelineElementResponse("timelineElementId", false));
 
         analogWorkflowUtils.addFailureAnalogFeedbackToTimeline(notificationInt, 1, attachments, sendPaperDetails,sendEventInt, sendRequestId);
-
         Mockito.verify(timelineUtils).buildFailureAnalogFeedbackTimelineElement(notificationInt, 1, attachments, sendPaperDetails, sendEventInt, sendRequestId);
     }
 
@@ -84,7 +89,7 @@ class AnalogWorkflowUtilsTest {
         NotificationRecipientInt notificationRecipientInt = NotificationRecipientInt.builder().physicalAddress(physicalAddressInt).taxId("testIdRecipient").denomination("Nome Cognome/Ragione Sociale").build();
 
         int recIndex = 0;
-        Mockito.when(notificationUtils.getRecipientFromIndex(notificationInt, recIndex)).thenReturn(notificationRecipientInt);
+        when(notificationUtils.getRecipientFromIndex(notificationInt, recIndex)).thenReturn(notificationRecipientInt);
 
         PhysicalAddressInt tmp = analogWorkflowUtils.getPhysicalAddress(notificationInt, recIndex);
 

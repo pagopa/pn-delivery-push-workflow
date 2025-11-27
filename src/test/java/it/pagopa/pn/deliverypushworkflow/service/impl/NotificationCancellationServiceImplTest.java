@@ -13,6 +13,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.cost.UpdateNotificationCostResponse
 import it.pagopa.pn.deliverypushworkflow.dto.cost.UpdateNotificationCostResultInt;
 import it.pagopa.pn.deliverypushworkflow.dto.documentcreation.DocumentCreationTypeInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.*;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.AddTimelineElementResponse;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationCancelledDocumentCreationRequestDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.exceptions.PnPaymentUpdateRetryException;
@@ -97,7 +98,7 @@ class NotificationCancellationServiceImplTest {
                 .timestamp(Instant.now())
                 .build();
         Mockito.when(timelineUtils.buildNotificationCancelledLegalFactCreationRequest(notification, legalFactId)).thenReturn(timelineElement);
-        Mockito.when(timelineService.addTimelineElement(Mockito.any(), Mockito.any())).thenReturn(false);
+        Mockito.when(timelineService.addTimelineElement(Mockito.any(), Mockito.any())).thenReturn(new AddTimelineElementResponse(null, false));
         Mockito.when(timelineService.getTimelineElement(any(), any())).thenReturn(Optional.of(timelineElement));
         Mockito.when(notificationService.removeAllNotificationCostsByIun(notification.getIun())).thenReturn(Mono.empty());
         Mockito.when(notificationService.getNotificationByIun(notification.getIun())).thenReturn(notification);
@@ -265,7 +266,7 @@ class NotificationCancellationServiceImplTest {
                 .timestamp(Instant.now())
                 .build();
         Mockito.when(timelineUtils.buildNotificationCancelledLegalFactCreationRequest(notification, legalFactId)).thenReturn(timelineElement);
-        Mockito.when(timelineService.addTimelineElement(Mockito.any(), Mockito.any())).thenReturn(false);
+        Mockito.when(timelineService.addTimelineElement(Mockito.any(), Mockito.any())).thenReturn(new AddTimelineElementResponse(null, false));
         Mockito.when(timelineService.getTimelineElement(any(), any())).thenReturn(Optional.of(timelineElement));
         Mockito.when(notificationService.removeAllNotificationCostsByIun(notification.getIun())).thenReturn(Mono.empty());
         Mockito.when(notificationService.getNotificationByIun(notification.getIun())).thenReturn(notification);
@@ -320,7 +321,7 @@ class NotificationCancellationServiceImplTest {
                 .timestamp(Instant.now())
                 .build();
         Mockito.when(timelineUtils.buildNotificationCancelledLegalFactCreationRequest(any(), any())).thenReturn(timelineElement);
-        Mockito.when(timelineService.addTimelineElement(Mockito.any(), Mockito.any())).thenReturn(true);
+        Mockito.when(timelineService.addTimelineElement(Mockito.any(), Mockito.any())).thenReturn(new AddTimelineElementResponse(null, true));
         Mockito.when(timelineService.getTimelineElement(any(), any())).thenReturn(Optional.of(timelineElementOLD));
         Mockito.when(notificationService.removeAllNotificationCostsByIun(notification.getIun())).thenReturn(Mono.empty());
         Mockito.when(notificationService.getNotificationByIun(notification.getIun())).thenReturn(notification);
@@ -381,7 +382,7 @@ class NotificationCancellationServiceImplTest {
                 .thenReturn(auditLogEvent);
         Mockito.when(notificationService.getNotificationByIun(iun)).thenReturn(notification);
         Mockito.when(timelineUtils.buildCancelledTimelineElement(any(), any())).thenReturn(timelineElement);
-        Mockito.when(timelineService.addTimelineElement(Mockito.any(), Mockito.any())).thenReturn(false);
+        Mockito.when(timelineService.addTimelineElement(Mockito.any(), Mockito.any())).thenReturn(new AddTimelineElementResponse(null, false));
         Mockito.when(auditLogEvent.generateSuccess()).thenReturn(auditLogEvent);
 
         // When

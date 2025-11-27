@@ -67,7 +67,7 @@ public class AarUtils {
         return timelineService.addTimelineElement(
                 timelineUtils.buildAarGenerationTimelineElement(notification, recIndex, pdfInfo.getKey(), pdfInfo.getNumberOfPages()),
                 notification
-        );
+        ).isDuplicate();
     }
 
     public AarGenerationDetailsInt getAarGenerationDetails(NotificationInt notification, Integer recIndex) {

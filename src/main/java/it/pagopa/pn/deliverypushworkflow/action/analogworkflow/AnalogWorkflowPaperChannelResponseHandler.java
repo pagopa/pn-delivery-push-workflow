@@ -337,7 +337,7 @@ public class AnalogWorkflowPaperChannelResponseHandler {
 
     private void scheduleSendAnalogFinalStatusResponseHandling(String iun, int recIndex, String analogFeedbackTimelineId){
         schedulerService.scheduleEvent(
-                iun, recIndex, Instant.now(), ActionType.SEND_ANALOG_FINAL_STATUS_RESPONSE, analogFeedbackTimelineId 
+                iun, recIndex, Instant.now(), ActionType.SEND_ANALOG_FINAL_STATUS_RESPONSE, analogFeedbackTimelineId
         );
     }
 

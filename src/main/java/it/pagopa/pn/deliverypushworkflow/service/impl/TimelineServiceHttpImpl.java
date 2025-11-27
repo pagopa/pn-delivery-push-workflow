@@ -1,6 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.service.impl;
 
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.AddTimelineElementResponse;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementDetailsInt;
@@ -26,7 +27,7 @@ public class TimelineServiceHttpImpl implements TimelineService {
     private final TimelineClient timelineClient;
 
     @Override
-    public boolean addTimelineElement(TimelineElementInternal element, NotificationInt notification) {
+    public AddTimelineElementResponse addTimelineElement(TimelineElementInternal element, NotificationInt notification) {
         log.info("addTimelineElement - IUN={} and timelineId={}", element.getIun(), element.getElementId());
         return timelineClient.addTimelineElement(element, notification);
     }
