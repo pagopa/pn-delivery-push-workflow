@@ -20,8 +20,10 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.CategorizedAttachm
 import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.NotificationChannelType;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.ResultFilterInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventIdParser;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.PhysicalAddressRelatedTimelineElement;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendAnalogFeedbackDetailsInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.ProductTypeEnum;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.SendResponse;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.paperchannel.PaperChannelPrepareRequest;
@@ -39,9 +41,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static it.pagopa.pn.deliverypushworkflow.exceptions.PnDeliveryPushExceptionCodes.ERROR_CODE_DELIVERYPUSH_TIMELINENOTFOUND;
 
@@ -177,7 +177,7 @@ public class PaperChannelServiceImpl implements PaperChannelService {
         String eventId = paperChannelUtils.buildPrepareAnalogDomicileEventId(notification, recIndex, sentAttemptMade);
         Boolean aarWithRadd = attachmentUtils.getAarWithRadd(notification, recIndex);
         log.debug("Starting prepareAnalogDomicile for eventId={} aarWithRadd={}", eventId, aarWithRadd);
-        
+
         // recupero gli allegati
         List<String> attachments = attachmentUtils.retrieveAttachments(notification, recIndex, attachmentUtils.retrieveSendAttachmentMode(notification, NotificationChannelType.ANALOG_NOTIFICATION), F24ResolutionMode.URL, Collections.emptyList(), true);
         PhysicalAddressInt.ANALOG_TYPE analogType = getAnalogType(notification);
@@ -209,6 +209,7 @@ public class PaperChannelServiceImpl implements PaperChannelService {
                 if (receiverAddress != null && !StringUtils.hasText(receiverAddress.getFullname())) {
                     receiverAddress.setFullname(notification.getRecipients().get(recIndex).getDenomination());
                 }
+                eventId = retrieveCorrectEventIdIfReworkIsPresent(notification, recIndex, eventId);
             }
             else
             {
@@ -239,7 +240,21 @@ public class PaperChannelServiceImpl implements PaperChannelService {
         }
     }
 
+    private String retrieveCorrectEventIdIfReworkIsPresent(NotificationInt notification, Integer recIndex, String eventId) {
+        Set<TimelineElementInternal> timelineElementInternals = timelineService.getTimeline(notification.getIun(), false);
+        TimelineElementInternal reworkedElement = timelineElementInternals.stream()
+                .filter(timelineElement -> timelineElement.getCategory().equals(TimelineElementCategoryInt.NOTIFICATION_TIMELINE_REWORKED)
+                    && recIndex.equals(TimelineEventIdParser.parse(timelineElement.getElementId()).recIndex().orElse(null)))
+                .sorted(Comparator.comparing(TimelineElementInternal::getTimestamp).reversed())
+                .toList().getFirst();
 
+        if(Objects.nonNull(reworkedElement)){
+            return TimelineEventIdParser.parse(reworkedElement.getElementId()).reworkIndexFull()
+                    .map(suffix -> eventId + "." + suffix)
+                    .orElse(eventId);
+        }
+        return eventId;
+    }
 
 
     @Override
