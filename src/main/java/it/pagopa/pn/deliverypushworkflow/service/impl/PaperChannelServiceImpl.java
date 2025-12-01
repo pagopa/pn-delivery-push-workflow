@@ -38,6 +38,7 @@ import lombok.AllArgsConstructor;
 import lombok.CustomLog;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.time.Instant;
@@ -242,15 +243,22 @@ public class PaperChannelServiceImpl implements PaperChannelService {
 
     private String retrieveCorrectEventIdIfReworkIsPresent(NotificationInt notification, Integer recIndex, String eventId) {
         Set<TimelineElementInternal> timelineElementInternals = timelineService.getTimeline(notification.getIun(), false);
-        TimelineElementInternal reworkedElement = timelineElementInternals.stream()
+        if(CollectionUtils.isEmpty(timelineElementInternals)){
+            return eventId;
+        }
+        List<TimelineElementInternal> reworkedElements = timelineElementInternals.stream()
                 .filter(timelineElement -> timelineElement.getCategory().equals(TimelineElementCategoryInt.NOTIFICATION_TIMELINE_REWORKED)
                     && recIndex.equals(TimelineEventIdParser.parse(timelineElement.getElementId()).recIndex().orElse(null)))
-                .sorted(Comparator.comparing(TimelineElementInternal::getTimestamp).reversed())
-                .toList().getFirst();
+                .toList();
 
-        if(Objects.nonNull(reworkedElement)){
-            return TimelineEventIdParser.parse(reworkedElement.getElementId()).reworkIndexFull()
-                    .map(suffix -> eventId + "." + suffix)
+        if(!CollectionUtils.isEmpty(reworkedElements)){
+            return reworkedElements.stream()
+                    .sorted(Comparator.comparing(TimelineElementInternal::getTimestamp).reversed())
+                    .toList()
+                    .stream().findFirst()
+                    .map(timelineElementInternal -> TimelineEventIdParser.parse(timelineElementInternal.getElementId()).reworkIndexFull()
+                            .map(suffix -> eventId + "." + suffix)
+                            .orElse(eventId))
                     .orElse(eventId);
         }
         return eventId;

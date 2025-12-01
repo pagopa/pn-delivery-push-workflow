@@ -513,8 +513,8 @@ class ReworkValidationHandlerTest {
         timeline.add(timelineElement);
 
         timelineElement = new TimelineElementInternal();
-        timelineElement.setCategory(TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE);
-        timelineElement.setElementId("PREPARE_ANALOG_DOMICILE.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_1");
+        timelineElement.setCategory(TimelineElementCategoryInt.SEND_ANALOG_DOMICILE);
+        timelineElement.setElementId("SEND_ANALOG_DOMICILE.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_1");
         timeline.add(timelineElement);
 
         timelineElement = new TimelineElementInternal();
@@ -585,7 +585,7 @@ class ReworkValidationHandlerTest {
         timelineElement.setCategory(TimelineElementCategoryInt.NOTIFICATION_TIMELINE_REWORKED);
         timelineElement.setElementId("NOTIFICATION_TIMELINE_REWORKED.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0");
         NotificationStatusHistoryElement element = new NotificationStatusHistoryElement();
-        element.setRelatedTimelineElements(List.of("SEND_ANALOG_FEEDBACK.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_1"));
+        element.setRelatedTimelineElements(List.of("SEND_ANALOG_DOMICILE.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_1"));
         timelineElement.setDetails(NotificationTimelineReworkedDetailsInt.builder()
                 .invalidatedTimelineAndStatusHistory(List.of(element)).build());
         timeline.add(timelineElement);
