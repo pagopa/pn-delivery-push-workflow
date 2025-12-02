@@ -20,8 +20,11 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.CategorizedAttachm
 import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.NotificationChannelType;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.ResultFilterInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventIdParser;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationTimelineReworkedDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.PhysicalAddressRelatedTimelineElement;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendAnalogFeedbackDetailsInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.ProductTypeEnum;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.SendResponse;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.paperchannel.PaperChannelPrepareRequest;
@@ -36,13 +39,13 @@ import lombok.AllArgsConstructor;
 import lombok.CustomLog;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
+import static it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventId.PREPARE_ANALOG_DOMICILE;
 import static it.pagopa.pn.deliverypushworkflow.exceptions.PnDeliveryPushExceptionCodes.ERROR_CODE_DELIVERYPUSH_TIMELINENOTFOUND;
 
 @CustomLog
@@ -177,7 +180,7 @@ public class PaperChannelServiceImpl implements PaperChannelService {
         String eventId = paperChannelUtils.buildPrepareAnalogDomicileEventId(notification, recIndex, sentAttemptMade);
         Boolean aarWithRadd = attachmentUtils.getAarWithRadd(notification, recIndex);
         log.debug("Starting prepareAnalogDomicile for eventId={} aarWithRadd={}", eventId, aarWithRadd);
-        
+
         // recupero gli allegati
         List<String> attachments = attachmentUtils.retrieveAttachments(notification, recIndex, attachmentUtils.retrieveSendAttachmentMode(notification, NotificationChannelType.ANALOG_NOTIFICATION), F24ResolutionMode.URL, Collections.emptyList(), true);
         PhysicalAddressInt.ANALOG_TYPE analogType = getAnalogType(notification);
@@ -209,6 +212,10 @@ public class PaperChannelServiceImpl implements PaperChannelService {
                 if (receiverAddress != null && !StringUtils.hasText(receiverAddress.getFullname())) {
                     receiverAddress.setFullname(notification.getRecipients().get(recIndex).getDenomination());
                 }
+
+                if (pnDeliveryPushWorkflowConfigs.getInvalidableCategories().contains(PREPARE_ANALOG_DOMICILE.getValue())) {
+                    eventId = retrieveCorrectEventIdIfReworkIsPresent(notification, recIndex, sentAttemptMade, eventId);
+                }
             }
             else
             {
@@ -239,7 +246,43 @@ public class PaperChannelServiceImpl implements PaperChannelService {
         }
     }
 
+    private String retrieveCorrectEventIdIfReworkIsPresent(NotificationInt notification, Integer recIndex, Integer sendAttemptMade, String eventId) {
+        Set<TimelineElementInternal> timelineElementInternals = timelineService.getTimeline(notification.getIun(), false);
+        if(CollectionUtils.isEmpty(timelineElementInternals)){
+            return eventId;
+        }
+        List<TimelineElementInternal> reworkedElements = timelineElementInternals.stream()
+                .filter(timelineElement -> timelineElement.getCategory().equals(TimelineElementCategoryInt.NOTIFICATION_TIMELINE_REWORKED))
+                .filter(timelineElement -> recIndex.equals(TimelineEventIdParser.parse(timelineElement.getElementId()).recIndex().orElse(null)))
+                .toList();
 
+        if(CollectionUtils.isEmpty(reworkedElements)){
+            return eventId;
+        }
+
+        boolean existsPrepareAnalogDomicileInvalidation = reworkedElements.stream()
+                .map(el -> (NotificationTimelineReworkedDetailsInt) el.getDetails())
+                .flatMap(details -> details.getInvalidatedTimelineAndStatusHistory().stream())
+                .flatMap(hist -> hist.getRelatedTimelineElements().stream())
+                .filter(id -> id.startsWith(PREPARE_ANALOG_DOMICILE.getValue()))
+                .anyMatch(id -> {
+                    TimelineEventIdParser parsed = TimelineEventIdParser.parse(id);
+                    return parsed.sentAttemptMade().isEmpty() || parsed.sentAttemptMade().get().equals(sendAttemptMade);
+                });
+
+        if (!existsPrepareAnalogDomicileInvalidation) {
+            return eventId;
+        }
+
+        TimelineElementInternal mostRecentRework = reworkedElements.stream()
+                .max(Comparator.comparing(TimelineElementInternal::getTimestamp))
+                .orElse(null);
+
+        return TimelineEventIdParser.parse(mostRecentRework.getElementId())
+                .reworkIndexFull()
+                .map(suffix -> eventId + "." + suffix)
+                .orElse(eventId);
+    }
 
 
     @Override

@@ -13,6 +13,8 @@ import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationRewo
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkErrorCause;
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkInfo;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventId;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationTimelineReworkedDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationViewedCreationRequestDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ScheduleRefinementDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
@@ -136,18 +138,35 @@ public class ReworkValidationHandler {
     }
 
     private Mono<NotificationReworkInfo> checkNotificationExpectedFinalStatusCodeAndThrow(NotificationReworkInfo info) {
-        return Mono.just(info.getTimeline())
-                .flatMap(timeline -> {
-                    boolean hasAttempt0 = timeline.stream().anyMatch(timelineElement -> timelineElement.getElementId().contains(ATTEMPT_0));
-                    boolean hasAttempt1 = timeline.stream().anyMatch(timelineElement -> timelineElement.getElementId().contains(ATTEMPT_1));
-                    String expectedAttempt = info.getActionDetail().getReworkAttempt();
-                    String expectedStatus = info.getActionDetail().getReworkExpectedFinalStatus();
+        String expectedAttempt = info.getActionDetail().getReworkAttempt();
+        String expectedStatus = info.getActionDetail().getReworkExpectedFinalStatus();
+        Set<TimelineElementInternal> filteredOnRecIndexTimelineElments = info.getTimeline().stream()
+                .filter(timelineElement -> timelineElement.getElementId().contains(info.getActionDetail().getReworkRecIndex()))
+                .collect(Collectors.toSet());
 
-                    if (hasAttempt0 && hasAttempt1 && ATTEMPT_0.equals(expectedAttempt) && KO.equals(expectedStatus)) {
-                        return Mono.error(new NotificationReworkValidationException(NotificationReworkError.builder().cause(NotificationReworkErrorCause.INVALID_EXPECTED_STATUS_CODE.getCause()).description(String.format(NotificationReworkErrorCause.INVALID_EXPECTED_STATUS_CODE.getErrorDetails(), expectedStatus, expectedAttempt)).build()));
-                    }
-                    return Mono.just(info);
-                });
+        boolean hasAttempt0 = filteredOnRecIndexTimelineElments.stream().anyMatch(timelineElement -> timelineElement.getElementId().contains(ATTEMPT_0));
+        boolean hasAttempt1 = filteredOnRecIndexTimelineElments.stream().anyMatch(timelineElement -> timelineElement.getCategory().equals(SEND_ANALOG_DOMICILE) &&
+                timelineElement.getElementId().contains(ATTEMPT_1));
+
+        if(expectedAttempt.equalsIgnoreCase(ATTEMPT_0)){
+            List<NotificationTimelineReworkedDetailsInt> notificationTimelineReworkedDetailsIntList =  filteredOnRecIndexTimelineElments.stream()
+                    .filter(timelineElementInternal -> timelineElementInternal.getCategory().equals(NOTIFICATION_TIMELINE_REWORKED))
+                    .map(timelineElementInternal -> (NotificationTimelineReworkedDetailsInt) timelineElementInternal.getDetails())
+                    .toList();
+
+            boolean containsInvalidatedAttempt1 = notificationTimelineReworkedDetailsIntList.stream()
+                    .flatMap(detail -> detail.getInvalidatedTimelineAndStatusHistory().stream())
+                    .flatMap(historyElement -> historyElement.getRelatedTimelineElements().stream())
+                    .anyMatch(timelineElementId -> timelineElementId.contains(TimelineEventId.SEND_ANALOG_DOMICILE.getValue()) && timelineElementId.contains(ATTEMPT_1));
+
+            hasAttempt1 = hasAttempt1 || containsInvalidatedAttempt1;
+        }
+
+        if (hasAttempt0 && hasAttempt1 && ATTEMPT_0.equals(expectedAttempt) && KO.equals(expectedStatus)) {
+            return Mono.error(new NotificationReworkValidationException(NotificationReworkError.builder().cause(NotificationReworkErrorCause.INVALID_EXPECTED_STATUS_CODE.getCause()).description(String.format(NotificationReworkErrorCause.INVALID_EXPECTED_STATUS_CODE.getErrorDetails(), expectedStatus, expectedAttempt)).build()));
+        }
+        return Mono.just(info);
+
     }
 
     private Mono<NotificationReworkInfo> checkNotificationAttachments(NotificationReworkInfo info) {
