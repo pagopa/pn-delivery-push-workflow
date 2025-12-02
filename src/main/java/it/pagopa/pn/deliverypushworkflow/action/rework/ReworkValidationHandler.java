@@ -13,6 +13,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationRewo
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkErrorCause;
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkInfo;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventId;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationTimelineReworkedDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationViewedCreationRequestDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ScheduleRefinementDetailsInt;
@@ -139,12 +140,16 @@ public class ReworkValidationHandler {
     private Mono<NotificationReworkInfo> checkNotificationExpectedFinalStatusCodeAndThrow(NotificationReworkInfo info) {
         String expectedAttempt = info.getActionDetail().getReworkAttempt();
         String expectedStatus = info.getActionDetail().getReworkExpectedFinalStatus();
-        Set<TimelineElementInternal> timelineElementInternals = info.getTimeline();
-        boolean hasAttempt0 = timelineElementInternals.stream().anyMatch(timelineElement -> timelineElement.getElementId().contains(ATTEMPT_0));
-        boolean hasAttempt1 = timelineElementInternals.stream().anyMatch(timelineElement -> timelineElement.getElementId().contains(ATTEMPT_1));
+        Set<TimelineElementInternal> filteredOnRecIndexTimelineElments = info.getTimeline().stream()
+                .filter(timelineElement -> timelineElement.getElementId().contains(info.getActionDetail().getReworkRecIndex()))
+                .collect(Collectors.toSet());
+
+        boolean hasAttempt0 = filteredOnRecIndexTimelineElments.stream().anyMatch(timelineElement -> timelineElement.getElementId().contains(ATTEMPT_0));
+        boolean hasAttempt1 = filteredOnRecIndexTimelineElments.stream().anyMatch(timelineElement -> timelineElement.getCategory().equals(SEND_ANALOG_DOMICILE) &&
+                timelineElement.getElementId().contains(ATTEMPT_1));
 
         if(expectedAttempt.equalsIgnoreCase(ATTEMPT_0)){
-            List<NotificationTimelineReworkedDetailsInt> notificationTimelineReworkedDetailsIntList =  timelineElementInternals.stream()
+            List<NotificationTimelineReworkedDetailsInt> notificationTimelineReworkedDetailsIntList =  filteredOnRecIndexTimelineElments.stream()
                     .filter(timelineElementInternal -> timelineElementInternal.getCategory().equals(NOTIFICATION_TIMELINE_REWORKED))
                     .map(timelineElementInternal -> (NotificationTimelineReworkedDetailsInt) timelineElementInternal.getDetails())
                     .toList();
@@ -152,7 +157,7 @@ public class ReworkValidationHandler {
             boolean containsInvalidatedAttempt1 = notificationTimelineReworkedDetailsIntList.stream()
                     .flatMap(detail -> detail.getInvalidatedTimelineAndStatusHistory().stream())
                     .flatMap(historyElement -> historyElement.getRelatedTimelineElements().stream())
-                    .anyMatch(timelineElementId -> timelineElementId.contains(ATTEMPT_1));
+                    .anyMatch(timelineElementId -> timelineElementId.contains(TimelineEventId.SEND_ANALOG_DOMICILE.getValue()) && timelineElementId.contains(ATTEMPT_1));
 
             hasAttempt1 = hasAttempt1 || containsInvalidatedAttempt1;
         }
