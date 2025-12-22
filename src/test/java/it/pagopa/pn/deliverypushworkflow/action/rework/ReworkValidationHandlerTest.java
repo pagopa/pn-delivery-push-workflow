@@ -11,16 +11,12 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.Notificat
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkError;
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkErrorCause;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationTimelineReworkedDetailsInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationViewedCreationRequestDetailsInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ScheduleRefinementDetailsInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.*;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.actionmanager.api.ActionApi;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.CheckAddressResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.model.FileDownloadResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationHistoryResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationStatus;
-import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationStatusHistoryElement;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.paperchannel.PaperChannelAddressClient;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.Action;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ReworkRequestEventAction;
@@ -584,8 +580,8 @@ class ReworkValidationHandlerTest {
         timelineElement = new TimelineElementInternal();
         timelineElement.setCategory(TimelineElementCategoryInt.NOTIFICATION_TIMELINE_REWORKED);
         timelineElement.setElementId("NOTIFICATION_TIMELINE_REWORKED.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0");
-        NotificationStatusHistoryElement element = new NotificationStatusHistoryElement();
-        element.setRelatedTimelineElements(List.of("SEND_ANALOG_DOMICILE.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_1"));
+        NotificationStatusHistoryInvalidatedElementInt element = new NotificationStatusHistoryInvalidatedElementInt();
+        element.setRelatedTimelineElementIds(List.of("SEND_ANALOG_DOMICILE.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_1"));
         timelineElement.setDetails(NotificationTimelineReworkedDetailsInt.builder()
                 .invalidatedTimelineAndStatusHistory(List.of(element)).build());
         timeline.add(timelineElement);
@@ -924,8 +920,8 @@ class ReworkValidationHandlerTest {
         timelineElement = new TimelineElementInternal();
         timelineElement.setCategory(TimelineElementCategoryInt.NOTIFICATION_TIMELINE_REWORKED);
         timelineElement.setElementId("NOTIFICATION_TIMELINE_REWORKED.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0");
-        NotificationStatusHistoryElement element = new NotificationStatusHistoryElement();
-        element.setRelatedTimelineElements(List.of("SEND_ANALOG_FEEDBACK.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_1"));
+        NotificationStatusHistoryInvalidatedElementInt element = new NotificationStatusHistoryInvalidatedElementInt();
+        element.setRelatedTimelineElementIds(List.of("SEND_ANALOG_FEEDBACK.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_1"));
         timelineElement.setDetails(NotificationTimelineReworkedDetailsInt.builder()
                 .invalidatedTimelineAndStatusHistory(List.of(element)).build());
         timeline.add(timelineElement);

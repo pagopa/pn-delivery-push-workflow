@@ -1575,8 +1575,8 @@ class TimelineUtilsTest {
         NotificationInt notification = buildNotification();
         Integer recIndex = 1;
         Integer sentAttemptMade = 1;
-        List<NotificationStatusHistoryElement> invalidatedTimelineAndStatusHistory = new ArrayList<>();
-        invalidatedTimelineAndStatusHistory.add(new NotificationStatusHistoryElement());
+        List<NotificationStatusHistoryInvalidatedElementInt> invalidatedTimelineAndStatusHistory = new ArrayList<>();
+        invalidatedTimelineAndStatusHistory.add(new NotificationStatusHistoryInvalidatedElementInt());
         String reworkId = "REWORK_0_1234";
 
         TimelineElementInternal actual = timelineUtils.buildNotificationTimelineReworkedTimelineElement(notification, invalidatedTimelineAndStatusHistory, recIndex, sentAttemptMade, reworkId);

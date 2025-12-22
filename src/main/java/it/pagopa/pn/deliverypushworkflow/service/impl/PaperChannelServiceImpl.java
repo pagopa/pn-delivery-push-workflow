@@ -263,7 +263,7 @@ public class PaperChannelServiceImpl implements PaperChannelService {
         boolean existsPrepareAnalogDomicileInvalidation = reworkedElements.stream()
                 .map(el -> (NotificationTimelineReworkedDetailsInt) el.getDetails())
                 .flatMap(details -> details.getInvalidatedTimelineAndStatusHistory().stream())
-                .flatMap(hist -> hist.getRelatedTimelineElements().stream())
+                .flatMap(hist -> hist.getRelatedTimelineElements().stream().map(TimelineElementInternal::getElementId))
                 .filter(id -> id.startsWith(PREPARE_ANALOG_DOMICILE.getValue()))
                 .anyMatch(id -> {
                     TimelineEventIdParser parsed = TimelineEventIdParser.parse(id);

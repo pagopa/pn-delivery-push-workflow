@@ -8,6 +8,7 @@ import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationDocumentInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationStatusHistoryInvalidatedElementInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendAnalogProgressDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationHistoryResponse;
@@ -98,7 +99,7 @@ public class ReworkRequestedHandler {
         Integer recIndex = Objects.nonNull(internalDetail.getReworkRecIndex().split("_")[1]) ? Integer.parseInt(internalDetail.getReworkRecIndex().split("_")[1]) : null;
         Integer attempt = Objects.nonNull(internalDetail.getReworkAttempt().split("_")[1]) ? Integer.parseInt(internalDetail.getReworkAttempt().split("_")[1]) : null;
         NotificationHistoryResponse notificationHistoryResponse = timelineService.getTimelineAndStatusHistory(notification.getIun(), notification.getRecipients().size(), notification.getSentAt());
-        List<NotificationStatusHistoryElement> statusHistoryElements = new ArrayList<>();
+        List<NotificationStatusHistoryInvalidatedElementInt> statusHistoryElements = new ArrayList<>();
         if(Objects.nonNull(notificationHistoryResponse.getNotificationStatusHistory())) {
             statusHistoryElements = notificationHistoryResponse.getNotificationStatusHistory()
                     .stream()
@@ -108,9 +109,18 @@ public class ReworkRequestedHandler {
                         notificationStatusHistoryElement.setRelatedTimelineElements(filteredRelatedTimelineElements);
                     })
                     .filter(element -> !CollectionUtils.isEmpty(element.getRelatedTimelineElements()))
+                    .map(this::toNotificationStatusHistoryInvalidatedElementInt)
                     .toList();
         }
         return timelineUtils.buildNotificationTimelineReworkedTimelineElement(notification, statusHistoryElements, recIndex, attempt, internalDetail.getReworkId());
+    }
+
+    private NotificationStatusHistoryInvalidatedElementInt toNotificationStatusHistoryInvalidatedElementInt(NotificationStatusHistoryElement notificationStatusHistoryElement) {
+        NotificationStatusHistoryInvalidatedElementInt elementInt = new NotificationStatusHistoryInvalidatedElementInt();
+        elementInt.setStatus(notificationStatusHistoryElement.getStatus());
+        elementInt.setActiveFrom(notificationStatusHistoryElement.getActiveFrom());
+        elementInt.setRelatedTimelineElementIds(notificationStatusHistoryElement.getRelatedTimelineElements());
+        return elementInt;
     }
 
 

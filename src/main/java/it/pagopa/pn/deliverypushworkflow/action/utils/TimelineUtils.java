@@ -1401,7 +1401,7 @@ public class TimelineUtils {
     }
 
     public TimelineElementInternal buildNotificationTimelineReworkedTimelineElement(NotificationInt notification,
-                                                                                    List<NotificationStatusHistoryElement> invalidatedTimelineElements,
+                                                                                    List<NotificationStatusHistoryInvalidatedElementInt> invalidatedTimelineElements,
                                                                                     Integer recIndex, Integer sentAttemptMade, String reworkId) {
         log.debug("buildNotificationTimelineReworkedElement - IUN={} and id={}", notification.getIun(), recIndex);
 
