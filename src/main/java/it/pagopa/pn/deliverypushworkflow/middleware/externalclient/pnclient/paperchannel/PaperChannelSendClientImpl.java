@@ -51,7 +51,8 @@ public class PaperChannelSendClientImpl implements PaperChannelSendClient {
         prepareRequest.setReceiverType(paperChannelPrepareRequest.getRecipientInt().getRecipientType().getValue());
         prepareRequest.setNotificationSentAt(paperChannelPrepareRequest.getNotificationInt().getSentAt());
         prepareRequest.setSenderPaId(paperChannelPrepareRequest.getNotificationInt().getSender().getPaId());
-
+        prepareRequest.setAttempt(getAttemptFromRequestId(paperChannelPrepareRequest.getRequestId()));
+        prepareRequest.setRecIndex(paperChannelPrepareRequest.getNotificationInt().getRecipients().indexOf(paperChannelPrepareRequest.getRecipientInt()));
         prepareRequest.setRelatedRequestId(paperChannelPrepareRequest.getRelatedRequestId());
         prepareRequest.setDiscoveredAddress(mapInternalToExternal(paperChannelPrepareRequest.getDiscoveredAddress()));
         prepareRequest.setAarWithRadd(paperChannelPrepareRequest.getAarWithRadd());
@@ -81,6 +82,8 @@ public class PaperChannelSendClientImpl implements PaperChannelSendClient {
             sendRequest.setSenderAddress(mapInternalToExternal(paperChannelSendRequest.getSenderAddress()));
             sendRequest.setRequestPaId(paperChannelSendRequest.getNotificationInt().getSender().getPaTaxId());
             sendRequest.setClientRequestTimeStamp(Instant.now());
+            sendRequest.setAttempt(getAttemptFromRequestId(paperChannelSendRequest.getRequestId()));
+            sendRequest.setRecIndex(paperChannelSendRequest.getNotificationInt().getRecipients().indexOf(paperChannelSendRequest.getRecipientInt()));
 
             SendResponse response = paperMessagesApi.sendPaperSendRequest(paperChannelSendRequest.getRequestId(), sendRequest);
             log.debug("[exit] send iun={} address={} recipient={} requestId={} attachments={} amount={}", paperChannelSendRequest.getNotificationInt().getIun(), LogUtils.maskGeneric(paperChannelSendRequest.getReceiverAddress().getAddress()), LogUtils.maskGeneric(paperChannelSendRequest.getRecipientInt().getDenomination()), paperChannelSendRequest.getRequestId(), paperChannelSendRequest.getAttachments(), response.getAmount());
@@ -93,6 +96,11 @@ public class PaperChannelSendClientImpl implements PaperChannelSendClient {
               throw e;
             }
         }
+    }
+
+    private int getAttemptFromRequestId(String requestId) {
+        int start = requestId.indexOf("ATTEMPT_") + 8;
+        return Character.getNumericValue(requestId.charAt(start));
     }
 
     private AnalogAddress mapInternalToExternal(PhysicalAddressInt physicalAddress){
