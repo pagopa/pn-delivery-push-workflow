@@ -8,7 +8,7 @@
 		<relativePath />
 	</parent>
 	<artifactId>pn-delivery-push-workflow</artifactId>
-	<version>1.2.0</version>
+	<version>1.2.1-SNAPSHOT</version>
 	<name>pn-delivery-push-workflow</name>
 	<description>Orchestrate Notification Workflow</description>
 	<scm>
@@ -659,7 +659,7 @@
 							<goal>generate</goal>
 						</goals>
 						<configuration>
-							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-emd-integration/63e4301bfedc7459db68f46b3ce6f33607306a10/docs/openapi/api-private.yaml</inputSpec>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-emd-integration/0e6881fe808cf101c8609cf2b406f5448a20f4fc/docs/openapi/api-private.yaml</inputSpec>
 							<templateDirectory>${project.build.directory}/dependency-resources/scripts/openapi/templates/7.4.0/client</templateDirectory>
 							<generatorName>java</generatorName>
 							<library>webclient</library>
