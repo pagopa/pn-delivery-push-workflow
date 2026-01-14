@@ -368,6 +368,133 @@ class ReworkValidationHandlerTest {
     }
 
     @Test
+    void handleNotificationTimelineKo_INVALID_ATTEMPT_1_VIEWED() {
+        NotificationReworkValidationDetails detail = new NotificationReworkValidationDetails();
+        detail.setReworkAttempt("ATTEMPT_0");
+        detail.setReworkRecIndex("RECINDEX_0");
+        detail.setReworkPcRetry("PCRETRY_0");
+        Action action = Action.builder()
+                .iun("XLJE-VRQM-VKNQ-202507-K-1")
+                .details(detail)
+                .recipientIndex(1)
+                .build();
+
+        NotificationInt notification = NotificationInt.builder()
+                .iun("XLJE-VRQM-VKNQ-202507-K-1")
+                .recipients(List.of(new NotificationRecipientInt()))
+                .build();
+
+        Set<TimelineElementInternal> timeline = new HashSet<>();
+        TimelineElementInternal timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE);
+        timelineElement.setElementId("PREPARE_ANALOG_DOMICILE.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_1");
+        timeline.add(timelineElement);
+
+        timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK);
+        timelineElement.setElementId("SEND_ANALOG_FEEDBACK.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_1");
+        timeline.add(timelineElement);
+
+        ScheduleRefinementDetailsInt scheduleRefinementDetails = new ScheduleRefinementDetailsInt();
+        scheduleRefinementDetails.setSchedulingDate(Instant.now());
+        timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.SCHEDULE_REFINEMENT);
+        timelineElement.setElementId("SCHEDULE_REFINEMENT.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_1");
+        timelineElement.setDetails(scheduleRefinementDetails);
+        timeline.add(timelineElement);
+
+        NotificationViewedCreationRequestDetailsInt detailViewed = new NotificationViewedCreationRequestDetailsInt();
+        detailViewed.setEventTimestamp(Instant.now().plusSeconds(60));
+        timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.NOTIFICATION_VIEWED_CREATION_REQUEST);
+        timelineElement.setElementId("NOTIFICATION_VIEWED_CREATION_REQUEST.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0");
+        timelineElement.setDetails(detailViewed);
+        timeline.add(timelineElement);
+
+
+        NotificationHistoryResponse notificationHistoryResponse = new NotificationHistoryResponse();
+        notificationHistoryResponse.setNotificationStatus(NotificationStatus.VIEWED);
+
+        when(timelineService.getTimeline(anyString(), anyBoolean())).thenReturn(timeline);
+        when(timelineUtils.checkIsNotificationCancellationRequested(any())).thenReturn(false);
+        when(notificationService.getNotificationByIun(any())).thenReturn(notification);
+        when(timelineService.getTimelineAndStatusHistory(any(),anyInt(),any())).thenReturn(notificationHistoryResponse);
+
+        notificationReworkHandler.handleNotificationRework(action).block();
+
+        verify(actionManagerApi, never()).insertAction(any());
+
+        ArgumentCaptor<ReworkRequestEventAction> captor = ArgumentCaptor.forClass(ReworkRequestEventAction.class);
+        verify(reworkRequestEventPool, times(1)).scheduleFutureAction(captor.capture(), any());
+        List<NotificationReworkError> capturedErrorList = captor.getValue().getError();
+        Assertions.assertEquals(NotificationReworkErrorCause.INVALID_NOTIFICATION_STATUS.getCause(), capturedErrorList.getFirst().getCause());
+        Assertions.assertEquals("Invalid status VIEWED if ATTEMPT_1 exists", capturedErrorList.getFirst().getDescription());
+    }
+
+    @Test
+    void handleNotificationTimelineKO_INVALID_ATTEMPT_1_REQ_ATTEMPT_1_VIEWED() {
+        NotificationReworkValidationDetails detail = new NotificationReworkValidationDetails();
+        detail.setReworkAttempt("ATTEMPT_1");
+        detail.setReworkRecIndex("RECINDEX_0");
+        detail.setReworkPcRetry("PCRETRY_0");
+        Action action = Action.builder()
+                .iun("XLJE-VRQM-VKNQ-202507-K-1")
+                .details(detail)
+                .recipientIndex(1)
+                .build();
+
+        NotificationInt notification = NotificationInt.builder()
+                .iun("XLJE-VRQM-VKNQ-202507-K-1")
+                .recipients(List.of(new NotificationRecipientInt()))
+                .build();
+
+        Set<TimelineElementInternal> timeline = new HashSet<>();
+        TimelineElementInternal timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE);
+        timelineElement.setElementId("PREPARE_ANALOG_DOMICILE.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_1");
+        timeline.add(timelineElement);
+
+        timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK);
+        timelineElement.setElementId("SEND_ANALOG_FEEDBACK.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_1");
+        timeline.add(timelineElement);
+
+        ScheduleRefinementDetailsInt scheduleRefinementDetails = new ScheduleRefinementDetailsInt();
+        scheduleRefinementDetails.setSchedulingDate(Instant.now());
+        timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.SCHEDULE_REFINEMENT);
+        timelineElement.setElementId("SCHEDULE_REFINEMENT.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_1");
+        timelineElement.setDetails(scheduleRefinementDetails);
+        timeline.add(timelineElement);
+
+        NotificationViewedCreationRequestDetailsInt detailViewed = new NotificationViewedCreationRequestDetailsInt();
+        detailViewed.setEventTimestamp(Instant.now().plusSeconds(60));
+        timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.NOTIFICATION_VIEWED_CREATION_REQUEST);
+        timelineElement.setElementId("NOTIFICATION_VIEWED_CREATION_REQUEST.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0");
+        timelineElement.setDetails(detailViewed);
+        timeline.add(timelineElement);
+
+
+        NotificationHistoryResponse notificationHistoryResponse = new NotificationHistoryResponse();
+        notificationHistoryResponse.setNotificationStatus(NotificationStatus.VIEWED);
+
+        when(timelineService.getTimeline(anyString(), anyBoolean())).thenReturn(timeline);
+        when(timelineUtils.checkIsNotificationCancellationRequested(any())).thenReturn(false);
+        when(notificationService.getNotificationByIun(any())).thenReturn(notification);
+        when(timelineService.getTimelineAndStatusHistory(any(),anyInt(),any())).thenReturn(notificationHistoryResponse);
+
+        notificationReworkHandler.handleNotificationRework(action).block();
+
+        verify(actionManagerApi, never()).insertAction(any());
+
+        ArgumentCaptor<ReworkRequestEventAction> captor = ArgumentCaptor.forClass(ReworkRequestEventAction.class);
+        verify(reworkRequestEventPool, times(1)).scheduleFutureAction(captor.capture(), any());
+        List<NotificationReworkError> capturedErrorList = captor.getValue().getError();
+        Assertions.assertEquals(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT.getCause(), capturedErrorList.getFirst().getCause());
+    }
+
+    @Test
     void handleNotificationTimelineKo_INVALID_TIMELINE_ELEMENT_VIEWED() {
         NotificationReworkValidationDetails detail = new NotificationReworkValidationDetails();
         detail.setReworkAttempt("ATTEMPT_0");

@@ -292,6 +292,10 @@ public class ReworkValidationHandler {
         Set<TimelineElementInternal> timeline = info.getFilteredTimeline();
 
         boolean isStatusViewed = STATUS_VIEWED.equals(status);
+        if(isStatusViewed && attempt.equalsIgnoreCase(ATTEMPT_0) &&
+                timeline.stream().anyMatch(timelineElementInternal -> timelineElementInternal.getElementId().contains(ATTEMPT_1))) {
+            return fail(NotificationReworkErrorCause.INVALID_NOTIFICATION_STATUS, "Invalid status VIEWED if ATTEMPT_1 exists");
+        }
 
         if (!containsCategory(timeline, TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK)) {
             log.warn("Timeline does not contain the SEND_ANALOG_FEEDBACK element required to proceed with the invalidation request for iun: [{}], recIndex: [{}], attemptId: [{}]", info.getAction().getIun(), recIndex, attempt);
