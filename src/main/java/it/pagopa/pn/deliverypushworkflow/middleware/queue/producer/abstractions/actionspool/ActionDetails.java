@@ -23,7 +23,8 @@ import it.pagopa.pn.deliverypushworkflow.action.details.*;
         @JsonSubTypes.Type(value = SendDigitalFinalStatusResponseDetails.class, name = "SEND_DIGITAL_FINAL_STATUS_RESPONSE"),
         @JsonSubTypes.Type(value = AnalogWorkflowTimeoutDetails.class, name = "ANALOG_WORKFLOW_NO_FEEDBACK_TIMEOUT"),
         @JsonSubTypes.Type(value = NotificationReworkValidationDetails.class, name = "NOTIFICATION_REWORK_VALIDATION"),
-        @JsonSubTypes.Type(value = NotificationReworkRequestedDetails.class, name = "NOTIFICATION_REWORK_REQUESTED")
+        @JsonSubTypes.Type(value = NotificationReworkRequestedDetails.class, name = "NOTIFICATION_REWORK_REQUESTED"),
+        @JsonSubTypes.Type(value = NotificationReworkUpdateDetails.class, name = "NOTIFICATION_REWORK_UPDATE"),
 })
 public interface ActionDetails {
 
