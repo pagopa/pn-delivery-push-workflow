@@ -22,6 +22,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventIdBuilder;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.*;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.SendResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationStatusHistoryElement;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationStatusHistoryInvalidatedElement;
 import it.pagopa.pn.deliverypushworkflow.service.NotificationProcessCostService;
 import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import lombok.extern.slf4j.Slf4j;
@@ -1419,12 +1420,25 @@ public class TimelineUtils {
         NotificationTimelineReworkedDetailsInt details = NotificationTimelineReworkedDetailsInt.builder()
                 .recIndex(recIndex)
                 .sentAttemptMade(sentAttemptMade)
-                .invalidatedTimelineAndStatusHistory(invalidatedTimelineElements)
+                .invalidatedTimelineAndStatusHistory(mapToInvalidatedTimelineAndStatusHistory(invalidatedTimelineElements))
                 .build();
 
         TimelineElementInternal timelineElementInternal = buildTimeline(notification, TimelineElementCategoryInt.NOTIFICATION_TIMELINE_REWORKED, elementId, details);
         timelineElementInternal.setReworkId(reworkId);
         return timelineElementInternal;
+    }
+
+    private List<NotificationStatusHistoryInvalidatedElement> mapToInvalidatedTimelineAndStatusHistory(List<NotificationStatusHistoryElement> invalidatedTimelineElements) {
+        return invalidatedTimelineElements.stream()
+                .map(notificationStatusHistoryElement -> {
+                    NotificationStatusHistoryInvalidatedElement notificationStatusHistoryInvalidatedElement = new NotificationStatusHistoryInvalidatedElement();
+                    notificationStatusHistoryInvalidatedElement.setStatus(notificationStatusHistoryElement.getStatus());
+                    notificationStatusHistoryInvalidatedElement.setActiveFrom(notificationStatusHistoryInvalidatedElement.getActiveFrom());
+                    notificationStatusHistoryInvalidatedElement.setRelatedTimelineElementIds(notificationStatusHistoryElement.getRelatedTimelineElements());
+                    return notificationStatusHistoryInvalidatedElement;
+                })
+                .toList();
+
     }
 
 }
