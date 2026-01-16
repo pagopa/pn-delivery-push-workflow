@@ -1433,7 +1433,7 @@ public class TimelineUtils {
                 .map(notificationStatusHistoryElement -> {
                     NotificationStatusHistoryInvalidatedElement notificationStatusHistoryInvalidatedElement = new NotificationStatusHistoryInvalidatedElement();
                     notificationStatusHistoryInvalidatedElement.setStatus(notificationStatusHistoryElement.getStatus());
-                    notificationStatusHistoryInvalidatedElement.setActiveFrom(notificationStatusHistoryInvalidatedElement.getActiveFrom());
+                    notificationStatusHistoryInvalidatedElement.setActiveFrom(notificationStatusHistoryElement.getActiveFrom());
                     notificationStatusHistoryInvalidatedElement.setRelatedTimelineElementIds(notificationStatusHistoryElement.getRelatedTimelineElements());
                     return notificationStatusHistoryInvalidatedElement;
                 })
