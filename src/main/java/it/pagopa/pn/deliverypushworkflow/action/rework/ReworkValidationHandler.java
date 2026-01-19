@@ -273,29 +273,33 @@ public class ReworkValidationHandler {
     private Mono<NotificationReworkInfo> checkNotificationTimelineAndThrow(NotificationReworkInfo info) {
         String recIndex = info.getActionDetail().getReworkRecIndex();
         String attempt = info.getActionDetail().getReworkAttempt();
+        boolean isStatusViewed = timelineUtils.checkIsNotificationViewed(info.getNotification().getIun(), getRecIndexFromAction(info.getActionDetail()));
 
-        return Mono.just(info.getTimeline().stream().filter(timelineElementInternal -> timelineElementInternal.getElementId().contains(attempt)
+        return Mono.just(info.getTimeline())
+                .map(timelineElement -> timelineElement.stream().filter(timelineElementInternal -> timelineElementInternal.getElementId().contains(recIndex)).collect(Collectors.toSet()))
+                .switchIfEmpty(fail(NotificationReworkErrorCause.INVALID_RECINDEX, NotificationReworkErrorCause.INVALID_RECINDEX.getErrorDetails()))
+                .flatMap(timeline -> checkIfAttemptOneExistsForReworkAttemptZero(timeline, attempt, isStatusViewed))
+                .map(timeline -> timeline.stream().filter(timelineElementInternal -> timelineElementInternal.getElementId().contains(attempt)
                                 || ELEMENTS_WITHOUT_ATTEMPT_ID.contains(timelineElementInternal.getCategory()))
                         .collect(Collectors.toSet()))
                 .filter(timelineElementInternals -> !timelineElementInternals.isEmpty())
                 .switchIfEmpty(fail(NotificationReworkErrorCause.INVALID_ATTEMPT_ID, NotificationReworkErrorCause.INVALID_ATTEMPT_ID.getErrorDetails()))
-                .map(timelineElement -> timelineElement.stream().filter(timelineElementInternal -> timelineElementInternal.getElementId().contains(recIndex)).collect(Collectors.toSet()))
-                .switchIfEmpty(fail(NotificationReworkErrorCause.INVALID_RECINDEX, NotificationReworkErrorCause.INVALID_RECINDEX.getErrorDetails()))
                 .doOnNext(info::setFilteredTimeline)
-                .flatMap(timeline -> checkNotificationTimeline(info, recIndex, attempt))
+                .flatMap(timeline -> checkNotificationTimeline(info, recIndex, attempt, isStatusViewed))
                 .thenReturn(info);
     }
 
-    private Mono<Void> checkNotificationTimeline(NotificationReworkInfo info, String recIndex, String attempt) {
-
-        String status = info.getNotificationStatus();
-        Set<TimelineElementInternal> timeline = info.getFilteredTimeline();
-
-        boolean isStatusViewed = STATUS_VIEWED.equals(status);
+    private Mono<Set<TimelineElementInternal>> checkIfAttemptOneExistsForReworkAttemptZero(Set<TimelineElementInternal> timeline, String attempt, boolean isStatusViewed) {
         if(isStatusViewed && attempt.equalsIgnoreCase(ATTEMPT_0) &&
                 timeline.stream().anyMatch(timelineElementInternal -> timelineElementInternal.getElementId().contains(ATTEMPT_1))) {
             return fail(NotificationReworkErrorCause.INVALID_NOTIFICATION_STATUS, "Invalid status VIEWED if ATTEMPT_1 exists");
         }
+
+        return Mono.just(timeline);
+    }
+
+    private Mono<Void> checkNotificationTimeline(NotificationReworkInfo info, String recIndex, String attempt, boolean isStatusViewed) {
+        Set<TimelineElementInternal> timeline = info.getFilteredTimeline();
 
         if (!containsCategory(timeline, TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK)) {
             log.warn("Timeline does not contain the SEND_ANALOG_FEEDBACK element required to proceed with the invalidation request for iun: [{}], recIndex: [{}], attemptId: [{}]", info.getAction().getIun(), recIndex, attempt);

@@ -417,6 +417,7 @@ class ReworkValidationHandlerTest {
 
         when(timelineService.getTimeline(anyString(), anyBoolean())).thenReturn(timeline);
         when(timelineUtils.checkIsNotificationCancellationRequested(any())).thenReturn(false);
+        when(timelineUtils.checkIsNotificationViewed(any(), any())).thenReturn(true);
         when(notificationService.getNotificationByIun(any())).thenReturn(notification);
         when(timelineService.getTimelineAndStatusHistory(any(),anyInt(),any())).thenReturn(notificationHistoryResponse);
 
@@ -481,6 +482,7 @@ class ReworkValidationHandlerTest {
 
         when(timelineService.getTimeline(anyString(), anyBoolean())).thenReturn(timeline);
         when(timelineUtils.checkIsNotificationCancellationRequested(any())).thenReturn(false);
+        when(timelineUtils.checkIsNotificationViewed(any(), any())).thenReturn(true);
         when(notificationService.getNotificationByIun(any())).thenReturn(notification);
         when(timelineService.getTimelineAndStatusHistory(any(),anyInt(),any())).thenReturn(notificationHistoryResponse);
 
@@ -544,6 +546,7 @@ class ReworkValidationHandlerTest {
 
         when(timelineService.getTimeline(anyString(), anyBoolean())).thenReturn(timeline);
         when(timelineUtils.checkIsNotificationCancellationRequested(any())).thenReturn(false);
+        when(timelineUtils.checkIsNotificationViewed(any(), any())).thenReturn(true);
         when(notificationService.getNotificationByIun(any())).thenReturn(notification);
         when(timelineService.getTimelineAndStatusHistory(any(),anyInt(),any())).thenReturn(notificationHistoryResponse);
 
