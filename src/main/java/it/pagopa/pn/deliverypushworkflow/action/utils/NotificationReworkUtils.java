@@ -36,7 +36,7 @@ public class NotificationReworkUtils {
 
             boolean containsInvalidatedAttempt1 = notificationTimelineReworkedDetailsIntList.stream()
                     .flatMap(detail -> detail.getInvalidatedTimelineAndStatusHistory().stream())
-                    .flatMap(historyElement -> historyElement.getRelatedTimelineElements().stream())
+                    .flatMap(historyElement -> historyElement.getRelatedTimelineElementIds().stream())
                     .anyMatch(timelineElementId -> timelineElementId.contains(TimelineEventId.SEND_ANALOG_DOMICILE.getValue()) && timelineElementId.contains(ATTEMPT_1));
 
             hasAttempt1 = hasAttempt1 || containsInvalidatedAttempt1;

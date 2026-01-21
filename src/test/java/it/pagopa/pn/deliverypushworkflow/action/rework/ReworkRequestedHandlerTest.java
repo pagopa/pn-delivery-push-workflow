@@ -140,7 +140,7 @@ class ReworkRequestedHandlerTest {
         Assertions.assertEquals("NOTIFICATION_TIMELINE_REWORKED.IUN_IUN_2.RECINDEX_0.ATTEMPT_0.REWORK_0", capturedElement.getElementId());
         NotificationTimelineReworkedDetailsInt detailsInt = (NotificationTimelineReworkedDetailsInt) capturedElement.getDetails();
         Assertions.assertEquals(1, detailsInt.getInvalidatedTimelineAndStatusHistory().size());
-        Assertions.assertEquals(7, detailsInt.getInvalidatedTimelineAndStatusHistory().getFirst().getRelatedTimelineElements().size());
+        Assertions.assertEquals(7, detailsInt.getInvalidatedTimelineAndStatusHistory().getFirst().getRelatedTimelineElementIds().size());
 
     }
 
@@ -211,7 +211,7 @@ class ReworkRequestedHandlerTest {
         Assertions.assertEquals("NOTIFICATION_TIMELINE_REWORKED.IUN_IUN_2.RECINDEX_0.ATTEMPT_1.REWORK_0", capturedElement.getElementId());
         NotificationTimelineReworkedDetailsInt detailsInt = (NotificationTimelineReworkedDetailsInt) capturedElement.getDetails();
         Assertions.assertEquals(1, detailsInt.getInvalidatedTimelineAndStatusHistory().size());
-        Assertions.assertEquals(3, detailsInt.getInvalidatedTimelineAndStatusHistory().getFirst().getRelatedTimelineElements().size());
+        Assertions.assertEquals(3, detailsInt.getInvalidatedTimelineAndStatusHistory().getFirst().getRelatedTimelineElementIds().size());
 
     }
 

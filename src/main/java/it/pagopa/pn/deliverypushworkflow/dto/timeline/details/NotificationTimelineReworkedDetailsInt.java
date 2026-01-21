@@ -1,6 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.dto.timeline.details;
 
-import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationStatusHistoryElement;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationStatusHistoryInvalidatedElement;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -15,7 +15,7 @@ import java.util.List;
 public class NotificationTimelineReworkedDetailsInt extends CategoryTypeTimelineElementDetailsInt implements RecipientRelatedTimelineElementDetails, TimelineElementDetailsInt {
     private int recIndex;
     private Integer sentAttemptMade;
-    private List<NotificationStatusHistoryElement> invalidatedTimelineAndStatusHistory;
+    private List<NotificationStatusHistoryInvalidatedElement> invalidatedTimelineAndStatusHistory;
 
     @Override
     public String toLog() {
