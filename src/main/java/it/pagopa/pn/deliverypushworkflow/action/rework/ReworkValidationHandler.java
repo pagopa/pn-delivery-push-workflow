@@ -13,7 +13,6 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.Notificat
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkError;
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkErrorCause;
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkInfo;
-import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkOperationEnum;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationViewedCreationRequestDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ScheduleRefinementDetailsInt;
@@ -26,7 +25,6 @@ import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationHistoryResponse;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.paperchannel.PaperChannelAddressClient;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.Action;
-import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ReworkRequestEventAction;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ReworkRequestEventPool;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ReworkRequestEventType;
 import it.pagopa.pn.deliverypushworkflow.service.NotificationService;
@@ -55,6 +53,7 @@ import java.util.stream.Collectors;
 
 import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkConstant.*;
 import static it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt.*;
+import static it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.handler.utils.NotificationReworkUtils.getReworkRequestEventAction;
 
 @Slf4j
 @Component
@@ -397,14 +396,5 @@ public class ReworkValidationHandler {
             throw new IllegalArgumentException("Error creating converting NotificationReworkRequestedDetails to json", e);
         }
         return newAction;
-    }
-
-    private static ReworkRequestEventAction getReworkRequestEventAction(List<NotificationReworkError> errorList, NotificationReworkValidationDetails detail, Action action) {
-        ReworkRequestEventAction reworkRequest = new ReworkRequestEventAction();
-        reworkRequest.setError(errorList);
-        reworkRequest.setIun(action.getIun());
-        reworkRequest.setReworkId(detail.getReworkId());
-        reworkRequest.setOperation(NotificationReworkOperationEnum.ERROR.name());
-        return reworkRequest;
     }
 }

@@ -14,7 +14,8 @@ public enum NotificationReworkErrorCause {
     INVALID_TIMELINE_ELEMENT("INVALID_TIMELINE_ELEMENT", "%s"),
     INVALID_ANALOG_ADDRESS("INVALID_ANALOG_ADDRESS", "L'indirizzo trovato ma scade nel %s"),
     EXPIRED_ANALOG_ADDRESS("EXPIRED_ANALOG_ADDRESS", "Indirizzo non trovato"),
-    DUPLICATED_ACTION_ERROR("DUPLICATED_ACTION_ERROR", "Errore inserimento azione duplicata");
+    DUPLICATED_ACTION_ERROR("DUPLICATED_ACTION_ERROR", "Errore inserimento azione duplicata"),
+    REWORK_REQUESTED_PHASE_ERROR("REWORK_REQUESTED_PHASE_ERROR", "Errore durante la fase di inizializzazione della richiesta di rework"),;
 
     private final String cause;
     private final String errorDetails;

@@ -12,7 +12,10 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendAnalogProgress
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationHistoryResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationStatusHistoryElement;
+import it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.handler.utils.NotificationReworkUtils;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.Action;
+import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ReworkRequestEventPool;
+import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ReworkRequestEventType;
 import it.pagopa.pn.deliverypushworkflow.service.NotificationService;
 import it.pagopa.pn.deliverypushworkflow.service.PaperChannelService;
 import it.pagopa.pn.deliverypushworkflow.service.SafeStorageService;
@@ -46,17 +49,24 @@ public class ReworkRequestedHandler {
     private final CheckAttachmentRetentionHandler checkAttachmentRetentionHandler;
     private final AttachmentUtils attachmentUtils;
     private final TimelineUtils timelineUtils;
+    private final ReworkRequestEventPool reworkRequestEventPool;
 
     public Mono<Void> handleNotificationReworkRequested(Action action) {
         NotificationReworkRequestedDetails detail = (NotificationReworkRequestedDetails) action.getDetails();
         List<String> timelineElementsToInvalidate = new ArrayList<>();
         NotificationInt notificationInt = notificationService.getNotificationByIun(action.getIun());
-        return Mono.just(timelineService.getTimeline(action.getIun(), true))
+        Set<TimelineElementInternal> timelineElements = timelineService.getTimeline(action.getIun(), true);
+        return Mono.just(timelineElements)
                 .flatMap(timeline -> computeTimelineElementToInvalidate(timeline, detail.getReworkRecIndex(), detail.getReworkAttempt()))
                 .doOnNext(timelineElementsToInvalidate::addAll)
-                .doOnNext(timelineElementIds -> startNotificationReworkProcess(detail))
+                .flatMap(timelineElementIds -> startNotificationReworkProcess(detail).thenReturn(timelineElementIds))
                 .flatMap(strings -> updateAttachmentRetention(detail.getCreatedAt(), notificationInt.getIun(), notificationInt.getDocuments()))
                 .map(internalAction -> buildTimelineElement(notificationInt, timelineElementsToInvalidate, detail))
+                .onErrorResume(throwable -> {
+                        log.error("Errors during handleNotificationReworkRequested for iun {}: {}", action.getIun(), throwable.getMessage(), throwable);
+                        reworkRequestEventPool.scheduleFutureAction(NotificationReworkUtils.getReworkRequestEventAction(throwable.getMessage(), detail, action), ReworkRequestEventType.NOTIFICATION_REWORK_REQUESTED);
+                        return Mono.empty();
+                })
                 .map(timelineElementInternal -> timelineService.addTimelineElement(timelineElementInternal, notificationInt))
                 .then();
     }
@@ -145,8 +155,8 @@ public class ReworkRequestedHandler {
         return true;
     }
 
-    public void startNotificationReworkProcess(NotificationReworkRequestedDetails details) {
+    public Mono<Void> startNotificationReworkProcess(NotificationReworkRequestedDetails details) {
         log.info("Starting rework process for reworkRequestId {} and reworkId {}", details.getReworkRequestId(), details.getReworkId());
-        paperChannelService.initNotificationRework(details.getReworkRequestId(), details.getReworkId());
+        return  Mono.fromRunnable(() -> paperChannelService.initNotificationRework(details.getReworkRequestId(), details.getReworkId()));
     }
 }
