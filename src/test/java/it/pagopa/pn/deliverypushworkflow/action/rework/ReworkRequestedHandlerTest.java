@@ -201,8 +201,6 @@ class ReworkRequestedHandlerTest {
         ArgumentCaptor<TimelineElementInternal> argumentCaptor = ArgumentCaptor.forClass(TimelineElementInternal.class);
         when(timelineService.addTimelineElement(any(), any())).thenReturn(new AddTimelineElementResponse(null, true));
 
-        when(pnDeliveryPushWorkflowConfigs.getTimeParams()).thenReturn(mock(TimeParams.class));
-        when(pnDeliveryPushWorkflowConfigs.getTimeParams().getAttachmentTimeToAddAfterExpiration()).thenReturn(java.time.Duration.ofDays(30));
         when(pnDeliveryPushWorkflowConfigs.getInvalidableCategories()).thenReturn(List.of("PREPARE_ANALOG_DOMICILE","PREPARE_ANALOG_DOMICILE_FAILURE","SEND_ANALOG_DOMICILE","SEND_ANALOG_PROGRESS","SEND_ANALOG_FEEDBACK","ANALOG_SUCCESS_WORKFLOW","ANALOG_FAILURE_WORKFLOW","SCHEDULE_REFINEMENT","REFINEMENT","COMPLETELY_UNREACHABLE_CREATION_REQUEST","COMPLETELY_UNREACHABLE","ANALOG_WORKFLOW_RECIPIENT_DECEASED"));
 
         // Act & Assert
