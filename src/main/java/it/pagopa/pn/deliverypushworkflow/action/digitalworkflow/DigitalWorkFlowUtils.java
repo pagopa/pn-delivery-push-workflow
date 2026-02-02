@@ -322,9 +322,8 @@ public class DigitalWorkFlowUtils {
     }
 
     private String addTimelineElement(TimelineElementInternal element, NotificationInt notification) {
-        String timelineId = element.getElementId();
         timelineService.addTimelineElement(element, notification);
-        return timelineId;
+        return element.getElementId();
     }
 
     public static DigitalAddressSourceInt nextSource(DigitalAddressSourceInt source, boolean isPfNewWorkflowEnabled) {
