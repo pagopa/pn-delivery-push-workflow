@@ -29,7 +29,11 @@ public class TimelineServiceHttpImpl implements TimelineService {
     @Override
     public AddTimelineElementResponse addTimelineElement(TimelineElementInternal element, NotificationInt notification) {
         log.info("addTimelineElement - IUN={} and timelineId={}", element.getIun(), element.getElementId());
-        return timelineClient.addTimelineElement(element, notification);
+        AddTimelineElementResponse addTimelineElementResponse = timelineClient.addTimelineElement(element, notification);
+        //dobbiamo sovrascrivere il timelineElementId del TimelineElementInternal con quello generato da timeline-service in quanto la gestione del
+        //suffisso REWORK è demandata al ms timeline-service
+        element.setElementId(addTimelineElementResponse.getTimelineElementId());
+        return addTimelineElementResponse;
     }
 
     @Override
