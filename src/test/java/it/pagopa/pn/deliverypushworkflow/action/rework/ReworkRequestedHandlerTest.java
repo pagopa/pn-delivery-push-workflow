@@ -143,7 +143,7 @@ class ReworkRequestedHandlerTest {
         Assertions.assertEquals("NOTIFICATION_TIMELINE_REWORKED.IUN_IUN_2.RECINDEX_0.ATTEMPT_0.REWORK_0", capturedElement.getElementId());
         NotificationTimelineReworkedDetailsInt detailsInt = (NotificationTimelineReworkedDetailsInt) capturedElement.getDetails();
         Assertions.assertEquals(1, detailsInt.getInvalidatedTimelineAndStatusHistory().size());
-        Assertions.assertEquals(7, detailsInt.getInvalidatedTimelineAndStatusHistory().getFirst().getRelatedTimelineElementIds().size());
+        Assertions.assertEquals(8, detailsInt.getInvalidatedTimelineAndStatusHistory().getFirst().getRelatedTimelineElementIds().size());
 
     }
 
@@ -335,6 +335,14 @@ class ReworkRequestedHandlerTest {
         detail.setDeliveryDetailCode("CON996");
         timelineElement = new TimelineElement();
         timelineElement.elementId("SEND_ANALOG_PROGRESS.RECINDEX_0.ATTEMPT_0.IDX_2");
+        timelineElement.category(TimelineCategory.SEND_ANALOG_PROGRESS);
+        timelineElement.details(detail);
+        timeline.add(timelineElement);
+
+        detail = new SendAnalogProgressDetails();
+        detail.setDeliveryDetailCode("CON996");
+        timelineElement = new TimelineElement();
+        timelineElement.elementId("SEND_ANALOG_PROGRESS.RECINDEX_0.ATTEMPT_1.IDX_2");
         timelineElement.category(TimelineCategory.SEND_ANALOG_PROGRESS);
         timelineElement.details(detail);
         timeline.add(timelineElement);
