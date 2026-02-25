@@ -854,9 +854,6 @@ Resources:
             Statement:
               - Sid: putEvents
                 Action:
-                  - sqs:ChangeMessageVisibility
-                  - sqs:GetQueueAttributes
-                  - sqs:GetQueueUrl
                   - sqs:SendMessage
                 Effect: Allow
                 Resource:
@@ -871,8 +868,7 @@ Resources:
       EventPattern:
         detail-type: "ActionManagerEventOutcome"
         detail:
-          routingActionType:
-            - !Ref ActionQueueDetailType
+          routingActionType: !Ref ActionQueueDetailType
       Targets:
         - Id: !Sub '${ProjectName}-CoreEventBus-ActionManager2ActionQueue'
           Arn: !Ref ScheduledActionsQueueARN
