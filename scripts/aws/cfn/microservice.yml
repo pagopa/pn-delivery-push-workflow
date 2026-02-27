@@ -866,7 +866,7 @@ Resources:
       RoleArn: !GetAtt "EventBusEnqueueRole.Arn"
       EventBusName: !Sub '${ProjectName}-CoreEventBus'
       EventPattern:
-        detail-type: "ActionManagerEventOutcome"
+        detail-type: ["ActionManagerEventOutcome"]
         detail:
           routingActionType: !Ref ActionQueueDetailType
       Targets:
