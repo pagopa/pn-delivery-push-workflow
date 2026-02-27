@@ -357,6 +357,11 @@ Parameters:
     Default: 30
     Description: 'Number of days before document expiration is still valid for notification rework'
 
+  ActionQueueDetailType:
+    Type: CommaDelimitedList
+    Default: ''
+    Description: 'List of action detail type to accept in event bridge rule'
+
 Conditions:
     UseExternalChannelMock: !Equals [ !Ref ExternalChannelBaseUrl, "Mock" ]
 
@@ -829,3 +834,44 @@ Resources:
       Parameters:
         FunctionName: !Ref PaperEventsCostUpdateLambda
         AlarmSNSTopicArn: !Ref AlarmSNSTopicArn
+
+  EventBusEnqueueRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref "AWS::AccountId"
+        Version: "2012-10-17"
+      Policies:
+        - PolicyName: !Sub ${ProjectName}-actionmanager-2-actionqueue-eventBusRulePolicy
+          PolicyDocument:
+            Statement:
+              - Sid: putEvents
+                Action:
+                  - sqs:SendMessage
+                Effect: Allow
+                Resource:
+                  - !Ref ScheduledActionsQueueARN
+
+  PnCoreEventBusActionManagerToActionsQueueRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Route ActionManager events to scheduled actions queue
+      RoleArn: !GetAtt "EventBusEnqueueRole.Arn"
+      EventBusName: !Sub '${ProjectName}-CoreEventBus'
+      EventPattern:
+        detail-type: "ActionManagerEventOutcome"
+        detail:
+          routingActionType: !Ref ActionQueueDetailType
+      Targets:
+        - Id: !Sub '${ProjectName}-CoreEventBus-ActionManager2ActionQueue'
+          Arn: !Ref ScheduledActionsQueueARN
+          InputPath: $.detail.body
+          DeadLetterConfig:
+            Arn: !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:pn-CoreEventBus-DLQ
