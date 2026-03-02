@@ -91,6 +91,10 @@ class NotificationCancellationServiceImplTest {
                 .withPaFee(100)
                 .build();
 
+        final Instant notificationCancellationRequestDate = Instant.now().minusSeconds(3600);
+        Mockito.when(timelineService.getNotificationCancellationRequested(notification.getIun()))
+                .thenReturn(Optional.of(notificationCancellationRequestDate));
+
         final TimelineElementInternal timelineElement = TimelineElementInternal.builder()
                 .details(NotificationCancelledDocumentCreationRequestDetailsInt.builder()
                         .legalFactId(legalFactId)
@@ -106,7 +110,7 @@ class NotificationCancellationServiceImplTest {
         Mockito.when(auditLogService.buildAuditLogEvent(eq(notification.getIun()), eq(PnAuditLogEventType.AUD_NT_CANCELLED), anyString(), eq(2)))
                 .thenReturn(auditLogEvent);
         Mockito.when(auditLogEvent.generateSuccess()).thenReturn(auditLogEvent);
-        Mockito.when(saveLegalFactsService.sendCreationRequestForNotificationCancelledLegalFact(notification, timelineElement.getTimestamp())).thenReturn(legalFactId);
+        Mockito.when(saveLegalFactsService.sendCreationRequestForNotificationCancelledLegalFact(notification, notificationCancellationRequestDate)).thenReturn(legalFactId);
         Mockito.doNothing().when(documentCreationRequestService).addDocumentCreationRequest(legalFactId, notification.getIun(), DocumentCreationTypeInt.NOTIFICATION_CANCELLED, timelineElement.getElementId());
 
         final int recIndex = 0;
@@ -259,6 +263,10 @@ class NotificationCancellationServiceImplTest {
                 .withPaFee(100)
                 .build();
 
+        final Instant notificationCancellationRequestDate = Instant.now().minusSeconds(3600);
+        Mockito.when(timelineService.getNotificationCancellationRequested(notification.getIun()))
+                .thenReturn(Optional.of(notificationCancellationRequestDate));
+
         final TimelineElementInternal timelineElement = TimelineElementInternal.builder()
                 .details(NotificationCancelledDocumentCreationRequestDetailsInt.builder()
                         .legalFactId(legalFactId)
@@ -274,7 +282,7 @@ class NotificationCancellationServiceImplTest {
         Mockito.when(auditLogService.buildAuditLogEvent(eq(notification.getIun()), eq(PnAuditLogEventType.AUD_NT_CANCELLED), anyString(), eq(2)))
                 .thenReturn(auditLogEvent);
         Mockito.when(auditLogEvent.generateSuccess()).thenReturn(auditLogEvent);
-        Mockito.when(saveLegalFactsService.sendCreationRequestForNotificationCancelledLegalFact(notification, timelineElement.getTimestamp())).thenReturn(legalFactId);
+        Mockito.when(saveLegalFactsService.sendCreationRequestForNotificationCancelledLegalFact(notification, notificationCancellationRequestDate)).thenReturn(legalFactId);
         Mockito.doNothing().when(documentCreationRequestService).addDocumentCreationRequest(legalFactId, notification.getIun(), DocumentCreationTypeInt.NOTIFICATION_CANCELLED, timelineElement.getElementId());
 
         //WHEN
@@ -308,6 +316,10 @@ class NotificationCancellationServiceImplTest {
                 .withNotificationRecipient(recipient)
                 .build();
 
+        final Instant notificationCancellationRequestDate = Instant.now().minusSeconds(3600);
+        Mockito.when(timelineService.getNotificationCancellationRequested(notification.getIun()))
+                .thenReturn(Optional.of(notificationCancellationRequestDate));
+
         final TimelineElementInternal timelineElementOLD = TimelineElementInternal.builder()
                 .details(NotificationCancelledDocumentCreationRequestDetailsInt.builder()
                         .legalFactId(legalFactId)
@@ -329,7 +341,7 @@ class NotificationCancellationServiceImplTest {
         Mockito.when(auditLogService.buildAuditLogEvent(eq(notification.getIun()), eq(PnAuditLogEventType.AUD_NT_CANCELLED), anyString(), eq(2)))
                 .thenReturn(auditLogEvent);
         Mockito.when(auditLogEvent.generateSuccess()).thenReturn(auditLogEvent);
-        Mockito.when(saveLegalFactsService.sendCreationRequestForNotificationCancelledLegalFact(notification, timelineElement.getTimestamp())).thenReturn(legalFactId);
+        Mockito.when(saveLegalFactsService.sendCreationRequestForNotificationCancelledLegalFact(notification, notificationCancellationRequestDate)).thenReturn(legalFactId);
         Mockito.doNothing().when(documentCreationRequestService).addDocumentCreationRequest(legalFactId, notification.getIun(), DocumentCreationTypeInt.NOTIFICATION_CANCELLED, timelineElement.getElementId());
 
         //WHEN

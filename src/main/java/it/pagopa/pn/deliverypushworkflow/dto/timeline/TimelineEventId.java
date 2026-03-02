@@ -468,17 +468,6 @@ public enum TimelineEventId {
         }
     },
 
-    NOTIFICATION_CANCELLATION_REQUEST("NOTIFICATION_CANCELLATION_REQUEST") {
-        @Override
-        public String buildEventId(EventId eventId) {
-            return new TimelineEventIdBuilder()
-                    .withCategory(this.getValue())
-                    .withIun(eventId.getIun())
-                    .build();
-        }
-
-    },
-
     NOTIFICATION_CANCELLED("NOTIFICATION_CANCELLED") {
         @Override
         public String buildEventId(EventId eventId) {

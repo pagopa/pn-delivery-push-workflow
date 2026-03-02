@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -266,6 +267,35 @@ class TimelineClientImplTest {
 
         assertThrows(RuntimeException.class, () ->
                 timelineServiceClient.getTimeline(iun, confidentialInfoRequired, strongly, timelineId)
+        );
+    }
+
+    @Test
+    void getNotificationCancellationRequested_returnsExpectedInstant() {
+        String iun = "iun123";
+        Instant expectedInstant = Instant.now();
+        CancellationRequestResponse cancellationRequestResponse = new CancellationRequestResponse();
+        cancellationRequestResponse.setTimestamp(expectedInstant);
+
+
+        when(timelineControllerApi.getCancellationRequest(iun))
+                .thenReturn(cancellationRequestResponse);
+
+        Instant result = timelineServiceClient.getNotificationCancellationRequested(iun);
+
+        assertEquals(expectedInstant, result);
+        Mockito.verify(timelineControllerApi).getCancellationRequest(iun);
+    }
+
+    @Test
+    void getNotificationCancellationRequested_throwsException() {
+        String iun = "iun123";
+
+        when(timelineControllerApi.getCancellationRequest(iun))
+                .thenThrow(new RuntimeException("Errore"));
+
+        assertThrows(RuntimeException.class, () ->
+                timelineServiceClient.getNotificationCancellationRequested(iun)
         );
     }
 

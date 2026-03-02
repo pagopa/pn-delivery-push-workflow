@@ -4,14 +4,12 @@ import it.pagopa.pn.commons.log.PnAuditLogEvent;
 import it.pagopa.pn.commons.log.PnAuditLogEventType;
 import it.pagopa.pn.deliverypushworkflow.action.utils.PaymentUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
-import it.pagopa.pn.deliverypushworkflow.dto.cancellation.StatusDetailInt;
 import it.pagopa.pn.deliverypushworkflow.dto.cost.PaymentsInfoForRecipientInt;
 import it.pagopa.pn.deliverypushworkflow.dto.cost.UpdateCostPhaseInt;
 import it.pagopa.pn.deliverypushworkflow.dto.cost.UpdateNotificationCostResponseInt;
 import it.pagopa.pn.deliverypushworkflow.dto.documentcreation.DocumentCreationTypeInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.PagoPaIntMode;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.EventId;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.NotificationFeePolicy;
 import it.pagopa.pn.deliverypushworkflow.service.*;
@@ -24,7 +22,6 @@ import java.time.Instant;
 import java.util.List;
 
 import static it.pagopa.pn.deliverypushworkflow.action.utils.PaymentUtils.handleResponse;
-import static it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventId.NOTIFICATION_CANCELLATION_REQUEST;
 
 @Service
 @AllArgsConstructor
@@ -100,14 +97,8 @@ public class NotificationCancellationServiceImpl implements NotificationCancella
     }
 
     private Instant getNotificationCancellationRequestDate(String iun) {
-        String elementId = NOTIFICATION_CANCELLATION_REQUEST.buildEventId(
-                EventId.builder()
-                        .iun(iun)
-                        .build());
-
-        return timelineService.getTimelineElement(iun, elementId)
-                .orElseThrow(() -> new IllegalStateException("Timeline element not found"))
-                .getTimestamp();
+        return timelineService.getNotificationCancellationRequested(iun)
+                .orElseThrow(() -> new IllegalStateException("Timeline element not found"));
     }
 
     private void handleUpdateNotificationCost(NotificationInt notification) {

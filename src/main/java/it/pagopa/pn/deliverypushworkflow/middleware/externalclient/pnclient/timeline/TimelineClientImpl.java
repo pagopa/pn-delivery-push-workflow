@@ -103,4 +103,11 @@ public class TimelineClientImpl implements TimelineClient {
 
         return timelineControllerApi.getTimelineAndStatusHistory(iun, recipients, createdAt);
     }
+
+    @Override
+    public Instant getNotificationCancellationRequested(String iun) {
+        log.logInvokingExternalService(CLIENT_NAME, GET_NOTIFICATION_CANCELLATION_REQUESTED);
+
+        return timelineControllerApi.getCancellationRequest(iun).getTimestamp();
+    }
 }
