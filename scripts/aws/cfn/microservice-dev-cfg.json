@@ -13,6 +13,7 @@
     "PaperNotificationFailedDynamoTableName": "pn-PaperNotificationFailed",
     "PaperNotificationFailedDynamoTableArn": "arn:aws:dynamodb:eu-south-1:830192246553:table/pn-PaperNotificationFailed",
     "ScheduledActionsQueueName": "pn-delivery_push_actions",
+    "ScheduledActionsQueueUrl": "https://sqs.eu-south-1.amazonaws.com/830192246553/pn-delivery_push_actions",
     "ScheduledActionsQueueARN": "arn:aws:sqs:eu-south-1:830192246553:pn-delivery_push_actions",
     "ScheduledActionsQueueAlarmARN": "arn:aws:cloudwatch:eu-south-1:830192246553:alarm:pn-delivery_push_actions-DLQ-HasMessage",
     "ScheduledActionsQueueAgeAlarmARN": "arn:aws:cloudwatch:eu-south-1:830192246553:alarm:pn-delivery_push_actions-HasOldMessage",

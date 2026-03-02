@@ -235,6 +235,11 @@ Parameters:
   ScheduledActionsQueueARN:
     Type: String
     Description: 'Send and pull ready-to-do actions th this queue'
+
+  ScheduledActionsQueueUrl:
+    Type: String
+    Default: ''
+    Description: 'Send and pull ready-to-do actions th this queue'
     
   ScheduledActionsQueueAlarmARN:
     Type: String
@@ -875,3 +880,20 @@ Resources:
           InputPath: $.detail.body
           DeadLetterConfig:
             Arn: !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:pn-CoreEventBus-DLQ
+
+  ScheduledActionsQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref ScheduledActionsQueueUrl
+      PolicyDocument:
+        Statement:
+          - Sid: AllowEventBridgeToSendMessage
+            Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sqs:SendMessage
+            Resource: !Ref ScheduledActionsQueueARN
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !GetAtt PnCoreEventBusActionManagerToActionsQueueRule.Arn
