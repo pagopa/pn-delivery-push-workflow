@@ -185,19 +185,11 @@ Parameters:
   PaperNotificationFailedDynamoTableName:
     Type: String
     Description: 'Name of dynamodb table containing unreacheble notifications recipients'
-  
-  PaperNotificationFailedDynamoTableArn:
-    Type: String
-    Description: 'ARN of dynamodb table containing unreacheble notifications recipients'
-  
+
   DocumentCreationRequestTableName:
     Type: String
     Description: 'Name of dynamodb table containing unreacheble notifications recipients'
-  
-  DocumentCreationRequestTableArn:
-    Type: String
-    Description: 'ARN of dynamodb table containing unreacheble notifications recipients'
-    
+
   # --- SQS Queues ---
   ConsumedQueueMessagePerMinuteWorkflow:
     Type: Number
@@ -231,24 +223,7 @@ Parameters:
   ScheduledActionsQueueName:
     Type: String
     Description: 'Send and pull ready-to-do actions th this queue'
-    
-  ScheduledActionsQueueARN:
-    Type: String
-    Description: 'Send and pull ready-to-do actions th this queue'
 
-  ScheduledActionsQueueUrl:
-    Type: String
-    Default: ''
-    Description: 'Send and pull ready-to-do actions th this queue'
-    
-  ScheduledActionsQueueAlarmARN:
-    Type: String
-    Description: delivery push actions done queue dlq alarm ARN
-    
-  ScheduledActionsQueueAgeAlarmARN:
-    Type: String
-    Description: delivery push actions done queue age alarm ARN
-    
   NationalRegistries2DeliveryPushQueueName:
     Type: String
     Description: 'National Registries to delivery-push queue name'
@@ -326,15 +301,6 @@ Parameters:
     Type: String
     Default: ''
     Description: 'Base key of the microservice in the s3 bucket'
-
-  # CDC
-  CdcKinesisSourceStreamArn:
-    Type: String
-    Description: 'Where to send CDC'
-
-  CdcKinesisSourceStreamKeyArn:
-    Description: "Kinesis source CDC stream crypto key ARN"
-    Type: String
 
   NewWorkflowLambdasEnabledStart:
     Type: String
@@ -460,8 +426,8 @@ Resources:
           - - !GetAtt DeliveryPushWorkflowServiceMicroservice.Outputs.FatalLogsMetricAlarmArn
             - !Ref DeliveryPushInputsQueueAlarmARN
             - !Ref DeliveryPushInputsQueueAgeAlarmARN
-            - !Ref ScheduledActionsQueueAlarmARN
-            - !Ref ScheduledActionsQueueAgeAlarmARN
+            - !Sub arn:aws:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:pn-delivery_push_actions-DLQ-HasMessage
+            - !Sub arn:aws:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:pn-delivery_push_actions-HasOldMessage
             - !Ref NationalRegistries2DeliveryPushQueueAlarmARN
             - !Ref NationalRegistries2DeliveryPushQueueAgeAlarmARN
             - !Ref NotificationCancellationActionInsertDLQAlarmARN
@@ -476,7 +442,7 @@ Resources:
           - ','
           - - !Ref DeliveryPushInputsQueueARN
             - !Ref ExternalChannelsOutputsQueueARN
-            - !Ref ScheduledActionsQueueARN
+            - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:pn-delivery_push_actions
             - !Ref NationalRegistries2DeliveryPushQueueARN
             - !Ref DeliveryPushToExternalRegistriesQueueARN
         LogGroupsNames: !Join
@@ -506,7 +472,7 @@ Resources:
             Resource:
               - !Ref DeliveryPushInputsQueueARN
               - !Ref ExternalChannelsOutputsQueueARN
-              - !Ref ScheduledActionsQueueARN
+              - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:pn-delivery_push_actions
               - !Ref NationalRegistries2DeliveryPushQueueARN
               - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${DeliveryPushToNotificationReworkUpdaterQueueName}
           - Effect: Allow
@@ -524,8 +490,8 @@ Resources:
               - 'dynamodb:DeleteItem'
               - 'dynamodb:UpdateItem'
             Resource:
-              - !Sub "${PaperNotificationFailedDynamoTableArn}"
-              - !Sub "${DocumentCreationRequestTableArn}"
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/pn-PaperNotificationFailed
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/pn-DocumentCreationRequestTable
 
   #### Alarm for custom metric Autoscaling
   AlarmCustomAutoscalingWorkflow:
@@ -679,10 +645,10 @@ Resources:
               - kinesis:ListShards
               - kinesis:ListStreams
               - kinesis:SubscribeToShard
-            Resource: !Ref CdcKinesisSourceStreamArn
+            Resource: !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/pn-cdc-stream
           - Action: kms:Decrypt
             Effect: Allow
-            Resource: !Ref CdcKinesisSourceStreamKeyArn
+            Resource: !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/3bc181f8-9590-49c1-a783-fe6ead65adab
           - Effect: Allow
             Action:
               - sqs:ChangeMessageVisibility
@@ -698,7 +664,7 @@ Resources:
     Properties:
       BatchSize: !Sub ${NotificationCancellationActionInsertLambdaBatchSize}
       BisectBatchOnFunctionError: true
-      EventSourceArn: !Ref CdcKinesisSourceStreamArn
+      EventSourceArn: !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/pn-cdc-stream
       FunctionName: !Ref NotificationCancellationActionInsertLambda
       FunctionResponseTypes:
         - ReportBatchItemFailures
@@ -786,10 +752,10 @@ Resources:
               - kinesis:ListShards
               - kinesis:ListStreams
               - kinesis:SubscribeToShard
-            Resource: !Ref CdcKinesisSourceStreamArn
+            Resource: !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/pn-cdc-stream
           - Action: kms:Decrypt
             Effect: Allow
-            Resource: !Ref CdcKinesisSourceStreamKeyArn
+            Resource: !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/3bc181f8-9590-49c1-a783-fe6ead65adab
           - Effect: Allow
             Action:
               - sqs:ChangeMessageVisibility
@@ -813,7 +779,7 @@ Resources:
     Properties:
       BatchSize: !Sub ${PaperEventsCostUpdateLambdaBatchSize}
       BisectBatchOnFunctionError: true
-      EventSourceArn: !Ref CdcKinesisSourceStreamArn
+      EventSourceArn: !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/pn-cdc-stream
       FunctionName: !Ref PaperEventsCostUpdateLambda
       FunctionResponseTypes:
         - ReportBatchItemFailures
@@ -862,7 +828,7 @@ Resources:
                   - sqs:SendMessage
                 Effect: Allow
                 Resource:
-                  - !Ref ScheduledActionsQueueARN
+                  - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:pn-delivery_push_actions
 
   PnCoreEventBusActionManagerToActionsQueueRule:
     Type: AWS::Events::Rule
@@ -876,7 +842,7 @@ Resources:
           routingActionType: !Ref ActionQueueDetailType
       Targets:
         - Id: !Sub '${ProjectName}-CoreEventBus-ActionManager2ActionQueue'
-          Arn: !Ref ScheduledActionsQueueARN
+          Arn: !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:pn-delivery_push_actions
           InputPath: $.detail.body
           DeadLetterConfig:
             Arn: !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:pn-CoreEventBus-DLQ
@@ -885,7 +851,7 @@ Resources:
     Type: AWS::SQS::QueuePolicy
     Properties:
       Queues:
-        - !Ref ScheduledActionsQueueUrl
+        - !Sub https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/pn-delivery_push_actions
       PolicyDocument:
         Statement:
           - Sid: AllowEventBridgeToSendMessage
@@ -893,7 +859,7 @@ Resources:
             Principal:
               Service: events.amazonaws.com
             Action: sqs:SendMessage
-            Resource: !Ref ScheduledActionsQueueARN
+            Resource: !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:pn-delivery_push_actions
             Condition:
               ArnEquals:
                 aws:SourceArn: !GetAtt PnCoreEventBusActionManagerToActionsQueueRule.Arn
