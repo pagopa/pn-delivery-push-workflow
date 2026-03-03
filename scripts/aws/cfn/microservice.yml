@@ -431,8 +431,8 @@ Resources:
           - - !GetAtt DeliveryPushWorkflowServiceMicroservice.Outputs.FatalLogsMetricAlarmArn
             - !Ref DeliveryPushInputsQueueAlarmARN
             - !Ref DeliveryPushInputsQueueAgeAlarmARN
-            - !Sub arn:aws:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:pn-delivery_push_actions-DLQ-HasMessage
-            - !Sub arn:aws:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:pn-delivery_push_actions-HasOldMessage
+            - !Sub arn:aws:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:${ScheduledActionsQueueName}-DLQ-HasMessage
+            - !Sub arn:aws:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:${ScheduledActionsQueueName}-HasOldMessage
             - !Ref NationalRegistries2DeliveryPushQueueAlarmARN
             - !Ref NationalRegistries2DeliveryPushQueueAgeAlarmARN
             - !Ref NotificationCancellationActionInsertDLQAlarmARN
@@ -447,7 +447,7 @@ Resources:
           - ','
           - - !Ref DeliveryPushInputsQueueARN
             - !Ref ExternalChannelsOutputsQueueARN
-            - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:pn-delivery_push_actions
+            - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${ScheduledActionsQueueName}
             - !Ref NationalRegistries2DeliveryPushQueueARN
             - !Ref DeliveryPushToExternalRegistriesQueueARN
         LogGroupsNames: !Join
@@ -477,7 +477,7 @@ Resources:
             Resource:
               - !Ref DeliveryPushInputsQueueARN
               - !Ref ExternalChannelsOutputsQueueARN
-              - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:pn-delivery_push_actions
+              - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${ScheduledActionsQueueName}
               - !Ref NationalRegistries2DeliveryPushQueueARN
               - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${DeliveryPushToNotificationReworkUpdaterQueueName}
           - Effect: Allow
@@ -495,8 +495,8 @@ Resources:
               - 'dynamodb:DeleteItem'
               - 'dynamodb:UpdateItem'
             Resource:
-              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/pn-PaperNotificationFailed
-              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/pn-DocumentCreationRequestTable
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${PaperNotificationFailedDynamoTableName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DocumentCreationRequestTableName}
 
   #### Alarm for custom metric Autoscaling
   AlarmCustomAutoscalingWorkflow:
@@ -833,7 +833,7 @@ Resources:
                   - sqs:SendMessage
                 Effect: Allow
                 Resource:
-                  - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:pn-delivery_push_actions
+                  - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${ScheduledActionsQueueName}
 
   PnCoreEventBusActionManagerToActionsQueueRule:
     Type: AWS::Events::Rule
@@ -847,7 +847,7 @@ Resources:
           routingActionType: !Ref ActionQueueDetailType
       Targets:
         - Id: !Sub '${ProjectName}-CoreEventBus-ActionManager2ActionQueue'
-          Arn: !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:pn-delivery_push_actions
+          Arn: !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${ScheduledActionsQueueName}
           InputPath: $.detail.body
           DeadLetterConfig:
             Arn: !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:pn-CoreEventBus-DLQ
@@ -856,7 +856,7 @@ Resources:
     Type: AWS::SQS::QueuePolicy
     Properties:
       Queues:
-        - !Sub https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/pn-delivery_push_actions
+        - !Sub https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${ScheduledActionsQueueName}
       PolicyDocument:
         Statement:
           - Sid: AllowEventBridgeToSendMessage
@@ -864,7 +864,7 @@ Resources:
             Principal:
               Service: events.amazonaws.com
             Action: sqs:SendMessage
-            Resource: !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:pn-delivery_push_actions
+            Resource: !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${ScheduledActionsQueueName}
             Condition:
               ArnEquals:
                 aws:SourceArn: !GetAtt PnCoreEventBusActionManagerToActionsQueueRule.Arn
