@@ -74,5 +74,7 @@ public interface TimelineService {
 
     NotificationHistoryResponse getTimelineAndStatusHistory(String iun, int recipients, Instant createdAt);
 
-    Optional<Instant> getNotificationCancellationRequested(String iun);
+    boolean isNotificationCancellationRequested(String iun);
+
+    Optional<Instant> getNotificationCancellationRequestedTimestamp(String iun);
 }

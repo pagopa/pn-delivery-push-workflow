@@ -1,18 +1,17 @@
 package it.pagopa.pn.deliverypushworkflow.service.impl;
 
-import it.pagopa.pn.commons.exceptions.PnHttpResponseException;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.AddTimelineElementResponse;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementDetailsInt;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.CancellationRequestResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationHistoryResponse;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.timeline.TimelineClient;
 import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -20,8 +19,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-
-import static it.pagopa.pn.deliverypushworkflow.exceptions.PnDeliveryPushExceptionCodes.ERROR_CODE_TIMELINESERVICE_TIMELINE_ELEMENT_NOT_PRESENT;
 
 @Service
 @Slf4j
@@ -119,19 +116,16 @@ public class TimelineServiceHttpImpl implements TimelineService {
         return timelineClient.getTimelineAndStatusHistory(iun, recipients, createdAt);
     }
 
-    public Optional<Instant> getNotificationCancellationRequested(String iun){
-        log.debug("getNotificationCancellationRequested - IUN={}", iun);
-        try {
-            return Optional.ofNullable(timelineClient.getNotificationCancellationRequested(iun));
-        } catch (PnHttpResponseException pnHttpResponseException) {
-            if (pnHttpResponseException.getStatusCode() == HttpStatus.NOT_FOUND.value()
-                    && pnHttpResponseException.getProblem().getErrors().getFirst().getCode().equals(ERROR_CODE_TIMELINESERVICE_TIMELINE_ELEMENT_NOT_PRESENT)) {
-                log.debug("Cancellation request not found for iun: {}. Returning empty Optional.", iun);
-                return Optional.empty();
-            }
-            else {
-                throw pnHttpResponseException;
-            }
-        }
+    @Override
+    public Optional<Instant> getNotificationCancellationRequestedTimestamp(String iun) {
+        log.debug("getNotificationCancellationRequestedTimestamp - IUN={}", iun);
+        return timelineClient.getNotificationCancellationRequested(iun)
+                .map(CancellationRequestResponse::getTimestamp);
+    }
+
+    @Override
+    public boolean isNotificationCancellationRequested(String iun) {
+        log.debug("isNotificationCancellationRequestedPresent - IUN={}", iun);
+        return getNotificationCancellationRequestedTimestamp(iun).isPresent();
     }
 }

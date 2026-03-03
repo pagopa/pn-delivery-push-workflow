@@ -92,7 +92,7 @@ class NotificationCancellationServiceImplTest {
                 .build();
 
         final Instant notificationCancellationRequestDate = Instant.now().minusSeconds(3600);
-        Mockito.when(timelineService.getNotificationCancellationRequested(notification.getIun()))
+        Mockito.when(timelineService.getNotificationCancellationRequestedTimestamp(notification.getIun()))
                 .thenReturn(Optional.of(notificationCancellationRequestDate));
 
         final TimelineElementInternal timelineElement = TimelineElementInternal.builder()
@@ -264,7 +264,7 @@ class NotificationCancellationServiceImplTest {
                 .build();
 
         final Instant notificationCancellationRequestDate = Instant.now().minusSeconds(3600);
-        Mockito.when(timelineService.getNotificationCancellationRequested(notification.getIun()))
+        Mockito.when(timelineService.getNotificationCancellationRequestedTimestamp(notification.getIun()))
                 .thenReturn(Optional.of(notificationCancellationRequestDate));
 
         final TimelineElementInternal timelineElement = TimelineElementInternal.builder()
@@ -317,7 +317,7 @@ class NotificationCancellationServiceImplTest {
                 .build();
 
         final Instant notificationCancellationRequestDate = Instant.now().minusSeconds(3600);
-        Mockito.when(timelineService.getNotificationCancellationRequested(notification.getIun()))
+        Mockito.when(timelineService.getNotificationCancellationRequestedTimestamp(notification.getIun()))
                 .thenReturn(Optional.of(notificationCancellationRequestDate));
 
         final TimelineElementInternal timelineElementOLD = TimelineElementInternal.builder()

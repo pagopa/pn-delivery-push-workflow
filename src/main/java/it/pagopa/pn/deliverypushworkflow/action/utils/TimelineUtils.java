@@ -1180,10 +1180,8 @@ public class TimelineUtils {
 
     public boolean checkIsNotificationCancellationRequested(String iun) {
         log.debug("checkIsNotificationCancellationRequested - iun={}", iun);
-        Optional<Instant> cancellationRequested = timelineService.getNotificationCancellationRequested(iun);
-
-        boolean isNotificationCancelled = cancellationRequested.isPresent();
-        log.debug("NotificationCancelled value is={}", isNotificationCancelled);
+        boolean isNotificationCancelled = timelineService.isNotificationCancellationRequested(iun);
+        log.debug("NotificationCancellationRequested value is={}", isNotificationCancelled);
 
         return isNotificationCancelled;
     }

@@ -12,6 +12,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.RecipientRelatedTimelineElementDetails;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementDetailsInt;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.CancellationRequestResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationHistoryResponse;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.timeline.TimelineClient;
 import it.pagopa.pn.deliverypushworkflow.service.NotificationCancellationService;
@@ -31,11 +32,11 @@ public class TimelineClientMock implements TimelineClient {
     public static final String SIMULATE_AFTER_CANCEL_NOTIFICATION= "simulate-after-cancel-notification";
     public static final String SIMULATE_RECIPIENT_WAIT = "simulate-recipient-wait";
     public static final String WAIT_SEPARATOR = "@@";
-    private Instant notificationCancellationRequestedTimestamp;
 
     private final NotificationViewedRequestHandler notificationViewedRequestHandler;
     private CopyOnWriteArrayList<TimelineElementInternal> timelineList;
     final HashMap<String, Long> counter = new HashMap<>();
+    private final HashMap<String, CancellationRequestResponse> notificationCancellationRequestMap;
     private final NotificationService notificationService;
     private final NotificationUtils notificationUtils;
     private final NotificationCancellationService notificationCancellationService;
@@ -47,12 +48,13 @@ public class TimelineClientMock implements TimelineClient {
         this.notificationService = notificationService;
         this.notificationUtils = notificationUtils;
         this.notificationCancellationService = notificationCancellationService;
+        this.notificationCancellationRequestMap = new HashMap<>();
     }
 
     public void clear() {
         this.timelineList = new CopyOnWriteArrayList<>();
         this.counter.clear();
-        this.notificationCancellationRequestedTimestamp = null;
+        this.notificationCancellationRequestMap.clear();
     }
 
 
@@ -112,7 +114,7 @@ public class TimelineClientMock implements TimelineClient {
 
     private void simulateCancellation(TimelineElementInternal dto) {
         //Viene simulata la cancellazione della notifica prima di uno specifico inserimento in timeline
-        this.notificationCancellationRequestedTimestamp = Instant.now();
+        this.notificationCancellationRequestMap.put(dto.getIun(), new CancellationRequestResponse().timestamp(Instant.now()));
 
         // Parto dal secondo step di cancellazione
         notificationCancellationService.continueCancellationProcess( dto.getIun() );
@@ -201,7 +203,10 @@ public class TimelineClientMock implements TimelineClient {
     }
 
     @Override
-    public Instant getNotificationCancellationRequested(String iun) {
-        return this.notificationCancellationRequestedTimestamp;
+    public Optional<CancellationRequestResponse> getNotificationCancellationRequested(String iun) {
+        log.debug("[TEST] getNotificationCancellationRequested for iun={}", iun);
+        Optional<CancellationRequestResponse> opt = Optional.ofNullable(this.notificationCancellationRequestMap.get(iun));
+        log.debug("[TEST] getNotificationCancellationRequested response for iun={} is present={}", iun, opt.isPresent());
+        return opt;
     }
 }

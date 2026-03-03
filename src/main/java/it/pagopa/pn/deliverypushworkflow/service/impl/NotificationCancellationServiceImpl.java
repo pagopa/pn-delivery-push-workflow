@@ -97,8 +97,8 @@ public class NotificationCancellationServiceImpl implements NotificationCancella
     }
 
     private Instant getNotificationCancellationRequestDate(String iun) {
-        return timelineService.getNotificationCancellationRequested(iun)
-                .orElseThrow(() -> new IllegalStateException("Timeline element not found"));
+        return timelineService.getNotificationCancellationRequestedTimestamp(iun)
+                .orElseThrow(() -> new IllegalStateException("Cancellation request timestamp not found for IUN " + iun));
     }
 
     private void handleUpdateNotificationCost(NotificationInt notification) {

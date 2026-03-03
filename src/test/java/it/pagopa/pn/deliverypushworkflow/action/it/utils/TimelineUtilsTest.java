@@ -856,7 +856,7 @@ class TimelineUtilsTest {
         Mockito.when(timelineService.getTimelineByIunTimelineId(iun, failureTimeoutElementId, false))
                 .thenReturn(Collections.emptySet());
 
-        Mockito.when(timelineService.getNotificationCancellationRequested(iun)).thenReturn(Optional.empty());
+        Mockito.when(timelineService.isNotificationCancellationRequested(iun)).thenReturn(false);
 
         //WHEN
         boolean viewedOrRefinedOrDeceasedOrCancelled = timelineUtils.hasTimelineTriggeredAttachmentRetentionUpdate(iun, recIndex);
@@ -867,7 +867,7 @@ class TimelineUtilsTest {
         Mockito.verify(timelineService, Mockito.times(1)).getTimelineElement(iun, refinedElementId);
         Mockito.verify(timelineService, Mockito.times(1)).getTimelineElement(iun, deceasedElementId);
         Mockito.verify(timelineService, Mockito.times(1)).getTimelineElement(iun, failureTimeoutElementId);
-        Mockito.verify(timelineService, Mockito.times(1)).getNotificationCancellationRequested(iun);
+        Mockito.verify(timelineService, Mockito.times(1)).isNotificationCancellationRequested(iun);
     }
 
     @Test
@@ -1092,7 +1092,7 @@ class TimelineUtilsTest {
                         .build());
         Mockito.when(timelineService.getTimelineElement(iun, failureTimeoutElementId)).thenReturn(Optional.empty());
 
-        Mockito.when(timelineService.getNotificationCancellationRequested(iun)).thenReturn(Optional.of(Instant.now()));
+        Mockito.when(timelineService.isNotificationCancellationRequested(iun)).thenReturn(true);
 
         //WHEN
         boolean viewedOrRefinedOrCancelled = timelineUtils.hasTimelineTriggeredAttachmentRetentionUpdate(iun, recIndex);
@@ -1103,7 +1103,7 @@ class TimelineUtilsTest {
         Mockito.verify(timelineService, Mockito.times(1)).getTimelineElement(iun, refinedElementId);
         Mockito.verify(timelineService, Mockito.times(1)).getTimelineElement(iun, deceasedElementId);
         Mockito.verify(timelineService, Mockito.times(1)).getTimelineElement(iun, failureTimeoutElementId);
-        Mockito.verify(timelineService, Mockito.times(1)).getNotificationCancellationRequested(iun);
+        Mockito.verify(timelineService, Mockito.times(1)).isNotificationCancellationRequested(iun);
     }
 
     private NotificationSenderInt createSender() {
@@ -1228,7 +1228,7 @@ class TimelineUtilsTest {
     void checkIsNotificationCancellationRequested() {
         String iun = "IUN-checkIsNotificationCancellationRequested";
 
-        Mockito.when(timelineService.getNotificationCancellationRequested(iun)).thenReturn(Optional.of(Instant.now()));
+        Mockito.when(timelineService.isNotificationCancellationRequested(iun)).thenReturn(true);
 
         boolean isNotificationCancellationRequested = timelineUtils.checkIsNotificationCancellationRequested(iun);
         Assertions.assertTrue(isNotificationCancellationRequested);

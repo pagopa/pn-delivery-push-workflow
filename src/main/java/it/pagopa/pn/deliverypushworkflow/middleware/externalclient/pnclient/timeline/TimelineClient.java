@@ -6,10 +6,12 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.AddTimelineElementResponse
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementDetailsInt;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.CancellationRequestResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationHistoryResponse;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 public interface TimelineClient {
     String CLIENT_NAME = PnLogger.EXTERNAL_SERVICES.PN_TIMELINE_SERVICE;
@@ -39,6 +41,6 @@ public interface TimelineClient {
 
     NotificationHistoryResponse getTimelineAndStatusHistory(String iun, int recipients, Instant createdAt);
 
-    Instant getNotificationCancellationRequested(String iun);
+    Optional<CancellationRequestResponse> getNotificationCancellationRequested(String iun);
 
 }
