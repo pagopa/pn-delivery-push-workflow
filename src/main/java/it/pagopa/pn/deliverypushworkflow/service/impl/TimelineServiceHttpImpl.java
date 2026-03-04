@@ -5,6 +5,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.AddTimelineElementResponse
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementDetailsInt;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.CancellationRequestResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationHistoryResponse;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.timeline.TimelineClient;
 import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
@@ -113,5 +114,18 @@ public class TimelineServiceHttpImpl implements TimelineService {
         log.debug("getTimelineAndStatusHistory - IUN={}, recipients={}, createdAt={}", iun, recipients, createdAt);
 
         return timelineClient.getTimelineAndStatusHistory(iun, recipients, createdAt);
+    }
+
+    @Override
+    public Optional<Instant> getNotificationCancellationRequestedTimestamp(String iun) {
+        log.debug("getNotificationCancellationRequestedTimestamp - IUN={}", iun);
+        return timelineClient.getNotificationCancellationRequested(iun)
+                .map(CancellationRequestResponse::getTimestamp);
+    }
+
+    @Override
+    public boolean isNotificationCancellationRequested(String iun) {
+        log.debug("isNotificationCancellationRequestedPresent - IUN={}", iun);
+        return getNotificationCancellationRequestedTimestamp(iun).isPresent();
     }
 }
