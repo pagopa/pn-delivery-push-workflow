@@ -252,14 +252,6 @@ Parameters:
   NotificationCancellationActionInsertLambdaName:
     Type: String
 
-  NotificationCancellationActionInsertDLQARN:
-    Type: String
-    Description: 'DLQ ARN for NotificationCancellationActionInsertLambda'
-
-  NotificationCancellationActionInsertDLQAlarmARN:
-    Type: String
-    Description: 'DLQ Alarm ARN for NotificationCancellationActionInsertLambda'
-
   NotificationCancellationActionInsertLambdaMaximumBatchingWindowInSeconds:
     Type: String
     Default: "60"
@@ -272,14 +264,6 @@ Parameters:
 
   PaperEventsCostUpdateLambdaName:
     Type: String
-
-  PaperEventsCostUpdateDLQARN:
-    Type: String
-    Description: 'DLQ ARN for PaperEventsCostUpdateLambda'
-
-  PaperEventsCostUpdateDLQAlarmARN:
-    Type: String
-    Description: 'DLQ Alarm ARN for PaperEventsCostUpdateLambda'
 
   PaperEventsCostUpdateLambdaMaximumBatchingWindowInSeconds:
     Type: String
@@ -337,6 +321,24 @@ Parameters:
     Type: String
     Default: ''
     Description: 'KMS Key ID for the CDC Kinesis stream'
+
+  ESMKinesisFailureNotificationsBucketName:
+    Type: String
+    Description: "S3 bucket name for ESM Kinesis failure notifications"
+
+  NotificationCancellationActionInsertMaximumRecordAge:
+    Type: Number
+    Description: "Maximum record age in seconds for NotificationCancellationActionInsertLambdaKinesisSource"
+    Default: 604800 # 7 days
+
+  PaperEventsCostUpdateLambdaMaximumRecordAge:
+    Type: Number
+    Description: "Maximum record age in seconds for PaperEventsCostUpdateLambdaKinesisSource"
+    Default: 604800 # 7 days
+
+  CdcKinesisSourceStreamName:
+    Type: String
+    Description: 'Name of the kinesis stream where CDC are sent'
 
 Conditions:
     UseExternalChannelMock: !Equals [ !Ref ExternalChannelBaseUrl, "Mock" ]
@@ -435,8 +437,6 @@ Resources:
             - !Sub arn:aws:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:${ScheduledActionsQueueName}-HasOldMessage
             - !Ref NationalRegistries2DeliveryPushQueueAlarmARN
             - !Ref NationalRegistries2DeliveryPushQueueAgeAlarmARN
-            - !Ref NotificationCancellationActionInsertDLQAlarmARN
-            - !Ref PaperEventsCostUpdateDLQAlarmARN
             - !GetAtt NotificationCancellationActionInsertLambdaAlarms.Outputs.LambdaInvocationErrorLogsMetricAlarm
             - !GetAtt PaperEventsCostUpdateLambdaAlarms.Outputs.LambdaInvocationErrorLogsMetricAlarm
         LambdaArns: !Join
@@ -656,11 +656,13 @@ Resources:
             Resource: !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${CdcKinesisSourceStreamKeyId}
           - Effect: Allow
             Action:
-              - sqs:ChangeMessageVisibility
-              - sqs:GetQueueAttributes
-              - sqs:GetQueueUrl
-              - sqs:SendMessage
-            Resource: !Ref NotificationCancellationActionInsertDLQARN
+              - s3:ListBucket
+              - s3:GetBucketLocation
+            Resource: !Sub arn:aws:s3:::${ESMKinesisFailureNotificationsBucketName}
+          - Effect: Allow
+            Action:
+              - s3:PutObject
+            Resource: !Sub arn:aws:s3:::${ESMKinesisFailureNotificationsBucketName}/*
 
   # CDC to NotificationCancellationActionInsert
   NotificationCancellationActionInsertLambdaSource:
@@ -683,10 +685,35 @@ Resources:
                 - !Ref NewWorkflowLambdasEnabledEnd
                 - ']}] } } }'
       MaximumBatchingWindowInSeconds: !Sub ${NotificationCancellationActionInsertLambdaMaximumBatchingWindowInSeconds}
+      MaximumRecordAgeInSeconds: !Ref NotificationCancellationActionInsertMaximumRecordAge
       StartingPosition: TRIM_HORIZON
       DestinationConfig:
         OnFailure:
-          Destination: !Ref NotificationCancellationActionInsertDLQARN
+          Destination: !Sub arn:aws:s3:::${ESMKinesisFailureNotificationsBucketName}
+
+  NotificationCancellationActionInsertKinesisFailuresAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-NotificationCancellationActionInsert-ESM-Alarm"
+      AlarmDescription: "CloudWatch alarm for when NotificationCancellationActionInsertLambda has Kinesis stream read failures, which can indicate problems with the function processing or with the stream itself."
+      TreatMissingData: notBreaching        
+      AlarmActions:
+        - !Ref AlarmSNSTopicArn
+      OKActions:
+        - !Ref AlarmSNSTopicArn
+      Dimensions:
+        - Value: !Ref NotificationCancellationActionInsertLambda
+          Name: FunctionName
+        - Value: !Ref CdcKinesisSourceStreamName
+          Name: StreamName
+      DatapointsToAlarm: 1           
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 6
+      Period: 600
+      Namespace: ESM/Kinesis   
+      MetricName: ProcessingFailures
+      Statistic: Maximum      
+      Threshold: 1
 
   NotificationCancellationActionInsertLambdaAlarms:
     Type: AWS::CloudFormation::Stack
@@ -771,16 +798,18 @@ Resources:
               !Ref DeliveryPushToExternalRegistriesQueueARN
           - Effect: Allow
             Action:
-              - sqs:ChangeMessageVisibility
-              - sqs:GetQueueAttributes
-              - sqs:GetQueueUrl
-              - sqs:SendMessage
-            Resource:
-              !Ref PaperEventsCostUpdateDLQARN
+              - s3:ListBucket
+              - s3:GetBucketLocation
+            Resource: !Sub arn:aws:s3:::${ESMKinesisFailureNotificationsBucketName}
+          - Effect: Allow
+            Action:
+              - s3:PutObject
+            Resource: !Sub arn:aws:s3:::${ESMKinesisFailureNotificationsBucketName}/*
 
     # CDC to Paper Events Cost Update
   PaperEventsCostUpdateLambdaKinesisSource:
     Type: AWS::Lambda::EventSourceMapping
+    DependsOn: PaperEventsCostUpdateLambdaPolicy
     Properties:
       BatchSize: !Sub ${PaperEventsCostUpdateLambdaBatchSize}
       BisectBatchOnFunctionError: true
@@ -798,10 +827,35 @@ Resources:
                 - !Ref NewWorkflowLambdasEnabledEnd
                 - ']}] } } }'
       MaximumBatchingWindowInSeconds: !Sub ${PaperEventsCostUpdateLambdaMaximumBatchingWindowInSeconds}
+      MaximumRecordAgeInSeconds: !Ref PaperEventsCostUpdateLambdaMaximumRecordAge
       StartingPosition: TRIM_HORIZON
       DestinationConfig:
         OnFailure:
-          Destination: !Ref PaperEventsCostUpdateDLQARN
+          Destination: !Sub arn:aws:s3:::${ESMKinesisFailureNotificationsBucketName}
+
+  PaperEventsCostUpdateKinesisFailuresAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-PaperEventsCostUpdate-ESM-Alarm"
+      AlarmDescription: "CloudWatch alarm for when PaperEventsCostUpdateLambda has Kinesis stream read failures, which can indicate problems with the function processing or with the stream itself."
+      TreatMissingData: notBreaching        
+      AlarmActions:
+        - !Ref AlarmSNSTopicArn
+      OKActions:
+        - !Ref AlarmSNSTopicArn
+      Dimensions:
+        - Value: !Ref PaperEventsCostUpdateLambda
+          Name: FunctionName
+        - Value: !Ref CdcKinesisSourceStreamName
+          Name: StreamName
+      DatapointsToAlarm: 1           
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 6
+      Period: 600
+      Namespace: ESM/Kinesis   
+      MetricName: ProcessingFailures
+      Statistic: Maximum      
+      Threshold: 1
 
   PaperEventsCostUpdateLambdaAlarms:
     Type: AWS::CloudFormation::Stack
