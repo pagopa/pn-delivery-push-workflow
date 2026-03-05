@@ -79,7 +79,7 @@ public class ReworkRequestedHandler {
                 .filter(elem -> checkAttemptId(elem, attemptId))
                 .filter(elem -> checkPrepareAnalogDomicile(elem, attemptId))
                 .filter(elem -> checkSendAnalogDomicile(elem, attemptId))
-                .filter(this::checkDeliveryDetailCode)
+                .filter(timelineElementInternal -> checkDeliveryDetailCode(timelineElementInternal, attemptId))
                 .map(TimelineElementInternal::getElementId)
                 .collectList()
                 .doOnNext(list -> log.debug("Invalidable elements found: {}", list));
@@ -148,12 +148,28 @@ public class ReworkRequestedHandler {
         return true;
     }
 
-    private boolean checkDeliveryDetailCode(TimelineElementInternal elem) {
-        if (TimelineElementCategoryInt.SEND_ANALOG_PROGRESS.name().equals(elem.getCategory().name())) {
-            return !((SendAnalogProgressDetailsInt) elem.getDetails()).getDeliveryDetailCode().startsWith(CON);
+    private boolean checkDeliveryDetailCode(TimelineElementInternal elem, String attemptId) {
+
+        if (elem.getCategory() != TimelineElementCategoryInt.SEND_ANALOG_PROGRESS) {
+            return true;
         }
+
+        String elementId = elem.getElementId();
+        SendAnalogProgressDetailsInt details = (SendAnalogProgressDetailsInt) elem.getDetails();
+        boolean isAttempt0 = ATTEMPT_0.equals(attemptId);
+        boolean isAttempt1 = ATTEMPT_1.equals(attemptId);
+
+        if (isAttempt0 && elementId.contains(ATTEMPT_1)) {
+            return true;
+        }
+
+        if ((isAttempt0 && elementId.contains(ATTEMPT_0)) || (isAttempt1 && elementId.contains(ATTEMPT_1))) {
+            return !details.getDeliveryDetailCode().startsWith(CON);
+        }
+
         return true;
     }
+
 
     public Mono<Void> startNotificationReworkProcess(NotificationReworkRequestedDetails details) {
         log.info("Starting rework process for reworkRequestId {} and reworkId {}", details.getReworkRequestId(), details.getReworkId());
