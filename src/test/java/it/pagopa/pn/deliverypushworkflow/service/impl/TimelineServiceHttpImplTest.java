@@ -7,6 +7,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendAnalogFeedbackDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementDetailsInt;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.CancellationRequestResponse;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.timeline.TimelineClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -253,4 +254,88 @@ class TimelineServiceHttpImplTest {
         element.setEventTimestamp(timestamp);
         return element;
     }
+
+    @Test
+    void getNotificationCancellationRequestedTimestampReturnsTimestampWhenPresent() {
+        String iun = "iun123";
+        Instant expectedTimestamp = Instant.now();
+        CancellationRequestResponse cancellationRequestResponse = new CancellationRequestResponse();
+        cancellationRequestResponse.setTimestamp(expectedTimestamp);
+
+        Mockito.when(timelineClient.getNotificationCancellationRequested(iun))
+                .thenReturn(Optional.of(cancellationRequestResponse));
+
+        Optional<Instant> result = timelineServiceHttp.getNotificationCancellationRequestedTimestamp(iun);
+
+        assertTrue(result.isPresent());
+        assertEquals(expectedTimestamp, result.get());
+    }
+
+    @Test
+    void getNotificationCancellationRequestedTimestampReturnsEmptyWhenNotPresent() {
+        String iun = "iun123";
+
+        Mockito.when(timelineClient.getNotificationCancellationRequested(iun))
+                .thenReturn(Optional.empty());
+
+        Optional<Instant> result = timelineServiceHttp.getNotificationCancellationRequestedTimestamp(iun);
+
+        assertFalse(result.isPresent());
+    }
+
+    @Test
+    void getNotificationCancellationRequestedTimestampReturnsEmptyWhenTimestampIsNull() {
+        String iun = "iun123";
+        CancellationRequestResponse cancellationRequestResponse = new CancellationRequestResponse();
+        cancellationRequestResponse.setTimestamp(null);
+
+        Mockito.when(timelineClient.getNotificationCancellationRequested(iun))
+                .thenReturn(Optional.of(cancellationRequestResponse));
+
+        Optional<Instant> result = timelineServiceHttp.getNotificationCancellationRequestedTimestamp(iun);
+
+        assertFalse(result.isPresent());
+    }
+
+    @Test
+    void isNotificationCancellationRequestedReturnsTrueWhenPresent() {
+        String iun = "iun123";
+        Instant timestamp = Instant.now();
+        CancellationRequestResponse cancellationRequestResponse = new CancellationRequestResponse();
+        cancellationRequestResponse.setTimestamp(timestamp);
+
+        Mockito.when(timelineClient.getNotificationCancellationRequested(iun))
+                .thenReturn(Optional.of(cancellationRequestResponse));
+
+        boolean result = timelineServiceHttp.isNotificationCancellationRequested(iun);
+
+        assertTrue(result);
+    }
+
+    @Test
+    void isNotificationCancellationRequestedReturnsFalseWhenNotPresent() {
+        String iun = "iun123";
+
+        Mockito.when(timelineClient.getNotificationCancellationRequested(iun))
+                .thenReturn(Optional.empty());
+
+        boolean result = timelineServiceHttp.isNotificationCancellationRequested(iun);
+
+        assertFalse(result);
+    }
+
+    @Test
+    void isNotificationCancellationRequestedReturnsFalseWhenTimestampIsNull() {
+        String iun = "iun123";
+        CancellationRequestResponse cancellationRequestResponse = new CancellationRequestResponse();
+        cancellationRequestResponse.setTimestamp(null);
+
+        Mockito.when(timelineClient.getNotificationCancellationRequested(iun))
+                .thenReturn(Optional.of(cancellationRequestResponse));
+
+        boolean result = timelineServiceHttp.isNotificationCancellationRequested(iun);
+
+        assertFalse(result);
+    }
+
 }
