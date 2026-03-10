@@ -228,7 +228,11 @@ public class ExternalChannelServiceImpl implements ExternalChannelService {
         Optional<TimelineElementInternal> timeline = timelineService.getTimelineElement(iun, eventId);
         if (timeline.isPresent()) {
             Instant timestamp = timeline.get().getTimestamp();
-            legalDigitalAddressInt.setAddress(legalDigitalAddressInt.getAddress() + "?timestamp=" + timestamp);
+            String address = legalDigitalAddressInt.getAddress();
+            String SERCQ_AAR_TIMESTAMP_INIT = "?timestamp=";
+            if (!legalDigitalAddressInt.getAddress().contains(SERCQ_AAR_TIMESTAMP_INIT)) {
+                legalDigitalAddressInt.setAddress(address + SERCQ_AAR_TIMESTAMP_INIT + timestamp);
+            }
         } else throw new PnInternalException(String.format("Timeline element with eventId '%s' not found for iun=%s", eventId, iun), ERROR_CODE_DELIVERYPUSH_TIMELINE_ELEMENT_NOT_PRESENT);
     }
 

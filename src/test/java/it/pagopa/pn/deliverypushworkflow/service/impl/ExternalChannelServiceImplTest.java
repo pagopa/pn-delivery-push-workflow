@@ -1172,6 +1172,173 @@ class ExternalChannelServiceImplTest {
         Mockito.verify( auditLogEvent, Mockito.never()).generateFailure(any());
     }
 
+    @Test
+    @ExtendWith(MockitoExtension.class)
+    void addInformationToAddress_addressAlreadyContainsTimestamp_shouldNotAppendAnotherTimestamp() {
+        when(featureEnabledUtils.isPfNewWorkflowEnabled(any())).thenReturn(false);
+
+        //GIVEN
+        String iun = "IUN01";
+        String taxId = "taxId";
+        String quickAccessToken = "test";
+
+        Instant existingTimestamp = Instant.parse("2024-01-01T10:00:00Z");
+        String addressWithTimestamp = SERCQ_ADDRESS + "?timestamp=" + existingTimestamp;
+
+        LegalDigitalAddressInt digitalDomicile = LegalDigitalAddressInt.builder()
+                .address(addressWithTimestamp)
+                .type(LegalDigitalAddressInt.LEGAL_DIGITAL_ADDRESS_TYPE.SERCQ)
+                .build();
+
+        NotificationRecipientInt recipient = NotificationRecipientTestBuilder.builder()
+                .withTaxId(taxId)
+                .withInternalId("ANON_" + taxId)
+                .withDigitalDomicile(digitalDomicile)
+                .withPhysicalAddress(
+                        PhysicalAddressBuilder.builder()
+                                .withAddress("_Via Nuova")
+                                .build()
+                )
+                .build();
+
+        NotificationInt notification = NotificationTestBuilder.builder()
+                .withIun(iun)
+                .withPaId("paId01")
+                .withNotificationRecipient(recipient)
+                .build();
+
+        when(notificationUtils.getRecipientFromIndex(any(NotificationInt.class), Mockito.anyInt())).thenReturn(recipient);
+
+        String aarKey = "testKey";
+        String attachments = "test1";
+        when(attachmentUtils.retrieveAttachments(any(), any(), any(), eq(F24ResolutionMode.RESOLVE_WITH_TIMELINE), any(), any()))
+                .thenReturn(Arrays.asList(aarKey, attachments));
+
+        PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
+        when(auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_DD_SEND), Mockito.anyString()))
+                .thenReturn(auditLogEvent);
+        when(auditLogEvent.generateSuccess(Mockito.anyString(), any())).thenReturn(auditLogEvent);
+
+        Map<String, String> quickLinkTestMap = Map.of(recipient.getInternalId(), quickAccessToken);
+        when(notificationService.getRecipientsQuickAccessLinkToken(iun)).thenReturn(quickLinkTestMap);
+
+        // Il timeline element esiste con un timestamp DIVERSO da quello già presente nell'indirizzo
+        Instant newTimestamp = Instant.parse("2024-06-15T12:00:00Z");
+        mockGetTimelineElement(iun, 0, newTimestamp);
+
+        DigitalAddressSourceInt addressSource = DigitalAddressSourceInt.PLATFORM;
+        int recIndex = 0;
+        int sentAttemptMade = 0;
+        final boolean isFirstSendRetry = false;
+
+        SendInformation sendInformation = SendInformation.builder()
+                .digitalAddress(digitalDomicile)
+                .digitalAddressSource(addressSource)
+                .retryNumber(sentAttemptMade)
+                .isFirstSendRetry(isFirstSendRetry)
+                .relatedFeedbackTimelineId(null)
+                .build();
+
+        //WHEN
+        externalChannelService.sendDigitalNotification(notification, recIndex, false, sendInformation);
+
+        //THEN — l'indirizzo deve rimanere invariato: il timestamp originale NON deve essere sostituito né duplicato
+        ArgumentCaptor<LegalDigitalAddressInt> captor = ArgumentCaptor.forClass(LegalDigitalAddressInt.class);
+        Mockito.verify(externalChannel).sendLegalNotification(
+                eq(notification), eq(recipient), captor.capture(),
+                anyString(), eq(Arrays.asList(aarKey, attachments)), eq(quickAccessToken));
+
+        String capturedAddress = captor.getValue().getAddress();
+        // L'address deve essere esattamente quello originale (con il timestamp già presente)
+        Assertions.assertEquals(addressWithTimestamp, capturedAddress);
+        // Non deve contenere due occorrenze di "?timestamp="
+        Assertions.assertFalse(
+                capturedAddress.indexOf("?timestamp=") != capturedAddress.lastIndexOf("?timestamp="),
+                "L'indirizzo non deve contenere più di un '?timestamp='");
+    }
+
+    @Test
+    @ExtendWith(MockitoExtension.class)
+    void addInformationToAddress_addressWithoutTimestamp_shouldAppendTimestampOnce() {
+        when(featureEnabledUtils.isPfNewWorkflowEnabled(any())).thenReturn(false);
+
+        //GIVEN
+        String iun = "IUN01";
+        String taxId = "taxId";
+        String quickAccessToken = "test";
+
+        LegalDigitalAddressInt digitalDomicile = LegalDigitalAddressInt.builder()
+                .address(SERCQ_ADDRESS)
+                .type(LegalDigitalAddressInt.LEGAL_DIGITAL_ADDRESS_TYPE.SERCQ)
+                .build();
+
+        NotificationRecipientInt recipient = NotificationRecipientTestBuilder.builder()
+                .withTaxId(taxId)
+                .withInternalId("ANON_" + taxId)
+                .withDigitalDomicile(digitalDomicile)
+                .withPhysicalAddress(
+                        PhysicalAddressBuilder.builder()
+                                .withAddress("_Via Nuova")
+                                .build()
+                )
+                .build();
+
+        NotificationInt notification = NotificationTestBuilder.builder()
+                .withIun(iun)
+                .withPaId("paId01")
+                .withNotificationRecipient(recipient)
+                .build();
+
+        when(notificationUtils.getRecipientFromIndex(any(NotificationInt.class), Mockito.anyInt())).thenReturn(recipient);
+
+        String aarKey = "testKey";
+        String attachments = "test1";
+        when(attachmentUtils.retrieveAttachments(any(), any(), any(), eq(F24ResolutionMode.RESOLVE_WITH_TIMELINE), any(), any()))
+                .thenReturn(Arrays.asList(aarKey, attachments));
+
+        PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
+        when(auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_DD_SEND), Mockito.anyString()))
+                .thenReturn(auditLogEvent);
+        when(auditLogEvent.generateSuccess(Mockito.anyString(), any())).thenReturn(auditLogEvent);
+
+        Map<String, String> quickLinkTestMap = Map.of(recipient.getInternalId(), quickAccessToken);
+        when(notificationService.getRecipientsQuickAccessLinkToken(iun)).thenReturn(quickLinkTestMap);
+
+        Instant now = Instant.now();
+        mockGetTimelineElement(iun, 0, now);
+
+        DigitalAddressSourceInt addressSource = DigitalAddressSourceInt.PLATFORM;
+        int recIndex = 0;
+        int sentAttemptMade = 0;
+        final boolean isFirstSendRetry = false;
+
+        SendInformation sendInformation = SendInformation.builder()
+                .digitalAddress(digitalDomicile)
+                .digitalAddressSource(addressSource)
+                .retryNumber(sentAttemptMade)
+                .isFirstSendRetry(isFirstSendRetry)
+                .relatedFeedbackTimelineId(null)
+                .build();
+
+        //WHEN
+        externalChannelService.sendDigitalNotification(notification, recIndex, false, sendInformation);
+
+        //THEN — il timestamp deve essere stato aggiunto esattamente una volta
+        ArgumentCaptor<LegalDigitalAddressInt> captor = ArgumentCaptor.forClass(LegalDigitalAddressInt.class);
+        Mockito.verify(externalChannel).sendLegalNotification(
+                eq(notification), eq(recipient), captor.capture(),
+                anyString(), eq(Arrays.asList(aarKey, attachments)), eq(quickAccessToken));
+
+        String capturedAddress = captor.getValue().getAddress();
+        String expectedAddress = SERCQ_ADDRESS + "?timestamp=" + dateTimeFormatter.format(now);
+        Assertions.assertEquals(expectedAddress, capturedAddress);
+        // Deve contenere esattamente un'occorrenza di "?timestamp="
+        Assertions.assertEquals(
+                capturedAddress.indexOf("?timestamp="),
+                capturedAddress.lastIndexOf("?timestamp="),
+                "L'indirizzo deve contenere esattamente un '?timestamp='");
+    }
+
     private void mockGetTimelineElement(String iun, int recIndex, Instant timestamp) {
         String aarGenEventIdExpected = TimelineEventId.AAR_GENERATION.buildEventId(
                 EventId.builder()
