@@ -35,7 +35,8 @@ public class TimelineClientImpl implements TimelineClient {
         } catch (PnHttpResponseException ex) {
             if (ex.getStatusCode() == HttpStatus.SC_CONFLICT) {
                 log.warn("Exception idconflict is expected for retry, letting flow continue");
-                return new AddTimelineElementResponse(null, true);
+                //response valida solo fino a che correzione timeline non è attiva, da modificare su correzione timeline fase 3
+                return new AddTimelineElementResponse(element.getElementId(), true);
             }
 
             log.error("Error while invoking {}: {}", ADD_TIMELINE_ELEMENT, ex.getMessage(), ex);
