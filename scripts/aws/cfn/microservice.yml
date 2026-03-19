@@ -787,7 +787,7 @@ Resources:
             Resource: !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/pn-cdc-stream
           - Action: kms:Decrypt
             Effect: Allow
-            Resource: !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/3bc181f8-9590-49c1-a783-fe6ead65adab
+            Resource: !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${CdcKinesisSourceStreamKeyId}
           - Effect: Allow
             Action:
               - sqs:ChangeMessageVisibility
