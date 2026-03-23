@@ -43,6 +43,7 @@ class TimelineClientImplTest {
     @Test
     void addTimelineElementReturnsTrueWhenConflictOccurs() {
         TimelineElementInternal timelineElementInternal = Mockito.mock(TimelineElementInternal.class);
+        when(timelineElementInternal.getElementId()).thenReturn("elementId");
         NotificationInt notificationInt = Mockito.mock(NotificationInt.class);
 
         NewTimelineElement newTimelineElement = Mockito.mock(NewTimelineElement.class);
@@ -56,7 +57,7 @@ class TimelineClientImplTest {
                 .addTimelineElement(newTimelineElement);
 
         AddTimelineElementResponse result = timelineServiceClient.addTimelineElement(timelineElementInternal, notificationInt);
-
+        assertEquals(timelineElementInternal.getElementId(), result.getTimelineElementId());
         assertTrue(result.isDuplicate());
     }
 
