@@ -60,7 +60,7 @@ public class ReworkRequestedHandler {
                 .flatMap(timeline -> computeTimelineElementToInvalidate(timeline, detail.getReworkRecIndex(), detail.getReworkAttempt()))
                 .doOnNext(timelineElementsToInvalidate::addAll)
                 .flatMap(timelineElementIds -> startNotificationReworkProcess(detail).thenReturn(timelineElementIds))
-                .flatMap(strings -> updateAttachmentRetention(detail.getCreatedAt(), notificationInt.getIun(), notificationInt.getDocuments()))
+                .flatMap(strings -> updateAttachmentRetention(detail.getCreatedAt(), notificationInt.getIun(), notificationInt.getDocuments(), detail.getReworkAttempt()))
                 .map(internalAction -> buildTimelineElement(notificationInt, timelineElementsToInvalidate, detail))
                 .onErrorResume(throwable -> {
                         log.error("Errors during handleNotificationReworkRequested for iun {}: {}", action.getIun(), throwable.getMessage(), throwable);
@@ -85,23 +85,26 @@ public class ReworkRequestedHandler {
                 .doOnNext(list -> log.debug("Invalidable elements found: {}", list));
     }
 
-    private Mono<String> updateAttachmentRetention(Instant actionCreatedAt, String iun, List<NotificationDocumentInt> documents) {
-        log.debug("Starting updateAttachmentRetention for iun {} with {} documents", iun, documents.size());
-        int retentionUntilDays = (int) pnDeliveryPushWorkflowConfigs.getTimeParams().getAttachmentTimeToAddAfterExpiration().toDays();
-        OffsetDateTime newRetentionDate = OffsetDateTime.now().plusDays(retentionUntilDays);
-        return Flux.fromIterable(documents)
-                .flatMap(document -> safeStorageService.getFile(document.getRef().getKey(), true, false))
-                .filter(response -> newRetentionDate.isAfter(response.getRetentionUntil()))
-                .flatMap(response -> {
-                    log.info("Updating retention for file {}: new date {}", response.getKey(), newRetentionDate);
-                    return attachmentUtils.changeAttachmentRetention(response.getKey(), newRetentionDate);
-                })
-                .collectList()
-                .doOnNext(response -> {
-                    log.debug("Retention updated for iun {}. Scheduling checkAttachmentRetention.", iun);
-                    checkAttachmentRetentionHandler.scheduleCheckAttachmentRetentionBeforeExpiration(iun, actionCreatedAt);
-                })
-                .thenReturn(iun);
+    private Mono<String> updateAttachmentRetention(Instant actionCreatedAt, String iun, List<NotificationDocumentInt> documents, String reworkAttempt) {
+        if(reworkAttempt.equalsIgnoreCase(ATTEMPT_0)) {
+            log.debug("Starting updateAttachmentRetention for iun {} with {} documents", iun, documents.size());
+            int retentionUntilDays = (int) pnDeliveryPushWorkflowConfigs.getTimeParams().getAttachmentTimeToAddAfterExpiration().toDays();
+            OffsetDateTime newRetentionDate = OffsetDateTime.now().plusDays(retentionUntilDays);
+            return Flux.fromIterable(documents)
+                    .flatMap(document -> safeStorageService.getFile(document.getRef().getKey(), true, false))
+                    .filter(response -> newRetentionDate.isAfter(response.getRetentionUntil()))
+                    .flatMap(response -> {
+                        log.info("Updating retention for file {}: new date {}", response.getKey(), newRetentionDate);
+                        return attachmentUtils.changeAttachmentRetention(response.getKey(), newRetentionDate);
+                    })
+                    .collectList()
+                    .doOnNext(response -> {
+                        log.debug("Retention updated for iun {}. Scheduling checkAttachmentRetention.", iun);
+                        checkAttachmentRetentionHandler.scheduleCheckAttachmentRetentionBeforeExpiration(iun, actionCreatedAt);
+                    })
+                    .thenReturn(iun);
+        }
+        return Mono.just(iun);
     }
 
     private TimelineElementInternal buildTimelineElement(NotificationInt notification,  List<String> elementsToInvalidate, NotificationReworkRequestedDetails internalDetail) {

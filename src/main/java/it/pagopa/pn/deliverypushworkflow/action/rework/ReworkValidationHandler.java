@@ -79,6 +79,8 @@ public class ReworkValidationHandler {
         NotificationReworkInfo reworkInfo = new NotificationReworkInfo();
         reworkInfo.setAction(action);
         reworkInfo.setActionDetail(((NotificationReworkValidationDetails) action.getDetails()));
+        String reworkAttempt = reworkInfo.getActionDetail().getReworkAttempt();
+        String reworkFinalStatus = reworkInfo.getActionDetail().getReworkExpectedFinalStatus();
 
         return Mono.just(reworkInfo)
                 .flatMap(this::checkNotificationCancelledAndThrow)
@@ -86,10 +88,10 @@ public class ReworkValidationHandler {
                 .flatMap(this::retrieveTimeline)
                 .flatMap(this::checkNotificationTimelineAndThrow)
                 .flatMap(this::checkNotificationExpectedFinalStatusCodeAndThrow)
-                .flatMap(this::checkNotificationAttachments)
+                .flatMap(notificationReworkInfo -> checkNotificationAttachments(notificationReworkInfo, reworkAttempt, reworkFinalStatus))
                 .map(this::computeRequestId)
                 .doOnNext(reworkInfo::setRequestId)
-                .flatMap(requestId -> checkNotificationAddress(reworkInfo))
+                .flatMap(requestId -> checkNotificationAddress(reworkInfo, reworkAttempt, reworkFinalStatus))
                 .thenReturn(reworkInfo)
                 .flatMap(info -> this.checkErrorList(info.getErrorList(), info.getAction(), reworkInfo.getActionDetail(), info.getRequestId()))
                 .onErrorResume(NotificationReworkValidationException.class, e -> {
@@ -150,28 +152,31 @@ public class ReworkValidationHandler {
                         .build()));
     }
 
-    private Mono<NotificationReworkInfo> checkNotificationAttachments(NotificationReworkInfo info) {
-        return Flux.fromIterable(info.getNotification().getDocuments())
-                .flatMap(document -> safeStorageService.getFile(document.getRef().getKey(), true, false))
-                .filter(response -> response.getRetentionUntil().minusDays(pnDeliveryPushWorkflowConfigs.getNotificationReworkDocumentExpiringRange()).isBefore(OffsetDateTime.now()))
-                .map(response -> NotificationReworkError.builder()
-                        .cause(NotificationReworkErrorCause.INVALID_ATTACHMENT.getCause())
-                        .description(String.format(NotificationReworkErrorCause.INVALID_ATTACHMENT.getErrorDetails(), response.getKey(), response.getRetentionUntil()))
-                        .build())
-                .onErrorResume(WebClientResponseException.class, ex ->
-                        ex.getStatusCode().equals(HttpStatus.GONE)
-                                ? Mono.just(NotificationReworkError.builder()
-                                .cause(NotificationReworkErrorCause.EXPIRED_ATTACHMENT.getCause())
-                                .description(NotificationReworkErrorCause.EXPIRED_ATTACHMENT.getErrorDetails())
-                                .build())
-                                : Mono.empty()
-                )
-                .collectList()
-                .map(errors -> {
-                    info.getErrorList().addAll(errors);
-                    return info;
-                })
-                .then(Mono.just(info));
+    private Mono<NotificationReworkInfo> checkNotificationAttachments(NotificationReworkInfo info, String reworkAttempt, String reworkFinalStatus) {
+        if(reworkAttempt.equalsIgnoreCase(ATTEMPT_0) && reworkFinalStatus.equalsIgnoreCase(KO)) {
+            return Flux.fromIterable(info.getNotification().getDocuments())
+                    .flatMap(document -> safeStorageService.getFile(document.getRef().getKey(), true, false))
+                    .filter(response -> response.getRetentionUntil().minusDays(pnDeliveryPushWorkflowConfigs.getNotificationReworkDocumentExpiringRange()).isBefore(OffsetDateTime.now()))
+                    .map(response -> NotificationReworkError.builder()
+                            .cause(NotificationReworkErrorCause.INVALID_ATTACHMENT.getCause())
+                            .description(String.format(NotificationReworkErrorCause.INVALID_ATTACHMENT.getErrorDetails(), response.getKey(), response.getRetentionUntil()))
+                            .build())
+                    .onErrorResume(WebClientResponseException.class, ex ->
+                            ex.getStatusCode().equals(HttpStatus.GONE)
+                                    ? Mono.just(NotificationReworkError.builder()
+                                    .cause(NotificationReworkErrorCause.EXPIRED_ATTACHMENT.getCause())
+                                    .description(NotificationReworkErrorCause.EXPIRED_ATTACHMENT.getErrorDetails())
+                                    .build())
+                                    : Mono.empty()
+                    )
+                    .collectList()
+                    .map(errors -> {
+                        info.getErrorList().addAll(errors);
+                        return info;
+                    })
+                    .then(Mono.just(info));
+        }
+        return Mono.just(info);
     }
 
     private String computeRequestId(NotificationReworkInfo info) {
@@ -185,18 +190,21 @@ public class ReworkValidationHandler {
                 .orElse(StringUtils.EMPTY);
     }
 
-    private Mono<NotificationReworkInfo> checkNotificationAddress(NotificationReworkInfo externalInfo) {
+    private Mono<NotificationReworkInfo> checkNotificationAddress(NotificationReworkInfo externalInfo, String reworkAttempt, String reworkFinalStatus) {
         log.debug("checkNotificationAddress for iun {}, requestId {}", externalInfo.getAction().getIun(), externalInfo.getRequestId());
-        return paperChannelAddressClient.checkAddress(externalInfo.getRequestId())
-                .doOnNext(checkAddressResponse -> checkTtl(checkAddressResponse, externalInfo))
-                .map(checkAddressResponse -> externalInfo)
-                .onErrorResume(PnHttpResponseException.class, ex -> {
-                    if(ex.getStatusCode() == 404) {
-                        log.warn("Address not found for requestId {}", externalInfo.getRequestId());
-                        return Mono.just(addErrorAddressNotFound(externalInfo));
-                    }
-                    return Mono.error(ex);
-                });
+        if(reworkAttempt.equalsIgnoreCase(ATTEMPT_0) && reworkFinalStatus.equalsIgnoreCase(KO)) {
+            return paperChannelAddressClient.checkAddress(externalInfo.getRequestId())
+                    .doOnNext(checkAddressResponse -> checkTtl(checkAddressResponse, externalInfo))
+                    .map(checkAddressResponse -> externalInfo)
+                    .onErrorResume(PnHttpResponseException.class, ex -> {
+                        if (ex.getStatusCode() == 404) {
+                            log.warn("Address not found for requestId {}", externalInfo.getRequestId());
+                            return Mono.just(addErrorAddressNotFound(externalInfo));
+                        }
+                        return Mono.error(ex);
+                    });
+        }
+        return Mono.just(externalInfo);
     }
 
     private NotificationReworkInfo addErrorAddressNotFound(NotificationReworkInfo externalInfo) {
