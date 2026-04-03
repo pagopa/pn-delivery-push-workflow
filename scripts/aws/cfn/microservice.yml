@@ -317,10 +317,15 @@ Parameters:
     Default: ''
     Description: 'List of action detail type to accept in event bridge rule'
 
-  CdcKinesisSourceStreamKeyId:
+  CdcKinesisSourceStreamArn:
     Type: String
     Default: ''
-    Description: 'KMS Key ID for the CDC Kinesis stream'
+    Description: 'ARN for pn-cdc-stream kinesis stream'
+
+  CdcKinesisSourceStreamKeyArn:
+    Type: String
+    Default: ''
+    Description: 'KMS Key ARN for the CDC Kinesis stream'
 
   ESMKinesisFailureNotificationsBucketName:
     Type: String
@@ -650,10 +655,10 @@ Resources:
               - kinesis:ListShards
               - kinesis:ListStreams
               - kinesis:SubscribeToShard
-            Resource: !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/pn-cdc-stream
+            Resource: !Ref CdcKinesisSourceStreamArn
           - Action: kms:Decrypt
             Effect: Allow
-            Resource: !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${CdcKinesisSourceStreamKeyId}
+            Resource: !Ref CdcKinesisSourceStreamKeyArn
           - Effect: Allow
             Action:
               - s3:ListBucket
@@ -671,7 +676,7 @@ Resources:
     Properties:
       BatchSize: !Sub ${NotificationCancellationActionInsertLambdaBatchSize}
       BisectBatchOnFunctionError: true
-      EventSourceArn: !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/pn-cdc-stream
+      EventSourceArn: !Ref CdcKinesisSourceStreamArn
       FunctionName: !Ref NotificationCancellationActionInsertLambda
       FunctionResponseTypes:
         - ReportBatchItemFailures
@@ -784,10 +789,10 @@ Resources:
               - kinesis:ListShards
               - kinesis:ListStreams
               - kinesis:SubscribeToShard
-            Resource: !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/pn-cdc-stream
+            Resource: !Ref CdcKinesisSourceStreamArn
           - Action: kms:Decrypt
             Effect: Allow
-            Resource: !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${CdcKinesisSourceStreamKeyId}
+            Resource: !Ref CdcKinesisSourceStreamKeyArn
           - Effect: Allow
             Action:
               - sqs:ChangeMessageVisibility
@@ -813,7 +818,7 @@ Resources:
     Properties:
       BatchSize: !Sub ${PaperEventsCostUpdateLambdaBatchSize}
       BisectBatchOnFunctionError: true
-      EventSourceArn: !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/pn-cdc-stream
+      EventSourceArn: !Ref CdcKinesisSourceStreamArn
       FunctionName: !Ref PaperEventsCostUpdateLambda
       FunctionResponseTypes:
         - ReportBatchItemFailures
