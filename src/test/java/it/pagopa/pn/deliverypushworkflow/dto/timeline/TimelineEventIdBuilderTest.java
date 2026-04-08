@@ -863,24 +863,6 @@ class TimelineEventIdBuilderTest {
     }
 
     @Test
-    void buildNOTIFICATION_CANCELLATION_REQUESTTest() {
-        String timeLineEventIdExpected = String.format("NOTIFICATION_CANCELLATION_REQUEST.IUN_%s", IUN);
-        String timeLineEventIdActual = new TimelineEventIdBuilder()
-                .withCategory(TimelineEventId.NOTIFICATION_CANCELLATION_REQUEST.getValue())
-                .withIun(IUN)
-                .build();
-
-        assertThat(timeLineEventIdActual).isEqualTo(timeLineEventIdExpected);
-
-        String timeLineEventIdActualFromBuildEvent = TimelineEventId.NOTIFICATION_CANCELLATION_REQUEST.buildEventId(EventId
-                .builder()
-                .iun(IUN)
-                .build());
-
-        assertThat(timeLineEventIdActualFromBuildEvent).isEqualTo(timeLineEventIdExpected);
-    }
-
-    @Test
     void buildNOTIFICATION_CANCELLEDTest() {
         String timeLineEventIdExpected = String.format("NOTIFICATION_CANCELLED.IUN_%s", IUN);
         String timeLineEventIdActual = new TimelineEventIdBuilder()

@@ -185,19 +185,11 @@ Parameters:
   PaperNotificationFailedDynamoTableName:
     Type: String
     Description: 'Name of dynamodb table containing unreacheble notifications recipients'
-  
-  PaperNotificationFailedDynamoTableArn:
-    Type: String
-    Description: 'ARN of dynamodb table containing unreacheble notifications recipients'
-  
+
   DocumentCreationRequestTableName:
     Type: String
     Description: 'Name of dynamodb table containing unreacheble notifications recipients'
-  
-  DocumentCreationRequestTableArn:
-    Type: String
-    Description: 'ARN of dynamodb table containing unreacheble notifications recipients'
-    
+
   # --- SQS Queues ---
   ConsumedQueueMessagePerMinuteWorkflow:
     Type: Number
@@ -227,23 +219,27 @@ Parameters:
   ExternalChannelsOutputsQueueARN:
     Type: String
     Description: 'Pull external-channel messages from this Queue'
-    
-  ScheduledActionsQueueName:
-    Type: String
-    Description: 'Send and pull ready-to-do actions th this queue'
-    
+
   ScheduledActionsQueueARN:
     Type: String
     Description: 'Send and pull ready-to-do actions th this queue'
-    
+
+  ScheduledActionsQueueName:
+    Type: String
+    Description: 'Send and pull ready-to-do actions th this queue'
+
+  ScheduledActionsQueueURL:
+    Type: String
+    Description: pn-delivery-push actions queue URL
+
   ScheduledActionsQueueAlarmARN:
     Type: String
-    Description: delivery push actions done queue dlq alarm ARN
-    
+    Description: pn-delivery-push actions queue dlq alarm queue
+
   ScheduledActionsQueueAgeAlarmARN:
     Type: String
-    Description: delivery push actions done queue age alarm ARN
-    
+    Description: pn-delivery-push actions queue age alarm ARN
+
   NationalRegistries2DeliveryPushQueueName:
     Type: String
     Description: 'National Registries to delivery-push queue name'
@@ -272,14 +268,6 @@ Parameters:
   NotificationCancellationActionInsertLambdaName:
     Type: String
 
-  NotificationCancellationActionInsertDLQARN:
-    Type: String
-    Description: 'DLQ ARN for NotificationCancellationActionInsertLambda'
-
-  NotificationCancellationActionInsertDLQAlarmARN:
-    Type: String
-    Description: 'DLQ Alarm ARN for NotificationCancellationActionInsertLambda'
-
   NotificationCancellationActionInsertLambdaMaximumBatchingWindowInSeconds:
     Type: String
     Default: "60"
@@ -292,14 +280,6 @@ Parameters:
 
   PaperEventsCostUpdateLambdaName:
     Type: String
-
-  PaperEventsCostUpdateDLQARN:
-    Type: String
-    Description: 'DLQ ARN for PaperEventsCostUpdateLambda'
-
-  PaperEventsCostUpdateDLQAlarmARN:
-    Type: String
-    Description: 'DLQ Alarm ARN for PaperEventsCostUpdateLambda'
 
   PaperEventsCostUpdateLambdaMaximumBatchingWindowInSeconds:
     Type: String
@@ -321,15 +301,6 @@ Parameters:
     Type: String
     Default: ''
     Description: 'Base key of the microservice in the s3 bucket'
-
-  # CDC
-  CdcKinesisSourceStreamArn:
-    Type: String
-    Description: 'Where to send CDC'
-
-  CdcKinesisSourceStreamKeyArn:
-    Description: "Kinesis source CDC stream crypto key ARN"
-    Type: String
 
   NewWorkflowLambdasEnabledStart:
     Type: String
@@ -356,6 +327,39 @@ Parameters:
     Type: Number
     Default: 30
     Description: 'Number of days before document expiration is still valid for notification rework'
+
+  ActionQueueDetailType:
+    Type: CommaDelimitedList
+    Default: ''
+    Description: 'List of action detail type to accept in event bridge rule'
+
+  CdcKinesisSourceStreamArn:
+    Type: String
+    Default: ''
+    Description: 'ARN for pn-cdc-stream kinesis stream'
+
+  CdcKinesisSourceStreamKeyArn:
+    Type: String
+    Default: ''
+    Description: 'KMS Key ARN for the CDC Kinesis stream'
+
+  ESMKinesisFailureNotificationsBucketName:
+    Type: String
+    Description: "S3 bucket name for ESM Kinesis failure notifications"
+
+  NotificationCancellationActionInsertMaximumRecordAge:
+    Type: Number
+    Description: "Maximum record age in seconds for NotificationCancellationActionInsertLambdaKinesisSource"
+    Default: 604800 # 7 days
+
+  PaperEventsCostUpdateLambdaMaximumRecordAge:
+    Type: Number
+    Description: "Maximum record age in seconds for PaperEventsCostUpdateLambdaKinesisSource"
+    Default: 604800 # 7 days
+
+  CdcKinesisSourceStreamName:
+    Type: String
+    Description: 'Name of the kinesis stream where CDC are sent'
 
 Conditions:
     UseExternalChannelMock: !Equals [ !Ref ExternalChannelBaseUrl, "Mock" ]
@@ -454,8 +458,6 @@ Resources:
             - !Ref ScheduledActionsQueueAgeAlarmARN
             - !Ref NationalRegistries2DeliveryPushQueueAlarmARN
             - !Ref NationalRegistries2DeliveryPushQueueAgeAlarmARN
-            - !Ref NotificationCancellationActionInsertDLQAlarmARN
-            - !Ref PaperEventsCostUpdateDLQAlarmARN
             - !GetAtt NotificationCancellationActionInsertLambdaAlarms.Outputs.LambdaInvocationErrorLogsMetricAlarm
             - !GetAtt PaperEventsCostUpdateLambdaAlarms.Outputs.LambdaInvocationErrorLogsMetricAlarm
         LambdaArns: !Join
@@ -514,8 +516,8 @@ Resources:
               - 'dynamodb:DeleteItem'
               - 'dynamodb:UpdateItem'
             Resource:
-              - !Sub "${PaperNotificationFailedDynamoTableArn}"
-              - !Sub "${DocumentCreationRequestTableArn}"
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${PaperNotificationFailedDynamoTableName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DocumentCreationRequestTableName}
 
   #### Alarm for custom metric Autoscaling
   AlarmCustomAutoscalingWorkflow:
@@ -675,11 +677,13 @@ Resources:
             Resource: !Ref CdcKinesisSourceStreamKeyArn
           - Effect: Allow
             Action:
-              - sqs:ChangeMessageVisibility
-              - sqs:GetQueueAttributes
-              - sqs:GetQueueUrl
-              - sqs:SendMessage
-            Resource: !Ref NotificationCancellationActionInsertDLQARN
+              - s3:ListBucket
+              - s3:GetBucketLocation
+            Resource: !Sub arn:aws:s3:::${ESMKinesisFailureNotificationsBucketName}
+          - Effect: Allow
+            Action:
+              - s3:PutObject
+            Resource: !Sub arn:aws:s3:::${ESMKinesisFailureNotificationsBucketName}/*
 
   # CDC to NotificationCancellationActionInsert
   NotificationCancellationActionInsertLambdaSource:
@@ -702,10 +706,35 @@ Resources:
                 - !Ref NewWorkflowLambdasEnabledEnd
                 - ']}] } } }'
       MaximumBatchingWindowInSeconds: !Sub ${NotificationCancellationActionInsertLambdaMaximumBatchingWindowInSeconds}
+      MaximumRecordAgeInSeconds: !Ref NotificationCancellationActionInsertMaximumRecordAge
       StartingPosition: TRIM_HORIZON
       DestinationConfig:
         OnFailure:
-          Destination: !Ref NotificationCancellationActionInsertDLQARN
+          Destination: !Sub arn:aws:s3:::${ESMKinesisFailureNotificationsBucketName}
+
+  NotificationCancellationActionInsertKinesisFailuresAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-NotificationCancellationActionInsert-ESM-Alarm"
+      AlarmDescription: "CloudWatch alarm for when NotificationCancellationActionInsertLambda has Kinesis stream read failures, which can indicate problems with the function processing or with the stream itself."
+      TreatMissingData: notBreaching        
+      AlarmActions:
+        - !Ref AlarmSNSTopicArn
+      OKActions:
+        - !Ref AlarmSNSTopicArn
+      Dimensions:
+        - Value: !Ref NotificationCancellationActionInsertLambda
+          Name: FunctionName
+        - Value: !Ref CdcKinesisSourceStreamName
+          Name: StreamName
+      DatapointsToAlarm: 1           
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 6
+      Period: 600
+      Namespace: ESM/Kinesis   
+      MetricName: ProcessingFailures
+      Statistic: Maximum      
+      Threshold: 1
 
   NotificationCancellationActionInsertLambdaAlarms:
     Type: AWS::CloudFormation::Stack
@@ -790,16 +819,18 @@ Resources:
               !Ref DeliveryPushToExternalRegistriesQueueARN
           - Effect: Allow
             Action:
-              - sqs:ChangeMessageVisibility
-              - sqs:GetQueueAttributes
-              - sqs:GetQueueUrl
-              - sqs:SendMessage
-            Resource:
-              !Ref PaperEventsCostUpdateDLQARN
+              - s3:ListBucket
+              - s3:GetBucketLocation
+            Resource: !Sub arn:aws:s3:::${ESMKinesisFailureNotificationsBucketName}
+          - Effect: Allow
+            Action:
+              - s3:PutObject
+            Resource: !Sub arn:aws:s3:::${ESMKinesisFailureNotificationsBucketName}/*
 
     # CDC to Paper Events Cost Update
   PaperEventsCostUpdateLambdaKinesisSource:
     Type: AWS::Lambda::EventSourceMapping
+    DependsOn: PaperEventsCostUpdateLambdaPolicy
     Properties:
       BatchSize: !Sub ${PaperEventsCostUpdateLambdaBatchSize}
       BisectBatchOnFunctionError: true
@@ -817,10 +848,35 @@ Resources:
                 - !Ref NewWorkflowLambdasEnabledEnd
                 - ']}] } } }'
       MaximumBatchingWindowInSeconds: !Sub ${PaperEventsCostUpdateLambdaMaximumBatchingWindowInSeconds}
+      MaximumRecordAgeInSeconds: !Ref PaperEventsCostUpdateLambdaMaximumRecordAge
       StartingPosition: TRIM_HORIZON
       DestinationConfig:
         OnFailure:
-          Destination: !Ref PaperEventsCostUpdateDLQARN
+          Destination: !Sub arn:aws:s3:::${ESMKinesisFailureNotificationsBucketName}
+
+  PaperEventsCostUpdateKinesisFailuresAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-PaperEventsCostUpdate-ESM-Alarm"
+      AlarmDescription: "CloudWatch alarm for when PaperEventsCostUpdateLambda has Kinesis stream read failures, which can indicate problems with the function processing or with the stream itself."
+      TreatMissingData: notBreaching        
+      AlarmActions:
+        - !Ref AlarmSNSTopicArn
+      OKActions:
+        - !Ref AlarmSNSTopicArn
+      Dimensions:
+        - Value: !Ref PaperEventsCostUpdateLambda
+          Name: FunctionName
+        - Value: !Ref CdcKinesisSourceStreamName
+          Name: StreamName
+      DatapointsToAlarm: 1           
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 6
+      Period: 600
+      Namespace: ESM/Kinesis   
+      MetricName: ProcessingFailures
+      Statistic: Maximum      
+      Threshold: 1
 
   PaperEventsCostUpdateLambdaAlarms:
     Type: AWS::CloudFormation::Stack
@@ -829,3 +885,61 @@ Resources:
       Parameters:
         FunctionName: !Ref PaperEventsCostUpdateLambda
         AlarmSNSTopicArn: !Ref AlarmSNSTopicArn
+
+  EventBusEnqueueRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref "AWS::AccountId"
+        Version: "2012-10-17"
+      Policies:
+        - PolicyName: !Sub ${ProjectName}-actionmanager-2-actionqueue-eventBusRulePolicy
+          PolicyDocument:
+            Statement:
+              - Sid: putEvents
+                Action:
+                  - sqs:SendMessage
+                Effect: Allow
+                Resource:
+                  - !Ref ScheduledActionsQueueARN
+
+  PnCoreEventBusActionManagerToActionsQueueRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Route ActionManager events to scheduled actions queue
+      RoleArn: !GetAtt "EventBusEnqueueRole.Arn"
+      EventBusName: !Sub '${ProjectName}-CoreEventBus'
+      EventPattern:
+        detail-type: ["ActionManagerEventOutcome"]
+        detail:
+          routingActionType: !Ref ActionQueueDetailType
+      Targets:
+        - Id: !Sub '${ProjectName}-CoreEventBus-ActionManager2ActionQueue'
+          Arn: !Ref ScheduledActionsQueueARN
+          InputPath: $.detail.body
+          DeadLetterConfig:
+            Arn: !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:pn-CoreEventBus-DLQ
+
+  ScheduledActionsQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref ScheduledActionsQueueURL
+      PolicyDocument:
+        Statement:
+          - Sid: AllowEventBridgeToSendMessage
+            Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sqs:SendMessage
+            Resource: !Ref ScheduledActionsQueueARN
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !GetAtt PnCoreEventBusActionManagerToActionsQueueRule.Arn

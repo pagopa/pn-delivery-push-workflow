@@ -73,4 +73,8 @@ public interface TimelineService {
     Set<TimelineElementInternal> getTimelineByIunTimelineId(String iun, String timelineId, boolean confidentialInfoRequired);
 
     NotificationHistoryResponse getTimelineAndStatusHistory(String iun, int recipients, Instant createdAt);
+
+    boolean isNotificationCancellationRequested(String iun);
+
+    Optional<Instant> getNotificationCancellationRequestedTimestamp(String iun);
 }

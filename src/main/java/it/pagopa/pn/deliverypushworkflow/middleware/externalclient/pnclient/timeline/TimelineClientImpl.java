@@ -17,6 +17,9 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
+
+import static it.pagopa.pn.deliverypushworkflow.exceptions.PnDeliveryPushExceptionCodes.ERROR_CODE_TIMELINESERVICE_TIMELINE_ELEMENT_NOT_PRESENT;
 
 @CustomLog
 @RequiredArgsConstructor
@@ -35,7 +38,8 @@ public class TimelineClientImpl implements TimelineClient {
         } catch (PnHttpResponseException ex) {
             if (ex.getStatusCode() == HttpStatus.SC_CONFLICT) {
                 log.warn("Exception idconflict is expected for retry, letting flow continue");
-                return new AddTimelineElementResponse(null, true);
+                //response valida solo fino a che correzione timeline non è attiva, da modificare su correzione timeline fase 3
+                return new AddTimelineElementResponse(element.getElementId(), true);
             }
 
             log.error("Error while invoking {}: {}", ADD_TIMELINE_ELEMENT, ex.getMessage(), ex);
@@ -102,5 +106,22 @@ public class TimelineClientImpl implements TimelineClient {
         log.logInvokingExternalService(CLIENT_NAME, GET_TIMELINE_AND_STATUS_HISTORY);
 
         return timelineControllerApi.getTimelineAndStatusHistory(iun, recipients, createdAt);
+    }
+
+    @Override
+    public Optional<CancellationRequestResponse> getNotificationCancellationRequested(String iun) {
+        log.logInvokingExternalService(CLIENT_NAME, GET_NOTIFICATION_CANCELLATION_REQUESTED);
+        try {
+            return Optional.ofNullable(timelineControllerApi.getCancellationRequest(iun));
+        } catch (PnHttpResponseException pnHttpResponseException) {
+            if (pnHttpResponseException.getStatusCode() == org.springframework.http.HttpStatus.NOT_FOUND.value()
+                    && pnHttpResponseException.getProblem().getErrors().getFirst().getCode().equals(ERROR_CODE_TIMELINESERVICE_TIMELINE_ELEMENT_NOT_PRESENT)) {
+                log.debug("Cancellation request not found for iun: {}. Returning empty optional.", iun);
+                return Optional.empty();
+            }
+            else {
+                throw pnHttpResponseException;
+            }
+        }
     }
 }
