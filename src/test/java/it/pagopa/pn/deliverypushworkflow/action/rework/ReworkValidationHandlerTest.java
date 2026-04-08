@@ -47,6 +47,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkConstant.KO;
 import static org.mockito.Mockito.*;
 
 @org.junit.jupiter.api.extension.ExtendWith(MockitoExtension.class)
@@ -121,19 +122,12 @@ class ReworkValidationHandlerTest {
         notificationHistoryResponse.setNotificationStatus(NotificationStatus.EFFECTIVE_DATE);
 
         when(timelineService.getTimeline(anyString(), anyBoolean())).thenReturn(timeline);
-        when(pnDeliveryPushWorkflowConfigs.getReworkTTLAddressRange()).thenReturn(10);
         when(timelineUtils.checkIsNotificationCancellationRequested(any())).thenReturn(false);
         when(notificationService.getNotificationByIun(any())).thenReturn(notification);
         when(timelineService.getTimelineAndStatusHistory(any(),anyInt(),any())).thenReturn(notificationHistoryResponse);
 
         FileDownloadResponse fileResponse = new FileDownloadResponse();
         fileResponse.setRetentionUntil(OffsetDateTime.now().plusDays(120));
-
-        when(safeStorageService.getFile(any(),any(),any())).thenReturn(Mono.just(fileResponse));
-
-        CheckAddressResponse response = new CheckAddressResponse();
-        response.setEndValidity(Instant.now().plus(20, java.time.temporal.ChronoUnit.DAYS));
-        when(paperChannelAddressClient.checkAddress(anyString())).thenReturn(Mono.just(response));
 
         notificationReworkHandler.handleNotificationRework(action).block();
 
@@ -742,10 +736,10 @@ class ReworkValidationHandlerTest {
     @Test
     void handleNotificationAttachments_INVALID_ATTACHMENT() {
         NotificationReworkValidationDetails detail = new NotificationReworkValidationDetails();
-        detail.setReworkAttempt("0");
+        detail.setReworkAttempt("ATTEMPT_0");
         detail.setReworkRecIndex("RECINDEX_0");
         detail.setReworkPcRetry("PCRETRY_0");
-        detail.setReworkExpectedFinalStatus("OK");
+        detail.setReworkExpectedFinalStatus("KO");
         Action action = Action.builder()
                 .iun("XLJE-VRQM-VKNQ-202507-K-1")
                 .details(detail)
@@ -813,10 +807,10 @@ class ReworkValidationHandlerTest {
     @Test
     void handleNotificationAttachments_EXPIRED_ATTACHMENT() {
         NotificationReworkValidationDetails detail = new NotificationReworkValidationDetails();
-        detail.setReworkAttempt("0");
+        detail.setReworkAttempt("ATTEMPT_0");
         detail.setReworkRecIndex("RECINDEX_0");
         detail.setReworkPcRetry("PCRETRY_0");
-        detail.setReworkExpectedFinalStatus("OK");
+        detail.setReworkExpectedFinalStatus("KO");
         Action action = Action.builder()
                 .iun("XLJE-VRQM-VKNQ-202507-K-1")
                 .details(detail)
@@ -883,9 +877,10 @@ class ReworkValidationHandlerTest {
     @Test
     void handleNotificationAddress_EXPIRED_ANALOG_ADDRESS() {
         NotificationReworkValidationDetails detail = new NotificationReworkValidationDetails();
-        detail.setReworkAttempt("0");
+        detail.setReworkAttempt("ATTEMPT_0");
         detail.setReworkRecIndex("RECINDEX_0");
         detail.setReworkPcRetry("PCRETRY_0");
+        detail.setReworkExpectedFinalStatus("KO");
         Action action = Action.builder()
                 .iun("XLJE-VRQM-VKNQ-202507-K-1")
                 .details(detail)
@@ -951,9 +946,10 @@ class ReworkValidationHandlerTest {
     @Test
     void handleNotificationAddress_INVALID_ANALOG_ADDRESS() {
         NotificationReworkValidationDetails detail = new NotificationReworkValidationDetails();
-        detail.setReworkAttempt("0");
+        detail.setReworkAttempt("ATTEMPT_0");
         detail.setReworkRecIndex("RECINDEX_0");
         detail.setReworkPcRetry("PCRETRY_0");
+        detail.setReworkExpectedFinalStatus(KO);
         Action action = Action.builder()
                 .iun("XLJE-VRQM-VKNQ-202507-K-1")
                 .details(detail)
@@ -1018,12 +1014,12 @@ class ReworkValidationHandlerTest {
     }
 
     @Test
-    void handleNotificationAddress_EXPECTED_FINAL_STATUS_OK() {
+    void handleNotificationAddress_InvalidAnalogAddress() {
         NotificationReworkValidationDetails detail = new NotificationReworkValidationDetails();
         detail.setReworkAttempt("ATTEMPT_0");
         detail.setReworkRecIndex("RECINDEX_0");
         detail.setReworkPcRetry("PCRETRY_0");
-        detail.setReworkExpectedFinalStatus("OK");
+        detail.setReworkExpectedFinalStatus("KO");
         Action action = Action.builder()
                 .iun("XLJE-VRQM-VKNQ-202507-K-1")
                 .details(detail)
