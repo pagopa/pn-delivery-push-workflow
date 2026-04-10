@@ -357,6 +357,10 @@ Parameters:
     Type: String
     Description: 'Name of the kinesis stream where CDC are sent'
 
+  DeliveryPushCxId:
+    Type: String
+    Description: 'delivery push cx id '
+
 Conditions:
     UseExternalChannelMock: !Equals [ !Ref ExternalChannelBaseUrl, "Mock" ]
 
@@ -963,7 +967,7 @@ Resources:
       EventPattern:
         detail-type: [ "PaperChannelOutcomeEvent" ]
         detail:
-          clientId: [ !Ref DeliveryPushPaperChannelUser ]
+          clientId: [ !Ref DeliveryPushCxId ]
       Targets:
         - Arn: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:PnCoreEventBusMatchedEventLogger
           Id: !Sub ${ProjectName}-Logger-AnalogToDeliveryPush
