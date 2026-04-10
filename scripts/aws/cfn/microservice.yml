@@ -191,6 +191,18 @@ Parameters:
     Description: 'Name of dynamodb table containing unreacheble notifications recipients'
 
   # --- SQS Queues ---
+  AnalogToDeliveryPushQueueName:
+    Type: String
+    Description: 'Analog to delivery push queue name'
+
+  AnalogToDeliveryPushQueueURL:
+    Type: String
+    Description: 'Analog to delivery push queue URL'
+
+  AnalogToDeliveryPushQueueARN:
+    Type: String
+    Description: 'Analog to delivery push queue ARN'
+
   ConsumedQueueMessagePerMinuteWorkflow:
     Type: Number
     Default: 0
@@ -407,6 +419,7 @@ Resources:
         ContainerEnvEntry28: !Sub 'PN_DELIVERYPUSHWORKFLOW_INVALIDABLECATEGORIES={{resolve:ssm:/config/timeline/invalidable-categories}}'
         ContainerEnvEntry29: !Sub 'PN_DELIVERYPUSHWORKFLOW_RADDALTBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
         ContainerEnvEntry30: 'PN_DELIVERYPUSHWORKFLOW_RADDSEARCHMODE={{resolve:ssm:/config/radd-coverage/search-mode}}'
+        ContainerEnvEntry31: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_ANALOGRESPONSEEVENT=${AnalogToDeliveryPushQueueName}'
         ApplicativeEnvFileChecksum: !Ref ApplicativeEnvFileChecksum
         ParentMicroserviceName: !Sub '${ProjectName}-delivery-push-workflow'
         JavaToolOptions: '-Dreactor.netty.ioWorkerCount=50'
@@ -485,6 +498,7 @@ Resources:
               - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${ScheduledActionsQueueName}
               - !Ref NationalRegistries2DeliveryPushQueueARN
               - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${DeliveryPushToNotificationReworkUpdaterQueueName}
+              - !Ref DeliveryPushToExternalRegistriesQueueARN
           - Effect: Allow
             Action:
               - 'ssm:GetParameter'
@@ -566,6 +580,17 @@ Resources:
                   Value: !Ref ApplicationLoadBalancerMetricsDimensionName
               Namespace: "AWS/ApplicationELB"
               MetricName: "HealthyHostCount"
+            Period: !Ref AutoscalingCheckPeriod
+            Stat: Average
+          ReturnData: False
+        - Id: m6
+          MetricStat:
+            Metric:
+              Dimensions:
+                - Name: QueueName
+                  Value: !Ref AnalogToDeliveryPushQueueName
+              Namespace: "AWS/SQS"
+              MetricName: "ApproximateNumberOfMessagesVisible"
             Period: !Ref AutoscalingCheckPeriod
             Stat: Average
           ReturnData: False
@@ -893,6 +918,7 @@ Resources:
                 Effect: Allow
                 Resource:
                   - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${ScheduledActionsQueueName}
+                  - !Ref AnalogToDeliveryPushQueueARN
 
   PnCoreEventBusActionManagerToActionsQueueRule:
     Type: AWS::Events::Rule
@@ -927,3 +953,33 @@ Resources:
             Condition:
               ArnEquals:
                 aws:SourceArn: !GetAtt PnCoreEventBusActionManagerToActionsQueueRule.Arn
+
+  PnCoreEventBusToAnalogToDeliveryPushQueue:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Route Analog Events to pn-analog_to_delivery_push queue
+      RoleArn: !GetAtt "EventBusEnqueueRole.Arn"
+      EventBusName: !Sub '${ProjectName}-CoreEventBus'
+      EventPattern:
+        detail-type: [ "PaperChannelOutcomeEvent" ]
+        detail:
+          clientId: [ !Ref DeliveryPushPaperChannelUser ]
+      Targets:
+        - Arn: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:PnCoreEventBusMatchedEventLogger
+          Id: !Sub ${ProjectName}-Logger-AnalogToDeliveryPush
+          InputTransformer:
+            InputPathsMap:
+              "timestamp": "$.time"
+            InputTemplate: |
+              {
+                  "timestamp": <timestamp>,
+                  "ruleArn": <aws.events.rule-arn>,
+                  "ruleName": <aws.events.rule-name>,
+                  "ingestionTime": <aws.events.event.ingestion-time>,
+                  "originalEvent": <aws.events.event.json>
+              }
+        - Id: !Sub '${ProjectName}-CoreEventBus-AnalogToDeliveryPush'
+          Arn: !Ref AnalogToDeliveryPushQueueARN
+          InputPath: $.detail
+          DeadLetterConfig:
+            Arn: !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:pn-CoreEventBus-DLQ

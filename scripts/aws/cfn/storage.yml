@@ -70,12 +70,37 @@ Resources:
         LogGroupRetention: !Ref LogRetention
         LogGroupPrefix: '/aws/lambda'
 
+  # Internal queues
+  AnalogToDeliveryPushQueue:
+    Type: AWS::CloudFormation::Stack
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Properties:
+      TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/sqs-queue.yaml"
+      Parameters:
+        QueueName: !Sub '${ProjectName}-analog_to_delivery_push'
+        AlarmSNSTopicName: !Ref AlarmSNSTopicName
+        DelaySeconds: 1
+        VisibilityTimeout: 60
+
 Outputs:
   # Lambda functions
   NotificationCancellationActionInsertLambdaName:
     Value: !Sub "${ProjectName}-notificationCancellationActionInsert-workflow"
   PaperEventsCostUpdateLambdaName:
     Value: !Sub "${ProjectName}-paperEventsCostUpdate-workflow"
+
+  # AnalogToDeliveryPush
+  AnalogToDeliveryPushQueueName:
+    Value: !GetAtt AnalogToDeliveryPushQueue.Outputs.QueueName
+    Description: AnalogToDeliveryPush queue name
+  AnalogToDeliveryPushQueueURL:
+    Value: !GetAtt AnalogToDeliveryPushQueue.Outputs.QueueURL
+    Description: AnalogToDeliveryPush queue URL
+  AnalogToDeliveryPushQueueARN:
+    Value: !GetAtt AnalogToDeliveryPushQueue.Outputs.QueueARN
+    Description: AnalogToDeliveryPush queue ARN
+
 
   # Log groups
   EcsWorkflowLogGroup:

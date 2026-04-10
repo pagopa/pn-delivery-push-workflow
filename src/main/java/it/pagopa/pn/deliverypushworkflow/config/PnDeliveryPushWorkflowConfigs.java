@@ -121,6 +121,7 @@ public class PnDeliveryPushWorkflowConfigs {
         private String scheduledActions;
         private String nationalRegistriesEvents;
         private String notificationReworkUpdaterEvent;
+        private String analogResponseEvents;
     }
 
     @Data
