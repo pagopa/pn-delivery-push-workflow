@@ -22,8 +22,8 @@ public class AnalogResponseConsumer {
     @SqsListener(queueNames = "#{@pnDeliveryPushWorkflowConfigs.topics.analogResponseEvents}")
     public void analogResponseEventConsumer(Message<PaperChannelUpdate> message) {
         setMdc(message);
-        PaperChannelUpdate paperChannelUpdate = message.getPayload();
         try {
+            PaperChannelUpdate paperChannelUpdate = message.getPayload();
             log.debug("Handle message from {} with payload {}", PaperChannelSendClient.CLIENT_NAME, paperChannelUpdate);
             paperChannelResponseHandler.paperChannelResponseReceiver(paperChannelUpdate);
         } catch (Exception ex) {

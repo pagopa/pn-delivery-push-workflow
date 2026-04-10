@@ -23,7 +23,7 @@ class AnalogResponseEventConsumerTest {
     private AnalogResponseConsumer analogResponseConsumer;
 
     @Test
-    void pnNationalRegistriesEventInboundConsumer_processesValidMessageWithoutException() {
+    void analogResponseEventConsumer_processesValidMessageWithoutException() {
         Message<PaperChannelUpdate> message = mock(Message.class);
         when(message.getPayload()).thenReturn(new PaperChannelUpdate());
         when(message.getHeaders()).thenReturn(new MessageHeaders(emptyMap()));
@@ -34,7 +34,7 @@ class AnalogResponseEventConsumerTest {
     }
 
     @Test
-    void pnNationalRegistriesEventInboundConsumer_throwsExceptionOnProcessingError() {
+    void analogResponseEventConsumer_throwsExceptionOnProcessingError() {
         Message<PaperChannelUpdate> message = mock(org.springframework.messaging.Message.class);
         doThrow(new RuntimeException("Errore simulato"))
                 .when(message).getPayload();
@@ -45,7 +45,7 @@ class AnalogResponseEventConsumerTest {
     }
 
     @Test
-    void pnNationalRegistriesEventInboundConsumer_throwsExceptionOnNullMessage() {
+    void analogResponseEventConsumer_throwsExceptionOnNullMessage() {
         assertThrows(NullPointerException.class, () -> analogResponseConsumer.analogResponseEventConsumer(null));
     }
 }

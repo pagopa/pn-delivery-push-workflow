@@ -419,7 +419,7 @@ Resources:
         ContainerEnvEntry28: !Sub 'PN_DELIVERYPUSHWORKFLOW_INVALIDABLECATEGORIES={{resolve:ssm:/config/timeline/invalidable-categories}}'
         ContainerEnvEntry29: !Sub 'PN_DELIVERYPUSHWORKFLOW_RADDALTBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
         ContainerEnvEntry30: 'PN_DELIVERYPUSHWORKFLOW_RADDSEARCHMODE={{resolve:ssm:/config/radd-coverage/search-mode}}'
-        ContainerEnvEntry31: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_ANALOGRESPONSEEVENT=${AnalogToDeliveryPushQueueName}'
+        ContainerEnvEntry31: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_ANALOGRESPONSEEVENTS=${AnalogToDeliveryPushQueueName}'
         ApplicativeEnvFileChecksum: !Ref ApplicativeEnvFileChecksum
         ParentMicroserviceName: !Sub '${ProjectName}-delivery-push-workflow'
         JavaToolOptions: '-Dreactor.netty.ioWorkerCount=50'
@@ -498,7 +498,7 @@ Resources:
               - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${ScheduledActionsQueueName}
               - !Ref NationalRegistries2DeliveryPushQueueARN
               - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${DeliveryPushToNotificationReworkUpdaterQueueName}
-              - !Ref DeliveryPushToExternalRegistriesQueueARN
+              - !Ref AnalogToDeliveryPushQueueARN
           - Effect: Allow
             Action:
               - 'ssm:GetParameter'
@@ -595,7 +595,7 @@ Resources:
             Stat: Average
           ReturnData: False
         - Id: code
-          Expression: !Sub "IF(m5==0, 101, (100*(m1+m2+m3+m4)) / (${ConsumedQueueMessagePerMinuteWorkflow} * m5) )"
+          Expression: !Sub "IF(m5==0, 101, (100*(m1+m2+m3+m4+m6)) / (${ConsumedQueueMessagePerMinuteWorkflow} * m5) )"
           Label: !Sub "${ProjectName}-delivery-push-workflow-service-queue-custom-metric"
           ReturnData: False
         - Id: e1
