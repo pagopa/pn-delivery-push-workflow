@@ -987,3 +987,20 @@ Resources:
           InputPath: $.detail
           DeadLetterConfig:
             Arn: !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:pn-CoreEventBus-DLQ
+
+  AnalogToDeliveryPushQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref AnalogToDeliveryPushQueueURL
+      PolicyDocument:
+        Statement:
+          - Sid: AllowEventBridgeToSendAnalogMessage
+            Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sqs:SendMessage
+            Resource: !Ref AnalogToDeliveryPushQueueARN
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !GetAtt PnCoreEventBusToAnalogToDeliveryPushQueue.Arn
