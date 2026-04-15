@@ -71,6 +71,19 @@ Resources:
         LogGroupPrefix: '/aws/lambda'
 
   # Internal queues
+  AnalogToDeliveryPushQueue:
+    Type: AWS::CloudFormation::Stack
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Properties:
+      TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/sqs-queue.yaml"
+      Parameters:
+        QueueName: !Sub '${ProjectName}-analog_to_delivery_push'
+        AlarmSNSTopicName: !Ref AlarmSNSTopicName
+        DelaySeconds: 1
+        VisibilityTimeout: 60
+
+  # Internal queues
   ScheduledActionsQueue:
     Type: AWS::CloudFormation::Stack
     UpdateReplacePolicy: Retain
@@ -91,9 +104,16 @@ Outputs:
   PaperEventsCostUpdateLambdaName:
     Value: !Sub "${ProjectName}-paperEventsCostUpdate-workflow"
 
-  # Log groups
-  EcsWorkflowLogGroup:
-    Value: !GetAtt PnDeliveryPushWorkflowLogGroup.Outputs.LogGroupName
+  # AnalogToDeliveryPush
+  AnalogToDeliveryPushQueueName:
+    Value: !GetAtt AnalogToDeliveryPushQueue.Outputs.QueueName
+    Description: AnalogToDeliveryPush queue name
+  AnalogToDeliveryPushQueueURL:
+    Value: !GetAtt AnalogToDeliveryPushQueue.Outputs.QueueURL
+    Description: AnalogToDeliveryPush queue URL
+  AnalogToDeliveryPushQueueARN:
+    Value: !GetAtt AnalogToDeliveryPushQueue.Outputs.QueueARN
+    Description: AnalogToDeliveryPush queue ARN
 
   # Scheduled Actions
   ScheduledActionsQueueName:
@@ -111,3 +131,7 @@ Outputs:
   ScheduledActionsQueueAgeAlarmARN:
     Value: !GetAtt ScheduledActionsQueue.Outputs.SqsAgeAlarmArn
     Description: pn-delivery-push actions queue age alarm ARN
+
+  # Log groups
+  EcsWorkflowLogGroup:
+    Value: !GetAtt PnDeliveryPushWorkflowLogGroup.Outputs.LogGroupName

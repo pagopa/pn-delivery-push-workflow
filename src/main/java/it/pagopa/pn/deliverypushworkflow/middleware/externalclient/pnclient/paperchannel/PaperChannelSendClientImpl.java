@@ -19,6 +19,7 @@ import java.time.Instant;
 @CustomLog
 public class PaperChannelSendClientImpl implements PaperChannelSendClient {
     public static final String PRINT_TYPE_BN_FRONTE_RETRO = "BN_FRONTE_RETRO";
+    private static final String CLIENT_ID = "pn-delivery-push";
     private final PaperMessagesApi paperMessagesApi;
     private final NotificationReworkApi notificationReworkApi;
 
@@ -56,7 +57,7 @@ public class PaperChannelSendClientImpl implements PaperChannelSendClient {
         prepareRequest.setDiscoveredAddress(mapInternalToExternal(paperChannelPrepareRequest.getDiscoveredAddress()));
         prepareRequest.setAarWithRadd(paperChannelPrepareRequest.getAarWithRadd());
 
-        paperMessagesApi.sendPaperPrepareRequest(paperChannelPrepareRequest.getRequestId(), prepareRequest);
+        paperMessagesApi.sendPaperPrepareRequest(paperChannelPrepareRequest.getRequestId(), prepareRequest, CLIENT_ID);
 
         log.debug("[exit] prepare iun={}  address={} recipient={} requestId={} attachments={} relatedRequestId={} aarWithRadd={}",
                 paperChannelPrepareRequest.getNotificationInt().getIun(), LogUtils.maskGeneric(paperChannelPrepareRequest.getPaAddress()==null?"null":paperChannelPrepareRequest.getPaAddress().getAddress()), LogUtils.maskGeneric(paperChannelPrepareRequest.getRecipientInt().getDenomination()), paperChannelPrepareRequest.getRequestId(), paperChannelPrepareRequest.getAttachments(), paperChannelPrepareRequest.getRelatedRequestId(), paperChannelPrepareRequest.getAarWithRadd());
