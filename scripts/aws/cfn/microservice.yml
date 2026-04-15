@@ -231,10 +231,26 @@ Parameters:
   ExternalChannelsOutputsQueueARN:
     Type: String
     Description: 'Pull external-channel messages from this Queue'
-    
+
+  ScheduledActionsQueueARN:
+    Type: String
+    Description: 'Send and pull ready-to-do actions th this queue'
+
   ScheduledActionsQueueName:
     Type: String
     Description: 'Send and pull ready-to-do actions th this queue'
+
+  ScheduledActionsQueueURL:
+    Type: String
+    Description: pn-delivery-push actions queue URL
+
+  ScheduledActionsQueueAlarmARN:
+    Type: String
+    Description: pn-delivery-push actions queue dlq alarm queue
+
+  ScheduledActionsQueueAgeAlarmARN:
+    Type: String
+    Description: pn-delivery-push actions queue age alarm ARN
 
   NationalRegistries2DeliveryPushQueueName:
     Type: String
@@ -455,8 +471,8 @@ Resources:
           - - !GetAtt DeliveryPushWorkflowServiceMicroservice.Outputs.FatalLogsMetricAlarmArn
             - !Ref DeliveryPushInputsQueueAlarmARN
             - !Ref DeliveryPushInputsQueueAgeAlarmARN
-            - !Sub arn:aws:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:${ScheduledActionsQueueName}-DLQ-HasMessage
-            - !Sub arn:aws:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:${ScheduledActionsQueueName}-HasOldMessage
+            - !Ref ScheduledActionsQueueAlarmARN
+            - !Ref ScheduledActionsQueueAgeAlarmARN
             - !Ref NationalRegistries2DeliveryPushQueueAlarmARN
             - !Ref NationalRegistries2DeliveryPushQueueAgeAlarmARN
             - !GetAtt NotificationCancellationActionInsertLambdaAlarms.Outputs.LambdaInvocationErrorLogsMetricAlarm
@@ -469,7 +485,7 @@ Resources:
           - ','
           - - !Ref DeliveryPushInputsQueueARN
             - !Ref ExternalChannelsOutputsQueueARN
-            - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${ScheduledActionsQueueName}
+            - !Ref ScheduledActionsQueueARN
             - !Ref NationalRegistries2DeliveryPushQueueARN
             - !Ref DeliveryPushToExternalRegistriesQueueARN
         LogGroupsNames: !Join
@@ -499,7 +515,7 @@ Resources:
             Resource:
               - !Ref DeliveryPushInputsQueueARN
               - !Ref ExternalChannelsOutputsQueueARN
-              - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${ScheduledActionsQueueName}
+              - !Ref ScheduledActionsQueueARN
               - !Ref NationalRegistries2DeliveryPushQueueARN
               - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${DeliveryPushToNotificationReworkUpdaterQueueName}
               - !Ref AnalogToDeliveryPushQueueARN
@@ -921,7 +937,7 @@ Resources:
                   - sqs:SendMessage
                 Effect: Allow
                 Resource:
-                  - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${ScheduledActionsQueueName}
+                  - !Ref ScheduledActionsQueueARN
                   - !Ref AnalogToDeliveryPushQueueARN
 
   PnCoreEventBusActionManagerToActionsQueueRule:
@@ -936,7 +952,7 @@ Resources:
           routingActionType: !Ref ActionQueueDetailType
       Targets:
         - Id: !Sub '${ProjectName}-CoreEventBus-ActionManager2ActionQueue'
-          Arn: !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${ScheduledActionsQueueName}
+          Arn: !Ref ScheduledActionsQueueARN
           InputPath: $.detail.body
           DeadLetterConfig:
             Arn: !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:pn-CoreEventBus-DLQ
@@ -945,7 +961,7 @@ Resources:
     Type: AWS::SQS::QueuePolicy
     Properties:
       Queues:
-        - !Sub https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${ScheduledActionsQueueName}
+        - !Ref ScheduledActionsQueueURL
       PolicyDocument:
         Statement:
           - Sid: AllowEventBridgeToSendMessage
@@ -953,7 +969,7 @@ Resources:
             Principal:
               Service: events.amazonaws.com
             Action: sqs:SendMessage
-            Resource: !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${ScheduledActionsQueueName}
+            Resource: !Ref ScheduledActionsQueueARN
             Condition:
               ArnEquals:
                 aws:SourceArn: !GetAtt PnCoreEventBusActionManagerToActionsQueueRule.Arn

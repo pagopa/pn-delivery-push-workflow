@@ -83,6 +83,20 @@ Resources:
         DelaySeconds: 1
         VisibilityTimeout: 60
 
+  # Internal queues
+  ScheduledActionsQueue:
+    Type: AWS::CloudFormation::Stack
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Properties:
+      TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/sqs-queue.yaml"
+      Parameters:
+        QueueName: !Sub '${ProjectName}-delivery_push_actions'
+        AlarmSNSTopicName: !Ref AlarmSNSTopicName
+        VisibilityTimeout: 60
+        MaxReceiveCount: 10
+        DelaySeconds: 1
+
 Outputs:
   # Lambda functions
   NotificationCancellationActionInsertLambdaName:
@@ -101,6 +115,22 @@ Outputs:
     Value: !GetAtt AnalogToDeliveryPushQueue.Outputs.QueueARN
     Description: AnalogToDeliveryPush queue ARN
 
+  # Scheduled Actions
+  ScheduledActionsQueueName:
+    Value: !GetAtt ScheduledActionsQueue.Outputs.QueueName
+    Description: pn-delivery-push actions queue name
+  ScheduledActionsQueueURL:
+    Value: !GetAtt ScheduledActionsQueue.Outputs.QueueURL
+    Description: pn-delivery-push actions queue URL
+  ScheduledActionsQueueARN:
+    Value: !GetAtt ScheduledActionsQueue.Outputs.QueueARN
+    Description: pn-delivery-push actions queue ARN
+  ScheduledActionsQueueAlarmARN:
+    Value: !GetAtt ScheduledActionsQueue.Outputs.SqsDLQAlarmArn
+    Description: pn-delivery-push actions queue dlq alarm queue
+  ScheduledActionsQueueAgeAlarmARN:
+    Value: !GetAtt ScheduledActionsQueue.Outputs.SqsAgeAlarmArn
+    Description: pn-delivery-push actions queue age alarm ARN
 
   # Log groups
   EcsWorkflowLogGroup:

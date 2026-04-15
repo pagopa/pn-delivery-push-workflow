@@ -8,7 +8,6 @@
     "ConsumedQueueMessagePerMinuteWorkflow": "3000",
     "DocumentCreationRequestTableName": "pn-DocumentCreationRequestTable",
     "PaperNotificationFailedDynamoTableName": "pn-PaperNotificationFailed",
-    "ScheduledActionsQueueName": "pn-delivery_push_actions",
     "WireTapLogActivation": "false",
     "MountEfs": "false",
     "PnCronAnalyzer": "-",
