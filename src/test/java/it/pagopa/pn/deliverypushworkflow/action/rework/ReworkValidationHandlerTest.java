@@ -1,5 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.action.rework;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.commons.exceptions.PnHttpResponseException;
 import it.pagopa.pn.deliverypushworkflow.action.details.NotificationReworkValidationDetails;
@@ -16,6 +17,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationViewed
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ScheduleRefinementDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.actionmanager.api.ActionApi;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.actionmanager.model.NewAction;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.CheckAddressResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorage.model.FileDownloadResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationHistoryResponse;
@@ -1095,4 +1097,148 @@ class ReworkValidationHandlerTest {
         Assertions.assertEquals("L'indirizzo trovato ma scade nel " + DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneOffset.UTC).format(response.getEndValidity()), capturedErrorList.getFirst().getDescription());
 
     }
+
+    @Test
+    void handleNotificationExpectedFinalStatusCode_RESTART_skipCheck() {
+        NotificationReworkValidationDetails detail = new NotificationReworkValidationDetails();
+        detail.setReworkAttempt("ATTEMPT_0");
+        detail.setReworkRecIndex("RECINDEX_0");
+        detail.setReworkPcRetry("PCRETRY_0");
+        detail.setReworkExpectedFinalStatus("KO");
+        detail.setRequestType("RESTART");
+
+        Action action = Action.builder()
+                .iun("XLJE-VRQM-VKNQ-202507-K-1")
+                .details(detail)
+                .recipientIndex(1)
+                .build();
+
+        NotificationDocumentInt doc = NotificationDocumentInt.builder()
+                .ref(NotificationDocumentInt.Ref.builder().key("key").build())
+                .build();
+
+        NotificationInt notification = NotificationInt.builder()
+                .iun("XLJE-VRQM-VKNQ-202507-K-1")
+                .recipients(List.of(new NotificationRecipientInt()))
+                .documents(List.of(doc))
+                .build();
+
+        Set<TimelineElementInternal> timeline = new HashSet<>();
+        TimelineElementInternal timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE);
+        timelineElement.setElementId("PREPARE_ANALOG_DOMICILE.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0");
+        timeline.add(timelineElement);
+
+        timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK);
+        timelineElement.setElementId("SEND_ANALOG_FEEDBACK.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0");
+        timeline.add(timelineElement);
+
+        timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.REFINEMENT);
+        timelineElement.setElementId("REFINEMENT.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0");
+        timeline.add(timelineElement);
+
+        // Se il check non fosse bypassato, questa presenza farebbe fallire il KO su ATTEMPT_0.
+        timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.SEND_ANALOG_DOMICILE);
+        timelineElement.setElementId("SEND_ANALOG_DOMICILE.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_1");
+        timeline.add(timelineElement);
+
+        NotificationHistoryResponse notificationHistoryResponse = new NotificationHistoryResponse();
+        notificationHistoryResponse.setNotificationStatus(NotificationStatus.EFFECTIVE_DATE);
+
+        when(timelineService.getTimeline(anyString(), anyBoolean())).thenReturn(timeline);
+        when(pnDeliveryPushWorkflowConfigs.getReworkTTLAddressRange()).thenReturn(10);
+        when(pnDeliveryPushWorkflowConfigs.getNotificationReworkDocumentExpiringRange()).thenReturn(30);
+        when(timelineUtils.checkIsNotificationCancellationRequested(any())).thenReturn(false);
+        when(notificationService.getNotificationByIun(any())).thenReturn(notification);
+        when(timelineService.getTimelineAndStatusHistory(any(), anyInt(), any())).thenReturn(notificationHistoryResponse);
+
+        FileDownloadResponse fileResponse = new FileDownloadResponse();
+        fileResponse.setRetentionUntil(OffsetDateTime.now().plusDays(120));
+        when(safeStorageService.getFile(any(), any(), any())).thenReturn(Mono.just(fileResponse));
+
+        CheckAddressResponse response = new CheckAddressResponse();
+        response.setEndValidity(Instant.now().plus(20, java.time.temporal.ChronoUnit.DAYS));
+        when(paperChannelAddressClient.checkAddress(anyString())).thenReturn(Mono.just(response));
+
+        notificationReworkHandler.handleNotificationRework(action).block();
+
+        verify(actionManagerApi, times(1)).insertAction(any());
+        verify(reworkRequestEventPool, never()).scheduleFutureAction(any(), any());
+    }
+
+    @Test
+    void handleNotificationRework_insertActionContainsRequestType() throws Exception {
+        NotificationReworkValidationDetails detail = new NotificationReworkValidationDetails();
+        detail.setReworkId("RWK-123");
+        detail.setReworkAttempt("ATTEMPT_0");
+        detail.setReworkRecIndex("RECINDEX_0");
+        detail.setReworkPcRetry("PCRETRY_0");
+        detail.setRequestType("RESTART");
+
+        Action action = Action.builder()
+                .actionId("ACTION-123")
+                .iun("XLJE-VRQM-VKNQ-202507-K-1")
+                .details(detail)
+                .recipientIndex(1)
+                .build();
+
+        NotificationDocumentInt doc = NotificationDocumentInt.builder()
+                .ref(NotificationDocumentInt.Ref.builder().key("key").build())
+                .build();
+
+        NotificationInt notification = NotificationInt.builder()
+                .iun("XLJE-VRQM-VKNQ-202507-K-1")
+                .recipients(List.of(new NotificationRecipientInt()))
+                .documents(List.of(doc))
+                .build();
+
+        Set<TimelineElementInternal> timeline = new HashSet<>();
+        TimelineElementInternal timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE);
+        timelineElement.setElementId("PREPARE_ANALOG_DOMICILE.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0");
+        timeline.add(timelineElement);
+
+        timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK);
+        timelineElement.setElementId("SEND_ANALOG_FEEDBACK.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0");
+        timeline.add(timelineElement);
+
+        timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.REFINEMENT);
+        timelineElement.setElementId("REFINEMENT.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0");
+        timeline.add(timelineElement);
+
+        NotificationHistoryResponse notificationHistoryResponse = new NotificationHistoryResponse();
+        notificationHistoryResponse.setNotificationStatus(NotificationStatus.EFFECTIVE_DATE);
+
+        when(timelineService.getTimeline(anyString(), anyBoolean())).thenReturn(timeline);
+        when(pnDeliveryPushWorkflowConfigs.getReworkTTLAddressRange()).thenReturn(10);
+        when(pnDeliveryPushWorkflowConfigs.getNotificationReworkDocumentExpiringRange()).thenReturn(30);
+        when(timelineUtils.checkIsNotificationCancellationRequested(any())).thenReturn(false);
+        when(notificationService.getNotificationByIun(any())).thenReturn(notification);
+        when(timelineService.getTimelineAndStatusHistory(any(), anyInt(), any())).thenReturn(notificationHistoryResponse);
+
+        FileDownloadResponse fileResponse = new FileDownloadResponse();
+        fileResponse.setRetentionUntil(OffsetDateTime.now().plusDays(120));
+        when(safeStorageService.getFile(any(), any(), any())).thenReturn(Mono.just(fileResponse));
+
+        CheckAddressResponse response = new CheckAddressResponse();
+        response.setEndValidity(Instant.now().plus(20, java.time.temporal.ChronoUnit.DAYS));
+        when(paperChannelAddressClient.checkAddress(anyString())).thenReturn(Mono.just(response));
+
+        ArgumentCaptor<NewAction> captor = ArgumentCaptor.forClass(NewAction.class);
+
+        notificationReworkHandler.handleNotificationRework(action).block();
+
+        verify(actionManagerApi, times(1)).insertAction(captor.capture());
+        verify(reworkRequestEventPool, never()).scheduleFutureAction(any(), any());
+
+        JsonNode insertedDetails = objectMapper.readTree(captor.getValue().getDetails());
+
+        Assertions.assertEquals(detail.getRequestType(), insertedDetails.path("requestType").asText());
+    }
 }
+

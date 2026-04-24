@@ -73,6 +73,7 @@ public class ReworkValidationHandler {
 
     private final List<TimelineElementCategoryInt> ELEMENTS_WITHOUT_ATTEMPT_ID = List.of(NOTIFICATION_VIEWED_CREATION_REQUEST, SCHEDULE_REFINEMENT, ANALOG_FAILURE_WORKFLOW, ANALOG_SUCCESS_WORKFLOW, REFINEMENT, ANALOG_WORKFLOW_RECIPIENT_DECEASED);
     private final String POST_VALIDATION_PROCESS = ".POST_VALIDATION_PROCESS";
+    private static final String RESTART = "RESTART";
 
     public Mono<Void> handleNotificationRework(Action action) {
         log.info("Start handleRework - iun {} id {}", action.getIun(), action.getRecipientIndex());
@@ -138,6 +139,9 @@ public class ReworkValidationHandler {
 
     private Mono<NotificationReworkInfo> checkNotificationExpectedFinalStatusCodeAndThrow(NotificationReworkInfo info) {
         NotificationReworkValidationDetails detail = info.getActionDetail();
+        if (RESTART.equals(detail.getRequestType())) {
+            return Mono.just(info);
+        }
         return NotificationReworkUtils.checkNotificationExpectedFinalStatusCodeAndThrow(
             detail.getReworkAttempt(),
             detail.getReworkExpectedFinalStatus(),
@@ -389,11 +393,12 @@ public class ReworkValidationHandler {
         request.setReworkRecIndex(detail.getReworkRecIndex());
         request.setReworkAttempt(detail.getReworkAttempt());
         request.setCreatedAt(Instant.now());
+        request.setRequestType(detail.getRequestType());
         try {
             objectMapper.registerModule(new JavaTimeModule());
             newAction.setDetails(objectMapper.writeValueAsString(request));
         } catch (JsonProcessingException e) {
-            throw new IllegalArgumentException("Error creating converting NotificationReworkRequestedDetails to json", e);
+            throw new IllegalArgumentException("Error converting NotificationReworkRequestedDetails to json", e);
         }
         return newAction;
     }
