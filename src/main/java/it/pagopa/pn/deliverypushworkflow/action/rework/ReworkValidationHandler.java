@@ -13,6 +13,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.Notificat
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkError;
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkErrorCause;
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkInfo;
+import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.ReworkRequestTypeEnum;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationViewedCreationRequestDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ScheduleRefinementDetailsInt;
@@ -73,7 +74,7 @@ public class ReworkValidationHandler {
 
     private final List<TimelineElementCategoryInt> ELEMENTS_WITHOUT_ATTEMPT_ID = List.of(NOTIFICATION_VIEWED_CREATION_REQUEST, SCHEDULE_REFINEMENT, ANALOG_FAILURE_WORKFLOW, ANALOG_SUCCESS_WORKFLOW, REFINEMENT, ANALOG_WORKFLOW_RECIPIENT_DECEASED);
     private final String POST_VALIDATION_PROCESS = ".POST_VALIDATION_PROCESS";
-    private static final String RESTART = "RESTART";
+    private static final String RESTART = ReworkRequestTypeEnum.RESTART.name();;
 
     public Mono<Void> handleNotificationRework(Action action) {
         log.info("Start handleRework - iun {} id {}", action.getIun(), action.getRecipientIndex());
@@ -395,8 +396,9 @@ public class ReworkValidationHandler {
         request.setCreatedAt(Instant.now());
         request.setRequestType(detail.getRequestType());
         try {
-            objectMapper.registerModule(new JavaTimeModule());
-            newAction.setDetails(objectMapper.writeValueAsString(request));
+            ObjectMapper requestObjectMapper = objectMapper.copy();
+            requestObjectMapper.registerModule(new JavaTimeModule());
+            newAction.setDetails(requestObjectMapper.writeValueAsString(request));
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("Error converting NotificationReworkRequestedDetails to json", e);
         }
