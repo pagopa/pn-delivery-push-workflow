@@ -9,6 +9,7 @@ import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationSenderInt;
+import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.ReworkRequestTypeEnum;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.AddTimelineElementResponse;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationTimelineReworkedDetailsInt;
@@ -80,6 +81,7 @@ class ReworkRequestedHandlerTest {
         details.setCreatedAt(Instant.now());
         details.setReworkRequestId("REQID");
         details.setReworkId("REWORK_0_UUID");
+        details.setRequestType(ReworkRequestTypeEnum.REWORK);
 
         Action action = Action.builder()
                 .iun("IUN_2")
@@ -138,6 +140,8 @@ class ReworkRequestedHandlerTest {
         handler.handleNotificationReworkRequested(action).block();
 
         verify(timelineService).addTimelineElement(argumentCaptor.capture(), eq(notification));
+        verify(paperChannelService).initNotificationRework(details.getReworkRequestId(), details.getReworkId());
+        verify(paperChannelService, never()).prepareAnalogNotification(any(), anyInt(), anyInt());
         TimelineElementInternal capturedElement = argumentCaptor.getValue();
         Assertions.assertEquals("NOTIFICATION_TIMELINE_REWORKED", capturedElement.getCategory().name());
         Assertions.assertEquals("NOTIFICATION_TIMELINE_REWORKED.IUN_IUN_2.RECINDEX_0.ATTEMPT_0.REWORK_0", capturedElement.getElementId());
@@ -156,6 +160,7 @@ class ReworkRequestedHandlerTest {
         details.setCreatedAt(Instant.now());
         details.setReworkRequestId("REQID");
         details.setReworkId("REWORK_0_UUID");
+        details.setRequestType(ReworkRequestTypeEnum.REWORK);
 
         Action action = Action.builder()
                 .iun("IUN_2")
@@ -209,6 +214,8 @@ class ReworkRequestedHandlerTest {
         handler.handleNotificationReworkRequested(action).block();
 
         verify(timelineService).addTimelineElement(argumentCaptor.capture(), eq(notification));
+        verify(paperChannelService).initNotificationRework(details.getReworkRequestId(), details.getReworkId());
+        verify(paperChannelService, never()).prepareAnalogNotification(any(), anyInt(), anyInt());
         TimelineElementInternal capturedElement = argumentCaptor.getValue();
         Assertions.assertEquals("NOTIFICATION_TIMELINE_REWORKED", capturedElement.getCategory().name());
         Assertions.assertEquals("NOTIFICATION_TIMELINE_REWORKED.IUN_IUN_2.RECINDEX_0.ATTEMPT_1.REWORK_0", capturedElement.getElementId());
@@ -216,6 +223,119 @@ class ReworkRequestedHandlerTest {
         Assertions.assertEquals(1, detailsInt.getInvalidatedTimelineAndStatusHistory().size());
         Assertions.assertEquals(3, detailsInt.getInvalidatedTimelineAndStatusHistory().getFirst().getRelatedTimelineElementIds().size());
 
+    }
+
+    @Test
+    void handleNotificationReworkRequestedRestartHappyPath() {
+        NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
+        details.setRequestType(ReworkRequestTypeEnum.RESTART);
+        details.setReworkRecIndex("RECINDEX_0");
+        details.setReworkAttempt("ATTEMPT_1");
+        details.setCreatedAt(Instant.now());
+        details.setReworkRequestId("REQID");
+        details.setReworkId("REWORK_0_UUID");
+
+        Action action = Action.builder()
+                .iun("IUN_2")
+                .details(details)
+                .build();
+
+        NotificationHistoryResponse historyResponse = new NotificationHistoryResponse();
+        List<TimelineElement> timeline = buildTimeline();
+        historyResponse.setTimeline(timeline);
+        historyResponse.setNotificationStatus(NotificationStatus.DELIVERED);
+        NotificationStatusHistoryElement historyElement = new NotificationStatusHistoryElement();
+        historyElement.setStatus(NotificationStatus.DELIVERED);
+        historyElement.setRelatedTimelineElements(timeline.stream().map(TimelineElement::getElementId).toList());
+        historyResponse.setNotificationStatusHistory(List.of(historyElement));
+
+        when(timelineService.getTimeline(any(), anyBoolean())).thenReturn(buildTimeline().stream().map(t -> {;
+            TimelineElementInternal tei = new TimelineElementInternal();
+            tei.setCategory(TimelineElementCategoryInt.valueOf(t.getCategory().name()));
+            tei.setElementId(t.getElementId());
+            tei.setDetails(switch (t.getCategory()) {
+                case SEND_ANALOG_PROGRESS -> {
+                    SendAnalogProgressDetails details1 = (SendAnalogProgressDetails) t.getDetails();
+                    SendAnalogProgressDetailsInt detailsInt = new SendAnalogProgressDetailsInt();
+                    detailsInt.setDeliveryDetailCode(details1.getDeliveryDetailCode());
+                    yield detailsInt;
+                }
+                default -> null;
+            });
+            return tei;
+        }).collect(java.util.stream.Collectors.toSet()));
+        NotificationInt notification = NotificationInt.builder()
+                .sentAt(Instant.now())
+                .recipients(List.of(new NotificationRecipientInt()))
+                .iun("IUN_2")
+                .sender(NotificationSenderInt.builder().paId("paId").build())
+                .documents(Collections.emptyList())
+                .build();
+        when(notificationService.getNotificationByIun(anyString())).thenReturn(notification);
+        when(timelineService.getTimelineAndStatusHistory(anyString(), anyInt(), any())).thenReturn(historyResponse);
+        when(timelineService.addTimelineElement(any(), any())).thenReturn(new AddTimelineElementResponse(null, true));
+        when(pnDeliveryPushWorkflowConfigs.getTimeParams()).thenReturn(mock(TimeParams.class));
+        when(pnDeliveryPushWorkflowConfigs.getTimeParams().getAttachmentTimeToAddAfterExpiration()).thenReturn(java.time.Duration.ofDays(30));
+        when(pnDeliveryPushWorkflowConfigs.getInvalidableCategories()).thenReturn(List.of("PREPARE_ANALOG_DOMICILE","PREPARE_ANALOG_DOMICILE_FAILURE","SEND_ANALOG_DOMICILE","SEND_ANALOG_PROGRESS","SEND_ANALOG_FEEDBACK","ANALOG_SUCCESS_WORKFLOW","ANALOG_FAILURE_WORKFLOW","SCHEDULE_REFINEMENT","REFINEMENT","COMPLETELY_UNREACHABLE_CREATION_REQUEST","COMPLETELY_UNREACHABLE","ANALOG_WORKFLOW_RECIPIENT_DECEASED"));
+
+        handler.handleNotificationReworkRequested(action).block();
+
+        verify(paperChannelService, never()).initNotificationRework(anyString(), anyString());
+        verify(timelineService).addTimelineElement(any(), eq(notification));
+        verify(paperChannelService).prepareAnalogNotification(eq(notification), eq(0), eq(1));
+        verify(reworkRequestEventPool, never()).scheduleFutureAction(any(), any());
+    }
+
+    @Test
+    void handleNotificationReworkRequestedRestartErrorPathSchedulesFutureAction() {
+        NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
+        details.setRequestType(ReworkRequestTypeEnum.RESTART);
+        details.setReworkRecIndex("RECINDEX_0");
+        details.setReworkAttempt("ATTEMPT_1");
+        details.setCreatedAt(Instant.now());
+        details.setReworkRequestId("REQID");
+        details.setReworkId("REWORK_0_UUID");
+
+        Action action = Action.builder()
+                .iun("IUN_2")
+                .details(details)
+                .build();
+
+        when(timelineService.getTimeline(any(), anyBoolean())).thenReturn(buildTimeline().stream().map(t -> {;
+            TimelineElementInternal tei = new TimelineElementInternal();
+            tei.setCategory(TimelineElementCategoryInt.valueOf(t.getCategory().name()));
+            tei.setElementId(t.getElementId());
+            tei.setDetails(switch (t.getCategory()) {
+                case SEND_ANALOG_PROGRESS -> {
+                    SendAnalogProgressDetails details1 = (SendAnalogProgressDetails) t.getDetails();
+                    SendAnalogProgressDetailsInt detailsInt = new SendAnalogProgressDetailsInt();
+                    detailsInt.setDeliveryDetailCode(details1.getDeliveryDetailCode());
+                    yield detailsInt;
+                }
+                default -> null;
+            });
+            return tei;
+        }).collect(java.util.stream.Collectors.toSet()));
+
+        NotificationInt notification = NotificationInt.builder()
+                .sentAt(Instant.now())
+                .recipients(List.of(new NotificationRecipientInt()))
+                .iun("IUN_2")
+                .sender(NotificationSenderInt.builder().paId("paId").build())
+                .documents(Collections.emptyList())
+                .build();
+        when(notificationService.getNotificationByIun(anyString())).thenReturn(notification);
+        when(timelineService.getTimelineAndStatusHistory(anyString(), anyInt(), any())).thenThrow(new RuntimeException("history-error"));
+        when(pnDeliveryPushWorkflowConfigs.getTimeParams()).thenReturn(mock(TimeParams.class));
+        when(pnDeliveryPushWorkflowConfigs.getTimeParams().getAttachmentTimeToAddAfterExpiration()).thenReturn(java.time.Duration.ofDays(30));
+        when(pnDeliveryPushWorkflowConfigs.getInvalidableCategories()).thenReturn(List.of("PREPARE_ANALOG_DOMICILE","PREPARE_ANALOG_DOMICILE_FAILURE","SEND_ANALOG_DOMICILE","SEND_ANALOG_PROGRESS","SEND_ANALOG_FEEDBACK","ANALOG_SUCCESS_WORKFLOW","ANALOG_FAILURE_WORKFLOW","SCHEDULE_REFINEMENT","REFINEMENT","COMPLETELY_UNREACHABLE_CREATION_REQUEST","COMPLETELY_UNREACHABLE","ANALOG_WORKFLOW_RECIPIENT_DECEASED"));
+
+        handler.handleNotificationReworkRequested(action).block();
+
+        verify(paperChannelService, never()).initNotificationRework(anyString(), anyString());
+        verify(paperChannelService, never()).prepareAnalogNotification(any(), anyInt(), anyInt());
+        verify(timelineService, never()).addTimelineElement(any(), any());
+        verify(reworkRequestEventPool).scheduleFutureAction(any(), any());
     }
 
     @Test
@@ -227,6 +347,7 @@ class ReworkRequestedHandlerTest {
         details.setCreatedAt(Instant.now());
         details.setReworkRequestId("REQID");
         details.setReworkId("REWORK_0_UUID");
+        details.setRequestType(ReworkRequestTypeEnum.REWORK);
 
         Action action = Action.builder()
                 .iun("IUN_2")

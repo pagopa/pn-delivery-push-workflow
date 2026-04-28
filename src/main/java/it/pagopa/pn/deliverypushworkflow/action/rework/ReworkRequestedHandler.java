@@ -7,6 +7,7 @@ import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationDocumentInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
+import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.ReworkRequestTypeEnum;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendAnalogProgressDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
@@ -53,33 +54,62 @@ public class ReworkRequestedHandler {
 
     public Mono<Void> handleNotificationReworkRequested(Action action) {
         NotificationReworkRequestedDetails detail = (NotificationReworkRequestedDetails) action.getDetails();
+        if (ReworkRequestTypeEnum.RESTART.name().equals(detail.getRequestType().name())) {
+            return handleNotificationReworkRestart(action, detail);
+        } else {
+            return handleNotificationReworkRequestedImpl(action, detail);
+        }
+    }
+
+    private Mono<Void> handleNotificationReworkRequestedImpl(Action action, NotificationReworkRequestedDetails detail) {
         List<String> timelineElementsToInvalidate = new ArrayList<>();
         NotificationInt notificationInt = notificationService.getNotificationByIun(action.getIun());
         Set<TimelineElementInternal> timelineElements = timelineService.getTimeline(action.getIun(), true);
         return Mono.just(timelineElements)
-                .flatMap(timeline -> computeTimelineElementToInvalidate(timeline, detail.getReworkRecIndex(), detail.getReworkAttempt()))
+                .flatMap(timeline -> computeTimelineElementToInvalidate(timeline, detail.getReworkRecIndex(), detail.getReworkAttempt(), detail.getRequestType()))
                 .doOnNext(timelineElementsToInvalidate::addAll)
                 .flatMap(timelineElementIds -> startNotificationReworkProcess(detail).thenReturn(timelineElementIds))
                 .flatMap(strings -> updateAttachmentRetention(detail.getCreatedAt(), notificationInt.getIun(), notificationInt.getDocuments()))
                 .map(internalAction -> buildTimelineElement(notificationInt, timelineElementsToInvalidate, detail))
                 .onErrorResume(throwable -> {
-                        log.error("Errors during handleNotificationReworkRequested for iun {}: {}", action.getIun(), throwable.getMessage(), throwable);
-                        reworkRequestEventPool.scheduleFutureAction(NotificationReworkUtils.getReworkRequestEventAction(throwable.getMessage(), detail, action), ReworkRequestEventType.NOTIFICATION_REWORK_REQUESTED);
-                        return Mono.empty();
+                    log.error("Errors during handleNotificationReworkRequested for iun {}: {}", action.getIun(), throwable.getMessage(), throwable);
+                    reworkRequestEventPool.scheduleFutureAction(NotificationReworkUtils.getReworkRequestEventAction(throwable.getMessage(), detail, action), ReworkRequestEventType.NOTIFICATION_REWORK_REQUESTED);
+                    return Mono.empty();
                 })
                 .map(timelineElementInternal -> timelineService.addTimelineElement(timelineElementInternal, notificationInt))
                 .then();
     }
 
-    private Mono<List<String>> computeTimelineElementToInvalidate(Set<TimelineElementInternal> timelineElementInternalList, String recIndex, String attemptId) {
+    private Mono<Void> handleNotificationReworkRestart(Action action, NotificationReworkRequestedDetails detail) {
+        List<String> timelineElementsToInvalidate = new ArrayList<>();
+        NotificationInt notificationInt = notificationService.getNotificationByIun(action.getIun());
+        Integer recIndex = Objects.nonNull(detail.getReworkRecIndex().split("_")[1]) ? Integer.parseInt(detail.getReworkRecIndex().split("_")[1]) : null;
+        Integer attempt = Objects.nonNull(detail.getReworkAttempt().split("_")[1]) ? Integer.parseInt(detail.getReworkAttempt().split("_")[1]) : null;
+        Set<TimelineElementInternal> timelineElements = timelineService.getTimeline(action.getIun(), true);
+        return Mono.just(timelineElements)
+                .flatMap(timeline -> computeTimelineElementToInvalidate(timeline, detail.getReworkRecIndex(), detail.getReworkAttempt(), detail.getRequestType()))
+                .doOnNext(timelineElementsToInvalidate::addAll)
+                .flatMap(strings -> updateAttachmentRetention(detail.getCreatedAt(), notificationInt.getIun(), notificationInt.getDocuments()))
+                .map(internalAction -> buildTimelineElement(notificationInt, timelineElementsToInvalidate, detail))
+                .onErrorResume(throwable -> {
+                    log.error("Errors during handleNotificationReworkRequested for iun {}: {}", action.getIun(), throwable.getMessage(), throwable);
+                    reworkRequestEventPool.scheduleFutureAction(NotificationReworkUtils.getReworkRequestEventAction(throwable.getMessage(), detail, action), ReworkRequestEventType.NOTIFICATION_REWORK_REQUESTED);
+                    return Mono.empty();
+                })
+                .map(timelineElementInternal -> timelineService.addTimelineElement(timelineElementInternal, notificationInt))
+                .doOnNext(timelineElementInternal -> paperChannelService.prepareAnalogNotification(notificationInt, recIndex, attempt))
+                .then();
+    }
+
+    private Mono<List<String>> computeTimelineElementToInvalidate(Set<TimelineElementInternal> timelineElementInternalList, String recIndex, String attemptId, ReworkRequestTypeEnum requestType) {
         log.debug("Starting computeTimelineElementToInvalidate for recIndex {} and attemptId {}", recIndex, attemptId);
         return Flux.fromIterable(timelineElementInternalList)
                 .filter(elem -> pnDeliveryPushWorkflowConfigs.getInvalidableCategories().contains(elem.getCategory().name()))
                 .filter(elem -> elem.getElementId().contains(recIndex))
                 .filter(elem -> checkAttemptId(elem, attemptId))
-                .filter(elem -> checkPrepareAnalogDomicile(elem, attemptId))
-                .filter(elem -> checkSendAnalogDomicile(elem, attemptId))
-                .filter(timelineElementInternal -> checkDeliveryDetailCode(timelineElementInternal, attemptId))
+                .filter(elem -> checkPrepareAnalogDomicile(elem, attemptId, requestType))
+                .filter(elem -> checkSendAnalogDomicile(elem, attemptId, requestType))
+                .filter(timelineElementInternal -> checkDeliveryDetailCode(timelineElementInternal, attemptId, requestType))
                 .map(TimelineElementInternal::getElementId)
                 .collectList()
                 .doOnNext(list -> log.debug("Invalidable elements found: {}", list));
@@ -124,7 +154,11 @@ public class ReworkRequestedHandler {
     }
 
 
-    private boolean checkPrepareAnalogDomicile(TimelineElementInternal elem, String attempt) {
+    private boolean checkPrepareAnalogDomicile(TimelineElementInternal elem, String attempt, ReworkRequestTypeEnum requestType) {
+        if (TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE.equals(elem.getCategory()) && ReworkRequestTypeEnum.RESTART.name().equals(requestType.name())) {
+            return true;
+        }
+
         if (ATTEMPT_1.equals(attempt)) {
             return !TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE.equals(elem.getCategory());
         } else {
@@ -133,7 +167,11 @@ public class ReworkRequestedHandler {
     }
 
 
-    private boolean checkSendAnalogDomicile(TimelineElementInternal elem, String attempt) {
+    private boolean checkSendAnalogDomicile(TimelineElementInternal elem, String attempt, ReworkRequestTypeEnum requestType) {
+        if (TimelineElementCategoryInt.SEND_ANALOG_DOMICILE.equals(elem.getCategory()) && ReworkRequestTypeEnum.RESTART.name().equals(requestType.name())) {
+            return true;
+        }
+
         if (ATTEMPT_1.equals(attempt)) {
             return !TimelineElementCategoryInt.SEND_ANALOG_DOMICILE.equals(elem.getCategory());
         } else {
@@ -148,7 +186,7 @@ public class ReworkRequestedHandler {
         return true;
     }
 
-    private boolean checkDeliveryDetailCode(TimelineElementInternal elem, String attemptId) {
+    private boolean checkDeliveryDetailCode(TimelineElementInternal elem, String attemptId, ReworkRequestTypeEnum requestType) {
 
         if (elem.getCategory() != TimelineElementCategoryInt.SEND_ANALOG_PROGRESS) {
             return true;
@@ -164,7 +202,7 @@ public class ReworkRequestedHandler {
         }
 
         if ((isAttempt0 && elementId.contains(ATTEMPT_0)) || (isAttempt1 && elementId.contains(ATTEMPT_1))) {
-            return !details.getDeliveryDetailCode().startsWith(CON);
+            return ReworkRequestTypeEnum.RESTART.name().equals(requestType.name()) || !details.getDeliveryDetailCode().startsWith(CON);
         }
 
         return true;

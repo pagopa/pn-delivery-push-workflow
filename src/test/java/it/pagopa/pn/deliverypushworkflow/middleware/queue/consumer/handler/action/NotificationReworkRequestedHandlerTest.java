@@ -12,6 +12,7 @@ import org.springframework.messaging.MessageHeaders;
 import reactor.core.publisher.Mono;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
 
@@ -43,6 +44,22 @@ class NotificationReworkRequestedHandlerTest {
 
         handler.handle(action, headers);
 
+        Mockito.verify(reworkRequestedHandler).handleNotificationReworkRequested(action);
+    }
+
+    @Test
+    void handlePropagatesErrorWhenReworkServiceFails() {
+        Action action = Action.builder()
+                .iun("iun_456")
+                .recipientIndex(1)
+                .build();
+
+        RuntimeException expected = new RuntimeException("boom");
+        when(reworkRequestedHandler.handleNotificationReworkRequested(any())).thenReturn(Mono.error(expected));
+
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> handler.handle(action, headers));
+
+        assertEquals("boom", thrown.getMessage());
         Mockito.verify(reworkRequestedHandler).handleNotificationReworkRequested(action);
     }
 
