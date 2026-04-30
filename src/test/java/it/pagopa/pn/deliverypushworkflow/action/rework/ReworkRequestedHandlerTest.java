@@ -73,7 +73,7 @@ class ReworkRequestedHandlerTest {
     }
 
     @Test
-    void handleNotificationReworkRequestedAttempt0() {
+    void handleNotificationAttempt0() {
         // Arrange
         NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
         details.setReworkRecIndex("RECINDEX_0");
@@ -137,7 +137,7 @@ class ReworkRequestedHandlerTest {
         when(pnDeliveryPushWorkflowConfigs.getInvalidableCategories()).thenReturn(List.of("PREPARE_ANALOG_DOMICILE","PREPARE_ANALOG_DOMICILE_FAILURE","SEND_ANALOG_DOMICILE","SEND_ANALOG_PROGRESS","SEND_ANALOG_FEEDBACK","ANALOG_SUCCESS_WORKFLOW","ANALOG_FAILURE_WORKFLOW","SCHEDULE_REFINEMENT","REFINEMENT","COMPLETELY_UNREACHABLE_CREATION_REQUEST","COMPLETELY_UNREACHABLE","ANALOG_WORKFLOW_RECIPIENT_DECEASED"));
 
         // Act & Assert
-        handler.handleNotificationReworkRequested(action).block();
+        handler.handleNotification(action).block();
 
         verify(timelineService).addTimelineElement(argumentCaptor.capture(), eq(notification));
         verify(paperChannelService).initNotificationRework(details.getReworkRequestId(), details.getReworkId());
@@ -152,7 +152,7 @@ class ReworkRequestedHandlerTest {
     }
 
     @Test
-    void handleNotificationReworkRequestedAttempt1() {
+    void handleNotificationAttempt1() {
         // Arrange
         NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
         details.setReworkRecIndex("RECINDEX_0");
@@ -211,7 +211,7 @@ class ReworkRequestedHandlerTest {
         when(pnDeliveryPushWorkflowConfigs.getInvalidableCategories()).thenReturn(List.of("PREPARE_ANALOG_DOMICILE","PREPARE_ANALOG_DOMICILE_FAILURE","SEND_ANALOG_DOMICILE","SEND_ANALOG_PROGRESS","SEND_ANALOG_FEEDBACK","ANALOG_SUCCESS_WORKFLOW","ANALOG_FAILURE_WORKFLOW","SCHEDULE_REFINEMENT","REFINEMENT","COMPLETELY_UNREACHABLE_CREATION_REQUEST","COMPLETELY_UNREACHABLE","ANALOG_WORKFLOW_RECIPIENT_DECEASED"));
 
         // Act & Assert
-        handler.handleNotificationReworkRequested(action).block();
+        handler.handleNotification(action).block();
 
         verify(timelineService).addTimelineElement(argumentCaptor.capture(), eq(notification));
         verify(paperChannelService).initNotificationRework(details.getReworkRequestId(), details.getReworkId());
@@ -226,7 +226,7 @@ class ReworkRequestedHandlerTest {
     }
 
     @Test
-    void handleNotificationReworkRequestedRestartHappyPath() {
+    void handleNotificationRestartHappyPath() {
         NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
         details.setRequestType(ReworkRequestTypeEnum.RESTART);
         details.setReworkRecIndex("RECINDEX_0");
@@ -278,7 +278,7 @@ class ReworkRequestedHandlerTest {
         when(pnDeliveryPushWorkflowConfigs.getTimeParams().getAttachmentTimeToAddAfterExpiration()).thenReturn(java.time.Duration.ofDays(30));
         when(pnDeliveryPushWorkflowConfigs.getInvalidableCategories()).thenReturn(List.of("PREPARE_ANALOG_DOMICILE","PREPARE_ANALOG_DOMICILE_FAILURE","SEND_ANALOG_DOMICILE","SEND_ANALOG_PROGRESS","SEND_ANALOG_FEEDBACK","ANALOG_SUCCESS_WORKFLOW","ANALOG_FAILURE_WORKFLOW","SCHEDULE_REFINEMENT","REFINEMENT","COMPLETELY_UNREACHABLE_CREATION_REQUEST","COMPLETELY_UNREACHABLE","ANALOG_WORKFLOW_RECIPIENT_DECEASED"));
 
-        handler.handleNotificationReworkRequested(action).block();
+        handler.handleNotification(action).block();
 
         verify(paperChannelService, never()).initNotificationRework(anyString(), anyString());
         verify(timelineService).addTimelineElement(any(), eq(notification));
@@ -287,7 +287,7 @@ class ReworkRequestedHandlerTest {
     }
 
     @Test
-    void handleNotificationReworkRequestedRestartErrorPathSchedulesFutureAction() {
+    void handleNotificationRestartErrorPathSchedulesFutureAction() {
         NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
         details.setRequestType(ReworkRequestTypeEnum.RESTART);
         details.setReworkRecIndex("RECINDEX_0");
@@ -330,7 +330,7 @@ class ReworkRequestedHandlerTest {
         when(pnDeliveryPushWorkflowConfigs.getTimeParams().getAttachmentTimeToAddAfterExpiration()).thenReturn(java.time.Duration.ofDays(30));
         when(pnDeliveryPushWorkflowConfigs.getInvalidableCategories()).thenReturn(List.of("PREPARE_ANALOG_DOMICILE","PREPARE_ANALOG_DOMICILE_FAILURE","SEND_ANALOG_DOMICILE","SEND_ANALOG_PROGRESS","SEND_ANALOG_FEEDBACK","ANALOG_SUCCESS_WORKFLOW","ANALOG_FAILURE_WORKFLOW","SCHEDULE_REFINEMENT","REFINEMENT","COMPLETELY_UNREACHABLE_CREATION_REQUEST","COMPLETELY_UNREACHABLE","ANALOG_WORKFLOW_RECIPIENT_DECEASED"));
 
-        handler.handleNotificationReworkRequested(action).block();
+        handler.handleNotification(action).block();
 
         verify(paperChannelService, never()).initNotificationRework(anyString(), anyString());
         verify(paperChannelService, never()).prepareAnalogNotification(any(), anyInt(), anyInt());
@@ -339,7 +339,7 @@ class ReworkRequestedHandlerTest {
     }
 
     @Test
-    void handleNotificationReworkRequestedErrorBeforeInsertElement() {
+    void handleNotificationErrorBeforeInsertElement() {
         // Arrange
         NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
         details.setReworkRecIndex("RECINDEX_0");
@@ -379,7 +379,7 @@ class ReworkRequestedHandlerTest {
         when(notificationService.getNotificationByIun(anyString())).thenReturn(notification);
 
         // Act & Assert
-        handler.handleNotificationReworkRequested(action).block();
+        handler.handleNotification(action).block();
 
         verify(timelineService, times(0)).addTimelineElement(any(), any());
         verify(reworkRequestEventPool, times(1)).scheduleFutureAction(any(), any());

@@ -52,19 +52,33 @@ public class ReworkRequestedHandler {
     private final TimelineUtils timelineUtils;
     private final ReworkRequestEventPool reworkRequestEventPool;
 
-    public Mono<Void> handleNotificationReworkRequested(Action action) {
+    public Mono<Void> handleNotification(Action action) {
         NotificationReworkRequestedDetails detail = (NotificationReworkRequestedDetails) action.getDetails();
         if (ReworkRequestTypeEnum.RESTART.name().equals(detail.getRequestType().name())) {
-            return handleNotificationReworkRestart(action, detail);
+            return handleNotificationRestart(action, detail);
         } else {
-            return handleNotificationReworkRequestedImpl(action, detail);
+            return handleNotificationRework(action, detail);
         }
     }
 
-    private Mono<Void> handleNotificationReworkRequestedImpl(Action action, NotificationReworkRequestedDetails detail) {
-        List<String> timelineElementsToInvalidate = new ArrayList<>();
+    private Mono<Void> handleNotificationRework(Action action, NotificationReworkRequestedDetails detail) {
+        return inizializeReworkRequest(action, detail)
+                .then();
+    }
+
+    private Mono<Void> handleNotificationRestart(Action action, NotificationReworkRequestedDetails detail) {
+        Integer recIndex = Objects.nonNull(detail.getReworkRecIndex().split("_")[1]) ? Integer.parseInt(detail.getReworkRecIndex().split("_")[1]) : null;
+        Integer attempt = Objects.nonNull(detail.getReworkAttempt().split("_")[1]) ? Integer.parseInt(detail.getReworkAttempt().split("_")[1]) : null;
+        return inizializeReworkRequest(action, detail)
+                .doOnNext(notificationInt -> paperChannelService.prepareAnalogNotification(notificationInt, recIndex, attempt))
+                .then();
+    }
+
+    private Mono<NotificationInt> inizializeReworkRequest(Action action, NotificationReworkRequestedDetails detail) {
         NotificationInt notificationInt = notificationService.getNotificationByIun(action.getIun());
         Set<TimelineElementInternal> timelineElements = timelineService.getTimeline(action.getIun(), true);
+        List<String> timelineElementsToInvalidate = new ArrayList<>();
+
         return Mono.just(timelineElements)
                 .flatMap(timeline -> computeTimelineElementToInvalidate(timeline, detail.getReworkRecIndex(), detail.getReworkAttempt(), detail.getRequestType()))
                 .doOnNext(timelineElementsToInvalidate::addAll)
@@ -77,28 +91,7 @@ public class ReworkRequestedHandler {
                     return Mono.empty();
                 })
                 .map(timelineElementInternal -> timelineService.addTimelineElement(timelineElementInternal, notificationInt))
-                .then();
-    }
-
-    private Mono<Void> handleNotificationReworkRestart(Action action, NotificationReworkRequestedDetails detail) {
-        List<String> timelineElementsToInvalidate = new ArrayList<>();
-        NotificationInt notificationInt = notificationService.getNotificationByIun(action.getIun());
-        Integer recIndex = Objects.nonNull(detail.getReworkRecIndex().split("_")[1]) ? Integer.parseInt(detail.getReworkRecIndex().split("_")[1]) : null;
-        Integer attempt = Objects.nonNull(detail.getReworkAttempt().split("_")[1]) ? Integer.parseInt(detail.getReworkAttempt().split("_")[1]) : null;
-        Set<TimelineElementInternal> timelineElements = timelineService.getTimeline(action.getIun(), true);
-        return Mono.just(timelineElements)
-                .flatMap(timeline -> computeTimelineElementToInvalidate(timeline, detail.getReworkRecIndex(), detail.getReworkAttempt(), detail.getRequestType()))
-                .doOnNext(timelineElementsToInvalidate::addAll)
-                .flatMap(strings -> updateAttachmentRetention(detail.getCreatedAt(), notificationInt.getIun(), notificationInt.getDocuments()))
-                .map(internalAction -> buildTimelineElement(notificationInt, timelineElementsToInvalidate, detail))
-                .onErrorResume(throwable -> {
-                    log.error("Errors during handleNotificationReworkRequested for iun {}: {}", action.getIun(), throwable.getMessage(), throwable);
-                    reworkRequestEventPool.scheduleFutureAction(NotificationReworkUtils.getReworkRequestEventAction(throwable.getMessage(), detail, action), ReworkRequestEventType.NOTIFICATION_REWORK_REQUESTED);
-                    return Mono.empty();
-                })
-                .map(timelineElementInternal -> timelineService.addTimelineElement(timelineElementInternal, notificationInt))
-                .doOnNext(timelineElementInternal -> paperChannelService.prepareAnalogNotification(notificationInt, recIndex, attempt))
-                .then();
+                .thenReturn(notificationInt);
     }
 
     private Mono<List<String>> computeTimelineElementToInvalidate(Set<TimelineElementInternal> timelineElementInternalList, String recIndex, String attemptId, ReworkRequestTypeEnum requestType) {
@@ -210,6 +203,10 @@ public class ReworkRequestedHandler {
 
 
     public Mono<Void> startNotificationReworkProcess(NotificationReworkRequestedDetails details) {
+        if (ReworkRequestTypeEnum.RESTART.equals(details.getRequestType())) {
+            log.debug("Request type is RESTART, skipping paper channel rework process for reworkRequestId {} and reworkId {}", details.getReworkRequestId(), details.getReworkId());
+            return Mono.empty();
+        }
         log.info("Starting rework process for reworkRequestId {} and reworkId {}", details.getReworkRequestId(), details.getReworkId());
         return  Mono.fromRunnable(() -> paperChannelService.initNotificationRework(details.getReworkRequestId(), details.getReworkId()));
     }

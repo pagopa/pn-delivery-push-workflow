@@ -40,11 +40,11 @@ class NotificationReworkRequestedHandlerTest {
                 .recipientIndex(1)
                 .build();
 
-        when(reworkRequestedHandler.handleNotificationReworkRequested(any())).thenReturn(Mono.empty());
+        when(reworkRequestedHandler.handleNotification(any())).thenReturn(Mono.empty());
 
         handler.handle(action, headers);
 
-        Mockito.verify(reworkRequestedHandler).handleNotificationReworkRequested(action);
+        Mockito.verify(reworkRequestedHandler).handleNotification(action);
     }
 
     @Test
@@ -55,12 +55,12 @@ class NotificationReworkRequestedHandlerTest {
                 .build();
 
         RuntimeException expected = new RuntimeException("boom");
-        when(reworkRequestedHandler.handleNotificationReworkRequested(any())).thenReturn(Mono.error(expected));
+        when(reworkRequestedHandler.handleNotification(any())).thenReturn(Mono.error(expected));
 
         RuntimeException thrown = assertThrows(RuntimeException.class, () -> handler.handle(action, headers));
 
         assertEquals("boom", thrown.getMessage());
-        Mockito.verify(reworkRequestedHandler).handleNotificationReworkRequested(action);
+        Mockito.verify(reworkRequestedHandler).handleNotification(action);
     }
 
 }
