@@ -85,13 +85,13 @@ public class ReworkRequestedHandler {
                 .flatMap(timelineElementIds -> startNotificationReworkProcess(detail).thenReturn(timelineElementIds))
                 .flatMap(strings -> updateAttachmentRetention(detail.getCreatedAt(), notificationInt.getIun(), notificationInt.getDocuments()))
                 .map(internalAction -> buildTimelineElement(notificationInt, timelineElementsToInvalidate, detail))
+                .map(timelineElementInternal -> timelineService.addTimelineElement(timelineElementInternal, notificationInt))
+                .map(ignore -> notificationInt)
                 .onErrorResume(throwable -> {
                     log.error("Errors during handleNotificationReworkRequested for iun {}: {}", action.getIun(), throwable.getMessage(), throwable);
                     reworkRequestEventPool.scheduleFutureAction(NotificationReworkUtils.getReworkRequestEventAction(throwable.getMessage(), detail, action), ReworkRequestEventType.NOTIFICATION_REWORK_REQUESTED);
                     return Mono.empty();
-                })
-                .map(timelineElementInternal -> timelineService.addTimelineElement(timelineElementInternal, notificationInt))
-                .thenReturn(notificationInt);
+                });
     }
 
     private Mono<List<String>> computeTimelineElementToInvalidate(Set<TimelineElementInternal> timelineElementInternalList, String recIndex, String attemptId, ReworkRequestTypeEnum requestType) {

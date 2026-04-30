@@ -339,6 +339,146 @@ class ReworkRequestedHandlerTest {
     }
 
     @Test
+    void handleNotificationReworkSpecificInvalidatesOnlyRecAndSkipsPrepareAndSend() {
+        NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
+        details.setRequestType(ReworkRequestTypeEnum.REWORK);
+        details.setReworkRecIndex("RECINDEX_0");
+        details.setReworkAttempt("ATTEMPT_1");
+        details.setCreatedAt(Instant.now());
+        details.setReworkRequestId("REQID");
+        details.setReworkId("REWORK_0_UUID");
+
+        Action action = Action.builder()
+                .iun("IUN_2")
+                .details(details)
+                .build();
+
+        NotificationHistoryResponse historyResponse = new NotificationHistoryResponse();
+        List<TimelineElement> timeline = buildTimeline();
+        historyResponse.setTimeline(timeline);
+        historyResponse.setNotificationStatus(NotificationStatus.DELIVERED);
+        NotificationStatusHistoryElement historyElement = new NotificationStatusHistoryElement();
+        historyElement.setStatus(NotificationStatus.DELIVERED);
+        historyElement.setRelatedTimelineElements(timeline.stream().map(TimelineElement::getElementId).toList());
+        historyResponse.setNotificationStatusHistory(List.of(historyElement));
+
+        when(timelineService.getTimeline(any(), anyBoolean())).thenReturn(buildTimeline().stream().map(t -> {;
+            TimelineElementInternal tei = new TimelineElementInternal();
+            tei.setCategory(TimelineElementCategoryInt.valueOf(t.getCategory().name()));
+            tei.setElementId(t.getElementId());
+            tei.setDetails(switch (t.getCategory()) {
+                case SEND_ANALOG_PROGRESS -> {
+                    SendAnalogProgressDetails details1 = (SendAnalogProgressDetails) t.getDetails();
+                    SendAnalogProgressDetailsInt detailsInt = new SendAnalogProgressDetailsInt();
+                    detailsInt.setDeliveryDetailCode(details1.getDeliveryDetailCode());
+                    yield detailsInt;
+                }
+                default -> null;
+            });
+            return tei;
+        }).collect(java.util.stream.Collectors.toSet()));
+
+        NotificationInt notification = NotificationInt.builder()
+                .sentAt(Instant.now())
+                .recipients(List.of(new NotificationRecipientInt()))
+                .iun("IUN_2")
+                .sender(NotificationSenderInt.builder().paId("paId").build())
+                .documents(Collections.emptyList())
+                .build();
+
+        when(notificationService.getNotificationByIun(anyString())).thenReturn(notification);
+        when(timelineService.getTimelineAndStatusHistory(anyString(), anyInt(), any())).thenReturn(historyResponse);
+        when(timelineService.addTimelineElement(any(), any())).thenReturn(new AddTimelineElementResponse(null, true));
+        when(pnDeliveryPushWorkflowConfigs.getTimeParams()).thenReturn(mock(TimeParams.class));
+        when(pnDeliveryPushWorkflowConfigs.getTimeParams().getAttachmentTimeToAddAfterExpiration()).thenReturn(java.time.Duration.ofDays(30));
+        when(pnDeliveryPushWorkflowConfigs.getInvalidableCategories()).thenReturn(List.of("PREPARE_ANALOG_DOMICILE","PREPARE_ANALOG_DOMICILE_FAILURE","SEND_ANALOG_DOMICILE","SEND_ANALOG_PROGRESS","SEND_ANALOG_FEEDBACK","ANALOG_SUCCESS_WORKFLOW","ANALOG_FAILURE_WORKFLOW","SCHEDULE_REFINEMENT","REFINEMENT","COMPLETELY_UNREACHABLE_CREATION_REQUEST","COMPLETELY_UNREACHABLE","ANALOG_WORKFLOW_RECIPIENT_DECEASED"));
+
+        ArgumentCaptor<TimelineElementInternal> argumentCaptor = ArgumentCaptor.forClass(TimelineElementInternal.class);
+
+        handler.handleNotification(action).block();
+
+        verify(timelineService).addTimelineElement(argumentCaptor.capture(), eq(notification));
+        verify(paperChannelService).initNotificationRework(details.getReworkRequestId(), details.getReworkId());
+        verify(paperChannelService, never()).prepareAnalogNotification(any(), anyInt(), anyInt());
+
+        List<String> invalidatedIds = extractInvalidatedTimelineIds(argumentCaptor.getValue());
+        Assertions.assertTrue(invalidatedIds.contains("SEND_ANALOG_PROGRESS.RECINDEX_0.ATTEMPT_1.IDX_0"));
+        Assertions.assertFalse(invalidatedIds.contains("SEND_ANALOG_PROGRESS.RECINDEX_0.ATTEMPT_1.IDX_2"));
+        Assertions.assertFalse(invalidatedIds.contains("PREPARE_ANALOG_DOMICILE.RECINDEX_0.ATTEMPT_1"));
+        Assertions.assertFalse(invalidatedIds.contains("SEND_ANALOG_DOMICILE.RECINDEX_0.ATTEMPT_1"));
+    }
+
+    @Test
+    void handleNotificationRestartSpecificInvalidatesConAndIncludesPrepareAndSend() {
+        NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
+        details.setRequestType(ReworkRequestTypeEnum.RESTART);
+        details.setReworkRecIndex("RECINDEX_0");
+        details.setReworkAttempt("ATTEMPT_1");
+        details.setCreatedAt(Instant.now());
+        details.setReworkRequestId("REQID");
+        details.setReworkId("REWORK_0_UUID");
+
+        Action action = Action.builder()
+                .iun("IUN_2")
+                .details(details)
+                .build();
+
+        NotificationHistoryResponse historyResponse = new NotificationHistoryResponse();
+        List<TimelineElement> timeline = buildTimeline();
+        historyResponse.setTimeline(timeline);
+        historyResponse.setNotificationStatus(NotificationStatus.DELIVERED);
+        NotificationStatusHistoryElement historyElement = new NotificationStatusHistoryElement();
+        historyElement.setStatus(NotificationStatus.DELIVERED);
+        historyElement.setRelatedTimelineElements(timeline.stream().map(TimelineElement::getElementId).toList());
+        historyResponse.setNotificationStatusHistory(List.of(historyElement));
+
+        when(timelineService.getTimeline(any(), anyBoolean())).thenReturn(buildTimeline().stream().map(t -> {;
+            TimelineElementInternal tei = new TimelineElementInternal();
+            tei.setCategory(TimelineElementCategoryInt.valueOf(t.getCategory().name()));
+            tei.setElementId(t.getElementId());
+            tei.setDetails(switch (t.getCategory()) {
+                case SEND_ANALOG_PROGRESS -> {
+                    SendAnalogProgressDetails details1 = (SendAnalogProgressDetails) t.getDetails();
+                    SendAnalogProgressDetailsInt detailsInt = new SendAnalogProgressDetailsInt();
+                    detailsInt.setDeliveryDetailCode(details1.getDeliveryDetailCode());
+                    yield detailsInt;
+                }
+                default -> null;
+            });
+            return tei;
+        }).collect(java.util.stream.Collectors.toSet()));
+
+        NotificationInt notification = NotificationInt.builder()
+                .sentAt(Instant.now())
+                .recipients(List.of(new NotificationRecipientInt()))
+                .iun("IUN_2")
+                .sender(NotificationSenderInt.builder().paId("paId").build())
+                .documents(Collections.emptyList())
+                .build();
+
+        when(notificationService.getNotificationByIun(anyString())).thenReturn(notification);
+        when(timelineService.getTimelineAndStatusHistory(anyString(), anyInt(), any())).thenReturn(historyResponse);
+        when(timelineService.addTimelineElement(any(), any())).thenReturn(new AddTimelineElementResponse(null, true));
+        when(pnDeliveryPushWorkflowConfigs.getTimeParams()).thenReturn(mock(TimeParams.class));
+        when(pnDeliveryPushWorkflowConfigs.getTimeParams().getAttachmentTimeToAddAfterExpiration()).thenReturn(java.time.Duration.ofDays(30));
+        when(pnDeliveryPushWorkflowConfigs.getInvalidableCategories()).thenReturn(List.of("PREPARE_ANALOG_DOMICILE","PREPARE_ANALOG_DOMICILE_FAILURE","SEND_ANALOG_DOMICILE","SEND_ANALOG_PROGRESS","SEND_ANALOG_FEEDBACK","ANALOG_SUCCESS_WORKFLOW","ANALOG_FAILURE_WORKFLOW","SCHEDULE_REFINEMENT","REFINEMENT","COMPLETELY_UNREACHABLE_CREATION_REQUEST","COMPLETELY_UNREACHABLE","ANALOG_WORKFLOW_RECIPIENT_DECEASED"));
+
+        ArgumentCaptor<TimelineElementInternal> argumentCaptor = ArgumentCaptor.forClass(TimelineElementInternal.class);
+
+        handler.handleNotification(action).block();
+
+        verify(timelineService).addTimelineElement(argumentCaptor.capture(), eq(notification));
+        verify(paperChannelService, never()).initNotificationRework(anyString(), anyString());
+        verify(paperChannelService).prepareAnalogNotification(eq(notification), eq(0), eq(1));
+
+        List<String> invalidatedIds = extractInvalidatedTimelineIds(argumentCaptor.getValue());
+        Assertions.assertTrue(invalidatedIds.contains("SEND_ANALOG_PROGRESS.RECINDEX_0.ATTEMPT_1.IDX_0"));
+        Assertions.assertTrue(invalidatedIds.contains("SEND_ANALOG_PROGRESS.RECINDEX_0.ATTEMPT_1.IDX_2"));
+        Assertions.assertTrue(invalidatedIds.contains("PREPARE_ANALOG_DOMICILE.RECINDEX_0.ATTEMPT_1"));
+        Assertions.assertTrue(invalidatedIds.contains("SEND_ANALOG_DOMICILE.RECINDEX_0.ATTEMPT_1"));
+    }
+
+    @Test
     void handleNotificationErrorBeforeInsertElement() {
         // Arrange
         NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
@@ -384,6 +524,11 @@ class ReworkRequestedHandlerTest {
         verify(timelineService, times(0)).addTimelineElement(any(), any());
         verify(reworkRequestEventPool, times(1)).scheduleFutureAction(any(), any());
 
+    }
+
+    private List<String> extractInvalidatedTimelineIds(TimelineElementInternal capturedElement) {
+        NotificationTimelineReworkedDetailsInt detailsInt = (NotificationTimelineReworkedDetailsInt) capturedElement.getDetails();
+        return detailsInt.getInvalidatedTimelineAndStatusHistory().getFirst().getRelatedTimelineElementIds();
     }
 
     private List<TimelineElement> buildTimeline() {
@@ -471,3 +616,4 @@ class ReworkRequestedHandlerTest {
         return timeline;
     }
 }
+
