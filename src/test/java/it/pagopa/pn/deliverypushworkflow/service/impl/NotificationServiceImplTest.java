@@ -107,6 +107,7 @@ class NotificationServiceImplTest {
         sentNotification.setIun("001");
         sentNotification.setPhysicalCommunicationType(SentNotificationV26.PhysicalCommunicationTypeEnum.REGISTERED_LETTER_890);
         sentNotification.setNotificationFeePolicy(it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.NotificationFeePolicy.DELIVERY_MODE);
+        sentNotification.setSenderPriority(0);
         return sentNotification;
     }
     
@@ -115,10 +116,9 @@ class NotificationServiceImplTest {
                 .iun("001")
                 .recipients(Collections.emptyList())
                 .documents(Collections.emptyList())
-                .sender(NotificationSenderInt.builder().build())
+                .sender(NotificationSenderInt.builder().priority(0).build())
                 .notificationFeePolicy(NotificationFeePolicy.DELIVERY_MODE)
                 .physicalCommunicationType(ServiceLevelTypeInt.REGISTERED_LETTER_890)
-                .priority(0)
                 .build();
     }
 }

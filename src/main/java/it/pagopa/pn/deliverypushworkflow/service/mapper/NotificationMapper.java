@@ -40,6 +40,7 @@ public class NotificationMapper {
                                 .paTaxId( sentNotification.getSenderTaxId() )
                                 .paId(sentNotification.getSenderPaId())
                                 .paDenomination(sentNotification.getSenderDenomination())
+                                .priority(sentNotification.getSenderPriority())
                                 .build()
                 )
                 .paFee(sentNotification.getPaFee())
@@ -55,7 +56,6 @@ public class NotificationMapper {
                 .additionalLanguages(sentNotification.getAdditionalLanguages())
                 .usedServices(UsedServicesMapper.externalToInternal(sentNotification.getUsedServices()))
                 .idempotenceToken(sentNotification.getIdempotenceToken())
-                .priority(sentNotification.getSenderPriority())
                 .build();
     }
 
@@ -107,7 +107,7 @@ public class NotificationMapper {
         sentNotification.setVat(notification.getVat());
         sentNotification.setAdditionalLanguages(notification.getAdditionalLanguages());
         sentNotification.setUsedServices(mapToUserSevicesInt(notification.getUsedServices()));
-        sentNotification.setSenderPriority(notification.getPriority());
+        sentNotification.setSenderPriority(notification.getSender().getPriority());
 
         ZonedDateTime time = DateFormatUtils.parseInstantToZonedDateTime(notification.getPaymentExpirationDate());
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -116,11 +116,6 @@ public class NotificationMapper {
         
         if(notification.getPagoPaIntMode() != null){
             sentNotification.setPagoPaIntMode(SentNotificationV26.PagoPaIntModeEnum.valueOf(notification.getPagoPaIntMode().getValue()));
-        }
-        if( notification.getPhysicalCommunicationType() != null ) {
-            sentNotification.setPhysicalCommunicationType(
-                    SentNotificationV26.PhysicalCommunicationTypeEnum.valueOf( notification.getPhysicalCommunicationType().name() )
-            );
         }
 
         NotificationSenderInt sender = notification.getSender();

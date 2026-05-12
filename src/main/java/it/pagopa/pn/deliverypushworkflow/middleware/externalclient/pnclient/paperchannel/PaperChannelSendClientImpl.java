@@ -52,8 +52,7 @@ public class PaperChannelSendClientImpl implements PaperChannelSendClient {
         prepareRequest.setReceiverType(paperChannelPrepareRequest.getRecipientInt().getRecipientType().getValue());
         prepareRequest.setNotificationSentAt(paperChannelPrepareRequest.getNotificationInt().getSentAt());
         prepareRequest.setSenderPaId(paperChannelPrepareRequest.getNotificationInt().getSender().getPaId());
-        prepareRequest.setSenderPriority(paperChannelPrepareRequest.getNotificationInt().getPriority());
-        prepareRequest.setRelatedRequestId(paperChannelPrepareRequest.getRelatedRequestId());
+        prepareRequest.setSenderPriority(paperChannelPrepareRequest.getNotificationInt().getSender().getPriority());        prepareRequest.setRelatedRequestId(paperChannelPrepareRequest.getRelatedRequestId());
         prepareRequest.setDiscoveredAddress(mapInternalToExternal(paperChannelPrepareRequest.getDiscoveredAddress()));
         prepareRequest.setAarWithRadd(paperChannelPrepareRequest.getAarWithRadd());
 
