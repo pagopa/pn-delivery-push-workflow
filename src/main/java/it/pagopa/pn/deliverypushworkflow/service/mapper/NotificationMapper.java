@@ -137,10 +137,6 @@ public class NotificationMapper {
                 NotificationMapper::getNotificationDocument).toList();
 
         sentNotification.setDocuments(documents);
-
-        if(notification.getPhysicalCommunicationType() != null){
-            sentNotification.setPhysicalCommunicationType(SentNotificationV26.PhysicalCommunicationTypeEnum.valueOf(notification.getPhysicalCommunicationType().name()));
-        }
         
         if(notification.getSender() != null){
             sentNotification.setSenderPaId(notification.getSender().getPaId());
