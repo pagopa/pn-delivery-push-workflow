@@ -3,7 +3,7 @@ package it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.del
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.deliverypushworkflow.MockAWSObjectsTest;
-import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.SentNotificationV25;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.SentNotificationV26;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -47,7 +47,7 @@ class PnDeliveryClientReactiveImplTestIT extends MockAWSObjectsTest {
     void removeAllNotificationCostsByIun() throws JsonProcessingException {
         //Given
         String iun ="iunTest";
-        SentNotificationV25 notification = new SentNotificationV25();
+        SentNotificationV26 notification = new SentNotificationV26();
         notification.setIun(iun);
 
         String path = "/delivery-private/notification-cost/{iun}"
@@ -75,7 +75,7 @@ class PnDeliveryClientReactiveImplTestIT extends MockAWSObjectsTest {
     void removeAllNotificationCostsByIunError(){
         //Given
         String iun ="iunTest1";
-        SentNotificationV25 notification = new SentNotificationV25();
+        SentNotificationV26 notification = new SentNotificationV26();
         notification.setIun(iun);
 
         String path = "/delivery-private/notification-cost/{iun}"
