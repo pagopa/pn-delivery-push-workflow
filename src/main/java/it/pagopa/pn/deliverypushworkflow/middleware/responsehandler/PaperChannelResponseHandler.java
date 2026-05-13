@@ -74,11 +74,11 @@ public class PaperChannelResponseHandler {
             log.logEndingProcess(processName);
 
         } catch (PnRuntimeException e) {
-            log.logEndingProcess(processName, false, e.getMessage());
+            log.logEndingProcess(processName, false, e.getMessage(), e);
             log.error(EXCEPTION_PREPARE_UPDATE, e);
             throw e;
         } catch (Exception e) {
-            log.logEndingProcess(processName, false, e.getMessage());
+            log.logEndingProcess(processName, false, e.getMessage(), e);
             log.error(EXCEPTION_PREPARE_UPDATE, e);
             throw new PnInternalException("Paper update failed", ERROR_CODE_DELIVERYPUSH_PAPERUPDATEFAILED, e);
         }
@@ -103,11 +103,11 @@ public class PaperChannelResponseHandler {
             analogWorkflowPaperChannelResponseHandler.paperChannelSendResponseHandler(analogSentResponseInt);
             log.logEndingProcess(processName);
         } catch (PnRuntimeException e) {
-            log.logEndingProcess(processName, false, e.getMessage());
+            log.logEndingProcess(processName, false, e.getMessage(), e);
             log.error(EXCEPTION_SEND_UPDATE, e);
             throw e;
         } catch (Exception e) {
-            log.logEndingProcess(processName, false, e.getMessage());
+            log.logEndingProcess(processName, false, e.getMessage(), e);
             log.error(EXCEPTION_SEND_UPDATE, e);
             throw new PnInternalException("Paper update failed", ERROR_CODE_DELIVERYPUSH_PAPERUPDATEFAILED, e);
         }

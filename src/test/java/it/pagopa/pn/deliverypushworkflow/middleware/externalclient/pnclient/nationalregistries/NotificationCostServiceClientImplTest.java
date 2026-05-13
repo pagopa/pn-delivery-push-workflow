@@ -14,7 +14,7 @@ import reactor.core.publisher.Mono;
 import java.nio.charset.Charset;
 import java.time.Instant;
 
-class NationalRegistriesClientImplTest {
+class NotificationCostServiceClientImplTest {
 
     private NationalRegistriesClientImpl publicRegistry;
     private AddressApi addressApi = Mockito.mock(AddressApi.class);

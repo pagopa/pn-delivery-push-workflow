@@ -38,7 +38,7 @@ public class CheckAttachmentRetentionEventHandler extends AbstractActionEventHan
             checkAttachmentRetentionHandler.handleCheckAttachmentRetentionBeforeExpiration(action.getIun(), action.getNotBefore());
             log.logEndingProcess(processName);
         } catch (Exception ex) {
-            log.logEndingProcess(processName, false, ex.getMessage());
+            log.logEndingProcess(processName, false, ex.getMessage(), ex);
             HandleEventUtils.handleException(headers, ex);
             throw ex;
         }

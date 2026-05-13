@@ -5,6 +5,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.cost.UpdateNotificationCostResponse
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.PagoPaInt;
 import it.pagopa.pn.deliverypushworkflow.exceptions.PnPaymentUpdateRetryException;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregistry_reactive.model.PaymentsInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -43,6 +44,34 @@ public class PaymentUtils {
 
         });
         return paymentsInfoForRecipients;
+    }
+
+    @NotNull
+    public static List<PaymentsInfo> getInvalidationPaymentsInfoFromNotification(NotificationInt notification) {
+        List<PaymentsInfo> paymentsInfo = new ArrayList<>();
+
+        notification.getRecipients().forEach(recipient -> {
+            int recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
+            log.debug("Start add validation for recipient index {}", recIndex);
+
+            if(recipient.getPayments() != null){
+                recipient.getPayments().forEach( payment ->{
+                    final PagoPaInt pagoPaPayment = payment.getPagoPA();
+                    if(pagoPaPayment != null && Boolean.TRUE.equals(pagoPaPayment.getApplyCost())){
+                        log.debug("Add validation for creditorTaxId={} noticeCode={} recIndex={}", pagoPaPayment.getCreditorTaxId(), pagoPaPayment.getNoticeCode(), recIndex);
+                        PaymentsInfo paymentInfo = new PaymentsInfo();
+                        paymentInfo.setRecIndex(recIndex);
+                        paymentInfo.setNoticeCode(pagoPaPayment.getNoticeCode());
+                        paymentInfo.setCreditorTaxId(pagoPaPayment.getCreditorTaxId());
+                        paymentsInfo.add(paymentInfo);
+                    }
+                });
+            }else {
+                log.debug("Don't need to add payments for iun={} recIndex={}", notification.getIun(), recIndex);
+            }
+
+        });
+        return paymentsInfo;
     }
 
     public static void handleResponse(NotificationInt notification, UpdateNotificationCostResponseInt updateNotificationCostResponse) {
