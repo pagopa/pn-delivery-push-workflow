@@ -259,11 +259,13 @@ public class ReworkValidationHandler {
     private Mono<NotificationReworkInfo> checkNotificationTimelineAndThrow(NotificationReworkInfo info) {
         String recIndex = info.getActionDetail().getReworkRecIndex();
         String attempt = info.getActionDetail().getReworkAttempt();
+        NotificationReworkValidationDetails detail = info.getActionDetail();
         boolean isStatusViewed = timelineUtils.checkIsNotificationViewed(info.getNotification().getIun(), getRecIndexFromAction(info.getActionDetail()));
 
         return Mono.just(info.getTimeline())
                 .map(timelineElement -> timelineElement.stream().filter(timelineElementInternal -> timelineElementInternal.getElementId().contains(recIndex)).collect(Collectors.toSet()))
                 .switchIfEmpty(fail(NotificationReworkErrorCause.INVALID_RECINDEX, NotificationReworkErrorCause.INVALID_RECINDEX.getErrorDetails()))
+                .flatMap(timeline -> checkForPaymentCategory(timeline, detail))
                 .flatMap(timeline -> checkIfAttemptOneExistsForReworkAttemptZero(timeline, attempt, isStatusViewed))
                 .map(timeline -> timeline.stream().filter(timelineElementInternal -> timelineElementInternal.getElementId().contains(attempt)
                                 || ELEMENTS_WITHOUT_ATTEMPT_ID.contains(timelineElementInternal.getCategory()))
@@ -273,6 +275,13 @@ public class ReworkValidationHandler {
                 .doOnNext(info::setFilteredTimeline)
                 .flatMap(timeline -> checkNotificationTimeline(info, recIndex, attempt, isStatusViewed))
                 .thenReturn(info);
+    }
+
+    private Mono<Set<TimelineElementInternal>> checkForPaymentCategory(Set<TimelineElementInternal> timeline, NotificationReworkValidationDetails detail) {
+        if (RESTART.equals(detail.getRequestType()) && timeline.stream().anyMatch(timelineElementInternal -> timelineElementInternal.getCategory().equals(TimelineElementCategoryInt.PAYMENT))) {
+            return fail(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT, "PAYMENT category found in timeline");
+        }
+        return Mono.just(timeline);
     }
 
     private Mono<Set<TimelineElementInternal>> checkIfAttemptOneExistsForReworkAttemptZero(Set<TimelineElementInternal> timeline, String attempt, boolean isStatusViewed) {

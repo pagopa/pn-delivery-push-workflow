@@ -1170,6 +1170,50 @@ class ReworkValidationHandlerTest {
     }
 
     @Test
+    void handleNotificationTimelineKo_RESTART_PAYMENT_CategoryFound() {
+        NotificationReworkValidationDetails detail = new NotificationReworkValidationDetails();
+        detail.setReworkAttempt("ATTEMPT_0");
+        detail.setReworkRecIndex("RECINDEX_0");
+        detail.setReworkPcRetry("PCRETRY_0");
+        detail.setRequestType("RESTART");
+
+        Action action = Action.builder()
+                .iun("XLJE-VRQM-VKNQ-202507-K-1")
+                .details(detail)
+                .recipientIndex(1)
+                .build();
+
+        NotificationInt notification = NotificationInt.builder()
+                .iun("XLJE-VRQM-VKNQ-202507-K-1")
+                .recipients(List.of(new NotificationRecipientInt()))
+                .build();
+
+        Set<TimelineElementInternal> timeline = new HashSet<>();
+        TimelineElementInternal timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.PAYMENT);
+        timelineElement.setElementId("PAYMENT.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0");
+        timeline.add(timelineElement);
+
+        NotificationHistoryResponse notificationHistoryResponse = new NotificationHistoryResponse();
+        notificationHistoryResponse.setNotificationStatus(NotificationStatus.EFFECTIVE_DATE);
+
+        when(timelineService.getTimeline(anyString(), anyBoolean())).thenReturn(timeline);
+        when(timelineUtils.checkIsNotificationCancellationRequested(any())).thenReturn(false);
+        when(notificationService.getNotificationByIun(any())).thenReturn(notification);
+        when(timelineService.getTimelineAndStatusHistory(any(), anyInt(), any())).thenReturn(notificationHistoryResponse);
+
+        notificationReworkHandler.handleNotificationRework(action).block();
+
+        verify(actionManagerApi, never()).insertAction(any());
+
+        ArgumentCaptor<ReworkRequestEventAction> captor = ArgumentCaptor.forClass(ReworkRequestEventAction.class);
+        verify(reworkRequestEventPool, times(1)).scheduleFutureAction(captor.capture(), any());
+        List<NotificationReworkError> capturedErrorList = captor.getValue().getError();
+        Assertions.assertEquals(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT.getCause(), capturedErrorList.getFirst().getCause());
+        Assertions.assertEquals("PAYMENT category found in timeline", capturedErrorList.getFirst().getDescription());
+    }
+
+    @Test
     void handleNotificationRework_insertActionContainsRequestType() throws Exception {
         NotificationReworkValidationDetails detail = new NotificationReworkValidationDetails();
         detail.setReworkId("RWK-123");
