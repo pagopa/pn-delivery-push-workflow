@@ -14,5 +14,6 @@ public class NotificationReworkValidationDetails implements ActionDetails {
     private String reworkPcRetry;
     private String reworkRecIndex;
     private String reworkExpectedFinalStatus;
+    private Boolean restartAttempt;
     private String requestType;
 }

@@ -17,4 +17,5 @@ public class NotificationReworkRequestedDetails implements ActionDetails {
     private String reworkId;
     private Instant createdAt;
     private String requestType;
+    private Boolean restartAttempt;
 }
