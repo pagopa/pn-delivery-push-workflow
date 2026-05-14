@@ -11,6 +11,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.Notificat
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkError;
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkErrorCause;
+import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.ReworkRequestTypeEnum;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationTimelineReworkedDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationViewedCreationRequestDetailsInt;
@@ -1105,7 +1106,7 @@ class ReworkValidationHandlerTest {
         detail.setReworkRecIndex("RECINDEX_0");
         detail.setReworkPcRetry("PCRETRY_0");
         detail.setReworkExpectedFinalStatus("KO");
-        detail.setRequestType("RESTART");
+        detail.setRequestType(ReworkRequestTypeEnum.RESTART);
 
         Action action = Action.builder()
                 .iun("XLJE-VRQM-VKNQ-202507-K-1")
@@ -1175,7 +1176,7 @@ class ReworkValidationHandlerTest {
         detail.setReworkAttempt("ATTEMPT_0");
         detail.setReworkRecIndex("RECINDEX_0");
         detail.setReworkPcRetry("PCRETRY_0");
-        detail.setRequestType("RESTART");
+        detail.setRequestType(ReworkRequestTypeEnum.RESTART);
 
         Action action = Action.builder()
                 .iun("XLJE-VRQM-VKNQ-202507-K-1")
@@ -1220,7 +1221,7 @@ class ReworkValidationHandlerTest {
         detail.setReworkAttempt("ATTEMPT_0");
         detail.setReworkRecIndex("RECINDEX_0");
         detail.setReworkPcRetry("PCRETRY_0");
-        detail.setRequestType("RESTART");
+        detail.setRequestType(ReworkRequestTypeEnum.RESTART);
 
         Action action = Action.builder()
                 .actionId("ACTION-123")
