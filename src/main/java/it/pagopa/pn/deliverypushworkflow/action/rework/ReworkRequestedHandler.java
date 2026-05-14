@@ -40,6 +40,7 @@ import java.time.OffsetDateTime;
 import java.util.*;
 
 import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkConstant.*;
+import static it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventId.SEND_ANALOG_DOMICILE;
 
 @Slf4j
 @Component
@@ -232,13 +233,14 @@ public class ReworkRequestedHandler {
         paperCostToInvalidate.setCostPhases(new ArrayList<>());
         timelineElementsToInvalidate.forEach(
                 elementId -> {
-                    if (elementId.contains(ATTEMPT_0)) {
+                    if (elementId.contains(ATTEMPT_0) && elementId.contains(SEND_ANALOG_DOMICILE.name())) {
                         paperCostToInvalidate.getCostPhases().add(AnalogUpdateCostPhase.SEND_ANALOG_DOMICILE_ATTEMPT_0);
-                    } else if (elementId.contains(ATTEMPT_1)) {
+                    } else if (elementId.contains(ATTEMPT_1) && elementId.contains(SEND_ANALOG_DOMICILE.name())) {
                         paperCostToInvalidate.getCostPhases().add(AnalogUpdateCostPhase.SEND_ANALOG_DOMICILE_ATTEMPT_1);
                     }
                 }
         );
+        paperCostToInvalidate.setCostPhases(paperCostToInvalidate.getCostPhases().stream().distinct().toList());
         return paperCostToInvalidate;
     }
 }

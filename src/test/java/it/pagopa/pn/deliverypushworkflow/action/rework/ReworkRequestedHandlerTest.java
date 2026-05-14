@@ -116,7 +116,7 @@ class ReworkRequestedHandlerTest {
 
         historyResponse.setNotificationStatusHistory(notificationStatusHistory);
         when(timelineService.getTimelineAndStatusHistory(anyString(), anyInt(), any())).thenReturn(historyResponse);
-        when(timelineService.getTimeline(any(), anyBoolean())).thenReturn(buildTimeline().stream().map(t -> {;
+        when(timelineService.getTimeline(any(), anyBoolean())).thenReturn(buildTimeline().stream().map(t -> {
             TimelineElementInternal tei = new TimelineElementInternal();
             tei.setCategory(TimelineElementCategoryInt.valueOf(t.getCategory().name()));
             tei.setElementId(t.getElementId());

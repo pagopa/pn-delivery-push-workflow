@@ -8,8 +8,6 @@ import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregi
 import org.springframework.http.ResponseEntity;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
-
 public interface PnExternalRegistriesClientReactive {
     String CLIENT_NAME = PnLogger.EXTERNAL_SERVICES.PN_EXTERNAL_REGISTRIES;
 
