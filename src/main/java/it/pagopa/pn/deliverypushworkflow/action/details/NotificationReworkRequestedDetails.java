@@ -1,5 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.action.details;
 
+import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.ReworkRequestTypeEnum;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ActionDetails;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,5 +17,5 @@ public class NotificationReworkRequestedDetails implements ActionDetails {
     private String reworkRecIndex;
     private String reworkId;
     private Instant createdAt;
-    private String requestType;
+    private ReworkRequestTypeEnum requestType;
 }

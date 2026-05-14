@@ -9,6 +9,7 @@ import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationSenderInt;
+import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.ReworkRequestTypeEnum;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.AddTimelineElementResponse;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationTimelineReworkedDetailsInt;
@@ -80,6 +81,7 @@ class ReworkRequestedHandlerTest {
         details.setCreatedAt(Instant.now());
         details.setReworkRequestId("REQID");
         details.setReworkId("REWORK_0_UUID");
+        details.setRequestType(ReworkRequestTypeEnum.REWORK);
 
         Action action = Action.builder()
                 .iun("IUN_2")
@@ -156,6 +158,7 @@ class ReworkRequestedHandlerTest {
         details.setCreatedAt(Instant.now());
         details.setReworkRequestId("REQID");
         details.setReworkId("REWORK_0_UUID");
+        details.setRequestType(ReworkRequestTypeEnum.REWORK);
 
         Action action = Action.builder()
                 .iun("IUN_2")
@@ -227,6 +230,7 @@ class ReworkRequestedHandlerTest {
         details.setCreatedAt(Instant.now());
         details.setReworkRequestId("REQID");
         details.setReworkId("REWORK_0_UUID");
+        details.setRequestType(ReworkRequestTypeEnum.REWORK);
 
         Action action = Action.builder()
                 .iun("IUN_2")
