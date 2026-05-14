@@ -230,6 +230,7 @@ class ReworkRequestedHandlerTest {
         details.setCreatedAt(Instant.now());
         details.setReworkRequestId("REQID");
         details.setReworkId("REWORK_0_UUID");
+        details.setRequestType(ReworkRequestTypeEnum.REWORK);
 
         Action action = Action.builder()
                 .iun("IUN_2")

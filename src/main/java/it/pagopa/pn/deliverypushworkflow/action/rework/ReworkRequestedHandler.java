@@ -71,6 +71,10 @@ public class ReworkRequestedHandler {
 
     private Mono<List<String>> computeTimelineElementToInvalidate(Set<TimelineElementInternal> timelineElementInternalList, String recIndex, String attemptId, ReworkRequestTypeEnum requestType) {
         log.debug("Starting computeTimelineElementToInvalidate for recIndex {} and attemptId {}", recIndex, attemptId);
+        if (Objects.isNull(requestType)) {
+            return Mono.error(new IllegalArgumentException("Request type is required to compute timeline elements to invalidate"));
+        }
+
         return Flux.fromIterable(timelineElementInternalList)
                 .filter(elem -> pnDeliveryPushWorkflowConfigs.getInvalidableCategories().contains(elem.getCategory().name()))
                 .filter(elem -> elem.getElementId().contains(recIndex))
