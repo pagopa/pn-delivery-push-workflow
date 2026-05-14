@@ -67,11 +67,11 @@ public class ExternalChannelResponseHandler {
 
             log.logEndingProcess(processName);
         } catch (PnInternalException e) {
-            log.logEndingProcess(processName, false, e.getMessage());
+            log.logEndingProcess(processName, false, e.getMessage(), e);
             log.error(EXCEPTION_LEGAL_UPDATE, e);
             throw e;
         } catch (Exception e) {
-            log.logEndingProcess(processName, false, e.getMessage());
+            log.logEndingProcess(processName, false, e.getMessage(),e);
             log.error(EXCEPTION_LEGAL_UPDATE, e);
             throw new PnInternalException("Legal update failed", ERROR_CODE_DELIVERYPUSH_UPDATEFAILED, e);
         }
@@ -111,11 +111,11 @@ public class ExternalChannelResponseHandler {
 
             log.logEndingProcess(processName);
         } catch (PnInternalException e) {
-            log.logEndingProcess(processName, false, e.getMessage());
+            log.logEndingProcess(processName, false, e.getMessage(), e);
             log.error(COURTESY_UPDATE_FAILED, e);
             throw e;
         } catch (Exception e) {
-            log.logEndingProcess(processName, false, e.getMessage());
+            log.logEndingProcess(processName, false, e.getMessage(), e);
             log.error(COURTESY_UPDATE_FAILED, e);
             throw new PnInternalException(COURTESY_UPDATE_FAILED, ERROR_CODE_DELIVERYPUSH_UPDATEFAILED, e);
         }

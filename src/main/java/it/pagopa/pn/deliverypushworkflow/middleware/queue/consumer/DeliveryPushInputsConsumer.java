@@ -32,7 +32,7 @@ public class DeliveryPushInputsConsumer {
             eventRouter.route(message, routerConfig);
             log.logEndingProcess(processName);
         } catch (Exception ex) {
-            log.logEndingProcess(processName, false, ex.getMessage());
+            log.logEndingProcess(processName, false, ex.getMessage(), ex);
             HandleEventUtils.handleException(message.getHeaders(), ex);
             throw ex;
         }

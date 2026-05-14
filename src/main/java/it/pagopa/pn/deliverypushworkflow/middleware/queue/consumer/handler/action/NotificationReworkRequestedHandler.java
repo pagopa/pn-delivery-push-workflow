@@ -35,9 +35,9 @@ public class NotificationReworkRequestedHandler extends AbstractActionEventHandl
         log.logStartingProcess(processName);
 
         MDCUtils.addMDCToContextAndExecute(Mono.just(action)
-                        .flatMap(notificationReworkRequestedService::handleNotificationReworkRequested)
+                        .flatMap(notificationReworkRequestedService::handleNotification)
                         .doOnSuccess(resultFromAsync -> log.logEndingProcess(processName))
-                        .doOnError(error -> log.logEndingProcess(processName, false, error.getMessage())))
+                        .doOnError(error -> log.logEndingProcess(processName, false, error.getMessage(), error)))
                 .block();
     }
 }
