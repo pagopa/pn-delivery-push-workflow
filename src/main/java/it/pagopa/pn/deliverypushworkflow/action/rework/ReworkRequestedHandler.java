@@ -3,6 +3,7 @@ package it.pagopa.pn.deliverypushworkflow.action.rework;
 import it.pagopa.pn.deliverypushworkflow.action.checkattachmentretention.CheckAttachmentRetentionHandler;
 import it.pagopa.pn.deliverypushworkflow.action.details.NotificationReworkRequestedDetails;
 import it.pagopa.pn.deliverypushworkflow.action.startworkflow.notificationvalidation.AttachmentUtils;
+import it.pagopa.pn.deliverypushworkflow.action.utils.PaymentUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationDocumentInt;
@@ -11,8 +12,14 @@ import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.ReworkRequestTyp
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendAnalogProgressDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregistry_reactive.model.AnalogUpdateCostPhase;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregistry_reactive.model.PaperCostToInvalidate;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregistry_reactive.model.PaymentsInfo;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationHistoryResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationStatusHistoryElement;
+import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.externalregistry.PnExternalRegistriesClientReactive;
+import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.notificationcostservice.NotificationCostServiceClient;
+import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.notificationcostservice.NotificationCostServiceMapper;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.handler.utils.NotificationReworkUtils;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.Action;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ReworkRequestEventPool;
@@ -34,6 +41,7 @@ import java.time.OffsetDateTime;
 import java.util.*;
 
 import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkConstant.*;
+import static it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventId.SEND_ANALOG_DOMICILE;
 
 @Slf4j
 @Component
@@ -49,6 +57,8 @@ public class ReworkRequestedHandler {
     private final AttachmentUtils attachmentUtils;
     private final TimelineUtils timelineUtils;
     private final ReworkRequestEventPool reworkRequestEventPool;
+    private final PnExternalRegistriesClientReactive pnExternalRegistriesClientReactive;
+    private final NotificationCostServiceClient notificationCostServiceClient;
 
     public Mono<Void> handleNotification(Action action) {
         NotificationReworkRequestedDetails detail = (NotificationReworkRequestedDetails) action.getDetails();
@@ -95,6 +105,8 @@ public class ReworkRequestedHandler {
                 .flatMap(timelineElementIds -> startNotificationReworkProcess(detail).thenReturn(timelineElementIds))
                 .flatMap(strings -> updateAttachmentRetention(detail.getCreatedAt(), notificationInt.getIun(), notificationInt.getDocuments()))
                 .map(internalAction -> buildTimelineElement(notificationInt, timelineElementsToInvalidate, detail))
+                .flatMap(timelineElementInternal -> pnExternalRegistriesClientReactive.invalidatePaperCostWithHttpInfo(action.getIun(), createPaperCostToInvalidateRequest(notificationInt, detail.getReworkRecIndex(), timelineElementsToInvalidate), notificationInt.getPagoPaIntMode()).thenReturn(timelineElementInternal))
+                .flatMap(timelineElementInternal -> notificationCostServiceClient.invalidatePaperCostWithHttpInfo(action.getIun(), NotificationCostServiceMapper.createPaperCostToInvalidateRequest(detail.getReworkRecIndex(), timelineElementsToInvalidate)).thenReturn(timelineElementInternal))
                 .map(timelineElementInternal -> timelineService.addTimelineElement(timelineElementInternal, notificationInt))
                 .map(ignore -> notificationInt)
                 .onErrorResume(throwable -> {
@@ -231,5 +243,25 @@ public class ReworkRequestedHandler {
         }
         log.info("Starting rework process for reworkRequestId {} and reworkId {}", details.getReworkRequestId(), details.getReworkId());
         return  Mono.fromRunnable(() -> paperChannelService.initNotificationRework(details.getReworkRequestId(), details.getReworkId()));
+    }
+
+    private PaperCostToInvalidate createPaperCostToInvalidateRequest(NotificationInt notification, String reworkRecIndex, List<String> timelineElementsToInvalidate) {
+        List<PaymentsInfo> paymentsInfoForRecipients = PaymentUtils.getInvalidationPaymentsInfoFromNotification(notification);
+        PaperCostToInvalidate paperCostToInvalidate = new PaperCostToInvalidate();
+        paperCostToInvalidate.setPaymentsInfo(paymentsInfoForRecipients);
+        paperCostToInvalidate.setRecIndex(reworkRecIndex);
+        paperCostToInvalidate.setVat(notification.getVat());
+        paperCostToInvalidate.setCostPhases(new ArrayList<>());
+        timelineElementsToInvalidate.forEach(
+                elementId -> {
+                    if (elementId.contains(ATTEMPT_0) && elementId.contains(SEND_ANALOG_DOMICILE.name())) {
+                        paperCostToInvalidate.getCostPhases().add(AnalogUpdateCostPhase.SEND_ANALOG_DOMICILE_ATTEMPT_0);
+                    } else if (elementId.contains(ATTEMPT_1) && elementId.contains(SEND_ANALOG_DOMICILE.name())) {
+                        paperCostToInvalidate.getCostPhases().add(AnalogUpdateCostPhase.SEND_ANALOG_DOMICILE_ATTEMPT_1);
+                    }
+                }
+        );
+        paperCostToInvalidate.setCostPhases(paperCostToInvalidate.getCostPhases().stream().distinct().toList());
+        return paperCostToInvalidate;
     }
 }

@@ -15,7 +15,10 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationTimelineReworkedDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendAnalogProgressDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregistry_reactive.model.PaperCostToInvalidate;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.*;
+import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.externalregistry.PnExternalRegistriesClientReactive;
+import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.notificationcostservice.NotificationCostServiceClient;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.Action;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ReworkRequestEventPool;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.impl.TimeParams;
@@ -33,6 +36,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.mockito.Mockito.*;
+import reactor.core.publisher.Mono;
 
 @org.junit.jupiter.api.extension.ExtendWith(MockitoExtension.class)
 class ReworkRequestedHandlerTest {
@@ -53,6 +57,10 @@ class ReworkRequestedHandlerTest {
     private AttachmentUtils attachmentUtils;
     @Mock
     private ReworkRequestEventPool reworkRequestEventPool;
+    @Mock
+    private PnExternalRegistriesClientReactive pnExternalRegistriesClientReactive;
+    @Mock
+    private NotificationCostServiceClient notificationCostServiceClient;
 
     private ReworkRequestedHandler handler;
 
@@ -68,7 +76,9 @@ class ReworkRequestedHandlerTest {
                 checkAttachmentRetentionHandler,
                 attachmentUtils,
                 timelineUtils,
-                reworkRequestEventPool
+                reworkRequestEventPool,
+                pnExternalRegistriesClientReactive,
+                notificationCostServiceClient
         );
     }
 
@@ -106,7 +116,7 @@ class ReworkRequestedHandlerTest {
 
         historyResponse.setNotificationStatusHistory(notificationStatusHistory);
         when(timelineService.getTimelineAndStatusHistory(anyString(), anyInt(), any())).thenReturn(historyResponse);
-        when(timelineService.getTimeline(any(), anyBoolean())).thenReturn(buildTimeline().stream().map(t -> {;
+        when(timelineService.getTimeline(any(), anyBoolean())).thenReturn(buildTimeline().stream().map(t -> {
             TimelineElementInternal tei = new TimelineElementInternal();
             tei.setCategory(TimelineElementCategoryInt.valueOf(t.getCategory().name()));
             tei.setElementId(t.getElementId());
@@ -124,7 +134,7 @@ class ReworkRequestedHandlerTest {
 
         NotificationInt notification = NotificationInt.builder()
                 .sentAt(Instant.now())
-                .recipients(List.of(new NotificationRecipientInt()))
+                .recipients(List.of(NotificationRecipientInt.builder().taxId("taxId").build()))
                 .iun("IUN_2")
                 .sender(NotificationSenderInt.builder().paId("paId").build())
                 .documents(Collections.emptyList())
@@ -135,12 +145,14 @@ class ReworkRequestedHandlerTest {
         when(pnDeliveryPushWorkflowConfigs.getTimeParams()).thenReturn(mock(TimeParams.class));
         when(pnDeliveryPushWorkflowConfigs.getTimeParams().getAttachmentTimeToAddAfterExpiration()).thenReturn(java.time.Duration.ofDays(30));
         when(pnDeliveryPushWorkflowConfigs.getInvalidableCategories()).thenReturn(List.of("PREPARE_ANALOG_DOMICILE","PREPARE_ANALOG_DOMICILE_FAILURE","SEND_ANALOG_DOMICILE","SEND_ANALOG_PROGRESS","SEND_ANALOG_FEEDBACK","ANALOG_SUCCESS_WORKFLOW","ANALOG_FAILURE_WORKFLOW","SCHEDULE_REFINEMENT","REFINEMENT","COMPLETELY_UNREACHABLE_CREATION_REQUEST","COMPLETELY_UNREACHABLE","ANALOG_WORKFLOW_RECIPIENT_DECEASED"));
+        stubCostInvalidationClients();
 
         // Act & Assert
         handler.handleNotification(action).block();
 
         verify(timelineService).addTimelineElement(argumentCaptor.capture(), eq(notification));
         verify(paperChannelService).initNotificationRework(details.getReworkRequestId(), details.getReworkId());
+        verify(pnExternalRegistriesClientReactive).invalidatePaperCostWithHttpInfo(eq("IUN_2"), any(PaperCostToInvalidate.class), eq(notification.getPagoPaIntMode()));
         verify(paperChannelService, never()).prepareAnalogNotification(any(), anyInt(), anyInt());
         TimelineElementInternal capturedElement = argumentCaptor.getValue();
         Assertions.assertEquals("NOTIFICATION_TIMELINE_REWORKED", capturedElement.getCategory().name());
@@ -197,7 +209,7 @@ class ReworkRequestedHandlerTest {
 
         NotificationInt notification = NotificationInt.builder()
                 .sentAt(Instant.now())
-                .recipients(List.of(new NotificationRecipientInt()))
+                .recipients(List.of(NotificationRecipientInt.builder().taxId("taxId").build()))
                 .iun("IUN_2")
                 .sender(NotificationSenderInt.builder().paId("paId").build())
                 .documents(Collections.emptyList())
@@ -209,12 +221,14 @@ class ReworkRequestedHandlerTest {
         when(pnDeliveryPushWorkflowConfigs.getTimeParams()).thenReturn(mock(TimeParams.class));
         when(pnDeliveryPushWorkflowConfigs.getTimeParams().getAttachmentTimeToAddAfterExpiration()).thenReturn(java.time.Duration.ofDays(30));
         when(pnDeliveryPushWorkflowConfigs.getInvalidableCategories()).thenReturn(List.of("PREPARE_ANALOG_DOMICILE","PREPARE_ANALOG_DOMICILE_FAILURE","SEND_ANALOG_DOMICILE","SEND_ANALOG_PROGRESS","SEND_ANALOG_FEEDBACK","ANALOG_SUCCESS_WORKFLOW","ANALOG_FAILURE_WORKFLOW","SCHEDULE_REFINEMENT","REFINEMENT","COMPLETELY_UNREACHABLE_CREATION_REQUEST","COMPLETELY_UNREACHABLE","ANALOG_WORKFLOW_RECIPIENT_DECEASED"));
+        stubCostInvalidationClients();
 
         // Act & Assert
         handler.handleNotification(action).block();
 
         verify(timelineService).addTimelineElement(argumentCaptor.capture(), eq(notification));
         verify(paperChannelService).initNotificationRework(details.getReworkRequestId(), details.getReworkId());
+        verify(pnExternalRegistriesClientReactive).invalidatePaperCostWithHttpInfo(eq("IUN_2"), any(PaperCostToInvalidate.class), eq(notification.getPagoPaIntMode()));
         verify(paperChannelService, never()).prepareAnalogNotification(any(), anyInt(), anyInt());
         TimelineElementInternal capturedElement = argumentCaptor.getValue();
         Assertions.assertEquals("NOTIFICATION_TIMELINE_REWORKED", capturedElement.getCategory().name());
@@ -266,7 +280,7 @@ class ReworkRequestedHandlerTest {
         }).collect(java.util.stream.Collectors.toSet()));
         NotificationInt notification = NotificationInt.builder()
                 .sentAt(Instant.now())
-                .recipients(List.of(new NotificationRecipientInt()))
+                .recipients(List.of(NotificationRecipientInt.builder().taxId("taxId").build()))
                 .iun("IUN_2")
                 .sender(NotificationSenderInt.builder().paId("paId").build())
                 .documents(Collections.emptyList())
@@ -277,11 +291,13 @@ class ReworkRequestedHandlerTest {
         when(pnDeliveryPushWorkflowConfigs.getTimeParams()).thenReturn(mock(TimeParams.class));
         when(pnDeliveryPushWorkflowConfigs.getTimeParams().getAttachmentTimeToAddAfterExpiration()).thenReturn(java.time.Duration.ofDays(30));
         when(pnDeliveryPushWorkflowConfigs.getInvalidableCategories()).thenReturn(List.of("PREPARE_ANALOG_DOMICILE","PREPARE_ANALOG_DOMICILE_FAILURE","SEND_ANALOG_DOMICILE","SEND_ANALOG_PROGRESS","SEND_ANALOG_FEEDBACK","ANALOG_SUCCESS_WORKFLOW","ANALOG_FAILURE_WORKFLOW","SCHEDULE_REFINEMENT","REFINEMENT","COMPLETELY_UNREACHABLE_CREATION_REQUEST","COMPLETELY_UNREACHABLE","ANALOG_WORKFLOW_RECIPIENT_DECEASED"));
+        stubCostInvalidationClients();
 
         handler.handleNotification(action).block();
 
         verify(paperChannelService, never()).initNotificationRework(anyString(), anyString());
         verify(timelineService).addTimelineElement(any(), eq(notification));
+        verify(pnExternalRegistriesClientReactive).invalidatePaperCostWithHttpInfo(eq("IUN_2"), any(PaperCostToInvalidate.class), eq(notification.getPagoPaIntMode()));
         verify(paperChannelService).prepareAnalogNotification(eq(notification), eq(0), eq(1));
         verify(reworkRequestEventPool, never()).scheduleFutureAction(any(), any());
     }
@@ -380,7 +396,7 @@ class ReworkRequestedHandlerTest {
 
         NotificationInt notification = NotificationInt.builder()
                 .sentAt(Instant.now())
-                .recipients(List.of(new NotificationRecipientInt()))
+                .recipients(List.of(NotificationRecipientInt.builder().taxId("taxId").build()))
                 .iun("IUN_2")
                 .sender(NotificationSenderInt.builder().paId("paId").build())
                 .documents(Collections.emptyList())
@@ -392,6 +408,7 @@ class ReworkRequestedHandlerTest {
         when(pnDeliveryPushWorkflowConfigs.getTimeParams()).thenReturn(mock(TimeParams.class));
         when(pnDeliveryPushWorkflowConfigs.getTimeParams().getAttachmentTimeToAddAfterExpiration()).thenReturn(java.time.Duration.ofDays(30));
         when(pnDeliveryPushWorkflowConfigs.getInvalidableCategories()).thenReturn(List.of("PREPARE_ANALOG_DOMICILE","PREPARE_ANALOG_DOMICILE_FAILURE","SEND_ANALOG_DOMICILE","SEND_ANALOG_PROGRESS","SEND_ANALOG_FEEDBACK","ANALOG_SUCCESS_WORKFLOW","ANALOG_FAILURE_WORKFLOW","SCHEDULE_REFINEMENT","REFINEMENT","COMPLETELY_UNREACHABLE_CREATION_REQUEST","COMPLETELY_UNREACHABLE","ANALOG_WORKFLOW_RECIPIENT_DECEASED"));
+        stubCostInvalidationClients();
 
         ArgumentCaptor<TimelineElementInternal> argumentCaptor = ArgumentCaptor.forClass(TimelineElementInternal.class);
 
@@ -400,6 +417,10 @@ class ReworkRequestedHandlerTest {
         verify(timelineService).addTimelineElement(argumentCaptor.capture(), eq(notification));
         verify(paperChannelService).initNotificationRework(details.getReworkRequestId(), details.getReworkId());
         verify(paperChannelService, never()).prepareAnalogNotification(any(), anyInt(), anyInt());
+        ArgumentCaptor<PaperCostToInvalidate> paperCostCaptor = ArgumentCaptor.forClass(PaperCostToInvalidate.class);
+        verify(pnExternalRegistriesClientReactive).invalidatePaperCostWithHttpInfo(eq("IUN_2"), paperCostCaptor.capture(), eq(notification.getPagoPaIntMode()));
+        Assertions.assertEquals("RECINDEX_0", paperCostCaptor.getValue().getRecIndex());
+        Assertions.assertFalse(paperCostCaptor.getValue().getCostPhases().isEmpty());
 
         List<String> invalidatedIds = extractInvalidatedTimelineIds(argumentCaptor.getValue());
         Assertions.assertTrue(invalidatedIds.contains("SEND_ANALOG_PROGRESS.RECINDEX_0.ATTEMPT_1.IDX_0"));
@@ -450,7 +471,7 @@ class ReworkRequestedHandlerTest {
 
         NotificationInt notification = NotificationInt.builder()
                 .sentAt(Instant.now())
-                .recipients(List.of(new NotificationRecipientInt()))
+                .recipients(List.of(NotificationRecipientInt.builder().taxId("taxId").build()))
                 .iun("IUN_2")
                 .sender(NotificationSenderInt.builder().paId("paId").build())
                 .documents(Collections.emptyList())
@@ -462,6 +483,7 @@ class ReworkRequestedHandlerTest {
         when(pnDeliveryPushWorkflowConfigs.getTimeParams()).thenReturn(mock(TimeParams.class));
         when(pnDeliveryPushWorkflowConfigs.getTimeParams().getAttachmentTimeToAddAfterExpiration()).thenReturn(java.time.Duration.ofDays(30));
         when(pnDeliveryPushWorkflowConfigs.getInvalidableCategories()).thenReturn(List.of("PREPARE_ANALOG_DOMICILE","PREPARE_ANALOG_DOMICILE_FAILURE","SEND_ANALOG_DOMICILE","SEND_ANALOG_PROGRESS","SEND_ANALOG_FEEDBACK","ANALOG_SUCCESS_WORKFLOW","ANALOG_FAILURE_WORKFLOW","SCHEDULE_REFINEMENT","REFINEMENT","COMPLETELY_UNREACHABLE_CREATION_REQUEST","COMPLETELY_UNREACHABLE","ANALOG_WORKFLOW_RECIPIENT_DECEASED"));
+        stubCostInvalidationClients();
 
         ArgumentCaptor<TimelineElementInternal> argumentCaptor = ArgumentCaptor.forClass(TimelineElementInternal.class);
 
@@ -470,98 +492,16 @@ class ReworkRequestedHandlerTest {
         verify(timelineService).addTimelineElement(argumentCaptor.capture(), eq(notification));
         verify(paperChannelService, never()).initNotificationRework(anyString(), anyString());
         verify(paperChannelService).prepareAnalogNotification(eq(notification), eq(0), eq(1));
+        ArgumentCaptor<PaperCostToInvalidate> paperCostCaptor = ArgumentCaptor.forClass(PaperCostToInvalidate.class);
+        verify(pnExternalRegistriesClientReactive).invalidatePaperCostWithHttpInfo(eq("IUN_2"), paperCostCaptor.capture(), eq(notification.getPagoPaIntMode()));
+        Assertions.assertEquals("RECINDEX_0", paperCostCaptor.getValue().getRecIndex());
+        Assertions.assertFalse(paperCostCaptor.getValue().getCostPhases().isEmpty());
 
         List<String> invalidatedIds = extractInvalidatedTimelineIds(argumentCaptor.getValue());
         Assertions.assertTrue(invalidatedIds.contains("SEND_ANALOG_PROGRESS.RECINDEX_0.ATTEMPT_1.IDX_0"));
         Assertions.assertTrue(invalidatedIds.contains("SEND_ANALOG_PROGRESS.RECINDEX_0.ATTEMPT_1.IDX_2"));
         Assertions.assertTrue(invalidatedIds.contains("PREPARE_ANALOG_DOMICILE.RECINDEX_0.ATTEMPT_1"));
         Assertions.assertTrue(invalidatedIds.contains("SEND_ANALOG_DOMICILE.RECINDEX_0.ATTEMPT_1"));
-    }
-
-    @Test
-    void handleNotificationRestartPrepareAnalogNotificationErrorSchedulesFutureAction() {
-        NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
-        details.setRequestType(ReworkRequestTypeEnum.RESTART);
-        details.setReworkRecIndex("RECINDEX_0");
-        details.setReworkAttempt("ATTEMPT_1");
-        details.setCreatedAt(Instant.now());
-        details.setReworkRequestId("REQID");
-        details.setReworkId("REWORK_0_UUID");
-
-        Action action = Action.builder()
-                .iun("IUN_2")
-                .details(details)
-                .build();
-
-        NotificationHistoryResponse historyResponse = new NotificationHistoryResponse();
-        List<TimelineElement> timeline = buildTimeline();
-        historyResponse.setTimeline(timeline);
-        historyResponse.setNotificationStatus(NotificationStatus.DELIVERED);
-        NotificationStatusHistoryElement historyElement = new NotificationStatusHistoryElement();
-        historyElement.setStatus(NotificationStatus.DELIVERED);
-        historyElement.setRelatedTimelineElements(timeline.stream().map(TimelineElement::getElementId).toList());
-        historyResponse.setNotificationStatusHistory(List.of(historyElement));
-
-        when(timelineService.getTimeline(any(), anyBoolean())).thenReturn(buildTimeline().stream().map(t -> {;
-            TimelineElementInternal tei = new TimelineElementInternal();
-            tei.setCategory(TimelineElementCategoryInt.valueOf(t.getCategory().name()));
-            tei.setElementId(t.getElementId());
-            tei.setDetails(switch (t.getCategory()) {
-                case SEND_ANALOG_PROGRESS -> {
-                    SendAnalogProgressDetails details1 = (SendAnalogProgressDetails) t.getDetails();
-                    SendAnalogProgressDetailsInt detailsInt = new SendAnalogProgressDetailsInt();
-                    detailsInt.setDeliveryDetailCode(details1.getDeliveryDetailCode());
-                    yield detailsInt;
-                }
-                default -> null;
-            });
-            return tei;
-        }).collect(java.util.stream.Collectors.toSet()));
-
-        NotificationInt notification = NotificationInt.builder()
-                .sentAt(Instant.now())
-                .recipients(List.of(new NotificationRecipientInt()))
-                .iun("IUN_2")
-                .sender(NotificationSenderInt.builder().paId("paId").build())
-                .documents(Collections.emptyList())
-                .build();
-
-        when(notificationService.getNotificationByIun(anyString())).thenReturn(notification);
-        when(timelineService.getTimelineAndStatusHistory(anyString(), anyInt(), any())).thenReturn(historyResponse);
-        when(timelineService.addTimelineElement(any(), any())).thenReturn(new AddTimelineElementResponse(null, true));
-        when(pnDeliveryPushWorkflowConfigs.getTimeParams()).thenReturn(mock(TimeParams.class));
-        when(pnDeliveryPushWorkflowConfigs.getTimeParams().getAttachmentTimeToAddAfterExpiration()).thenReturn(java.time.Duration.ofDays(30));
-        when(pnDeliveryPushWorkflowConfigs.getInvalidableCategories()).thenReturn(List.of("PREPARE_ANALOG_DOMICILE","PREPARE_ANALOG_DOMICILE_FAILURE","SEND_ANALOG_DOMICILE","SEND_ANALOG_PROGRESS","SEND_ANALOG_FEEDBACK","ANALOG_SUCCESS_WORKFLOW","ANALOG_FAILURE_WORKFLOW","SCHEDULE_REFINEMENT","REFINEMENT","COMPLETELY_UNREACHABLE_CREATION_REQUEST","COMPLETELY_UNREACHABLE","ANALOG_WORKFLOW_RECIPIENT_DECEASED"));
-        doThrow(new RuntimeException("prepare-error")).when(paperChannelService).prepareAnalogNotification(eq(notification), eq(0), eq(1));
-
-        handler.handleNotification(action).block();
-
-        verify(paperChannelService, never()).initNotificationRework(anyString(), anyString());
-        verify(timelineService).addTimelineElement(any(), eq(notification));
-        verify(paperChannelService).prepareAnalogNotification(eq(notification), eq(0), eq(1));
-        verify(reworkRequestEventPool).scheduleFutureAction(any(), any());
-    }
-
-    @Test
-    void handleNotificationRestartMalformedIndexesSchedulesFutureAction() {
-        NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
-        details.setRequestType(ReworkRequestTypeEnum.RESTART);
-        details.setReworkRecIndex("RECINDEX_");
-        details.setReworkAttempt("ATTEMPT_1");
-        details.setCreatedAt(Instant.now());
-        details.setReworkRequestId("REQID");
-        details.setReworkId("REWORK_0_UUID");
-
-        Action action = Action.builder()
-                .iun("IUN_2")
-                .details(details)
-                .build();
-
-        handler.handleNotification(action).block();
-
-        verify(paperChannelService, never()).prepareAnalogNotification(any(), anyInt(), anyInt());
-        verify(timelineService, never()).addTimelineElement(any(), any());
-        verify(reworkRequestEventPool).scheduleFutureAction(any(), any());
     }
 
     @Test
@@ -615,6 +555,13 @@ class ReworkRequestedHandlerTest {
     private List<String> extractInvalidatedTimelineIds(TimelineElementInternal capturedElement) {
         NotificationTimelineReworkedDetailsInt detailsInt = (NotificationTimelineReworkedDetailsInt) capturedElement.getDetails();
         return detailsInt.getInvalidatedTimelineAndStatusHistory().getFirst().getRelatedTimelineElementIds();
+    }
+
+    private void stubCostInvalidationClients() {
+        when(pnExternalRegistriesClientReactive.invalidatePaperCostWithHttpInfo(anyString(), any(PaperCostToInvalidate.class), any()))
+                .thenReturn(Mono.empty());
+        when(notificationCostServiceClient.invalidatePaperCostWithHttpInfo(anyString(), any()))
+                .thenReturn(Mono.empty());
     }
 
     private List<TimelineElement> buildTimeline() {
@@ -702,4 +649,3 @@ class ReworkRequestedHandlerTest {
         return timeline;
     }
 }
-

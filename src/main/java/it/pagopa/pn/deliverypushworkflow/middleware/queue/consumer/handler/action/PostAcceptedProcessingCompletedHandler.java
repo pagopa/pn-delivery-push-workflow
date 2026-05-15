@@ -36,7 +36,7 @@ public class PostAcceptedProcessingCompletedHandler extends AbstractActionEventH
             scheduleRecipientWorkflow.startScheduleRecipientWorkflow(action.getIun());
             log.logEndingProcess(processName);
         }catch (Exception ex){
-            log.logEndingProcess(processName, false, ex.getMessage());
+            log.logEndingProcess(processName, false, ex.getMessage(), ex);
             HandleEventUtils.handleException(headers, ex);
             throw ex;
         }

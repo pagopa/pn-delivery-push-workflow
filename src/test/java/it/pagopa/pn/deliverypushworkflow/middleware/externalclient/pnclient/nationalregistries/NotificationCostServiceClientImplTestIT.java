@@ -25,7 +25,7 @@ import static org.mockserver.model.HttpResponse.response;
 @TestPropertySource(properties = {
         "pn.delivery-push-workflow.national-registries-base-url=http://localhost:9999"
 })
-class NationalRegistriesClientImplTestIT extends MockAWSObjectsTest {
+class NotificationCostServiceClientImplTestIT extends MockAWSObjectsTest {
 
     private static final String PN_NATIONAL_REGISTRIES_CX_ID = "pn-national-registries-cx-id";
 

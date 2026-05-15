@@ -57,7 +57,7 @@ public class DocumentCreationResponseEventHandler extends AbstractActionEventHan
 
                 MDC.remove(MDCUtils.MDC_PN_CTX_SAFESTORAGE_FILEKEY);
             } catch (Exception ex) {
-                log.logEndingProcess(processName, false, ex.getMessage());
+                log.logEndingProcess(processName, false, ex.getMessage(), ex);
                 MDC.remove(MDCUtils.MDC_PN_CTX_SAFESTORAGE_FILEKEY);
                 HandleEventUtils.handleException(headers, ex);
                 throw ex;

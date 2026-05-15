@@ -62,7 +62,7 @@ public class NotificationViewedEventHandler implements EventHandler<PnDeliveryNo
 
             log.logEndingProcess(processName);
         } catch (Exception ex) {
-            log.logEndingProcess(processName, false, ex.getMessage());
+            log.logEndingProcess(processName, false, ex.getMessage(), ex);
             HandleEventUtils.handleException(headers, ex);
             throw ex;
         }

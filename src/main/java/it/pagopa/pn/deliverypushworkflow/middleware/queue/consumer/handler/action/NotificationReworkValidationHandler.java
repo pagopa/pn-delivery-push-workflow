@@ -37,7 +37,7 @@ public class NotificationReworkValidationHandler extends AbstractActionEventHand
         MDCUtils.addMDCToContextAndExecute(Mono.just(action)
                     .flatMap(reworkValidationHandler::handleNotificationRework)
                     .doOnSuccess(resultFromAsync -> log.logEndingProcess(processName))
-                    .doOnError(error -> log.logEndingProcess(processName, false, error.getMessage())))
+                    .doOnError(error -> log.logEndingProcess(processName, false, error.getMessage(), error)))
                 .block();
     }
 }

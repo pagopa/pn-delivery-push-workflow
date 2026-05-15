@@ -22,7 +22,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Collections;
 
-class NationalRegistriesClientServiceImplTest {
+class NotificationCostServiceClientServiceImplTest {
 
     @Mock
     private PublicRegistryUtils publicRegistryUtils;
