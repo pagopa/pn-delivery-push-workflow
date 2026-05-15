@@ -440,6 +440,7 @@ Resources:
         ContainerEnvEntry29: !Sub 'PN_DELIVERYPUSHWORKFLOW_RADDALTBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
         ContainerEnvEntry30: 'PN_DELIVERYPUSHWORKFLOW_RADDSEARCHMODE={{resolve:ssm:/config/radd-coverage/search-mode}}'
         ContainerEnvEntry31: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_ANALOGRESPONSEEVENTS=${AnalogToDeliveryPushQueueName}'
+        ContainerEnvEntry31: !Sub 'PN_DELIVERYPUSHWORKFLOW_NOTIFICATIONCOSTSERVICEBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
         ApplicativeEnvFileChecksum: !Ref ApplicativeEnvFileChecksum
         ParentMicroserviceName: !Sub '${ProjectName}-delivery-push-workflow'
         JavaToolOptions: '-Dreactor.netty.ioWorkerCount=50'
