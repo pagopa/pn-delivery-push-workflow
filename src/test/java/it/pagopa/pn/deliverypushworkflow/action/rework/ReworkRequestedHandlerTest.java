@@ -420,7 +420,7 @@ class ReworkRequestedHandlerTest {
         ArgumentCaptor<PaperCostToInvalidate> paperCostCaptor = ArgumentCaptor.forClass(PaperCostToInvalidate.class);
         verify(pnExternalRegistriesClientReactive).invalidatePaperCostWithHttpInfo(eq("IUN_2"), paperCostCaptor.capture(), eq(notification.getPagoPaIntMode()));
         Assertions.assertEquals("RECINDEX_0", paperCostCaptor.getValue().getRecIndex());
-        Assertions.assertFalse(paperCostCaptor.getValue().getCostPhases().isEmpty());
+        Assertions.assertTrue(paperCostCaptor.getValue().getCostPhases().isEmpty());
 
         List<String> invalidatedIds = extractInvalidatedTimelineIds(argumentCaptor.getValue());
         Assertions.assertTrue(invalidatedIds.contains("SEND_ANALOG_PROGRESS.RECINDEX_0.ATTEMPT_1.IDX_0"));
@@ -434,7 +434,7 @@ class ReworkRequestedHandlerTest {
         NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
         details.setRequestType(ReworkRequestTypeEnum.RESTART);
         details.setReworkRecIndex("RECINDEX_0");
-        details.setReworkAttempt("ATTEMPT_1");
+        details.setReworkAttempt("ATTEMPT_0");
         details.setCreatedAt(Instant.now());
         details.setReworkRequestId("REQID");
         details.setReworkId("REWORK_0_UUID");
@@ -491,11 +491,14 @@ class ReworkRequestedHandlerTest {
 
         verify(timelineService).addTimelineElement(argumentCaptor.capture(), eq(notification));
         verify(paperChannelService, never()).initNotificationRework(anyString(), anyString());
-        verify(paperChannelService).prepareAnalogNotification(eq(notification), eq(0), eq(1));
+        verify(paperChannelService).prepareAnalogNotification(eq(notification), eq(0), eq(0));
         ArgumentCaptor<PaperCostToInvalidate> paperCostCaptor = ArgumentCaptor.forClass(PaperCostToInvalidate.class);
         verify(pnExternalRegistriesClientReactive).invalidatePaperCostWithHttpInfo(eq("IUN_2"), paperCostCaptor.capture(), eq(notification.getPagoPaIntMode()));
         Assertions.assertEquals("RECINDEX_0", paperCostCaptor.getValue().getRecIndex());
         Assertions.assertFalse(paperCostCaptor.getValue().getCostPhases().isEmpty());
+        Assertions.assertTrue(paperCostCaptor.getValue().getCostPhases().stream().anyMatch(elem -> elem.getValue().equals("SEND_ANALOG_DOMICILE_ATTEMPT_0")));
+        Assertions.assertTrue(paperCostCaptor.getValue().getCostPhases().stream().anyMatch(elem -> elem.getValue().equals("SEND_ANALOG_DOMICILE_ATTEMPT_1")));
+
 
         List<String> invalidatedIds = extractInvalidatedTimelineIds(argumentCaptor.getValue());
         Assertions.assertTrue(invalidatedIds.contains("SEND_ANALOG_PROGRESS.RECINDEX_0.ATTEMPT_1.IDX_0"));
