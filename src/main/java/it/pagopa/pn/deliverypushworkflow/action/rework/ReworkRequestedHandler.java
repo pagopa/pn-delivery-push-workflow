@@ -69,10 +69,18 @@ public class ReworkRequestedHandler {
     }
 
     private Mono<Void> handleNotificationRestart(Action action, NotificationReworkRequestedDetails detail) {
-        Integer recIndex = extractTimelineIndex(detail.getReworkRecIndex(), "reworkRecIndex");
-        Integer attempt = extractTimelineIndex(detail.getReworkAttempt(), "reworkAttempt");
-        return initializeReworkRequest(action, detail)
-                .doOnNext(notificationInt -> paperChannelService.prepareAnalogNotification(notificationInt, recIndex, attempt))
+        return Mono.defer(() -> {
+                    Integer recIndex = extractTimelineIndex(detail.getReworkRecIndex(), "reworkRecIndex");
+                    Integer attempt = extractTimelineIndex(detail.getReworkAttempt(), "reworkAttempt");
+                    return initializeReworkRequest(action, detail)
+                            .flatMap(notificationInt -> Mono.fromRunnable(() -> paperChannelService.prepareAnalogNotification(notificationInt, recIndex, attempt))
+                                    .thenReturn(notificationInt));
+                })
+                .onErrorResume(throwable -> {
+                    log.error("Errors during handleNotificationReworkRequested RESTART for iun {}: {}", action.getIun(), throwable.getMessage(), throwable);
+                    reworkRequestEventPool.scheduleFutureAction(NotificationReworkUtils.getReworkRequestEventAction(throwable.getMessage(), detail, action), ReworkRequestEventType.NOTIFICATION_REWORK_REQUESTED);
+                    return Mono.empty();
+                })
                 .then();
     }
 

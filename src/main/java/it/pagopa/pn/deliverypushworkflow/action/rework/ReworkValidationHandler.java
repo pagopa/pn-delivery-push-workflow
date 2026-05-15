@@ -74,7 +74,6 @@ public class ReworkValidationHandler {
 
     private final List<TimelineElementCategoryInt> ELEMENTS_WITHOUT_ATTEMPT_ID = List.of(NOTIFICATION_VIEWED_CREATION_REQUEST, SCHEDULE_REFINEMENT, ANALOG_FAILURE_WORKFLOW, ANALOG_SUCCESS_WORKFLOW, REFINEMENT, ANALOG_WORKFLOW_RECIPIENT_DECEASED);
     private final String POST_VALIDATION_PROCESS = ".POST_VALIDATION_PROCESS";
-    private static final String RESTART = ReworkRequestTypeEnum.RESTART.name();;
 
     public Mono<Void> handleNotificationRework(Action action) {
         log.info("Start handleRework - iun {} id {}", action.getIun(), action.getRecipientIndex());
@@ -140,7 +139,7 @@ public class ReworkValidationHandler {
 
     private Mono<NotificationReworkInfo> checkNotificationExpectedFinalStatusCodeAndThrow(NotificationReworkInfo info) {
         NotificationReworkValidationDetails detail = info.getActionDetail();
-        if (RESTART.equals(detail.getRequestType())) {
+        if (ReworkRequestTypeEnum.RESTART.equals(detail.getRequestType())) {
             return Mono.just(info);
         }
         return NotificationReworkUtils.checkNotificationExpectedFinalStatusCodeAndThrow(
@@ -279,7 +278,7 @@ public class ReworkValidationHandler {
     }
 
     private Mono<Set<TimelineElementInternal>> checkForPaymentCategory(Set<TimelineElementInternal> timeline, NotificationReworkValidationDetails detail) {
-        if (RESTART.equals(detail.getRequestType()) && timeline.stream().anyMatch(timelineElementInternal -> timelineElementInternal.getCategory().equals(TimelineElementCategoryInt.PAYMENT))) {
+        if (ReworkRequestTypeEnum.RESTART.equals(detail.getRequestType()) && timeline.stream().anyMatch(timelineElementInternal -> timelineElementInternal.getCategory().equals(TimelineElementCategoryInt.PAYMENT))) {
             return fail(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT, "PAYMENT category found in timeline");
         }
         return Mono.just(timeline);
