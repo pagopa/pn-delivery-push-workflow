@@ -1257,19 +1257,9 @@ class ReworkValidationHandlerTest {
         notificationHistoryResponse.setNotificationStatus(NotificationStatus.EFFECTIVE_DATE);
 
         when(timelineService.getTimeline(anyString(), anyBoolean())).thenReturn(timeline);
-        when(pnDeliveryPushWorkflowConfigs.getReworkTTLAddressRange()).thenReturn(10);
-        when(pnDeliveryPushWorkflowConfigs.getNotificationReworkDocumentExpiringRange()).thenReturn(30);
         when(timelineUtils.checkIsNotificationCancellationRequested(any())).thenReturn(false);
         when(notificationService.getNotificationByIun(any())).thenReturn(notification);
         when(timelineService.getTimelineAndStatusHistory(any(), anyInt(), any())).thenReturn(notificationHistoryResponse);
-
-        FileDownloadResponse fileResponse = new FileDownloadResponse();
-        fileResponse.setRetentionUntil(OffsetDateTime.now().plusDays(120));
-        when(safeStorageService.getFile(any(), any(), any())).thenReturn(Mono.just(fileResponse));
-
-        CheckAddressResponse response = new CheckAddressResponse();
-        response.setEndValidity(Instant.now().plus(20, java.time.temporal.ChronoUnit.DAYS));
-        when(paperChannelAddressClient.checkAddress(anyString())).thenReturn(Mono.just(response));
 
         ArgumentCaptor<NewAction> captor = ArgumentCaptor.forClass(NewAction.class);
 
