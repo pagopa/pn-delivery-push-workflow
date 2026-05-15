@@ -30,6 +30,7 @@ import it.pagopa.pn.deliverypushworkflow.service.SafeStorageService;
 import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import reactor.core.publisher.Flux;
@@ -61,6 +62,10 @@ public class ReworkRequestedHandler {
 
     public Mono<Void> handleNotification(Action action) {
         NotificationReworkRequestedDetails detail = (NotificationReworkRequestedDetails) action.getDetails();
+        if (Objects.isNull(detail.getRequestType())) {
+            return Mono.error(new IllegalArgumentException("Request type is required for rework request with reworkId " + detail.getReworkId() + " and iun " + action.getIun()));
+        }
+
         if (ReworkRequestTypeEnum.RESTART.name().equals(detail.getRequestType().name())) {
             return handleNotificationRestart(action, detail);
         } else {
@@ -69,19 +74,27 @@ public class ReworkRequestedHandler {
     }
 
     private Mono<Void> handleNotificationRework(Action action, NotificationReworkRequestedDetails detail) {
-        return inizializeReworkRequest(action, detail)
+        return initializeReworkRequest(action, detail)
                 .then();
     }
 
     private Mono<Void> handleNotificationRestart(Action action, NotificationReworkRequestedDetails detail) {
-        Integer recIndex = Objects.nonNull(detail.getReworkRecIndex().split("_")[1]) ? Integer.parseInt(detail.getReworkRecIndex().split("_")[1]) : null;
-        Integer attempt = Objects.nonNull(detail.getReworkAttempt().split("_")[1]) ? Integer.parseInt(detail.getReworkAttempt().split("_")[1]) : null;
-        return inizializeReworkRequest(action, detail)
-                .doOnNext(notificationInt -> paperChannelService.prepareAnalogNotification(notificationInt, recIndex, attempt))
+        return Mono.defer(() -> {
+                    Integer recIndex = extractTimelineIndex(detail.getReworkRecIndex(), "reworkRecIndex");
+                    Integer attempt = extractTimelineIndex(detail.getReworkAttempt(), "reworkAttempt");
+                    return initializeReworkRequest(action, detail)
+                            .flatMap(notificationInt -> Mono.fromRunnable(() -> paperChannelService.prepareAnalogNotification(notificationInt, recIndex, attempt))
+                                    .thenReturn(notificationInt));
+                })
+                .onErrorResume(throwable -> {
+                    log.error("Errors during handleNotificationReworkRequested RESTART for iun {}: {}", action.getIun(), throwable.getMessage(), throwable);
+                    reworkRequestEventPool.scheduleFutureAction(NotificationReworkUtils.getReworkRequestEventAction(throwable.getMessage(), detail, action), ReworkRequestEventType.NOTIFICATION_REWORK_REQUESTED);
+                    return Mono.empty();
+                })
                 .then();
     }
 
-    private Mono<NotificationInt> inizializeReworkRequest(Action action, NotificationReworkRequestedDetails detail) {
+    private Mono<NotificationInt> initializeReworkRequest(Action action, NotificationReworkRequestedDetails detail) {
         NotificationInt notificationInt = notificationService.getNotificationByIun(action.getIun());
         Set<TimelineElementInternal> timelineElements = timelineService.getTimeline(action.getIun(), true);
         List<String> timelineElementsToInvalidate = new ArrayList<>();
@@ -144,8 +157,8 @@ public class ReworkRequestedHandler {
     }
 
     private TimelineElementInternal buildTimelineElement(NotificationInt notification,  List<String> elementsToInvalidate, NotificationReworkRequestedDetails internalDetail) {
-        Integer recIndex = Objects.nonNull(internalDetail.getReworkRecIndex().split("_")[1]) ? Integer.parseInt(internalDetail.getReworkRecIndex().split("_")[1]) : null;
-        Integer attempt = Objects.nonNull(internalDetail.getReworkAttempt().split("_")[1]) ? Integer.parseInt(internalDetail.getReworkAttempt().split("_")[1]) : null;
+        Integer recIndex = extractTimelineIndex(internalDetail.getReworkRecIndex(), "reworkRecIndex");
+        Integer attempt = extractTimelineIndex(internalDetail.getReworkAttempt(), "reworkAttempt");
         NotificationHistoryResponse notificationHistoryResponse = timelineService.getTimelineAndStatusHistory(notification.getIun(), notification.getRecipients().size(), notification.getSentAt());
         List<NotificationStatusHistoryElement> statusHistoryElements = new ArrayList<>();
         if(Objects.nonNull(notificationHistoryResponse.getNotificationStatusHistory())) {
@@ -160,6 +173,14 @@ public class ReworkRequestedHandler {
                     .toList();
         }
         return timelineUtils.buildNotificationTimelineReworkedTimelineElement(notification, statusHistoryElements, recIndex, attempt, internalDetail.getReworkId());
+    }
+
+    private Integer extractTimelineIndex(String timelineIndex, String fieldName) {
+        String indexValue = StringUtils.substringAfterLast(timelineIndex, "_");
+        if (!StringUtils.isNumeric(indexValue)) {
+            throw new IllegalArgumentException(String.format("Invalid %s value '%s' for rework request, expected format 'PREFIX_number'", fieldName, timelineIndex));
+        }
+        return Integer.parseInt(indexValue);
     }
 
 

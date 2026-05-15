@@ -1279,7 +1279,7 @@ class ReworkValidationHandlerTest {
 
         JsonNode insertedDetails = objectMapper.readTree(captor.getValue().getDetails());
 
-        Assertions.assertEquals(detail.getRequestType(), insertedDetails.path("requestType").asText());
+        Assertions.assertEquals(detail.getRequestType().name(), insertedDetails.path("requestType").asText());
     }
 }
 
