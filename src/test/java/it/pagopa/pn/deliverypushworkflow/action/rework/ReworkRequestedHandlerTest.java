@@ -191,7 +191,7 @@ class ReworkRequestedHandlerTest {
         notificationStatusHistory.add(historyElement);
         historyResponse.setNotificationStatusHistory(notificationStatusHistory);
         when(timelineService.getTimelineAndStatusHistory(anyString(), anyInt(), any())).thenReturn(historyResponse);
-        when(timelineService.getTimeline(any(), anyBoolean())).thenReturn(buildTimeline().stream().map(t -> {;
+        when(timelineService.getTimeline(any(), anyBoolean())).thenReturn(buildTimeline().stream().map(t -> {
             TimelineElementInternal tei = new TimelineElementInternal();
             tei.setCategory(TimelineElementCategoryInt.valueOf(t.getCategory().name()));
             tei.setElementId(t.getElementId());
@@ -261,7 +261,7 @@ class ReworkRequestedHandlerTest {
         historyElement.setRelatedTimelineElements(timeline.stream().map(TimelineElement::getElementId).toList());
         historyResponse.setNotificationStatusHistory(List.of(historyElement));
 
-        when(timelineService.getTimeline(any(), anyBoolean())).thenReturn(buildTimeline().stream().map(t -> {;
+        when(timelineService.getTimeline(any(), anyBoolean())).thenReturn(buildTimeline().stream().map(t -> {
             TimelineElementInternal tei = new TimelineElementInternal();
             tei.setCategory(TimelineElementCategoryInt.valueOf(t.getCategory().name()));
             tei.setElementId(t.getElementId());
@@ -313,7 +313,7 @@ class ReworkRequestedHandlerTest {
                 .details(details)
                 .build();
 
-        when(timelineService.getTimeline(any(), anyBoolean())).thenReturn(buildTimeline().stream().map(t -> {;
+        when(timelineService.getTimeline(any(), anyBoolean())).thenReturn(buildTimeline().stream().map(t -> {
             TimelineElementInternal tei = new TimelineElementInternal();
             tei.setCategory(TimelineElementCategoryInt.valueOf(t.getCategory().name()));
             tei.setElementId(t.getElementId());
@@ -372,7 +372,7 @@ class ReworkRequestedHandlerTest {
         historyElement.setRelatedTimelineElements(timeline.stream().map(TimelineElement::getElementId).toList());
         historyResponse.setNotificationStatusHistory(List.of(historyElement));
 
-        when(timelineService.getTimeline(any(), anyBoolean())).thenReturn(buildTimeline().stream().map(t -> {;
+        when(timelineService.getTimeline(any(), anyBoolean())).thenReturn(buildTimeline().stream().map(t -> {
             TimelineElementInternal tei = new TimelineElementInternal();
             tei.setCategory(TimelineElementCategoryInt.valueOf(t.getCategory().name()));
             tei.setElementId(t.getElementId());
@@ -445,7 +445,7 @@ class ReworkRequestedHandlerTest {
         historyElement.setRelatedTimelineElements(timeline.stream().map(TimelineElement::getElementId).toList());
         historyResponse.setNotificationStatusHistory(List.of(historyElement));
 
-        when(timelineService.getTimeline(any(), anyBoolean())).thenReturn(buildTimeline().stream().map(t -> {;
+        when(timelineService.getTimeline(any(), anyBoolean())).thenReturn(buildTimeline().stream().map(t -> {
             TimelineElementInternal tei = new TimelineElementInternal();
             tei.setCategory(TimelineElementCategoryInt.valueOf(t.getCategory().name()));
             tei.setElementId(t.getElementId());
