@@ -952,7 +952,7 @@ class ReworkValidationHandlerTest {
         detail.setReworkAttempt("ATTEMPT_0");
         detail.setReworkRecIndex("RECINDEX_0");
         detail.setReworkPcRetry("PCRETRY_0");
-        detail.setReworkExpectedFinalStatus(KO);
+        detail.setReworkExpectedFinalStatus("KO");
         Action action = Action.builder()
                 .iun("XLJE-VRQM-VKNQ-202507-K-1")
                 .details(detail)
@@ -1217,6 +1217,7 @@ class ReworkValidationHandlerTest {
         detail.setReworkAttempt("ATTEMPT_0");
         detail.setReworkRecIndex("RECINDEX_0");
         detail.setReworkPcRetry("PCRETRY_0");
+        detail.setReworkExpectedFinalStatus("OK");
         detail.setRequestType(ReworkRequestTypeEnum.RESTART);
 
         Action action = Action.builder()
