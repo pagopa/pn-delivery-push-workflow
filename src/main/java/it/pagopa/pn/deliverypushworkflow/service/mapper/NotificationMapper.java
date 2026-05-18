@@ -117,6 +117,11 @@ public class NotificationMapper {
         if(notification.getPagoPaIntMode() != null){
             sentNotification.setPagoPaIntMode(SentNotificationV26.PagoPaIntModeEnum.valueOf(notification.getPagoPaIntMode().getValue()));
         }
+        if( notification.getPhysicalCommunicationType() != null ) {
+            sentNotification.setPhysicalCommunicationType(
+                    SentNotificationV26.PhysicalCommunicationTypeEnum.valueOf( notification.getPhysicalCommunicationType().name() )
+            );
+        }
 
         NotificationSenderInt sender = notification.getSender();
         if( sender != null ) {
@@ -134,10 +139,6 @@ public class NotificationMapper {
                 NotificationMapper::getNotificationDocument).toList();
 
         sentNotification.setDocuments(documents);
-
-        if(notification.getPhysicalCommunicationType() != null){
-            sentNotification.setPhysicalCommunicationType(SentNotificationV26.PhysicalCommunicationTypeEnum.valueOf(notification.getPhysicalCommunicationType().name()));
-        }
         
         if(notification.getSender() != null){
             sentNotification.setSenderPaId(notification.getSender().getPaId());
