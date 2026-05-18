@@ -4,6 +4,7 @@ import it.pagopa.pn.deliverypushworkflow.action.it.utils.NotificationRecipientTe
 import it.pagopa.pn.deliverypushworkflow.action.it.utils.NotificationTestBuilder;
 import it.pagopa.pn.deliverypushworkflow.action.it.utils.PhysicalAddressBuilder;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationSenderInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,7 @@ class NotificationMapperTest {
                 .withNotificationFeePolicy(it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.NotificationFeePolicy.DELIVERY_MODE)
                 .build();
         expected = expected.toBuilder()
+                .sender(NotificationSenderInt.builder().physicalCommunicationPriority(0).build())
                 .version("v1")
                 .vat(22)
                 .build();
@@ -38,7 +40,6 @@ class NotificationMapperTest {
         NotificationInt actual = NotificationMapper.externalToInternal( sent );
         
         Assertions.assertEquals(expected, actual );
-        
     }
 
     @Test
@@ -60,6 +61,7 @@ class NotificationMapperTest {
                 .physicalCommunicationType(SentNotificationV26.PhysicalCommunicationTypeEnum.REGISTERED_LETTER_890)
                 .amount(18)
                 .paymentExpirationDate("2022-10-22")
+                .physicalCommunicationPriority(0)
                 .notificationFeePolicy(NotificationFeePolicy.DELIVERY_MODE)
                 .recipients( Collections.singletonList(
                        new NotificationRecipientV24()
