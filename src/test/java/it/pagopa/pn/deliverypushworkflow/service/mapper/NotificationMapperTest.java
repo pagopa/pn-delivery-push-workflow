@@ -4,6 +4,7 @@ import it.pagopa.pn.deliverypushworkflow.action.it.utils.NotificationRecipientTe
 import it.pagopa.pn.deliverypushworkflow.action.it.utils.NotificationTestBuilder;
 import it.pagopa.pn.deliverypushworkflow.action.it.utils.PhysicalAddressBuilder;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationSenderInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -30,36 +31,37 @@ class NotificationMapperTest {
                 .withNotificationFeePolicy(it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.NotificationFeePolicy.DELIVERY_MODE)
                 .build();
         expected = expected.toBuilder()
+                .sender(NotificationSenderInt.builder().physicalCommunicationPriority(0).build())
                 .version("v1")
                 .vat(22)
                 .build();
         
-        SentNotificationV25 sent = NotificationMapper.internalToExternal( expected );
+        SentNotificationV26 sent = NotificationMapper.internalToExternal( expected );
         NotificationInt actual = NotificationMapper.externalToInternal( sent );
         
         Assertions.assertEquals(expected, actual );
-        
     }
 
     @Test
     void externalToInternal() {
-        SentNotificationV25 expected = getExternalNotification();
+        SentNotificationV26 expected = getExternalNotification();
 
         NotificationInt internal = NotificationMapper.externalToInternal( expected );
-        SentNotificationV25 actual = NotificationMapper.internalToExternal( internal );
+        SentNotificationV26 actual = NotificationMapper.internalToExternal( internal );
         
         Assertions.assertEquals( expected, actual );
     }
 
-    private SentNotificationV25 getExternalNotification() {
-        return new SentNotificationV25()
+    private SentNotificationV26 getExternalNotification() {
+        return new SentNotificationV26()
                 .iun("IUN_01")
                 .paProtocolNumber("protocol_01")
                 .subject("Subject 01")
                 .senderPaId( "pa_02" )
-                .physicalCommunicationType(SentNotificationV25.PhysicalCommunicationTypeEnum.REGISTERED_LETTER_890)
+                .physicalCommunicationType(SentNotificationV26.PhysicalCommunicationTypeEnum.REGISTERED_LETTER_890)
                 .amount(18)
                 .paymentExpirationDate("2022-10-22")
+                .physicalCommunicationPriority(0)
                 .notificationFeePolicy(NotificationFeePolicy.DELIVERY_MODE)
                 .recipients( Collections.singletonList(
                        new NotificationRecipientV24()

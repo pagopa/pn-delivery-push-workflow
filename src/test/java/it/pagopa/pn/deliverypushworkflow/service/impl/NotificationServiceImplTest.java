@@ -6,7 +6,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.Notificat
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationSenderInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.ServiceLevelTypeInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.NotificationFeePolicy;
-import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.SentNotificationV25;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.SentNotificationV26;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.delivery.PnDeliveryClient;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.delivery.PnDeliveryClientReactive;
 import org.junit.jupiter.api.Assertions;
@@ -41,7 +41,7 @@ class NotificationServiceImplTest {
     void getNotificationByIun() {
         NotificationInt expected = buildNotificationInt();
 
-        SentNotificationV25 sentNotification = buildSentNotification();
+        SentNotificationV26 sentNotification = buildSentNotification();
         Mockito.when(pnDeliveryClient.getSentNotification("001")).thenReturn(sentNotification);
 
         NotificationInt actual = service.getNotificationByIun("001");
@@ -102,11 +102,12 @@ class NotificationServiceImplTest {
 
     }
     
-    private SentNotificationV25 buildSentNotification() {
-        SentNotificationV25 sentNotification = new SentNotificationV25();
+    private SentNotificationV26 buildSentNotification() {
+        SentNotificationV26 sentNotification = new SentNotificationV26();
         sentNotification.setIun("001");
-        sentNotification.setPhysicalCommunicationType(SentNotificationV25.PhysicalCommunicationTypeEnum.REGISTERED_LETTER_890);
+        sentNotification.setPhysicalCommunicationType(SentNotificationV26.PhysicalCommunicationTypeEnum.REGISTERED_LETTER_890);
         sentNotification.setNotificationFeePolicy(it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.NotificationFeePolicy.DELIVERY_MODE);
+        sentNotification.setPhysicalCommunicationPriority(0);
         return sentNotification;
     }
     
@@ -115,7 +116,7 @@ class NotificationServiceImplTest {
                 .iun("001")
                 .recipients(Collections.emptyList())
                 .documents(Collections.emptyList())
-                .sender(NotificationSenderInt.builder().build())
+                .sender(NotificationSenderInt.builder().physicalCommunicationPriority(0).build())
                 .notificationFeePolicy(NotificationFeePolicy.DELIVERY_MODE)
                 .physicalCommunicationType(ServiceLevelTypeInt.REGISTERED_LETTER_890)
                 .build();

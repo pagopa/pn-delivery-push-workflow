@@ -246,7 +246,7 @@
 						</goals>
 						<phase>generate-resources</phase>
 						<configuration>
-							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-paper-channel/2e75e268974f8773caf96385ea83dba1816383bc/docs/openapi/api-internal-v1.yaml</inputSpec>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-paper-channel/2695fcde4c08d3122fb883f2895d9a9491e05556/docs/openapi/api-internal-v1.yaml</inputSpec>
 							<templateDirectory>${project.build.directory}/dependency-resources/scripts/openapi/templates/7.4.0/client</templateDirectory>
 							<generatorName>java</generatorName>
 							<library>resttemplate</library>
@@ -438,7 +438,7 @@
 							<goal>generate</goal>
 						</goals>
 						<configuration>
-							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-delivery/d95ea58009124ce8ab953b13b6e5c3da95aafeb7/docs/openapi/api-private.yaml</inputSpec>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-delivery/1bf3411538d333d2ccdd12fc32902494af04e0c1/docs/openapi/api-private.yaml</inputSpec>
 							<templateDirectory>${project.build.directory}/dependency-resources/scripts/openapi/templates/7.4.0/client</templateDirectory>
 							<skipValidateSpec>true</skipValidateSpec>
 							<generatorName>java</generatorName>
@@ -474,7 +474,7 @@
 							<goal>generate</goal>
 						</goals>
 						<configuration>
-							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-delivery/d95ea58009124ce8ab953b13b6e5c3da95aafeb7/docs/openapi/api-private.yaml</inputSpec>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-delivery/1bf3411538d333d2ccdd12fc32902494af04e0c1/docs/openapi/api-private.yaml</inputSpec>
 							<templateDirectory>${project.build.directory}/dependency-resources/scripts/openapi/templates/7.4.0/client</templateDirectory>
 							<skipValidateSpec>true</skipValidateSpec>
 							<generatorName>java</generatorName>
