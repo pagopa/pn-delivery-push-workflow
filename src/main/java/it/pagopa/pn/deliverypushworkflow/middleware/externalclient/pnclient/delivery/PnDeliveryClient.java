@@ -1,7 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.delivery;
 
 import it.pagopa.pn.commons.log.PnLogger;
-import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.SentNotificationV25;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.SentNotificationV26;
 
 import java.util.Map;
 
@@ -11,6 +11,6 @@ public interface PnDeliveryClient {
     String GET_NOTIFICATION = "GET NOTIFICATION";
     String GET_QUICK_ACCESS_TOKEN = "GET QUICK ACCESS TOKEN";
 
-    SentNotificationV25 getSentNotification(String iun);
+    SentNotificationV26 getSentNotification(String iun);
     Map<String, String> getQuickAccessLinkTokensPrivate(String iun);
 }
