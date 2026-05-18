@@ -31,7 +31,7 @@ class NotificationMapperTest {
                 .withNotificationFeePolicy(it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.NotificationFeePolicy.DELIVERY_MODE)
                 .build();
         expected = expected.toBuilder()
-                .sender(NotificationSenderInt.builder().priority(0).build())
+                .sender(NotificationSenderInt.builder().physicalCommunicationPriority(0).build())
                 .version("v1")
                 .vat(22)
                 .build();
@@ -61,7 +61,7 @@ class NotificationMapperTest {
                 .physicalCommunicationType(SentNotificationV26.PhysicalCommunicationTypeEnum.REGISTERED_LETTER_890)
                 .amount(18)
                 .paymentExpirationDate("2022-10-22")
-                .senderPriority(0)
+                .physicalCommunicationPriority(0)
                 .notificationFeePolicy(NotificationFeePolicy.DELIVERY_MODE)
                 .recipients( Collections.singletonList(
                        new NotificationRecipientV24()

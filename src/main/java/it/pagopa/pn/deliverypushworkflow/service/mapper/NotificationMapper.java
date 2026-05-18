@@ -40,7 +40,7 @@ public class NotificationMapper {
                                 .paTaxId( sentNotification.getSenderTaxId() )
                                 .paId(sentNotification.getSenderPaId())
                                 .paDenomination(sentNotification.getSenderDenomination())
-                                .priority(sentNotification.getSenderPriority())
+                                .physicalCommunicationPriority(sentNotification.getPhysicalCommunicationPriority())
                                 .build()
                 )
                 .paFee(sentNotification.getPaFee())
@@ -107,7 +107,7 @@ public class NotificationMapper {
         sentNotification.setVat(notification.getVat());
         sentNotification.setAdditionalLanguages(notification.getAdditionalLanguages());
         sentNotification.setUsedServices(mapToUserSevicesInt(notification.getUsedServices()));
-        sentNotification.setSenderPriority(notification.getSender().getPriority());
+        sentNotification.setPhysicalCommunicationPriority(notification.getSender().getPhysicalCommunicationPriority());
 
         ZonedDateTime time = DateFormatUtils.parseInstantToZonedDateTime(notification.getPaymentExpirationDate());
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
