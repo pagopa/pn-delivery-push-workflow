@@ -1,10 +1,14 @@
 package it.pagopa.pn.deliverypushworkflow.action.it.mockbean;
 
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.PagoPaIntMode;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.NotificationFeePolicy;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregistry_reactive.model.PaperCostToInvalidate;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregistry_reactive.model.UpdateNotificationCostRequest;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregistry_reactive.model.UpdateNotificationCostResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregistry_reactive.model.UpdateNotificationCostResult;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.externalregistry.PnExternalRegistriesClientReactive;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.http.ResponseEntity;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
@@ -52,6 +56,11 @@ public class PnExternalRegistriesClientReactiveMock implements PnExternalRegistr
         response.setUpdateResults(updateResults);
         
         return Mono.just(response);
+    }
+
+    @Override
+    public Mono<ResponseEntity<Void>> invalidatePaperCost(String iun, PaperCostToInvalidate paperCostToInvalidate, PagoPaIntMode mode, NotificationFeePolicy notificationFeePolicy) {
+        return Mono.just(ResponseEntity.ok().build());
     }
 
     public Integer getNotificationCostFromIuv(String creditorTaxId, String noticeCode) {

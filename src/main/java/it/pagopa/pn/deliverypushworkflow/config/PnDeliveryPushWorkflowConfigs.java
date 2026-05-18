@@ -46,6 +46,8 @@ public class PnDeliveryPushWorkflowConfigs {
 
     private String externalRegistryBaseUrl;
 
+    private String notificationCostServiceBaseUrl;
+
     private String nationalRegistriesBaseUrl;
 
     private String actionManagerBaseUrl;
