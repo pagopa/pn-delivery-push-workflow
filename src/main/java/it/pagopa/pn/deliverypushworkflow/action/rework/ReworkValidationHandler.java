@@ -413,11 +413,10 @@ public class ReworkValidationHandler {
         request.setCreatedAt(Instant.now());
         request.setRequestType(detail.getRequestType());
         try {
-            ObjectMapper requestObjectMapper = objectMapper.copy();
-            requestObjectMapper.registerModule(new JavaTimeModule());
-            newAction.setDetails(requestObjectMapper.writeValueAsString(request));
+            objectMapper.registerModule(new JavaTimeModule());
+            newAction.setDetails(objectMapper.writeValueAsString(request));
         } catch (JsonProcessingException e) {
-            throw new IllegalArgumentException("Error converting NotificationReworkRequestedDetails to json", e);
+            throw new IllegalArgumentException("Error creating converting NotificationReworkRequestedDetails to json", e);
         }
         return newAction;
     }

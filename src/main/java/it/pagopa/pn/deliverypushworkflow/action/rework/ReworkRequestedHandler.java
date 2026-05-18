@@ -75,6 +75,11 @@ public class ReworkRequestedHandler {
 
     private Mono<Void> handleNotificationRework(Action action, NotificationReworkRequestedDetails detail) {
         return initializeReworkRequest(action, detail)
+                .onErrorResume(throwable -> {
+                    log.error("Errors during handleNotificationReworkRequested for iun {}: {}", action.getIun(), throwable.getMessage(), throwable);
+                    reworkRequestEventPool.scheduleFutureAction(NotificationReworkUtils.getReworkRequestEventAction(throwable.getMessage(), detail, action), ReworkRequestEventType.NOTIFICATION_REWORK_REQUESTED);
+                    return Mono.empty();
+                })
                 .then();
     }
 
@@ -108,20 +113,11 @@ public class ReworkRequestedHandler {
                 .flatMap(timelineElementInternal -> pnExternalRegistriesClientReactive.invalidatePaperCost(action.getIun(), createPaperCostToInvalidateRequest(notificationInt, detail.getReworkRecIndex(), timelineElementsToInvalidate), notificationInt.getPagoPaIntMode(), notificationInt.getNotificationFeePolicy()).thenReturn(timelineElementInternal))
                 .flatMap(timelineElementInternal -> notificationCostServiceClient.invalidatePaperCostWithHttpInfo(action.getIun(), NotificationCostServiceMapper.createPaperCostToInvalidateRequest(detail.getReworkRecIndex(), timelineElementsToInvalidate)).thenReturn(timelineElementInternal))
                 .map(timelineElementInternal -> timelineService.addTimelineElement(timelineElementInternal, notificationInt))
-                .map(ignore -> notificationInt)
-                .onErrorResume(throwable -> {
-                    log.error("Errors during handleNotificationReworkRequested for iun {}: {}", action.getIun(), throwable.getMessage(), throwable);
-                    reworkRequestEventPool.scheduleFutureAction(NotificationReworkUtils.getReworkRequestEventAction(throwable.getMessage(), detail, action), ReworkRequestEventType.NOTIFICATION_REWORK_REQUESTED);
-                    return Mono.empty();
-                });
+                .map(ignore -> notificationInt);
     }
 
     private Mono<List<String>> computeTimelineElementToInvalidate(Set<TimelineElementInternal> timelineElementInternalList, String recIndex, String attemptId, ReworkRequestTypeEnum requestType) {
         log.debug("Starting computeTimelineElementToInvalidate for recIndex {} and attemptId {}", recIndex, attemptId);
-        if (Objects.isNull(requestType)) {
-            return Mono.error(new IllegalArgumentException("Request type is required to compute timeline elements to invalidate"));
-        }
-
         return Flux.fromIterable(timelineElementInternalList)
                 .filter(elem -> pnDeliveryPushWorkflowConfigs.getInvalidableCategories().contains(elem.getCategory().name()))
                 .filter(elem -> elem.getElementId().contains(recIndex))
