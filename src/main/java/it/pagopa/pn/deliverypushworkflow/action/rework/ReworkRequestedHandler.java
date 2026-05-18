@@ -105,7 +105,7 @@ public class ReworkRequestedHandler {
                 .flatMap(timelineElementIds -> startNotificationReworkProcess(detail).thenReturn(timelineElementIds))
                 .flatMap(strings -> updateAttachmentRetention(detail.getCreatedAt(), notificationInt.getIun(), notificationInt.getDocuments(), detail.getReworkAttempt()))
                 .map(internalAction -> buildTimelineElement(notificationInt, timelineElementsToInvalidate, detail))
-                .flatMap(timelineElementInternal -> pnExternalRegistriesClientReactive.invalidatePaperCostWithHttpInfo(action.getIun(), createPaperCostToInvalidateRequest(notificationInt, detail.getReworkRecIndex(), timelineElementsToInvalidate), notificationInt.getPagoPaIntMode()).thenReturn(timelineElementInternal))
+                .flatMap(timelineElementInternal -> pnExternalRegistriesClientReactive.invalidatePaperCost(action.getIun(), createPaperCostToInvalidateRequest(notificationInt, detail.getReworkRecIndex(), timelineElementsToInvalidate), notificationInt.getPagoPaIntMode(), notificationInt.getNotificationFeePolicy()).thenReturn(timelineElementInternal))
                 .flatMap(timelineElementInternal -> notificationCostServiceClient.invalidatePaperCostWithHttpInfo(action.getIun(), NotificationCostServiceMapper.createPaperCostToInvalidateRequest(detail.getReworkRecIndex(), timelineElementsToInvalidate)).thenReturn(timelineElementInternal))
                 .map(timelineElementInternal -> timelineService.addTimelineElement(timelineElementInternal, notificationInt))
                 .map(ignore -> notificationInt)

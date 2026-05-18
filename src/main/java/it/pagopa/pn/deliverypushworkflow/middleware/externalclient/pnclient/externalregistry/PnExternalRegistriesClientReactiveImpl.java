@@ -2,6 +2,7 @@ package it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.ext
 
 import it.pagopa.pn.commons.pnclients.CommonBaseClient;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.PagoPaIntMode;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.NotificationFeePolicy;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregistry_reactive.api.PaperCostApi;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregistry_reactive.api.UpdateNotificationCostApi;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregistry_reactive.model.PaperCostToInvalidate;
@@ -24,9 +25,9 @@ public class PnExternalRegistriesClientReactiveImpl extends CommonBaseClient imp
         return updateNotificationCostApi.updateNotificationCost(updateNotificationCostRequest);
     }
 
-    public Mono<ResponseEntity<Void>> invalidatePaperCostWithHttpInfo(String iun, PaperCostToInvalidate paperCostToInvalidate, PagoPaIntMode mode) {
-        if (!PagoPaIntMode.ASYNC.equals(mode)) {
-            log.debug("Invalidating not possible for mode: {}", mode);
+    public Mono<ResponseEntity<Void>> invalidatePaperCost(String iun, PaperCostToInvalidate paperCostToInvalidate, PagoPaIntMode mode, NotificationFeePolicy notificationFeePolicy) {
+        if ((PagoPaIntMode.SYNC.equals(mode) || PagoPaIntMode.NONE.equals(mode)) && NotificationFeePolicy.FLAT_RATE.equals(notificationFeePolicy)) {
+            log.debug("Invalidating not possible for mode: {} and feePolicy: {}", mode, notificationFeePolicy);
             return Mono.empty();
         }
         return paperCostApi.invalidatePaperCostWithHttpInfo(iun, paperCostToInvalidate);

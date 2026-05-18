@@ -1,6 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.action.it.mockbean;
 
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.PagoPaIntMode;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.NotificationFeePolicy;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregistry_reactive.model.PaperCostToInvalidate;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregistry_reactive.model.UpdateNotificationCostRequest;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregistry_reactive.model.UpdateNotificationCostResponse;
@@ -58,7 +59,7 @@ public class PnExternalRegistriesClientReactiveMock implements PnExternalRegistr
     }
 
     @Override
-    public Mono<ResponseEntity<Void>> invalidatePaperCostWithHttpInfo(String iun, PaperCostToInvalidate paperCostToInvalidate, PagoPaIntMode mode) {
+    public Mono<ResponseEntity<Void>> invalidatePaperCost(String iun, PaperCostToInvalidate paperCostToInvalidate, PagoPaIntMode mode, NotificationFeePolicy notificationFeePolicy) {
         return Mono.just(ResponseEntity.ok().build());
     }
 
