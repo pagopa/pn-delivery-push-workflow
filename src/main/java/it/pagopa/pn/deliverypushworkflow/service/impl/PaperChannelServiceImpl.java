@@ -382,7 +382,7 @@ public class PaperChannelServiceImpl implements PaperChannelService {
                         .prepareRequestId(prepareRequestId)
                         .build();
 
-                timelineId = paperChannelUtils.addSendAnalogNotificationToTimeline(notification, receiverAddress, recIndex, analogDtoInfo, replacedF24AttachmentUrls, categorizedAttachmentsResult);
+                timelineId = paperChannelUtils.addSendAnalogNotificationToTimeline(notification, receiverAddress, recIndex, analogDtoInfo, replacedF24AttachmentUrls, categorizedAttachmentsResult, prepareRequestId);
 
                 log.info("Analog notification sent to paperChannel - iun={} id={}", notification.getIun(), recIndex);
                 auditLogEvent.generateSuccess("send success cost={} send timelineId={}", sendResponse.getAmount(), timelineId).log();

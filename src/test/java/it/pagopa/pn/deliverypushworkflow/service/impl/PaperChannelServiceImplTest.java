@@ -658,7 +658,7 @@ class PaperChannelServiceImplTest {
         Mockito.when(auditLogEvent.generateSuccess(any(), (Integer) any(), any())).thenReturn(auditLogEvent);
 
         String sendAnalogElementId = "sendAnalogElementId";
-        Mockito.when(paperChannelUtils.addSendAnalogNotificationToTimeline(any(), any(), any(), any(), any(), any()))
+        Mockito.when(paperChannelUtils.addSendAnalogNotificationToTimeline(any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(sendAnalogElementId);
 
         TimelineElementInternal timelineElementInternal = TimelineElementInternal.builder()

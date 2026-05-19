@@ -126,9 +126,10 @@ public class PaperChannelUtils {
     
     public String addSendAnalogNotificationToTimeline(NotificationInt notification, PhysicalAddressInt physicalAddress, Integer recIndex,
                                                       AnalogDtoInt analogDtoInfo, List<String> replacedF24AttachmentUrls,
-                                                      CategorizedAttachmentsResultInt categorizedAttachmentsResult) {
+                                                      CategorizedAttachmentsResultInt categorizedAttachmentsResult,
+                                                      String prepareRequestId) {
         TimelineElementInternal timelineElementInternal = timelineUtils.buildSendAnalogNotificationTimelineElement(
-                physicalAddress, recIndex, notification, analogDtoInfo, replacedF24AttachmentUrls, categorizedAttachmentsResult);
+                physicalAddress, recIndex, notification, analogDtoInfo, replacedF24AttachmentUrls, categorizedAttachmentsResult, prepareRequestId);
         addTimelineElement(timelineElementInternal,
                 notification
         );
