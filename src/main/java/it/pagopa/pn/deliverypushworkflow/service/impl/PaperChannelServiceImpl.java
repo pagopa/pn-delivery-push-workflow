@@ -213,14 +213,15 @@ public class PaperChannelServiceImpl implements PaperChannelService {
                     receiverAddress.setFullname(notification.getRecipients().get(recIndex).getDenomination());
                 }
 
-                if (pnDeliveryPushWorkflowConfigs.getInvalidableCategories().contains(PREPARE_ANALOG_DOMICILE.getValue())) {
-                    eventId = retrieveCorrectEventIdIfReworkIsPresent(notification, recIndex, sentAttemptMade, eventId);
-                }
             }
             else
             {
                 // se sentAttemptMade è 0, il receiver addres è quello fornito dalla PA
                 receiverAddress = analogWorkflowUtils.getPhysicalAddress(notification, recIndex);
+            }
+
+            if (pnDeliveryPushWorkflowConfigs.getInvalidableCategories().contains(PREPARE_ANALOG_DOMICILE.getValue())) {
+                eventId = retrieveCorrectEventIdIfReworkIsPresent(notification, recIndex, sentAttemptMade, eventId);
             }
 
 
