@@ -228,7 +228,11 @@ public class ReworkValidationHandler {
     }
 
     private String computeRequestIdForAddress(NotificationReworkInfo externalInfo) {
-        return String.format(TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE+externalInfo.getAction().getIun()+externalInfo.getActionDetail().getReworkRecIndex()+".ATTEMPT_0");
+        return String.join(".",
+                TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE.toString(),
+                "IUN_" + externalInfo.getAction().getIun(),
+                "RECINDEX_" + externalInfo.getActionDetail().getReworkRecIndex(),
+                ATTEMPT_0);
     }
 
     private NotificationReworkInfo addErrorAddressNotFound(NotificationReworkInfo externalInfo) {
