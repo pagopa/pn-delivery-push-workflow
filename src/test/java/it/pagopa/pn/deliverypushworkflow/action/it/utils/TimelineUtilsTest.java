@@ -283,7 +283,7 @@ class TimelineUtilsTest {
                 .build();
 
         TimelineElementInternal actual = timelineUtils.buildSendAnalogNotificationTimelineElement(
-                address, recIndex, notification, analogDtoInfo, List.of("replacedF24AttachmentUrls"), categorizedAttachmentsResult
+                address, recIndex, notification, analogDtoInfo, List.of("replacedF24AttachmentUrls"), categorizedAttachmentsResult, null
         );
 
         Assertions.assertAll(

@@ -225,6 +225,7 @@ public enum TimelineEventId {
                     .withIun(eventId.getIun())
                     .withRecIndex(eventId.getRecIndex())
                     .withSentAttemptMade(eventId.getSentAttemptMade())
+                    .withReworkIdx(eventId.getReworkIdx())
                     .build();
         }
     },

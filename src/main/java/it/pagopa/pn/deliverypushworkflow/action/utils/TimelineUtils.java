@@ -15,10 +15,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.legalfacts.LegalFactsIdInt;
 import it.pagopa.pn.deliverypushworkflow.dto.legalfacts.PdfInfo;
 import it.pagopa.pn.deliverypushworkflow.dto.mandate.DelegateInfoInt;
 import it.pagopa.pn.deliverypushworkflow.dto.radd.RaddInfo;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.EventId;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventId;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventIdBuilder;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.*;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.*;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.SendResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationStatusHistoryElement;
@@ -400,16 +397,19 @@ public class TimelineUtils {
                                                                               NotificationInt notification,
                                                                               AnalogDtoInt analogDtoInfo,
                                                                               List<String> replacedF24AttachmentUrls,
-                                                                              CategorizedAttachmentsResultInt categorizedAttachmentsResult) {
+                                                                              CategorizedAttachmentsResultInt categorizedAttachmentsResult,
+                                                                              String prepareRequestId) {
         SendResponse sendResponse = analogDtoInfo.getSendResponse();
         log.debug("buildSendAnalogNotificationTimelineElement - IUN={} and id={} analogCost={} relatedRequestId={} replacedF24AttachmentUrls={}", notification.getIun(), recIndex, sendResponse.getAmount(), analogDtoInfo.getRelatedRequestId(), replacedF24AttachmentUrls);
         ServiceLevelInt serviceLevel = notification.getPhysicalCommunicationType() != null ? ServiceLevelInt.valueOf(notification.getPhysicalCommunicationType().name()) : null;
 
+        Integer reworkIdx = TimelineEventIdParser.parse(prepareRequestId).reworkIndex().orElse(null);
         String elementId = TimelineEventId.SEND_ANALOG_DOMICILE.buildEventId(
                 EventId.builder()
                         .iun(notification.getIun())
                         .recIndex(recIndex)
                         .sentAttemptMade(analogDtoInfo.getSentAttemptMade())
+                        .reworkIdx(reworkIdx)
                         .build());
 
         SendAnalogDetailsInt details = SendAnalogDetailsInt.builder()
