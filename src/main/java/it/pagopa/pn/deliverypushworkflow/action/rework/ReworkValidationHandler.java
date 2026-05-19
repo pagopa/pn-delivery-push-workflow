@@ -157,8 +157,7 @@ public class ReworkValidationHandler {
     }
 
     private Mono<NotificationReworkInfo> checkNotificationAttachments(NotificationReworkInfo info, String reworkAttempt, String reworkFinalStatus) {
-        if(ReworkRequestTypeEnum.RESTART.equals(info.getActionDetail().getRequestType()) ||
-                (ATTEMPT_0.equalsIgnoreCase(reworkAttempt) && KO.equalsIgnoreCase(reworkFinalStatus))) {
+        if(needToVerifyAddressAndAttachments(info, reworkAttempt, reworkFinalStatus)) {
             return Flux.fromIterable(info.getNotification().getDocuments())
                     .flatMap(document -> safeStorageService.getFile(document.getRef().getKey(), true, false))
                     .filter(response -> response.getRetentionUntil().minusDays(pnDeliveryPushWorkflowConfigs.getNotificationReworkDocumentExpiringRange()).isBefore(OffsetDateTime.now()))
@@ -184,6 +183,11 @@ public class ReworkValidationHandler {
         return Mono.just(info);
     }
 
+    private static boolean needToVerifyAddressAndAttachments(NotificationReworkInfo info, String reworkAttempt, String reworkFinalStatus) {
+        return ReworkRequestTypeEnum.RESTART.equals(info.getActionDetail().getRequestType()) ||
+                (ATTEMPT_0.equalsIgnoreCase(reworkAttempt) && KO.equalsIgnoreCase(reworkFinalStatus));
+    }
+
     private String computeRequestId(NotificationReworkInfo info) {
         log.debug("computeRequestId for iun {}", info.getAction().getIun());
         return info.getTimeline().stream()
@@ -197,8 +201,7 @@ public class ReworkValidationHandler {
 
     private Mono<NotificationReworkInfo> checkNotificationAddress(NotificationReworkInfo externalInfo, String reworkAttempt, String reworkFinalStatus) {
         log.debug("checkNotificationAddress for iun {}, requestId {}", externalInfo.getAction().getIun(), externalInfo.getRequestId());
-        if(ReworkRequestTypeEnum.RESTART.equals(externalInfo.getActionDetail().getRequestType()) ||
-                (ATTEMPT_0.equalsIgnoreCase(reworkAttempt) && KO.equalsIgnoreCase(reworkFinalStatus))) {
+        if(needToVerifyAddressAndAttachments(externalInfo, reworkAttempt, reworkFinalStatus)) {
             return paperChannelAddressClient.checkAddress(externalInfo.getRequestId())
                     .doOnNext(checkAddressResponse -> checkTtl(checkAddressResponse, externalInfo))
                     .map(checkAddressResponse -> externalInfo)
