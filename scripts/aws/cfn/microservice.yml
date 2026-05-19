@@ -951,6 +951,11 @@ Resources:
         detail-type: ["ActionManagerEventOutcome"]
         detail:
           routingActionType: !Ref ActionQueueDetailType
+          $or:
+            - communicationType:
+                - exists: false
+            - communicationType:
+                - "LEGAL"
       Targets:
         - Id: !Sub '${ProjectName}-CoreEventBus-ActionManager2ActionQueue'
           Arn: !Ref ScheduledActionsQueueARN
