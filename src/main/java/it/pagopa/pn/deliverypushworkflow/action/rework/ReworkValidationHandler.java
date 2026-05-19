@@ -90,7 +90,7 @@ public class ReworkValidationHandler {
                 .flatMap(this::checkNotificationTimelineAndThrow)
                 .flatMap(this::checkNotificationExpectedFinalStatusCodeAndThrow)
                 .flatMap(notificationReworkInfo -> checkNotificationAttachments(notificationReworkInfo, reworkAttempt, reworkFinalStatus))
-                .flatMap(requestId -> checkNotificationAddress(reworkInfo, reworkAttempt, reworkFinalStatus))
+                .flatMap(notificationReworkInfo -> checkNotificationAddress(reworkInfo, reworkAttempt, reworkFinalStatus))
                 .map(this::computeRequestId)
                 .doOnNext(reworkInfo::setRequestId)
                 .thenReturn(reworkInfo)
