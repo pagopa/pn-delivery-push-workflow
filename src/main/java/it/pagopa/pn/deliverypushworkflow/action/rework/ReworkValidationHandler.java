@@ -157,7 +157,8 @@ public class ReworkValidationHandler {
     }
 
     private Mono<NotificationReworkInfo> checkNotificationAttachments(NotificationReworkInfo info, String reworkAttempt, String reworkFinalStatus) {
-        if(reworkAttempt.equalsIgnoreCase(ATTEMPT_0) && reworkFinalStatus.equalsIgnoreCase(KO)) {
+        if(ReworkRequestTypeEnum.RESTART.equals(info.getActionDetail().getRequestType()) ||
+                (ATTEMPT_0.equalsIgnoreCase(reworkAttempt) && KO.equalsIgnoreCase(reworkFinalStatus))) {
             return Flux.fromIterable(info.getNotification().getDocuments())
                     .flatMap(document -> safeStorageService.getFile(document.getRef().getKey(), true, false))
                     .filter(response -> response.getRetentionUntil().minusDays(pnDeliveryPushWorkflowConfigs.getNotificationReworkDocumentExpiringRange()).isBefore(OffsetDateTime.now()))
@@ -196,7 +197,8 @@ public class ReworkValidationHandler {
 
     private Mono<NotificationReworkInfo> checkNotificationAddress(NotificationReworkInfo externalInfo, String reworkAttempt, String reworkFinalStatus) {
         log.debug("checkNotificationAddress for iun {}, requestId {}", externalInfo.getAction().getIun(), externalInfo.getRequestId());
-        if(reworkAttempt.equalsIgnoreCase(ATTEMPT_0) && reworkFinalStatus.equalsIgnoreCase(KO)) {
+        if(ReworkRequestTypeEnum.RESTART.equals(externalInfo.getActionDetail().getRequestType()) ||
+                (ATTEMPT_0.equalsIgnoreCase(reworkAttempt) && KO.equalsIgnoreCase(reworkFinalStatus))) {
             return paperChannelAddressClient.checkAddress(externalInfo.getRequestId())
                     .doOnNext(checkAddressResponse -> checkTtl(checkAddressResponse, externalInfo))
                     .map(checkAddressResponse -> externalInfo)
@@ -293,7 +295,7 @@ public class ReworkValidationHandler {
     }
 
     private Mono<Set<TimelineElementInternal>> checkIfAttemptOneExistsForReworkAttemptZero(Set<TimelineElementInternal> timeline, String attempt, boolean isStatusViewed) {
-        if(isStatusViewed && attempt.equalsIgnoreCase(ATTEMPT_0) &&
+        if(isStatusViewed && ATTEMPT_0.equalsIgnoreCase(attempt) &&
                 timeline.stream().anyMatch(timelineElementInternal -> timelineElementInternal.getElementId().contains(ATTEMPT_1))) {
             return fail(NotificationReworkErrorCause.INVALID_NOTIFICATION_STATUS, "Invalid status VIEWED if ATTEMPT_1 exists");
         }
