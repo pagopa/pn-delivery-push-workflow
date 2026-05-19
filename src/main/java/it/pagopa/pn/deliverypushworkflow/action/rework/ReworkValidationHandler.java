@@ -90,9 +90,9 @@ public class ReworkValidationHandler {
                 .flatMap(this::checkNotificationTimelineAndThrow)
                 .flatMap(this::checkNotificationExpectedFinalStatusCodeAndThrow)
                 .flatMap(notificationReworkInfo -> checkNotificationAttachments(notificationReworkInfo, reworkAttempt, reworkFinalStatus))
+                .flatMap(notificationReworkInfo -> checkNotificationAddress(reworkInfo, reworkAttempt, reworkFinalStatus))
                 .map(this::computeRequestId)
                 .doOnNext(reworkInfo::setRequestId)
-                .flatMap(requestId -> checkNotificationAddress(reworkInfo, reworkAttempt, reworkFinalStatus))
                 .thenReturn(reworkInfo)
                 .flatMap(info -> this.checkErrorList(info.getErrorList(), info.getAction(), reworkInfo.getActionDetail(), info.getRequestId()))
                 .onErrorResume(NotificationReworkValidationException.class, e -> {
@@ -157,7 +157,7 @@ public class ReworkValidationHandler {
     }
 
     private Mono<NotificationReworkInfo> checkNotificationAttachments(NotificationReworkInfo info, String reworkAttempt, String reworkFinalStatus) {
-        if(needToVerifyAddressAndAttachments(info, reworkAttempt, reworkFinalStatus)) {
+        if(needToVerifyAttachments(info, reworkAttempt, reworkFinalStatus)) {
             return Flux.fromIterable(info.getNotification().getDocuments())
                     .flatMap(document -> safeStorageService.getFile(document.getRef().getKey(), true, false))
                     .filter(response -> response.getRetentionUntil().minusDays(pnDeliveryPushWorkflowConfigs.getNotificationReworkDocumentExpiringRange()).isBefore(OffsetDateTime.now()))
@@ -183,7 +183,12 @@ public class ReworkValidationHandler {
         return Mono.just(info);
     }
 
-    private static boolean needToVerifyAddressAndAttachments(NotificationReworkInfo info, String reworkAttempt, String reworkFinalStatus) {
+    private static boolean needToVerifyAddress(NotificationReworkInfo info, String reworkAttempt, String reworkFinalStatus) {
+        return (ReworkRequestTypeEnum.RESTART.equals(info.getActionDetail().getRequestType()) && ATTEMPT_1.equalsIgnoreCase(reworkAttempt)) ||
+                (ATTEMPT_0.equalsIgnoreCase(reworkAttempt) && KO.equalsIgnoreCase(reworkFinalStatus));
+    }
+
+    private static boolean needToVerifyAttachments(NotificationReworkInfo info, String reworkAttempt, String reworkFinalStatus) {
         return ReworkRequestTypeEnum.RESTART.equals(info.getActionDetail().getRequestType()) ||
                 (ATTEMPT_0.equalsIgnoreCase(reworkAttempt) && KO.equalsIgnoreCase(reworkFinalStatus));
     }
@@ -195,14 +200,20 @@ public class ReworkValidationHandler {
                 .filter(timelineElement -> timelineElement.getElementId().contains(info.getActionDetail().getReworkAttempt()))
                 .filter(timelineElement -> timelineElement.getElementId().contains(info.getActionDetail().getReworkRecIndex()))
                 .findFirst()
-                .map(timelineElementInternal -> timelineElementInternal.getElementId() + "." + info.getActionDetail().getReworkPcRetry())
+                .map(timelineElementInternal -> {
+                        if (ReworkRequestTypeEnum.REWORK.equals(info.getActionDetail().getRequestType())) {
+                            return timelineElementInternal.getElementId() + "." + info.getActionDetail().getReworkPcRetry();
+                        } else {
+                            return timelineElementInternal.getElementId();
+                        }
+                    })
                 .orElse(StringUtils.EMPTY);
     }
 
     private Mono<NotificationReworkInfo> checkNotificationAddress(NotificationReworkInfo externalInfo, String reworkAttempt, String reworkFinalStatus) {
         log.debug("checkNotificationAddress for iun {}, requestId {}", externalInfo.getAction().getIun(), externalInfo.getRequestId());
-        if(needToVerifyAddressAndAttachments(externalInfo, reworkAttempt, reworkFinalStatus)) {
-            return paperChannelAddressClient.checkAddress(externalInfo.getRequestId())
+        if(needToVerifyAddress(externalInfo, reworkAttempt, reworkFinalStatus)) {
+            return paperChannelAddressClient.checkAddress(computeRequestIdForAddress(externalInfo))
                     .doOnNext(checkAddressResponse -> checkTtl(checkAddressResponse, externalInfo))
                     .map(checkAddressResponse -> externalInfo)
                     .onErrorResume(PnHttpResponseException.class, ex -> {
@@ -214,6 +225,14 @@ public class ReworkValidationHandler {
                     });
         }
         return Mono.just(externalInfo);
+    }
+
+    private String computeRequestIdForAddress(NotificationReworkInfo externalInfo) {
+        return String.join(".",
+                TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE.toString(),
+                "IUN_" + externalInfo.getAction().getIun(),
+                "RECINDEX_" + externalInfo.getActionDetail().getReworkRecIndex(),
+                ATTEMPT_0);
     }
 
     private NotificationReworkInfo addErrorAddressNotFound(NotificationReworkInfo externalInfo) {
