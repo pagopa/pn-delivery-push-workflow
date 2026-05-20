@@ -15,6 +15,8 @@ import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationRewo
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkInfo;
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.ReworkRequestTypeEnum;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventIdParser;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationPaidDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationViewedCreationRequestDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ScheduleRefinementDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
@@ -290,11 +292,17 @@ public class ReworkValidationHandler {
     private Mono<NotificationReworkInfo> checkNotificationTimelineAndThrow(NotificationReworkInfo info) {
         String recIndex = info.getActionDetail().getReworkRecIndex();
         String attempt = info.getActionDetail().getReworkAttempt();
+        int recIndexIdx = TimelineEventIdParser.parse(recIndex).recIndex().orElseThrow();
         NotificationReworkValidationDetails detail = info.getActionDetail();
         boolean isStatusViewed = timelineUtils.checkIsNotificationViewed(info.getNotification().getIun(), getRecIndexFromAction(info.getActionDetail()));
 
         return Mono.just(info.getTimeline())
-                .map(timelineElement -> timelineElement.stream().filter(timelineElementInternal -> timelineElementInternal.getElementId().contains(recIndex)).collect(Collectors.toSet()))
+                .map(timelineElement -> timelineElement.stream().filter(timelineElementInternal -> {
+                    if (TimelineElementCategoryInt.PAYMENT.equals(timelineElementInternal.getCategory())) {
+                        return ((NotificationPaidDetailsInt) timelineElementInternal.getDetails()).getRecIndex() == recIndexIdx;
+                    }
+                    return timelineElementInternal.getElementId().contains(recIndex);
+                }).collect(Collectors.toSet()))
                 .filter(set -> !set.isEmpty())
                 .switchIfEmpty(fail(NotificationReworkErrorCause.INVALID_RECINDEX, NotificationReworkErrorCause.INVALID_RECINDEX.getErrorDetails()))
                 .flatMap(timeline -> checkForPaymentCategory(timeline, detail))
@@ -310,7 +318,7 @@ public class ReworkValidationHandler {
     }
 
     private Mono<Set<TimelineElementInternal>> checkForPaymentCategory(Set<TimelineElementInternal> timeline, NotificationReworkValidationDetails detail) {
-        if (ReworkRequestTypeEnum.RESTART.equals(detail.getRequestType()) && timeline.stream().anyMatch(timelineElementInternal -> timelineElementInternal.getCategory().equals(TimelineElementCategoryInt.PAYMENT))) {
+        if (ReworkRequestTypeEnum.RESTART.equals(detail.getRequestType()) && timeline.stream().anyMatch(timelineElementInternal -> TimelineElementCategoryInt.PAYMENT.equals(timelineElementInternal.getCategory()))) {
             return fail(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT, "PAYMENT category found in timeline");
         }
         return Mono.just(timeline);
