@@ -13,10 +13,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationRewo
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkErrorCause;
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.ReworkRequestTypeEnum;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationTimelineReworkedDetailsInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationViewedCreationRequestDetailsInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ScheduleRefinementDetailsInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.*;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.actionmanager.api.ActionApi;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.actionmanager.model.NewAction;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.CheckAddressResponse;
@@ -1188,7 +1185,8 @@ class ReworkValidationHandlerTest {
         Set<TimelineElementInternal> timeline = new HashSet<>();
         TimelineElementInternal timelineElement = new TimelineElementInternal();
         timelineElement.setCategory(TimelineElementCategoryInt.PAYMENT);
-        timelineElement.setElementId("PAYMENT.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0");
+        timelineElement.setElementId("NOTIFICATION_PAID.IUN_AJDN-ZDVK-UGMU-202605-E-1.CODE_PPA30201140004608200077777777777");
+        timelineElement.setDetails(NotificationPaidDetailsInt.builder().recIndex(0).build());
         timeline.add(timelineElement);
 
         NotificationHistoryResponse notificationHistoryResponse = new NotificationHistoryResponse();
