@@ -231,7 +231,7 @@ public class ReworkValidationHandler {
         return String.join(".",
                 TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE.toString(),
                 "IUN_" + externalInfo.getAction().getIun(),
-                "RECINDEX_" + externalInfo.getActionDetail().getReworkRecIndex(),
+                externalInfo.getActionDetail().getReworkRecIndex(),
                 ATTEMPT_0);
     }
 
