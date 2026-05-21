@@ -15,7 +15,6 @@ import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationRewo
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkInfo;
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.ReworkRequestTypeEnum;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventIdParser;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationPaidDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationViewedCreationRequestDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ScheduleRefinementDetailsInt;
@@ -292,14 +291,14 @@ public class ReworkValidationHandler {
     private Mono<NotificationReworkInfo> checkNotificationTimelineAndThrow(NotificationReworkInfo info) {
         String recIndex = info.getActionDetail().getReworkRecIndex();
         String attempt = info.getActionDetail().getReworkAttempt();
-        int recIndexIdx = TimelineEventIdParser.parse(recIndex).recIndex().orElseThrow();
         NotificationReworkValidationDetails detail = info.getActionDetail();
         boolean isStatusViewed = timelineUtils.checkIsNotificationViewed(info.getNotification().getIun(), getRecIndexFromAction(info.getActionDetail()));
 
         return Mono.just(info.getTimeline())
                 .map(timelineElement -> timelineElement.stream().filter(timelineElementInternal -> {
                     if (TimelineElementCategoryInt.PAYMENT.equals(timelineElementInternal.getCategory())) {
-                        return ((NotificationPaidDetailsInt) timelineElementInternal.getDetails()).getRecIndex() == recIndexIdx;
+                        String paymentRecIndex = REC_INDEX.concat(String.valueOf(((NotificationPaidDetailsInt) timelineElementInternal.getDetails()).getRecIndex()));
+                        return paymentRecIndex.equals(recIndex);
                     }
                     return timelineElementInternal.getElementId().contains(recIndex);
                 }).collect(Collectors.toSet()))
