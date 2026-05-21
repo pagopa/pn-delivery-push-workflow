@@ -720,7 +720,7 @@ Resources:
         - ReportBatchItemFailures
       FilterCriteria:
         Filters:
-          - Pattern: !Sub '{"data": {"eventName": ["INSERT"], "tableName": ["pn-Timelines"], "dynamodb": { "NewImage": {"communicationType": {"S": [{ "exists": false }]}} }}}'
+          - Pattern: '{"data": {"eventName": ["INSERT"], "tableName": ["pn-Timelines"], "dynamodb": { "NewImage": {"communicationType": {"S": [{ "exists": false }]}} }}}'
       MaximumBatchingWindowInSeconds: !Sub ${NotificationCancellationActionInsertLambdaMaximumBatchingWindowInSeconds}
       MaximumRecordAgeInSeconds: !Ref NotificationCancellationActionInsertMaximumRecordAge
       StartingPosition: TRIM_HORIZON
@@ -856,7 +856,7 @@ Resources:
         - ReportBatchItemFailures
       FilterCriteria:
         Filters:
-          - Pattern: !Sub '{"data": {"eventName": ["INSERT"], "tableName": ["pn-Timelines"], "dynamodb": { "NewImage": {"communicationType": {"S": [{ "exists": false }]}} }}}'
+          - Pattern: '{"data": {"eventName": ["INSERT"], "tableName": ["pn-Timelines"], "dynamodb": { "NewImage": {"communicationType": {"S": [{ "exists": false }]}} }}}'
       MaximumBatchingWindowInSeconds: !Sub ${PaperEventsCostUpdateLambdaMaximumBatchingWindowInSeconds}
       MaximumRecordAgeInSeconds: !Ref PaperEventsCostUpdateLambdaMaximumRecordAge
       StartingPosition: TRIM_HORIZON
