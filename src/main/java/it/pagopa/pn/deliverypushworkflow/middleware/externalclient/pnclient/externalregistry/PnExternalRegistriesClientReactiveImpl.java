@@ -26,7 +26,7 @@ public class PnExternalRegistriesClientReactiveImpl extends CommonBaseClient imp
     }
 
     public Mono<ResponseEntity<Void>> invalidatePaperCost(String iun, PaperCostToInvalidate paperCostToInvalidate, PagoPaIntMode mode, NotificationFeePolicy notificationFeePolicy) {
-        if ((PagoPaIntMode.SYNC.equals(mode) || PagoPaIntMode.NONE.equals(mode)) && NotificationFeePolicy.FLAT_RATE.equals(notificationFeePolicy)) {
+        if (PagoPaIntMode.SYNC.equals(mode) || PagoPaIntMode.NONE.equals(mode) || NotificationFeePolicy.FLAT_RATE.equals(notificationFeePolicy)) {
             log.debug("Invalidating not possible for mode: {} and feePolicy: {}", mode, notificationFeePolicy);
             return Mono.empty();
         }
