@@ -314,14 +314,6 @@ Parameters:
     Default: ''
     Description: 'Base key of the microservice in the s3 bucket'
 
-  NewWorkflowLambdasEnabledStart:
-    Type: String
-    Description: 'Start date in EPOCH millis format (important!) for lambdas enabled'
-
-  NewWorkflowLambdasEnabledEnd:
-    Type: String
-    Description: 'End date in EPOCH millis format (important!) for lambdas enabled'
-
   Version:
     Type: String
     Description: 'Keep track of used projects commitIds'
@@ -728,13 +720,7 @@ Resources:
         - ReportBatchItemFailures
       FilterCriteria:
         Filters:
-          - Pattern: !Join
-              - ''
-              - - '{ "data" : { "tableName" : [ "pn-Timelines" ], "eventName": [ "INSERT" ], "dynamodb": { "ApproximateCreationDateTime": [{ "numeric": [ ">=", '
-                - !Ref NewWorkflowLambdasEnabledStart
-                - ', "<", '
-                - !Ref NewWorkflowLambdasEnabledEnd
-                - ']}] } } }'
+          - Pattern: !Sub '{"data": {"eventName": ["INSERT"], "tableName": ["pn-Timelines"], "dynamodb": { "NewImage": {"communicationType": {"S": [{ "exists": false }]}} }}}'
       MaximumBatchingWindowInSeconds: !Sub ${NotificationCancellationActionInsertLambdaMaximumBatchingWindowInSeconds}
       MaximumRecordAgeInSeconds: !Ref NotificationCancellationActionInsertMaximumRecordAge
       StartingPosition: TRIM_HORIZON
@@ -870,13 +856,7 @@ Resources:
         - ReportBatchItemFailures
       FilterCriteria:
         Filters:
-          - Pattern: !Join
-              - ''
-              - - '{ "data" : { "tableName" : [ "pn-Timelines" ], "eventName": [ "INSERT" ], "dynamodb": { "ApproximateCreationDateTime": [{ "numeric": [ ">=", '
-                - !Ref NewWorkflowLambdasEnabledStart
-                - ', "<", '
-                - !Ref NewWorkflowLambdasEnabledEnd
-                - ']}] } } }'
+          - Pattern: !Sub '{"data": {"eventName": ["INSERT"], "tableName": ["pn-Timelines"], "dynamodb": { "NewImage": {"communicationType": {"S": [{ "exists": false }]}} }}}'
       MaximumBatchingWindowInSeconds: !Sub ${PaperEventsCostUpdateLambdaMaximumBatchingWindowInSeconds}
       MaximumRecordAgeInSeconds: !Ref PaperEventsCostUpdateLambdaMaximumRecordAge
       StartingPosition: TRIM_HORIZON
