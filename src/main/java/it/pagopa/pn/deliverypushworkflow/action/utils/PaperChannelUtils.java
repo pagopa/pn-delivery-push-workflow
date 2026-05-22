@@ -1,5 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.action.utils;
 
+import io.micrometer.common.util.StringUtils;
 import it.pagopa.pn.commons.exceptions.PnInternalException;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
@@ -16,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -36,11 +38,11 @@ public class PaperChannelUtils {
         this.pnDeliveryPushConfigs = pnDeliveryPushConfigs;
     }
 
-    public PhysicalAddressInt getSenderAddress(){
+    public PhysicalAddressInt getSenderAddress() {
         return pnDeliveryPushConfigs.getPaperChannel().getSenderPhysicalAddress();
     }
 
-    public String buildPrepareSimpleRegisteredLetterEventId(NotificationInt notification, Integer recIndex){
+    public String buildPrepareSimpleRegisteredLetterEventId(NotificationInt notification, Integer recIndex) {
         return TimelineEventId.PREPARE_SIMPLE_REGISTERED_LETTER.buildEventId(
                 EventId.builder()
                         .iun(notification.getIun())
@@ -50,8 +52,7 @@ public class PaperChannelUtils {
     }
 
 
-
-    public String buildPrepareAnalogDomicileEventId(NotificationInt notification, Integer recIndex, int sentAttemptMade){
+    public String buildPrepareAnalogDomicileEventId(NotificationInt notification, Integer recIndex, int sentAttemptMade) {
         return TimelineEventId.PREPARE_ANALOG_DOMICILE.buildEventId(
                 EventId.builder()
                         .iun(notification.getIun())
@@ -62,7 +63,7 @@ public class PaperChannelUtils {
     }
 
 
-    public String buildSendAnalogDomicileEventId(NotificationInt notification, Integer recIndex, int sentAttemptMade){
+    public String buildSendAnalogDomicileEventId(NotificationInt notification, Integer recIndex, int sentAttemptMade) {
         return TimelineEventId.SEND_ANALOG_DOMICILE.buildEventId(
                 EventId.builder()
                         .iun(notification.getIun())
@@ -73,9 +74,7 @@ public class PaperChannelUtils {
     }
 
 
-
-
-    public String buildSendAnalogFeedbackEventId(NotificationInt notification, Integer recIndex, int sentAttemptMade){
+    public String buildSendAnalogFeedbackEventId(NotificationInt notification, Integer recIndex, int sentAttemptMade) {
         return TimelineEventId.SEND_ANALOG_FEEDBACK.buildEventId(
                 EventId.builder()
                         .iun(notification.getIun())
@@ -86,7 +85,7 @@ public class PaperChannelUtils {
     }
 
     public String addPrepareSimpleRegisteredLetterToTimeline(NotificationInt notification, PhysicalAddressInt physicalAddress, Integer recIndex,
-                                                           String eventId) {
+                                                             String eventId) {
         TimelineElementInternal timelineElementInternal = timelineUtils.buildPrepareSimpleRegisteredLetterTimelineElement(recIndex, notification, physicalAddress, eventId);
         addTimelineElement(timelineElementInternal,
                 notification
@@ -97,8 +96,8 @@ public class PaperChannelUtils {
     public String addSendSimpleRegisteredLetterToTimeline(NotificationInt notification, PhysicalAddressInt physicalAddress, Integer recIndex,
                                                           SendResponse sendResponse, String productType, String prepareRequestId,
                                                           List<String> replacedF24AttachmentUrls, CategorizedAttachmentsResultInt categorizedAttachmentsResult) {
-        TimelineElementInternal timelineElementInternal = timelineUtils. buildSendSimpleRegisteredLetterTimelineElement(
-                recIndex, notification, physicalAddress, sendResponse, productType, prepareRequestId,replacedF24AttachmentUrls, categorizedAttachmentsResult);
+        TimelineElementInternal timelineElementInternal = timelineUtils.buildSendSimpleRegisteredLetterTimelineElement(
+                recIndex, notification, physicalAddress, sendResponse, productType, prepareRequestId, replacedF24AttachmentUrls, categorizedAttachmentsResult);
         addTimelineElement(timelineElementInternal,
                 notification
         );
@@ -107,7 +106,7 @@ public class PaperChannelUtils {
 
 
     public String addPrepareAnalogNotificationToTimeline(NotificationInt notification, PhysicalAddressInt physicalAddress, Integer recIndex, String relatedRequestId,
-                                                    int sentAttemptMade, String eventId, PhysicalAddressInt discoveredAddress) {
+                                                         int sentAttemptMade, String eventId, PhysicalAddressInt discoveredAddress) {
         TimelineElementInternal timelineElementInternal = timelineUtils.buildPrepareAnalogNotificationTimelineElement(physicalAddress, recIndex, notification, relatedRequestId, sentAttemptMade, eventId, discoveredAddress);
         addTimelineElement(timelineElementInternal,
                 notification
@@ -117,13 +116,33 @@ public class PaperChannelUtils {
 
 
     public void addPrepareAnalogFailureTimelineElement(PhysicalAddressInt foundAddress, String prepareRequestId, String failureCause, Integer recIndex, NotificationInt notification) {
-        TimelineElementInternal timelineElementInternal = timelineUtils.buildPrepareAnalogFailureTimelineElement(foundAddress, prepareRequestId, failureCause, recIndex, notification);
-        addTimelineElement(timelineElementInternal,
-                notification
-        );
+        boolean isFoundAddressComplete = checkFoundAddress(foundAddress);
+
+        if (!isFoundAddressComplete) {
+            log.debug("Found address is not complete, it will not be added to timeline - iun {} recIndex {} prepareRequestId {} foundAddress {}",
+                    notification.getIun(), recIndex, prepareRequestId, foundAddress);
+        } else {
+            log.info("Found address is complete, it will be added to timeline - iun {} recIndex {} prepareRequestId {} foundAddress {}",
+                    notification.getIun(), recIndex, prepareRequestId, foundAddress);
+        }
+
+        TimelineElementInternal timelineElementInternal =
+                timelineUtils.buildPrepareAnalogFailureTimelineElement(
+                        isFoundAddressComplete ? foundAddress : null,
+                        prepareRequestId,
+                        failureCause,
+                        recIndex,
+                        notification);
+
+        addTimelineElement(timelineElementInternal, notification);
     }
 
-    
+    private boolean checkFoundAddress(PhysicalAddressInt foundAddress) {
+        return !Objects.isNull(foundAddress)
+                && (!StringUtils.isBlank(foundAddress.getMunicipality())
+                || !StringUtils.isBlank(foundAddress.getAddress()));
+    }
+
     public String addSendAnalogNotificationToTimeline(NotificationInt notification, PhysicalAddressInt physicalAddress, Integer recIndex,
                                                       AnalogDtoInt analogDtoInfo, List<String> replacedF24AttachmentUrls,
                                                       CategorizedAttachmentsResultInt categorizedAttachmentsResult,
