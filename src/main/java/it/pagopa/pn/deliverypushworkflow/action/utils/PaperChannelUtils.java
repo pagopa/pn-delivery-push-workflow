@@ -1,6 +1,5 @@
 package it.pagopa.pn.deliverypushworkflow.action.utils;
 
-import io.micrometer.common.util.StringUtils;
 import it.pagopa.pn.commons.exceptions.PnInternalException;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
@@ -10,11 +9,13 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.CategorizedAttachm
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.EventId;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventId;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.*;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendAnalogDetailsInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SimpleRegisteredLetterDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.SendResponse;
 import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.utils.StringUtils;
 
 import java.util.List;
 import java.util.Objects;
@@ -116,14 +117,14 @@ public class PaperChannelUtils {
 
 
     public void addPrepareAnalogFailureTimelineElement(PhysicalAddressInt foundAddress, String prepareRequestId, String failureCause, Integer recIndex, NotificationInt notification) {
-        boolean isFoundAddressComplete = checkFoundAddress(foundAddress);
+        boolean isFoundAddressComplete = foundAddressHasMunicipalityOrAddress(foundAddress);
 
         if (!isFoundAddressComplete) {
-            log.debug("Found address is not complete, it will not be added to timeline - iun {} recIndex {} prepareRequestId {} foundAddress {}",
-                    notification.getIun(), recIndex, prepareRequestId, foundAddress);
+            log.debug("Found address is not complete, it will not be added to timeline - iun {} recIndex {} ",
+                    notification.getIun(), recIndex);
         } else {
-            log.info("Found address is complete, it will be added to timeline - iun {} recIndex {} prepareRequestId {} foundAddress {}",
-                    notification.getIun(), recIndex, prepareRequestId, foundAddress);
+            log.info("Found address is complete, it will be added to timeline - iun {} recIndex {}",
+                    notification.getIun(), recIndex);
         }
 
         TimelineElementInternal timelineElementInternal =
@@ -137,7 +138,7 @@ public class PaperChannelUtils {
         addTimelineElement(timelineElementInternal, notification);
     }
 
-    private boolean checkFoundAddress(PhysicalAddressInt foundAddress) {
+    private boolean foundAddressHasMunicipalityOrAddress(PhysicalAddressInt foundAddress) {
         return !Objects.isNull(foundAddress)
                 && (!StringUtils.isBlank(foundAddress.getMunicipality())
                 || !StringUtils.isBlank(foundAddress.getAddress()));

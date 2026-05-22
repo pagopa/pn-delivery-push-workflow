@@ -1,7 +1,5 @@
-package it.pagopa.pn.deliverypushworkflow.utils;
+package it.pagopa.pn.deliverypushworkflow.action.utils;
 
-import it.pagopa.pn.deliverypushworkflow.action.utils.PaperChannelUtils;
-import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
