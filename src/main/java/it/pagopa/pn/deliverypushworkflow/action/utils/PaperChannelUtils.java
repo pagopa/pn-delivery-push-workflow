@@ -123,7 +123,7 @@ public class PaperChannelUtils {
             log.debug("Found address is not complete, it will not be added to timeline - iun {} recIndex {} ",
                     notification.getIun(), recIndex);
         } else {
-            log.info("Found address is complete, it will be added to timeline - iun {} recIndex {}",
+            log.info("Found address is complete, it will be added to timeline - iun {} recIndex {} ",
                     notification.getIun(), recIndex);
         }
 
