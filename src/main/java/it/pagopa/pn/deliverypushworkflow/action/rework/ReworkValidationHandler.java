@@ -54,6 +54,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkConstant.*;
+import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.ReworkRequestTypeEnum.REWORK;
 import static it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt.*;
 import static it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.handler.utils.NotificationReworkUtils.getReworkRequestEventAction;
 
@@ -202,7 +203,7 @@ public class ReworkValidationHandler {
                 .filter(timelineElement -> timelineElement.getElementId().contains(info.getActionDetail().getReworkRecIndex()))
                 .findFirst()
                 .map(timelineElementInternal -> {
-                        if (ReworkRequestTypeEnum.REWORK.equals(info.getActionDetail().getRequestType())) {
+                        if (REWORK.equals(info.getActionDetail().getRequestType())) {
                             return timelineElementInternal.getElementId() + "." + info.getActionDetail().getReworkPcRetry();
                         } else {
                             return timelineElementInternal.getElementId();
@@ -291,6 +292,7 @@ public class ReworkValidationHandler {
     private Mono<NotificationReworkInfo> checkNotificationTimelineAndThrow(NotificationReworkInfo info) {
         String recIndex = info.getActionDetail().getReworkRecIndex();
         String attempt = info.getActionDetail().getReworkAttempt();
+        ReworkRequestTypeEnum requestType = info.getActionDetail().getRequestType();
         NotificationReworkValidationDetails detail = info.getActionDetail();
         boolean isStatusViewed = timelineUtils.checkIsNotificationViewed(info.getNotification().getIun(), getRecIndexFromAction(info.getActionDetail()));
 
@@ -305,7 +307,7 @@ public class ReworkValidationHandler {
                 .filter(set -> !set.isEmpty())
                 .switchIfEmpty(fail(NotificationReworkErrorCause.INVALID_RECINDEX, NotificationReworkErrorCause.INVALID_RECINDEX.getErrorDetails()))
                 .flatMap(timeline -> checkForPaymentCategory(timeline, detail))
-                .flatMap(timeline -> checkIfAttemptOneExistsForReworkAttemptZero(timeline, attempt, isStatusViewed))
+                .flatMap(timeline -> checkIfAttemptOneExistsForReworkAttemptZero(timeline, attempt, isStatusViewed, requestType))
                 .map(timeline -> timeline.stream().filter(timelineElementInternal -> timelineElementInternal.getElementId().contains(attempt)
                                 || ELEMENTS_WITHOUT_ATTEMPT_ID.contains(timelineElementInternal.getCategory()))
                         .collect(Collectors.toSet()))
@@ -323,8 +325,8 @@ public class ReworkValidationHandler {
         return Mono.just(timeline);
     }
 
-    private Mono<Set<TimelineElementInternal>> checkIfAttemptOneExistsForReworkAttemptZero(Set<TimelineElementInternal> timeline, String attempt, boolean isStatusViewed) {
-        if(isStatusViewed && ATTEMPT_0.equalsIgnoreCase(attempt) &&
+    private Mono<Set<TimelineElementInternal>> checkIfAttemptOneExistsForReworkAttemptZero(Set<TimelineElementInternal> timeline, String attempt, boolean isStatusViewed, ReworkRequestTypeEnum requestType) {
+        if(isStatusViewed && REWORK.equals(requestType) && ATTEMPT_0.equalsIgnoreCase(attempt) &&
                 timeline.stream().anyMatch(timelineElementInternal -> timelineElementInternal.getElementId().contains(ATTEMPT_1))) {
             return fail(NotificationReworkErrorCause.INVALID_NOTIFICATION_STATUS, "Invalid status VIEWED if ATTEMPT_1 exists");
         }
