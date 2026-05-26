@@ -47,7 +47,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkConstant.KO;
 import static org.mockito.Mockito.*;
 
 @org.junit.jupiter.api.extension.ExtendWith(MockitoExtension.class)
@@ -367,6 +366,7 @@ class ReworkValidationHandlerTest {
         detail.setReworkAttempt("ATTEMPT_0");
         detail.setReworkRecIndex("RECINDEX_0");
         detail.setReworkPcRetry("PCRETRY_0");
+        detail.setRequestType(ReworkRequestTypeEnum.REWORK);
         Action action = Action.builder()
                 .iun("XLJE-VRQM-VKNQ-202507-K-1")
                 .details(detail)
