@@ -56,8 +56,8 @@ class PaperChannelUtilsTest {
     @Test
     void addPrepareAnalogFailureTimelineElement_shouldPassNull_whenBothFieldsAreBlank() {
         PhysicalAddressInt foundAddress = PhysicalAddressInt.builder()
-                .municipality(" ")
-                .address("")
+                .municipality(null)
+                .address(null)
                 .build();
 
         String prepareRequestId = "REQ-1";
@@ -83,7 +83,7 @@ class PaperChannelUtilsTest {
     void addPrepareAnalogFailureTimelineElement_shouldNotPassFoundAddress_whenMunicipalityIsPresent() {
         PhysicalAddressInt foundAddress = PhysicalAddressInt.builder()
                 .municipality("Roma")
-                .address("")
+                .address(null)
                 .build();
 
         String prepareRequestId = "REQ-1";
@@ -108,7 +108,7 @@ class PaperChannelUtilsTest {
     @Test
     void addPrepareAnalogFailureTimelineElement_shouldNotPassFoundAddress_whenAddressIsPresent() {
         PhysicalAddressInt foundAddress = PhysicalAddressInt.builder()
-                .municipality("")
+                .municipality(null)
                 .address("Via Roma 1")
                 .build();
 

@@ -15,8 +15,6 @@ import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel
 import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import software.amazon.awssdk.utils.StringUtils;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -139,9 +137,9 @@ public class PaperChannelUtils {
     }
 
     private boolean foundAddressHasMunicipalityAndAddress(PhysicalAddressInt foundAddress) {
-        return !Objects.isNull(foundAddress)
-                && (!StringUtils.isBlank(foundAddress.getMunicipality())
-                && !StringUtils.isBlank(foundAddress.getAddress()));
+        return Objects.nonNull(foundAddress)
+                && (Objects.nonNull(foundAddress.getMunicipality())
+                && Objects.nonNull(foundAddress.getAddress()));
     }
 
     public String addSendAnalogNotificationToTimeline(NotificationInt notification, PhysicalAddressInt physicalAddress, Integer recIndex,
