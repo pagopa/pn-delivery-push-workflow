@@ -15,8 +15,6 @@ import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel
 import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import software.amazon.awssdk.utils.StringUtils;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -117,13 +115,13 @@ public class PaperChannelUtils {
 
 
     public void addPrepareAnalogFailureTimelineElement(PhysicalAddressInt foundAddress, String prepareRequestId, String failureCause, Integer recIndex, NotificationInt notification) {
-        boolean isFoundAddressComplete = foundAddressHasMunicipalityOrAddress(foundAddress);
+        boolean isFoundAddressComplete = foundAddressHasMunicipalityAndAddress(foundAddress);
 
         if (!isFoundAddressComplete) {
-            log.debug("Found address is not complete, it will not be added to timeline - iun {} recIndex {} ",
+            log.debug("Found address is not complete, it will not be added to timeline - iun {} recIndex {}",
                     notification.getIun(), recIndex);
         } else {
-            log.info("Found address is complete, it will be added to timeline - iun {} recIndex {} ",
+            log.info("Found address is complete, it will be added to timeline - iun {} recIndex {}",
                     notification.getIun(), recIndex);
         }
 
@@ -138,10 +136,10 @@ public class PaperChannelUtils {
         addTimelineElement(timelineElementInternal, notification);
     }
 
-    private boolean foundAddressHasMunicipalityOrAddress(PhysicalAddressInt foundAddress) {
-        return !Objects.isNull(foundAddress)
-                && (!StringUtils.isBlank(foundAddress.getMunicipality())
-                || !StringUtils.isBlank(foundAddress.getAddress()));
+    private boolean foundAddressHasMunicipalityAndAddress(PhysicalAddressInt foundAddress) {
+        return Objects.nonNull(foundAddress)
+                && (Objects.nonNull(foundAddress.getMunicipality())
+                && Objects.nonNull(foundAddress.getAddress()));
     }
 
     public String addSendAnalogNotificationToTimeline(NotificationInt notification, PhysicalAddressInt physicalAddress, Integer recIndex,
