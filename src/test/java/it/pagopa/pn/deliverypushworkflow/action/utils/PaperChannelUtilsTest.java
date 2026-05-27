@@ -80,7 +80,7 @@ class PaperChannelUtilsTest {
     }
 
     @Test
-    void addPrepareAnalogFailureTimelineElement_shouldPassFoundAddress_whenMunicipalityIsPresent() {
+    void addPrepareAnalogFailureTimelineElement_shouldNotPassFoundAddress_whenMunicipalityIsPresent() {
         PhysicalAddressInt foundAddress = PhysicalAddressInt.builder()
                 .municipality("Roma")
                 .address("")
@@ -93,7 +93,7 @@ class PaperChannelUtilsTest {
         TimelineElementInternal timelineElement = TimelineElementInternal.builder().build();
 
         when(timelineUtils.buildPrepareAnalogFailureTimelineElement(
-                eq(foundAddress), eq(prepareRequestId), eq(failureCause), eq(recIndex), eq(notification)))
+                isNull(), eq(prepareRequestId), eq(failureCause), eq(recIndex), eq(notification)))
                 .thenReturn(timelineElement);
 
         assertDoesNotThrow(() ->
@@ -101,12 +101,12 @@ class PaperChannelUtilsTest {
                         foundAddress, prepareRequestId, failureCause, recIndex, notification));
 
         verify(timelineUtils).buildPrepareAnalogFailureTimelineElement(
-                eq(foundAddress), eq(prepareRequestId), eq(failureCause), eq(recIndex), eq(notification));
+                isNull(), eq(prepareRequestId), eq(failureCause), eq(recIndex), eq(notification));
         verify(timelineService).addTimelineElement(timelineElement, notification);
     }
 
     @Test
-    void addPrepareAnalogFailureTimelineElement_shouldPassFoundAddress_whenAddressIsPresent() {
+    void addPrepareAnalogFailureTimelineElement_shouldNotPassFoundAddress_whenAddressIsPresent() {
         PhysicalAddressInt foundAddress = PhysicalAddressInt.builder()
                 .municipality("")
                 .address("Via Roma 1")
@@ -119,7 +119,7 @@ class PaperChannelUtilsTest {
         TimelineElementInternal timelineElement = TimelineElementInternal.builder().build();
 
         when(timelineUtils.buildPrepareAnalogFailureTimelineElement(
-                eq(foundAddress), eq(prepareRequestId), eq(failureCause), eq(recIndex), eq(notification)))
+                isNull(), eq(prepareRequestId), eq(failureCause), eq(recIndex), eq(notification)))
                 .thenReturn(timelineElement);
 
         assertDoesNotThrow(() ->
@@ -127,7 +127,7 @@ class PaperChannelUtilsTest {
                         foundAddress, prepareRequestId, failureCause, recIndex, notification));
 
         verify(timelineUtils).buildPrepareAnalogFailureTimelineElement(
-                eq(foundAddress), eq(prepareRequestId), eq(failureCause), eq(recIndex), eq(notification));
+                isNull(), eq(prepareRequestId), eq(failureCause), eq(recIndex), eq(notification));
         verify(timelineService).addTimelineElement(timelineElement, notification);
     }
 

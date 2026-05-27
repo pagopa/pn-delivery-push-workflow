@@ -117,7 +117,7 @@ public class PaperChannelUtils {
 
 
     public void addPrepareAnalogFailureTimelineElement(PhysicalAddressInt foundAddress, String prepareRequestId, String failureCause, Integer recIndex, NotificationInt notification) {
-        boolean isFoundAddressComplete = foundAddressHasMunicipalityOrAddress(foundAddress);
+        boolean isFoundAddressComplete = foundAddressHasMunicipalityAndAddress(foundAddress);
 
         if (!isFoundAddressComplete) {
             log.debug("Found address is not complete, it will not be added to timeline - iun {} recIndex {} ",
@@ -138,10 +138,10 @@ public class PaperChannelUtils {
         addTimelineElement(timelineElementInternal, notification);
     }
 
-    private boolean foundAddressHasMunicipalityOrAddress(PhysicalAddressInt foundAddress) {
+    private boolean foundAddressHasMunicipalityAndAddress(PhysicalAddressInt foundAddress) {
         return !Objects.isNull(foundAddress)
                 && (!StringUtils.isBlank(foundAddress.getMunicipality())
-                || !StringUtils.isBlank(foundAddress.getAddress()));
+                && !StringUtils.isBlank(foundAddress.getAddress()));
     }
 
     public String addSendAnalogNotificationToTimeline(NotificationInt notification, PhysicalAddressInt physicalAddress, Integer recIndex,
