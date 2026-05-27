@@ -120,10 +120,10 @@ public class PaperChannelUtils {
         boolean isFoundAddressComplete = foundAddressHasMunicipalityAndAddress(foundAddress);
 
         if (!isFoundAddressComplete) {
-            log.debug("Found address is not complete, it will not be added to timeline - iun {} recIndex {} ",
+            log.debug("Found address is not complete, it will not be added to timeline - iun {} recIndex {}",
                     notification.getIun(), recIndex);
         } else {
-            log.info("Found address is complete, it will be added to timeline - iun {} recIndex {} ",
+            log.info("Found address is complete, it will be added to timeline - iun {} recIndex {}",
                     notification.getIun(), recIndex);
         }
 
