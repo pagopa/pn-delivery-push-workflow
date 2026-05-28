@@ -54,10 +54,36 @@ class PaperChannelUtilsTest {
     }
 
     @Test
-    void addPrepareAnalogFailureTimelineElement_shouldPassNull_whenBothFieldsAreBlank() {
+    void addPrepareAnalogFailureTimelineElement_shouldNotPassFoundAddress_whenBothFieldsAreNull() {
         PhysicalAddressInt foundAddress = PhysicalAddressInt.builder()
                 .municipality(null)
                 .address(null)
+                .build();
+
+        String prepareRequestId = "REQ-1";
+        String failureCause = "CAUSE-1";
+        Integer recIndex = 1;
+        NotificationInt notification = NotificationInt.builder().iun("IUN-1").build();
+        TimelineElementInternal timelineElement = TimelineElementInternal.builder().build();
+
+        when(timelineUtils.buildPrepareAnalogFailureTimelineElement(
+                isNull(), eq(prepareRequestId), eq(failureCause), eq(recIndex), eq(notification)))
+                .thenReturn(timelineElement);
+
+        assertDoesNotThrow(() ->
+                paperChannelUtils.addPrepareAnalogFailureTimelineElement(
+                        foundAddress, prepareRequestId, failureCause, recIndex, notification));
+
+        verify(timelineUtils).buildPrepareAnalogFailureTimelineElement(
+                isNull(), eq(prepareRequestId), eq(failureCause), eq(recIndex), eq(notification));
+        verify(timelineService).addTimelineElement(timelineElement, notification);
+    }
+
+    @Test
+    void addPrepareAnalogFailureTimelineElement_shouldNotPassFoundAddress_whenBothFieldsAreBlank() {
+        PhysicalAddressInt foundAddress = PhysicalAddressInt.builder()
+                .municipality("")
+                .address("")
                 .build();
 
         String prepareRequestId = "REQ-1";
