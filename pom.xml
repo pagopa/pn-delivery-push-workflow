@@ -659,7 +659,7 @@
 						</goals>
 						<phase>generate-resources</phase>
 						<configuration>
-							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-external-registries/25be981d65c566364f51babec968b6e56ed18d1c/docs/openapi/api-private-v1.yaml</inputSpec>
+							<inputSpec>https://raw.githubusercontent.com/pagopa/pn-external-registries/62db42318ecf60067e725788852988b0b23b7f3c/docs/openapi/api-private-v1.yaml</inputSpec>
 							<templateDirectory>${project.build.directory}/dependency-resources/scripts/openapi/templates/7.4.0/client</templateDirectory>
 							<generatorName>java</generatorName>
 							<library>webclient</library>

@@ -420,7 +420,6 @@ class ReworkRequestedHandlerTest {
         verify(paperChannelService, never()).prepareAnalogNotification(any(), anyInt(), anyInt());
         ArgumentCaptor<PaperCostToInvalidate> paperCostCaptor = ArgumentCaptor.forClass(PaperCostToInvalidate.class);
         verify(pnExternalRegistriesClientReactive).invalidatePaperCost(eq("IUN_2"), paperCostCaptor.capture(), eq(notification.getPagoPaIntMode()), eq(notification.getNotificationFeePolicy()));
-        Assertions.assertEquals("RECINDEX_0", paperCostCaptor.getValue().getRecIndex());
         Assertions.assertTrue(paperCostCaptor.getValue().getCostPhases().isEmpty());
 
         List<String> invalidatedIds = extractInvalidatedTimelineIds(argumentCaptor.getValue());
@@ -579,7 +578,6 @@ class ReworkRequestedHandlerTest {
         verify(paperChannelService).prepareAnalogNotification(eq(notification), eq(0), eq(0));
         ArgumentCaptor<PaperCostToInvalidate> paperCostCaptor = ArgumentCaptor.forClass(PaperCostToInvalidate.class);
         verify(pnExternalRegistriesClientReactive).invalidatePaperCost(eq("IUN_2"), paperCostCaptor.capture(), eq(notification.getPagoPaIntMode()), eq(notification.getNotificationFeePolicy()));
-        Assertions.assertEquals("RECINDEX_0", paperCostCaptor.getValue().getRecIndex());
         Assertions.assertFalse(paperCostCaptor.getValue().getCostPhases().isEmpty());
         Assertions.assertTrue(paperCostCaptor.getValue().getCostPhases().stream().anyMatch(elem -> elem.getValue().equals("SEND_ANALOG_DOMICILE_ATTEMPT_0")));
         Assertions.assertTrue(paperCostCaptor.getValue().getCostPhases().stream().anyMatch(elem -> elem.getValue().equals("SEND_ANALOG_DOMICILE_ATTEMPT_1")));

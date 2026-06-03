@@ -248,7 +248,6 @@ public class ReworkRequestedHandler {
         List<PaymentsInfo> paymentsInfoForRecipients = PaymentUtils.getInvalidationPaymentsInfoFromNotification(notification);
         PaperCostToInvalidate paperCostToInvalidate = new PaperCostToInvalidate();
         paperCostToInvalidate.setPaymentsInfo(paymentsInfoForRecipients);
-        paperCostToInvalidate.setRecIndex(reworkRecIndex);
         paperCostToInvalidate.setVat(notification.getVat());
         paperCostToInvalidate.setCostPhases(new ArrayList<>());
         timelineElementsToInvalidate.forEach(
