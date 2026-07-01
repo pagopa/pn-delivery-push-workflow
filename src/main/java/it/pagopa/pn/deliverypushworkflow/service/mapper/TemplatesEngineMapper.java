@@ -25,13 +25,6 @@ public class TemplatesEngineMapper {
     public static NotificationAarRaddAlt notificationAARRADDalt(NotificationInt notification,
                                                                    NotificationRecipientInt recipient,
                                                                    String qrCodeQuickAccessUrlAarDetail,
-                                                                   String piattaformaNotificheURL,
-                                                                   String accessUrlLabel,
-                                                                   String accessLink,
-                                                                   String accessLinkLabel,
-                                                                   String perfezionamentoLink,
-                                                                   String perfezionamentoLinkLabel,
-                                                                   String raddPhoneNumber,
                                                                    String senderLogoBase64) {
         AarRaddAltSender sender = new AarRaddAltSender()
                 .paDenomination(notification.getSender().getPaDenomination());
@@ -49,24 +42,13 @@ public class TemplatesEngineMapper {
         return new NotificationAarRaddAlt()
                 .notification(altNotification)
                 .recipient(aarRecipient)
-                .piattaformaNotificheURL(piattaformaNotificheURL)
-                .piattaformaNotificheURLLabel(accessUrlLabel)
-                .sendURL(accessLink)
-                .sendURLLAbel(accessLinkLabel)
-                .perfezionamentoURL(perfezionamentoLink)
-                .perfezionamentoURLLabel(perfezionamentoLinkLabel)
                 .qrCodeQuickAccessLink(qrCodeQuickAccessUrlAarDetail)
-                .raddPhoneNumber(raddPhoneNumber)
                 .senderLogoBase64(senderLogoBase64);
     }
 
     public static NotificationAar notificationAAR(NotificationInt notification,
                                                      NotificationRecipientInt recipient,
                                                      String qrCodeQuickAccessUrlAarDetail,
-                                                     String piattaformaNotificheURL,
-                                                     String accessUrlLabel,
-                                                     String perfezionamentoLink,
-                                                     String perfezionamentoLinkLabel,
                                                      String senderLogoBase64) {
         AarSender sender = new AarSender()
                 .paDenomination(notification.getSender().getPaDenomination());
@@ -83,10 +65,6 @@ public class TemplatesEngineMapper {
         return new NotificationAar()
                 .notification(aarNotification)
                 .recipient(aarRecipient)
-                .piattaformaNotificheURL(piattaformaNotificheURL)
-                .piattaformaNotificheURLLabel(accessUrlLabel)
-                .perfezionamentoURL(perfezionamentoLink)
-                .perfezionamentoURLLabel(perfezionamentoLinkLabel)
                 .qrCodeQuickAccessLink(qrCodeQuickAccessUrlAarDetail)
                 .senderLogoBase64(senderLogoBase64);
     }
@@ -126,9 +104,6 @@ public class TemplatesEngineMapper {
     public static NotificationAarForPec notificationAarForPec(NotificationInt notification,
                                                               NotificationRecipientInt recipient,
                                                               String quickAccessLink,
-                                                              String perfezionamentoLink,
-                                                              String faqSendURL,
-                                                              String piattaformaNotificheURL,
                                                               String recipientTypeForHTMLTemplate) {
         AarForPecSender sender = new AarForPecSender()
                 .paDenomination(notification.getSender().getPaDenomination());
@@ -142,20 +117,14 @@ public class TemplatesEngineMapper {
                 .taxId(recipient.getTaxId());
 
         return new NotificationAarForPec()
-                .perfezionamentoURL(perfezionamentoLink)
                 .quickAccessLink(quickAccessLink)
-                .pnFaqSendURL(faqSendURL)
-                .piattaformaNotificheURL(piattaformaNotificheURL)
                 .notification(pecNotification)
                 .recipient(aarForPecRecipient)
                 .recipientType(recipientTypeForHTMLTemplate);
     }
 
     public static NotificationAarForEmailAnalog notificationAarForEmailAnalog(NotificationInt notification,
-                                                                  String perfezionamentoLink,
                                                                   String quickAccessLink,
-                                                                  String faqSendURL,
-                                                                  String piattaformaNotificheURL,
                                                                   NotificationRecipientInt recipient) {
         AarForEmailSenderAnalog sender = new AarForEmailSenderAnalog()
                 .paDenomination(notification.getSender().getPaDenomination());
@@ -168,19 +137,13 @@ public class TemplatesEngineMapper {
                 .sender(sender);
 
         return new NotificationAarForEmailAnalog()
-                .perfezionamentoURL(perfezionamentoLink)
                 .quickAccessLink(quickAccessLink)
-                .pnFaqSendURL(faqSendURL)
-                .piattaformaNotificheURL(piattaformaNotificheURL)
                 .notification(aarForEmailNotification)
                 .recipient(recipientAnalog);
     }
 
     public static NotificationAarForEmailDigital notificationAarForEmailDigital(NotificationInt notification,
-                                                                  String perfezionamentoLink,
                                                                   String quickAccessLink,
-                                                                  String faqSendURL,
-                                                                  String piattaformaNotificheURL,
                                                                   NotificationRecipientInt recipient) {
         AarForEmailSenderDigital sender = new AarForEmailSenderDigital()
                 .paDenomination(notification.getSender().getPaDenomination());
@@ -193,10 +156,7 @@ public class TemplatesEngineMapper {
                 .sender(sender);
 
         return new NotificationAarForEmailDigital()
-                .perfezionamentoURL(perfezionamentoLink)
                 .quickAccessLink(quickAccessLink)
-                .pnFaqSendURL(faqSendURL)
-                .piattaformaNotificheURL(piattaformaNotificheURL)
                 .notification(aarForEmailNotification)
                 .recipient(recipientDigital);
     }

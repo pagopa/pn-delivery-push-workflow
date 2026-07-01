@@ -6,7 +6,6 @@ import it.pagopa.pn.commons.utils.qr.models.UrlData;
 import it.pagopa.pn.deliverypushworkflow.action.utils.EndWorkflowStatus;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
-import it.pagopa.pn.deliverypushworkflow.dto.ext.datavault.RecipientTypeInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
 import it.pagopa.pn.deliverypushworkflow.dto.legalfacts.AARInfo;
@@ -23,8 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
-import java.net.MalformedURLException;
-import java.net.URI;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
@@ -227,11 +224,6 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
         LanguageEnum language = getLanguage(notification.getAdditionalLanguages());
         PnSendMode pnSendMode = pnSendModeUtils.getPnSendMode(notification.getSentAt());
         String qrCodeQuickAccessUrlAarDetail = this.getQrCodeQuickAccessUrlAarDetail(recipient, quickAccessToken);
-        String accessUrl = this.getAccessUrl(recipient);
-        String accessUrlLabel = this.getAccessUrlLabel(recipient);
-        String perfezionamentoLink = this.getPerfezionamentoLink();
-        String perfezionamentoLinkLabel = this.getPerfezionamentoLinkLabel();
-        String accessLink = this.getAccessLink();
         if (pnSendMode != null) {
             final AarTemplateChooseStrategy aarTemplateTypeChooseStrategy = pnSendMode.getAarTemplateTypeChooseStrategy();
             final AarTemplateType aarTemplateType = aarTemplateTypeChooseStrategy.choose(recipient.getPhysicalAddress(),notification);
@@ -245,10 +237,6 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
                                     notification,
                                     recipient,
                                     qrCodeQuickAccessUrlAarDetail,
-                                    accessUrl,
-                                    accessUrlLabel,
-                                    perfezionamentoLink,
-                                    perfezionamentoLinkLabel,
                                     this.buildAarSenderLogo(notification.getSender().getPaId()));
                     bytesArrayGeneratedAar = templatesClient.notificationAar(language, notificationAAR);
                 }
@@ -259,13 +247,6 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
                                     notification,
                                     recipient,
                                     qrCodeQuickAccessUrlAarDetail,
-                                    accessUrl,
-                                    accessUrlLabel,
-                                    accessLink,
-                                    this.getAccessLinkLabel(),
-                                    perfezionamentoLink,
-                                    perfezionamentoLinkLabel,
-                                    pnDeliveryPushWorkflowConfigs.getWebapp().getRaddPhoneNumber(),
                                     this.buildAarSenderLogo(notification.getSender().getPaId()));
                     bytesArrayGeneratedAar = templatesClient.notificationAarRaddAlt(language, notificationAARRADDalt);
                 }
@@ -305,10 +286,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
         NotificationAarForEmailAnalog notificationAAR =
                 notificationAarForEmailAnalog(
                         notification,
-                        this.getPerfezionamentoLink(),
                         this.getQuickAccessLink(recipient, quickAccess),
-                        this.getFAQSendURL(),
-                        this.getAccessUrl(recipient),
                         recipient);
         LanguageEnum language = getLanguage(notification.getAdditionalLanguages());
         return templatesClient.notificationAarForEmailAnalog(language, notificationAAR);
@@ -337,10 +315,7 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
         NotificationAarForEmailDigital notificationAAR =
                 notificationAarForEmailDigital(
                         notification,
-                        this.getPerfezionamentoLink(),
                         this.getQuickAccessLink(recipient, quickAccess),
-                        this.getFAQSendURL(),
-                        this.getAccessUrl(recipient),
                         recipient);
         LanguageEnum language = getLanguage(notification.getAdditionalLanguages());
         return templatesClient.notificationAarForEmailDigital(language, notificationAAR);
@@ -371,9 +346,6 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
                 notification,
                 recipient,
                 this.getQuickAccessLink(recipient, quickAccessToken),
-                this.getPerfezionamentoLink(),
-                this.getFAQSendURL(),
-                this.getAccessUrl(recipient),
                 recipient.getRecipientType().getValue());
         LanguageEnum language = getLanguage(notification.getAdditionalLanguages());
         return templatesClientPec.parametrizedNotificationAarForPec(language, notificationAAR);
@@ -420,24 +392,6 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
     }
 
     /**
-     * Retrieves the label for the access URL associated with a notification recipient.
-     *
-     * @param recipient the {@link NotificationRecipientInt} object representing the recipient of the notification,
-     *                  used to retrieve the access URL.
-     * @return a {@link String} representing the label of the access URL, typically the host without the "www." prefix.
-     *         If the URL is invalid, returns the full access URL.
-     */
-    private String getAccessUrlLabel(NotificationRecipientInt recipient) {
-        try {
-            String host = URI.create(getAccessUrl(recipient)).toURL().getHost();
-            return host.startsWith("www.") ? host.substring(4) : host;
-        } catch (MalformedURLException e) {
-            log.warn("cannot get host", e);
-            return getAccessUrl(recipient);
-        }
-    }
-
-    /**
      * Generates a Base64-encoded QR code image for quick access, using the provided recipient and access token.
      *
      * @param recipient the {@link NotificationRecipientInt} object representing the recipient of the notification,
@@ -467,64 +421,6 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
         return qrUrlCodecService.encode(quickAccess, urlData);
     }
 
-    /**
-     * Generates a link to the "perfezionamento" page of the web application.
-     *
-     * @return a {@link String} representing the complete URL for the "perfezionamento" page.
-     */
-    private String getPerfezionamentoLink() {
-        return pnDeliveryPushWorkflowConfigs.getWebapp().getLandingUrl() + "perfezionamento";
-    }
-
-    /**
-     * Generates the label for the "perfezionamento" link by appending the "perfezionamento" path
-     * to the base access link label.
-     *
-     * @return a {@link String} representing the complete label for the "perfezionamento" link.
-     */
-    private String getPerfezionamentoLinkLabel() {
-        return this.getAccessLinkLabel() + "/perfezionamento";
-    }
-
-    private String getAccessLink() {
-        return pnDeliveryPushWorkflowConfigs.getWebapp().getLandingUrl();
-    }
-
-    /**
-     * Retrieves the host name from the base landing URL configured in the application settings,
-     * and removes the "www." prefix if it exists.
-     *
-     * @return a {@link String} representing the host name from the landing URL, with "www." removed if present.
-     */
-    private String getAccessLinkLabel() {
-        try {
-            String host = URI.create(pnDeliveryPushWorkflowConfigs.getWebapp().getLandingUrl()).toURL().getHost();
-            return host.startsWith("www.") ? host.substring(4) : host;
-        } catch (MalformedURLException e) {
-            log.warn("cannot get host", e);
-            return pnDeliveryPushWorkflowConfigs.getWebapp().getLandingUrl();
-        }
-    }
-
-    private String getFAQAccessLink() {
-        return pnDeliveryPushWorkflowConfigs.getWebapp().getLandingUrl() + pnDeliveryPushWorkflowConfigs.getWebapp().getFaqUrlTemplateSuffix();
-    }
-
-    private String getFAQSendURL() {
-        return this.getFAQAccessLink() + "#" + pnDeliveryPushWorkflowConfigs.getWebapp().getFaqSendHash();
-    }
-
-    /**
-     * Returns the appropriate access URL for a recipient based on their type.
-     *
-     * @param recipient the recipient object containing information about the recipient's type.
-     * @return a {@link String} representing the access URL based on the recipient's type.
-     */
-    private String getAccessUrl(NotificationRecipientInt recipient) {
-        return RecipientTypeInt.PF == recipient.getRecipientType()
-                ? pnDeliveryPushWorkflowConfigs.getWebapp().getDirectAccessUrlTemplatePhysical()
-                : pnDeliveryPushWorkflowConfigs.getWebapp().getDirectAccessUrlTemplateLegal();
-    }
 
     /**
      * Determines the language to be used for the notification based on the provided list of additional languages.

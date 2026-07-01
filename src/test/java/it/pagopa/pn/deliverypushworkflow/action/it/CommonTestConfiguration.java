@@ -261,12 +261,6 @@ public class CommonTestConfiguration {
 
         // Impostazione delle proprietà Webapp
         PnDeliveryPushWorkflowConfigs.Webapp webapp = new PnDeliveryPushWorkflowConfigs.Webapp();
-        webapp.setDirectAccessUrlTemplatePhysical("http://localhost:8090/dist/direct_access_pf");
-        webapp.setDirectAccessUrlTemplateLegal("http://localhost:8090/dist/direct_access_pg");
-        webapp.setFaqUrlTemplateSuffix("faq.html");
-        webapp.setQuickAccessUrlAarDetailSuffix("notifica?aar");
-        webapp.setLandingUrl("https://www.dev.pn.pagopa.it");
-        webapp.setRaddPhoneNumber("06.4520.2323");
         webapp.setAarSenderLogoUrlTemplate("TO_BASE64_RESOLVER:https://example.com/<PA_ID>/logo.png");
         Mockito.when(cfg.getWebapp()).thenReturn(webapp);
         
