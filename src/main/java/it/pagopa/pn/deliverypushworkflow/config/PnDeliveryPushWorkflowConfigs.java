@@ -195,10 +195,10 @@ public class PnDeliveryPushWorkflowConfigs {
 
     @Data
     public static class CourtesyRetry {
-        private Intervals intervals;
+        private IntervalsMinutes intervalsMinutes;
 
         @Data
-        public static class Intervals {
+        public static class IntervalsMinutes {
             private List<Integer> io;
             private List<Integer> sms;
             private List<Integer> email;
