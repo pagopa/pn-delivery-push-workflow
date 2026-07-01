@@ -128,13 +128,6 @@ public class PnDeliveryPushWorkflowConfigs {
 
     @Data
     public static class Webapp {
-        private String directAccessUrlTemplatePhysical;
-        private String directAccessUrlTemplateLegal;
-        private String faqUrlTemplateSuffix;
-        private String faqSendHash;
-        private String quickAccessUrlAarDetailSuffix;
-        private String landingUrl;
-        private String raddPhoneNumber;
         private String aarSenderLogoUrlTemplate;
     }
 
