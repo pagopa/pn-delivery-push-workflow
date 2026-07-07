@@ -143,7 +143,7 @@ public class ReworkValidationHandler {
 
     private Mono<NotificationReworkInfo> checkNotificationExpectedFinalStatusCodeAndThrow(NotificationReworkInfo info) {
         NotificationReworkValidationDetails detail = info.getActionDetail();
-        if (ReworkRequestTypeEnum.RESTART.equals(detail.getRequestType())) {
+        if (ReworkRequestTypeEnum.RESTART.equals(detail.getReworkRequestType())) {
             return Mono.just(info);
         }
         return NotificationReworkUtils.checkNotificationExpectedFinalStatusCodeAndThrow(
@@ -186,12 +186,12 @@ public class ReworkValidationHandler {
     }
 
     private static boolean needToVerifyAddress(NotificationReworkInfo info, String reworkAttempt, String reworkFinalStatus) {
-        return (ReworkRequestTypeEnum.RESTART.equals(info.getActionDetail().getRequestType()) && ATTEMPT_1.equalsIgnoreCase(reworkAttempt)) ||
+        return (ReworkRequestTypeEnum.RESTART.equals(info.getActionDetail().getReworkRequestType()) && ATTEMPT_1.equalsIgnoreCase(reworkAttempt)) ||
                 (ATTEMPT_0.equalsIgnoreCase(reworkAttempt) && KO.equalsIgnoreCase(reworkFinalStatus));
     }
 
     private static boolean needToVerifyAttachments(NotificationReworkInfo info, String reworkAttempt, String reworkFinalStatus) {
-        return ReworkRequestTypeEnum.RESTART.equals(info.getActionDetail().getRequestType()) ||
+        return ReworkRequestTypeEnum.RESTART.equals(info.getActionDetail().getReworkRequestType()) ||
                 (ATTEMPT_0.equalsIgnoreCase(reworkAttempt) && KO.equalsIgnoreCase(reworkFinalStatus));
     }
 
@@ -203,7 +203,7 @@ public class ReworkValidationHandler {
                 .filter(timelineElement -> timelineElement.getElementId().contains(info.getActionDetail().getReworkRecIndex()))
                 .findFirst()
                 .map(timelineElementInternal -> {
-                        if (REWORK.equals(info.getActionDetail().getRequestType())) {
+                        if (REWORK.equals(info.getActionDetail().getReworkRequestType())) {
                             return timelineElementInternal.getElementId() + "." + info.getActionDetail().getReworkPcRetry();
                         } else {
                             return timelineElementInternal.getElementId();
@@ -292,7 +292,7 @@ public class ReworkValidationHandler {
     private Mono<NotificationReworkInfo> checkNotificationTimelineAndThrow(NotificationReworkInfo info) {
         String recIndex = info.getActionDetail().getReworkRecIndex();
         String attempt = info.getActionDetail().getReworkAttempt();
-        ReworkRequestTypeEnum requestType = info.getActionDetail().getRequestType();
+        ReworkRequestTypeEnum reworkRequestType = info.getActionDetail().getReworkRequestType();
         NotificationReworkValidationDetails detail = info.getActionDetail();
         boolean isStatusViewed = timelineUtils.checkIsNotificationViewed(info.getNotification().getIun(), getRecIndexFromAction(info.getActionDetail()));
 
@@ -307,7 +307,7 @@ public class ReworkValidationHandler {
                 .filter(set -> !set.isEmpty())
                 .switchIfEmpty(fail(NotificationReworkErrorCause.INVALID_RECINDEX, NotificationReworkErrorCause.INVALID_RECINDEX.getErrorDetails()))
                 .flatMap(timeline -> checkForPaymentCategory(timeline, detail))
-                .flatMap(timeline -> checkIfAttemptOneExistsForReworkAttemptZero(timeline, attempt, isStatusViewed, requestType))
+                .flatMap(timeline -> checkIfAttemptOneExistsForReworkAttemptZero(timeline, attempt, isStatusViewed, reworkRequestType))
                 .map(timeline -> timeline.stream().filter(timelineElementInternal -> timelineElementInternal.getElementId().contains(attempt)
                                 || ELEMENTS_WITHOUT_ATTEMPT_ID.contains(timelineElementInternal.getCategory()))
                         .collect(Collectors.toSet()))
@@ -319,14 +319,14 @@ public class ReworkValidationHandler {
     }
 
     private Mono<Set<TimelineElementInternal>> checkForPaymentCategory(Set<TimelineElementInternal> timeline, NotificationReworkValidationDetails detail) {
-        if (ReworkRequestTypeEnum.RESTART.equals(detail.getRequestType()) && timeline.stream().anyMatch(timelineElementInternal -> TimelineElementCategoryInt.PAYMENT.equals(timelineElementInternal.getCategory()))) {
+        if (ReworkRequestTypeEnum.RESTART.equals(detail.getReworkRequestType()) && timeline.stream().anyMatch(timelineElementInternal -> TimelineElementCategoryInt.PAYMENT.equals(timelineElementInternal.getCategory()))) {
             return fail(NotificationReworkErrorCause.INVALID_TIMELINE_ELEMENT, "PAYMENT category found in timeline");
         }
         return Mono.just(timeline);
     }
 
-    private Mono<Set<TimelineElementInternal>> checkIfAttemptOneExistsForReworkAttemptZero(Set<TimelineElementInternal> timeline, String attempt, boolean isStatusViewed, ReworkRequestTypeEnum requestType) {
-        if(isStatusViewed && REWORK.equals(requestType) && ATTEMPT_0.equalsIgnoreCase(attempt) &&
+    private Mono<Set<TimelineElementInternal>> checkIfAttemptOneExistsForReworkAttemptZero(Set<TimelineElementInternal> timeline, String attempt, boolean isStatusViewed, ReworkRequestTypeEnum reworkRequestType) {
+        if(isStatusViewed && REWORK.equals(reworkRequestType) && ATTEMPT_0.equalsIgnoreCase(attempt) &&
                 timeline.stream().anyMatch(timelineElementInternal -> timelineElementInternal.getElementId().contains(ATTEMPT_1))) {
             return fail(NotificationReworkErrorCause.INVALID_NOTIFICATION_STATUS, "Invalid status VIEWED if ATTEMPT_1 exists");
         }
@@ -444,7 +444,7 @@ public class ReworkValidationHandler {
         request.setReworkRecIndex(detail.getReworkRecIndex());
         request.setReworkAttempt(detail.getReworkAttempt());
         request.setCreatedAt(Instant.now());
-        request.setRequestType(detail.getRequestType());
+        request.setReworkRequestType(detail.getReworkRequestType());
         try {
             objectMapper.registerModule(new JavaTimeModule());
             newAction.setDetails(objectMapper.writeValueAsString(request));

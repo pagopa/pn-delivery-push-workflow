@@ -96,7 +96,7 @@ class ReworkRequestedHandlerTest {
         details.setCreatedAt(Instant.now());
         details.setReworkRequestId("REQID");
         details.setReworkId("REWORK_0_UUID");
-        details.setRequestType(ReworkRequestTypeEnum.REWORK);
+        details.setReworkRequestType(ReworkRequestTypeEnum.REWORK);
 
         Action action = Action.builder()
                 .iun("IUN_2")
@@ -178,7 +178,7 @@ class ReworkRequestedHandlerTest {
         details.setCreatedAt(Instant.now());
         details.setReworkRequestId("REQID");
         details.setReworkId("REWORK_0_UUID");
-        details.setRequestType(ReworkRequestTypeEnum.REWORK);
+        details.setReworkRequestType(ReworkRequestTypeEnum.REWORK);
 
         Action action = Action.builder()
                 .iun("IUN_2")
@@ -247,7 +247,7 @@ class ReworkRequestedHandlerTest {
     @Test
     void handleNotificationRestartHappyPath() {
         NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
-        details.setRequestType(ReworkRequestTypeEnum.RESTART);
+        details.setReworkRequestType(ReworkRequestTypeEnum.RESTART);
         details.setReworkRecIndex("RECINDEX_0");
         details.setReworkAttempt("ATTEMPT_1");
         details.setCreatedAt(Instant.now());
@@ -309,7 +309,7 @@ class ReworkRequestedHandlerTest {
     @Test
     void handleNotificationRestartErrorPathSchedulesFutureAction() {
         NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
-        details.setRequestType(ReworkRequestTypeEnum.RESTART);
+        details.setReworkRequestType(ReworkRequestTypeEnum.RESTART);
         details.setReworkRecIndex("RECINDEX_0");
         details.setReworkAttempt("ATTEMPT_1");
         details.setCreatedAt(Instant.now());
@@ -359,7 +359,7 @@ class ReworkRequestedHandlerTest {
     @Test
     void handleNotificationReworkSpecificInvalidatesOnlyRecAndSkipsPrepareAndSend() {
         NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
-        details.setRequestType(ReworkRequestTypeEnum.REWORK);
+        details.setReworkRequestType(ReworkRequestTypeEnum.REWORK);
         details.setReworkRecIndex("RECINDEX_0");
         details.setReworkAttempt("ATTEMPT_1");
         details.setCreatedAt(Instant.now());
@@ -432,7 +432,7 @@ class ReworkRequestedHandlerTest {
     @Test
     void handleNotificationReworkSyncFlatRateSkipsPaperCostApiAndStillAddsTimelineElement() {
         NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
-        details.setRequestType(ReworkRequestTypeEnum.REWORK);
+        details.setReworkRequestType(ReworkRequestTypeEnum.REWORK);
         details.setReworkRecIndex("RECINDEX_0");
         details.setReworkAttempt("ATTEMPT_1");
         details.setCreatedAt(Instant.now());
@@ -515,7 +515,7 @@ class ReworkRequestedHandlerTest {
     @Test
     void handleNotificationRestartSpecificInvalidatesConAndIncludesPrepareAndSend() {
         NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
-        details.setRequestType(ReworkRequestTypeEnum.RESTART);
+        details.setReworkRequestType(ReworkRequestTypeEnum.RESTART);
         details.setReworkRecIndex("RECINDEX_0");
         details.setReworkAttempt("ATTEMPT_0");
         details.setCreatedAt(Instant.now());
@@ -599,7 +599,7 @@ class ReworkRequestedHandlerTest {
         details.setCreatedAt(Instant.now());
         details.setReworkRequestId("REQID");
         details.setReworkId("REWORK_0_UUID");
-        details.setRequestType(ReworkRequestTypeEnum.REWORK);
+        details.setReworkRequestType(ReworkRequestTypeEnum.REWORK);
 
         Action action = Action.builder()
                 .iun("IUN_2")

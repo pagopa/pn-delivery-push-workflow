@@ -366,7 +366,7 @@ class ReworkValidationHandlerTest {
         detail.setReworkAttempt("ATTEMPT_0");
         detail.setReworkRecIndex("RECINDEX_0");
         detail.setReworkPcRetry("PCRETRY_0");
-        detail.setRequestType(ReworkRequestTypeEnum.REWORK);
+        detail.setReworkRequestType(ReworkRequestTypeEnum.REWORK);
         Action action = Action.builder()
                 .iun("XLJE-VRQM-VKNQ-202507-K-1")
                 .details(detail)
@@ -1099,7 +1099,7 @@ class ReworkValidationHandlerTest {
         detail.setReworkRecIndex("RECINDEX_0");
         detail.setReworkPcRetry("PCRETRY_0");
         detail.setReworkExpectedFinalStatus("KO");
-        detail.setRequestType(ReworkRequestTypeEnum.RESTART);
+        detail.setReworkRequestType(ReworkRequestTypeEnum.RESTART);
 
         Action action = Action.builder()
                 .iun("XLJE-VRQM-VKNQ-202507-K-1")
@@ -1169,7 +1169,7 @@ class ReworkValidationHandlerTest {
         detail.setReworkAttempt("ATTEMPT_0");
         detail.setReworkRecIndex("RECINDEX_0");
         detail.setReworkPcRetry("PCRETRY_0");
-        detail.setRequestType(ReworkRequestTypeEnum.RESTART);
+        detail.setReworkRequestType(ReworkRequestTypeEnum.RESTART);
 
         Action action = Action.builder()
                 .iun("XLJE-VRQM-VKNQ-202507-K-1")
@@ -1216,7 +1216,7 @@ class ReworkValidationHandlerTest {
         detail.setReworkRecIndex("RECINDEX_0");
         detail.setReworkPcRetry("PCRETRY_0");
         detail.setReworkExpectedFinalStatus("OK");
-        detail.setRequestType(ReworkRequestTypeEnum.RESTART);
+        detail.setReworkRequestType(ReworkRequestTypeEnum.RESTART);
 
         Action action = Action.builder()
                 .actionId("ACTION-123")
@@ -1274,7 +1274,7 @@ class ReworkValidationHandlerTest {
 
         JsonNode insertedDetails = objectMapper.readTree(captor.getValue().getDetails());
 
-        Assertions.assertEquals(detail.getRequestType().name(), insertedDetails.path("requestType").asText());
+        Assertions.assertEquals(detail.getReworkRequestType().name(), insertedDetails.path("reworkRequestType").asText());
     }
 }
 

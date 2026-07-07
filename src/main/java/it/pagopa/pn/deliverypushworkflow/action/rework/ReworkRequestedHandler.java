@@ -62,11 +62,11 @@ public class ReworkRequestedHandler {
 
     public Mono<Void> handleNotification(Action action) {
         NotificationReworkRequestedDetails detail = (NotificationReworkRequestedDetails) action.getDetails();
-        if (Objects.isNull(detail.getRequestType())) {
+        if (Objects.isNull(detail.getReworkRequestType())) {
             return Mono.error(new IllegalArgumentException("Request type is required for rework request with reworkId " + detail.getReworkId() + " and iun " + action.getIun()));
         }
 
-        if (ReworkRequestTypeEnum.RESTART.name().equals(detail.getRequestType().name())) {
+        if (ReworkRequestTypeEnum.RESTART.name().equals(detail.getReworkRequestType().name())) {
             return handleNotificationRestart(action, detail);
         } else {
             return handleNotificationRework(action, detail);
@@ -105,7 +105,7 @@ public class ReworkRequestedHandler {
         List<String> timelineElementsToInvalidate = new ArrayList<>();
 
         return Mono.just(timelineElements)
-                .flatMap(timeline -> computeTimelineElementToInvalidate(timeline, detail.getReworkRecIndex(), detail.getReworkAttempt(), detail.getRequestType()))
+                .flatMap(timeline -> computeTimelineElementToInvalidate(timeline, detail.getReworkRecIndex(), detail.getReworkAttempt(), detail.getReworkRequestType()))
                 .doOnNext(timelineElementsToInvalidate::addAll)
                 .flatMap(timelineElementIds -> startNotificationReworkProcess(detail).thenReturn(timelineElementIds))
                 .flatMap(strings -> updateAttachmentRetention(detail.getCreatedAt(), notificationInt.getIun(), notificationInt.getDocuments(), detail.getReworkAttempt()))
@@ -116,15 +116,15 @@ public class ReworkRequestedHandler {
                 .map(ignore -> notificationInt);
     }
 
-    private Mono<List<String>> computeTimelineElementToInvalidate(Set<TimelineElementInternal> timelineElementInternalList, String recIndex, String attemptId, ReworkRequestTypeEnum requestType) {
+    private Mono<List<String>> computeTimelineElementToInvalidate(Set<TimelineElementInternal> timelineElementInternalList, String recIndex, String attemptId, ReworkRequestTypeEnum reworkRequestType) {
         log.debug("Starting computeTimelineElementToInvalidate for recIndex {} and attemptId {}", recIndex, attemptId);
         return Flux.fromIterable(timelineElementInternalList)
                 .filter(elem -> pnDeliveryPushWorkflowConfigs.getInvalidableCategories().contains(elem.getCategory().name()))
                 .filter(elem -> elem.getElementId().contains(recIndex))
                 .filter(elem -> checkAttemptId(elem, attemptId))
-                .filter(elem -> checkPrepareAnalogDomicile(elem, attemptId, requestType))
-                .filter(elem -> checkSendAnalogDomicile(elem, attemptId, requestType))
-                .filter(timelineElementInternal -> checkDeliveryDetailCode(timelineElementInternal, attemptId, requestType))
+                .filter(elem -> checkPrepareAnalogDomicile(elem, attemptId, reworkRequestType))
+                .filter(elem -> checkSendAnalogDomicile(elem, attemptId, reworkRequestType))
+                .filter(timelineElementInternal -> checkDeliveryDetailCode(timelineElementInternal, attemptId, reworkRequestType))
                 .map(TimelineElementInternal::getElementId)
                 .collectList()
                 .doOnNext(list -> log.debug("Invalidable elements found: {}", list));
@@ -168,7 +168,7 @@ public class ReworkRequestedHandler {
                     .filter(element -> !CollectionUtils.isEmpty(element.getRelatedTimelineElements()))
                     .toList();
         }
-        return timelineUtils.buildNotificationTimelineReworkedTimelineElement(notification, statusHistoryElements, recIndex, attempt, internalDetail.getReworkId());
+        return timelineUtils.buildNotificationTimelineReworkedTimelineElement(notification, statusHistoryElements, recIndex, attempt, internalDetail);
     }
 
     private Integer extractTimelineIndex(String timelineIndex, String fieldName) {
@@ -180,8 +180,8 @@ public class ReworkRequestedHandler {
     }
 
 
-    private boolean checkPrepareAnalogDomicile(TimelineElementInternal elem, String attempt, ReworkRequestTypeEnum requestType) {
-        if (TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE.equals(elem.getCategory()) && ReworkRequestTypeEnum.RESTART.name().equals(requestType.name())) {
+    private boolean checkPrepareAnalogDomicile(TimelineElementInternal elem, String attempt, ReworkRequestTypeEnum reworkRequestType) {
+        if (TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE.equals(elem.getCategory()) && ReworkRequestTypeEnum.RESTART.name().equals(reworkRequestType.name())) {
             return true;
         }
 
@@ -193,8 +193,8 @@ public class ReworkRequestedHandler {
     }
 
 
-    private boolean checkSendAnalogDomicile(TimelineElementInternal elem, String attempt, ReworkRequestTypeEnum requestType) {
-        if (TimelineElementCategoryInt.SEND_ANALOG_DOMICILE.equals(elem.getCategory()) && ReworkRequestTypeEnum.RESTART.name().equals(requestType.name())) {
+    private boolean checkSendAnalogDomicile(TimelineElementInternal elem, String attempt, ReworkRequestTypeEnum reworkRequestType) {
+        if (TimelineElementCategoryInt.SEND_ANALOG_DOMICILE.equals(elem.getCategory()) && ReworkRequestTypeEnum.RESTART.name().equals(reworkRequestType.name())) {
             return true;
         }
 
@@ -212,7 +212,7 @@ public class ReworkRequestedHandler {
         return true;
     }
 
-    private boolean checkDeliveryDetailCode(TimelineElementInternal elem, String attemptId, ReworkRequestTypeEnum requestType) {
+    private boolean checkDeliveryDetailCode(TimelineElementInternal elem, String attemptId, ReworkRequestTypeEnum reworkRequestType) {
 
         if (elem.getCategory() != TimelineElementCategoryInt.SEND_ANALOG_PROGRESS) {
             return true;
@@ -228,7 +228,7 @@ public class ReworkRequestedHandler {
         }
 
         if ((isAttempt0 && elementId.contains(ATTEMPT_0)) || (isAttempt1 && elementId.contains(ATTEMPT_1))) {
-            return ReworkRequestTypeEnum.RESTART.name().equals(requestType.name()) || !details.getDeliveryDetailCode().startsWith(CON);
+            return ReworkRequestTypeEnum.RESTART.name().equals(reworkRequestType.name()) || !details.getDeliveryDetailCode().startsWith(CON);
         }
 
         return true;
@@ -236,7 +236,7 @@ public class ReworkRequestedHandler {
 
 
     public Mono<Void> startNotificationReworkProcess(NotificationReworkRequestedDetails details) {
-        if (ReworkRequestTypeEnum.RESTART.equals(details.getRequestType())) {
+        if (ReworkRequestTypeEnum.RESTART.equals(details.getReworkRequestType())) {
             log.debug("Request type is RESTART, skipping paper channel rework process for reworkRequestId {} and reworkId {}", details.getReworkRequestId(), details.getReworkId());
             return Mono.empty();
         }

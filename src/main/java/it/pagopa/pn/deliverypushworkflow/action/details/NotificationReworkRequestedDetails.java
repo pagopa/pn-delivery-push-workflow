@@ -17,5 +17,5 @@ public class NotificationReworkRequestedDetails implements ActionDetails {
     private String reworkRecIndex;
     private String reworkId;
     private Instant createdAt;
-    private ReworkRequestTypeEnum requestType;
+    private ReworkRequestTypeEnum reworkRequestType;
 }

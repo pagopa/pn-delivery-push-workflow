@@ -3,6 +3,7 @@ package it.pagopa.pn.deliverypushworkflow.service.mapper;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.legalfacts.LegalFactCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.dto.legalfacts.LegalFactsIdInt;
+import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.ReworkRequestTypeEnum;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.StatusInfoInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
@@ -36,6 +37,7 @@ public class TimelineServiceMapper {
 
         return TimelineElementInternal.builder()
                 .reworkId(timelineElement.getReworkId())
+                .reworkRequestType(timelineElement.getReworkRequestType() != null ? ReworkRequestTypeEnum.valueOf(timelineElement.getReworkRequestType()) : null)
                 .iun(timelineElement.getIun())
                 .elementId(timelineElement.getElementId())
                 .timestamp(timelineElement.getTimestamp())
@@ -68,6 +70,7 @@ public class TimelineServiceMapper {
                 .category(TimelineCategory.valueOf(timelineElementInternal.getCategory().name()))
                 .details(toTimelineElementDetails(timelineElementInternal.getDetails(), timelineElementInternal.getCategory().name()))
                 .reworkId(timelineElementInternal.getReworkId())
+                .reworkRequestType(timelineElementInternal.getReworkRequestType() != null ? timelineElementInternal.getReworkRequestType().name() : null)
                 .notificationSentAt(timelineElementInternal.getNotificationSentAt());
     }
 
