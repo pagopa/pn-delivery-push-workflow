@@ -159,6 +159,7 @@ import static org.awaitility.Awaitility.setDefaultTimeout;
         AnalogDeliveryTimeoutUtils.class,
         AnalogWorkflowTimeoutHandler.class,
         AnalogWorkflowTimeoutActionHandler.class,
+        SendCourtesyMessageActionEventHandler.class,
         PaperTrackerServiceImpl.class,
         AnalogWorkflowDeliveryTimeoutHandler.class,
         CheckCoverageAreaServiceParameterStore.class,

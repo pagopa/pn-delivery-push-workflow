@@ -23,4 +23,5 @@ public class ActionHandlerRegistry {
     private final PostAcceptedProcessingCompletedHandler postAcceptedProcessingCompletedHandler;
     private final SendAnalogFinalStatusResponseHandler sendAnalogFinalStatusResponseHandler;
     private final AnalogWorkflowTimeoutHandler analogWorkflowTimeoutHandler;
+    private final SendCourtesyMessageActionEventHandler sendCourtesyMessageActionEventHandler;
 }
