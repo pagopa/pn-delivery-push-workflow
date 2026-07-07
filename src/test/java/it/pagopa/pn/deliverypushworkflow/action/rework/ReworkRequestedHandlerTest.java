@@ -357,6 +357,116 @@ class ReworkRequestedHandlerTest {
     }
 
     @Test
+    void handleInvalidateElementsHappyPathAddsTimelineAndInvalidatesPaperCost() {
+        NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
+        details.setRequestType(ReworkRequestTypeEnum.INVALIDATE_ELEMENTS);
+        details.setReworkRecIndex("RECINDEX_0");
+        details.setReworkAttempt("ATTEMPT_1");
+        details.setCreatedAt(Instant.now());
+        details.setReworkRequestId("REQID");
+        details.setReworkId("REWORK_0_UUID");
+        details.setElementsToInvalidate(List.of(
+                "SEND_ANALOG_DOMICILE.RECINDEX_0.ATTEMPT_1",
+                "SEND_ANALOG_PROGRESS.RECINDEX_0.ATTEMPT_1.IDX_0"
+        ));
+
+        Action action = Action.builder()
+                .iun("IUN_2")
+                .details(details)
+                .build();
+
+        NotificationHistoryResponse historyResponse = new NotificationHistoryResponse();
+        List<TimelineElement> timeline = buildTimeline();
+        historyResponse.setTimeline(timeline);
+        historyResponse.setNotificationStatus(NotificationStatus.DELIVERED);
+        NotificationStatusHistoryElement historyElement = new NotificationStatusHistoryElement();
+        historyElement.setStatus(NotificationStatus.DELIVERED);
+        historyElement.setRelatedTimelineElements(timeline.stream().map(TimelineElement::getElementId).toList());
+        historyResponse.setNotificationStatusHistory(List.of(historyElement));
+
+        NotificationInt notification = NotificationInt.builder()
+                .sentAt(Instant.now())
+                .recipients(List.of(NotificationRecipientInt.builder().taxId("taxId").build()))
+                .iun("IUN_2")
+                .sender(NotificationSenderInt.builder().paId("paId").build())
+                .documents(Collections.emptyList())
+                .notificationFeePolicy(NotificationFeePolicy.DELIVERY_MODE)
+                .build();
+
+        when(notificationService.getNotificationByIun(anyString())).thenReturn(notification);
+        when(timelineService.getTimelineAndStatusHistory(anyString(), anyInt(), any())).thenReturn(historyResponse);
+        when(timelineService.addTimelineElement(any(), any())).thenReturn(new AddTimelineElementResponse(null, true));
+        stubCostInvalidationClients();
+
+        ArgumentCaptor<TimelineElementInternal> timelineCaptor = ArgumentCaptor.forClass(TimelineElementInternal.class);
+        ArgumentCaptor<PaperCostToInvalidate> paperCostCaptor = ArgumentCaptor.forClass(PaperCostToInvalidate.class);
+
+        handler.handleNotification(action).block();
+
+        verify(pnExternalRegistriesClientReactive).invalidatePaperCost(eq("IUN_2"), paperCostCaptor.capture(), eq(notification.getPagoPaIntMode()), eq(notification.getNotificationFeePolicy()));
+        verify(notificationCostServiceClient).invalidatePaperCostWithHttpInfo(eq("IUN_2"), any());
+        verify(timelineService).addTimelineElement(timelineCaptor.capture(), eq(notification));
+        verify(paperChannelService, never()).initNotificationRework(anyString(), anyString());
+        verify(paperChannelService, never()).prepareAnalogNotification(any(), anyInt(), anyInt());
+        verify(reworkRequestEventPool, never()).scheduleFutureAction(any(), any());
+
+        Assertions.assertFalse(paperCostCaptor.getValue().getCostPhases().isEmpty());
+        Assertions.assertTrue(paperCostCaptor.getValue().getCostPhases().stream().anyMatch(elem -> elem.getValue().equals("SEND_ANALOG_DOMICILE_ATTEMPT_1")));
+
+        List<String> invalidatedIds = extractInvalidatedTimelineIds(timelineCaptor.getValue());
+        Assertions.assertEquals(2, invalidatedIds.size());
+        Assertions.assertTrue(invalidatedIds.contains("SEND_ANALOG_DOMICILE.RECINDEX_0.ATTEMPT_1"));
+        Assertions.assertTrue(invalidatedIds.contains("SEND_ANALOG_PROGRESS.RECINDEX_0.ATTEMPT_1.IDX_0"));
+    }
+
+    @Test
+    void handleInvalidateElementsSchedulesFutureActionOnError() {
+        NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
+        details.setRequestType(ReworkRequestTypeEnum.INVALIDATE_ELEMENTS);
+        details.setReworkRecIndex("RECINDEX_0");
+        details.setReworkAttempt("ATTEMPT_1");
+        details.setCreatedAt(Instant.now());
+        details.setReworkRequestId("REQID");
+        details.setReworkId("REWORK_0_UUID");
+        details.setElementsToInvalidate(List.of("SEND_ANALOG_DOMICILE.RECINDEX_0.ATTEMPT_1"));
+
+        Action action = Action.builder()
+                .iun("IUN_2")
+                .details(details)
+                .build();
+
+        NotificationHistoryResponse historyResponse = new NotificationHistoryResponse();
+        List<TimelineElement> timeline = buildTimeline();
+        historyResponse.setTimeline(timeline);
+        historyResponse.setNotificationStatus(NotificationStatus.DELIVERED);
+        NotificationStatusHistoryElement historyElement = new NotificationStatusHistoryElement();
+        historyElement.setStatus(NotificationStatus.DELIVERED);
+        historyElement.setRelatedTimelineElements(timeline.stream().map(TimelineElement::getElementId).toList());
+        historyResponse.setNotificationStatusHistory(List.of(historyElement));
+
+        NotificationInt notification = NotificationInt.builder()
+                .sentAt(Instant.now())
+                .recipients(List.of(NotificationRecipientInt.builder().taxId("taxId").build()))
+                .iun("IUN_2")
+                .sender(NotificationSenderInt.builder().paId("paId").build())
+                .documents(Collections.emptyList())
+                .notificationFeePolicy(NotificationFeePolicy.DELIVERY_MODE)
+                .build();
+
+        when(notificationService.getNotificationByIun(anyString())).thenReturn(notification);
+        when(timelineService.getTimelineAndStatusHistory(anyString(), anyInt(), any())).thenReturn(historyResponse);
+        when(timelineService.addTimelineElement(any(), any())).thenReturn(new AddTimelineElementResponse(null, true));
+        when(pnExternalRegistriesClientReactive.invalidatePaperCost(anyString(), any(PaperCostToInvalidate.class), any(), any(NotificationFeePolicy.class)))
+                .thenReturn(Mono.error(new RuntimeException("invalidate-error")));
+
+        handler.handleNotification(action).block();
+
+        verify(notificationCostServiceClient, never()).invalidatePaperCostWithHttpInfo(anyString(), any());
+        verify(timelineService).addTimelineElement(any(), eq(notification));
+        verify(reworkRequestEventPool).scheduleFutureAction(any(), any());
+    }
+
+    @Test
     void handleNotificationReworkSpecificInvalidatesOnlyRecAndSkipsPrepareAndSend() {
         NotificationReworkRequestedDetails details = new NotificationReworkRequestedDetails();
         details.setRequestType(ReworkRequestTypeEnum.REWORK);

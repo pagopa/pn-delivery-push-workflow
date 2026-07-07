@@ -19,7 +19,10 @@ public class NotificationCostServiceClientImpl extends CommonBaseClient implemen
     @Override
     public Mono<ResponseEntity<Void>> invalidatePaperCostWithHttpInfo(String iun, PaperCostToInvalidate paperCostToInvalidate) {
         log.logInvokingAsyncExternalService(CLIENT_NAME, INVALIDATE_NOTIFICATION_COST, iun);
-
+        if (paperCostToInvalidate.getCostPhases().isEmpty()) {
+            log.debug("Skipped paper cost invalidation");
+            return Mono.just(ResponseEntity.noContent().build());
+        }
         return paperCostApi.invalidatePaperCostWithHttpInfo(iun, paperCostToInvalidate)
                 .doOnError(throwable -> log.error("Error calling invalidatePaperCost with iun: {}", iun, throwable));
     }
