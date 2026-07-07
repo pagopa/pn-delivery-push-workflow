@@ -155,7 +155,13 @@ class CourtesyMessageUtilsTest {
         courtesyMessageUtils.handleSendCourtesyMessageAction(notification.getIun(), 0, details(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO, DeliveryModeInt.ANALOG));
 
         //THEN
-        Mockito.verify(timelineService, never()).addTimelineElement(Mockito.any(), Mockito.any(NotificationInt.class));
+        // chiusura senza successo -> viene scritto COURTESY_CHANNEL_FAILED
+        Mockito.verify(timelineUtils).buildCourtesyChannelFailedTimelineElement(
+                Mockito.eq(0), Mockito.eq(notification),
+                Mockito.eq(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO),
+                Mockito.eq(DeliveryModeInt.ANALOG), Mockito.anyString());
+        Mockito.verify(timelineService, times(1)).addTimelineElement(Mockito.any(), Mockito.any(NotificationInt.class));
+        // nessuna riprogrammazione in WI-1.2
         Mockito.verify(schedulerService, never()).scheduleEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.any(Instant.class),
                 Mockito.any(ActionType.class), Mockito.any(SendCourtesyMessageActionDetails.class));
     }

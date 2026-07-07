@@ -80,6 +80,11 @@ public class CourtesyMessageUtils {
         CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel = details.getChannel();
         log.info("handleSendCourtesyMessageAction channel={} retryIndex={} deliveryMode={} - iun={} id={}", channel, details.getRetryIndex(), details.getDeliveryMode(), iun, recIndex);
 
+        if (timelineUtils.checkIsNotificationCancellationRequested(iun)) {
+            log.warn("Notification cancellation requested, skipping courtesy send for channel={} - iun={} id={}", channel, iun, recIndex);
+            return;
+        }
+
         CourtesyDigitalAddressInt courtesyAddress = resolveCourtesyAddress(notification, recIndex, channel);
         if (courtesyAddress == null) {
             log.warn("Courtesy address not found for channel={}, channel closed - iun={} id={}", channel, iun, recIndex);
@@ -92,8 +97,23 @@ public class CourtesyMessageUtils {
         if (sent) {
             addProbableSchedulingElementToTimeline(notification, recIndex, schedulingAnalogDate);
         } else {
-            log.info("Courtesy message not sent for channel={}, channel closed without retry (WI-1.2) - iun={} id={}", channel, iun, recIndex);
+            // TODO WI-1.3/1.4: classificare l'esito (inatteso/transitorio vs permanente) e, su errore inatteso, riprogrammare con retryIndex+1 e backoff (a esaurimento -> DLQ);
+            //  il campo failureReason di COURTESY_CHANNEL_FAILED (EXPECTED_FAILURE / RETRIES_EXHAUSTED) verrà valorizzato dalla classificazione.
+            log.info("Courtesy message not sent for channel={}, channel closed without success - iun={} id={}", channel, iun, recIndex);
+            addCourtesyChannelFailedToTimeline(notification, recIndex, details);
         }
+    }
+
+    private void addCourtesyChannelFailedToTimeline(NotificationInt notification, Integer recIndex, SendCourtesyMessageActionDetails details) {
+        String eventId = TimelineEventId.COURTESY_CHANNEL_FAILED.buildEventId(EventId.builder()
+                .iun(notification.getIun())
+                .recIndex(recIndex)
+                .courtesyAddressType(details.getChannel())
+                .build());
+        addTimelineElement(
+                timelineUtils.buildCourtesyChannelFailedTimelineElement(recIndex, notification, details.getChannel(), details.getDeliveryMode(), eventId),
+                notification
+        );
     }
 
     private CourtesyDigitalAddressInt resolveCourtesyAddress(NotificationInt notification, Integer recIndex, CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel) {

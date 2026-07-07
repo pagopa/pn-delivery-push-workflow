@@ -46,6 +46,28 @@ public enum TimelineEventId {
 
     },
 
+    COURTESY_CHANNEL_FAILED("COURTESY_CHANNEL_FAILED") {
+        @Override
+        public String buildEventId(EventId eventId) {
+            return new TimelineEventIdBuilder()
+                    .withCategory(this.getValue())
+                    .withIun(eventId.getIun())
+                    .withRecIndex(eventId.getRecIndex())
+                    .withCourtesyAddressType(eventId.getCourtesyAddressType())
+                    .build();
+        }
+
+        @Override
+        public String buildSearchEventIdByIunAndRecipientIndex(String iun, Integer recipientIndex) {
+            return new TimelineEventIdBuilder()
+                    .withCategory(this.getValue())
+                    .withIun(iun)
+                    .withRecIndex(recipientIndex)
+                    .build();
+        }
+
+    },
+
     PROBABLE_SCHEDULING_ANALOG_DATE("PROBABLE_SCHEDULING_ANALOG_DATE") {
         @Override
         public String buildEventId(EventId eventId) {
