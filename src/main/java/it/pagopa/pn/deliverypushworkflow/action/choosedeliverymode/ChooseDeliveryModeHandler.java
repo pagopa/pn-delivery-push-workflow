@@ -7,15 +7,17 @@ import it.pagopa.pn.deliverypushworkflow.dto.address.LegalDigitalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.publicregistry.NationalRegistriesResponse;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ContactPhaseInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.DeliveryModeInt;
+import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ActionType;
 import it.pagopa.pn.deliverypushworkflow.service.NationalRegistriesService;
 import it.pagopa.pn.deliverypushworkflow.service.NotificationService;
+import it.pagopa.pn.deliverypushworkflow.service.SchedulerService;
 import it.pagopa.pn.deliverypushworkflow.utils.FeatureEnabledUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.time.Instant;
 import java.util.Optional;
 
 @Component
@@ -23,6 +25,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ChooseDeliveryModeHandler {
     private final DigitalWorkFlowHandler digitalWorkFlowHandler;
+    private final SchedulerService schedulerService;
     private final NationalRegistriesService nationalRegistriesService;
     private final ChooseDeliveryModeUtils chooseDeliveryUtils;
     private final NotificationService notificationService;
@@ -75,7 +78,7 @@ public class ChooseDeliveryModeHandler {
             Optional<LegalDigitalAddressInt> platformAddressOpt = chooseDeliveryUtils.retrievePlatformAddress(notification, recIndex);
             // ... se non lo trovo, parte il flusso di invio notifica analogica.
             if (platformAddressOpt.isEmpty()) {
-                courtesyMessageUtils.scheduleCourtesyMessagesActions(notification, recIndex, DeliveryModeInt.ANALOG);
+                scheduleAnalogWorkflow(notification, recIndex);
             }else{
                 digitalWorkFlowHandler.startDigitalWorkflow(notification, platformAddressOpt.get(), DigitalAddressSourceInt.PLATFORM, recIndex);
             }
@@ -112,8 +115,21 @@ public class ChooseDeliveryModeHandler {
                 log.info("New workflow is enabled - iun={} id={}", notification.getIun(), recIndex);
                 checkSpecialAndPlatformAddress(notification, recIndex);
             } else {
-                courtesyMessageUtils.scheduleCourtesyMessagesActions(notification, recIndex, DeliveryModeInt.ANALOG);
+                scheduleAnalogWorkflow(notification, recIndex);
             }
         }
+    }
+
+    private void scheduleAnalogWorkflow(NotificationInt notification, Integer recIndex) {
+        String iun = notification.getIun();
+        log.debug("Scheduling analog workflow for iun={} id={} ", iun, recIndex);
+
+        // TODO WI-2.1/2.2: con gli invii di cortesia asincroni la decorrenza dei 5 giorni dovrà partire dal primo
+        //  recapito riuscito e il caso "tutti i canali chiusi senza successo" richiede coordinamento; qui la datazione
+        //  di ANALOG_WORKFLOW è interim (data probabile al dispatch), coerente col comportamento precedente.
+        Instant schedulingDate = courtesyMessageUtils.scheduleCourtesyMessagesActionsForAnalog(notification, recIndex);
+
+        chooseDeliveryUtils.addScheduleAnalogWorkflowToTimeline(recIndex, notification, schedulingDate);
+        schedulerService.scheduleEvent(iun, recIndex, schedulingDate, ActionType.ANALOG_WORKFLOW);
     }
 }

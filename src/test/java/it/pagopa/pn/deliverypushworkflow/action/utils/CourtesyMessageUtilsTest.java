@@ -109,37 +109,6 @@ class CourtesyMessageUtilsTest {
     }
 
     @Test
-    void scheduleCourtesyMessagesActionsAnalogNoCourtesySchedulesAnalogNow() {
-        NotificationRecipientInt recipient = getNotificationRecipientInt();
-        NotificationInt notification = getNotificationInt(recipient);
-
-        Mockito.when(notificationUtils.getRecipientFromIndex(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(recipient);
-        Mockito.when(addressBookService.getCourtesyAddress(Mockito.anyString(), Mockito.anyString())).thenReturn(Collections.emptyList());
-
-        courtesyMessageUtils.scheduleCourtesyMessagesActions(notification, 0, DeliveryModeInt.ANALOG);
-
-        Mockito.verify(schedulerService, never()).scheduleEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.any(Instant.class),
-                Mockito.eq(ActionType.SEND_COURTESY_MESSAGE_ACTION), Mockito.any(SendCourtesyMessageActionDetails.class));
-        Mockito.verify(schedulerService).scheduleEvent(Mockito.eq(notification.getIun()), Mockito.eq(0), Mockito.any(Instant.class), Mockito.eq(ActionType.ANALOG_WORKFLOW));
-        Mockito.verify(timelineUtils).buildScheduleAnalogWorkflowTimeline(Mockito.eq(notification), Mockito.eq(0), Mockito.any(Instant.class));
-    }
-
-    @Test
-    void scheduleCourtesyMessagesActionsDigitalNoCourtesyDoesNotScheduleAnalog() {
-        NotificationRecipientInt recipient = getNotificationRecipientInt();
-        NotificationInt notification = getNotificationInt(recipient);
-
-        Mockito.when(notificationUtils.getRecipientFromIndex(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(recipient);
-        Mockito.when(addressBookService.getCourtesyAddress(Mockito.anyString(), Mockito.anyString())).thenReturn(Collections.emptyList());
-
-        courtesyMessageUtils.scheduleCourtesyMessagesActions(notification, 0, DeliveryModeInt.DIGITAL);
-
-        // ramo digitale senza cortesia -> nessuna schedulazione analogico
-        Mockito.verify(schedulerService, never()).scheduleEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.any(Instant.class), Mockito.eq(ActionType.ANALOG_WORKFLOW));
-        Mockito.verifyNoInteractions(timelineService);
-    }
-
-    @Test
     void handleSendCourtesyMessageActionAppIoSuccess() {
         //GIVEN
         NotificationRecipientInt recipient = getNotificationRecipientInt();
@@ -161,11 +130,9 @@ class CourtesyMessageUtilsTest {
         Mockito.verify(timelineUtils).buildSendCourtesyMessageTimelineElement(
                 Mockito.eq(0), Mockito.eq(notification), Mockito.any(CourtesyDigitalAddressInt.class), Mockito.any(Instant.class),
                 Mockito.anyString(), Mockito.eq(sendMessageResultInt));
-        // SEND_COURTESY_MESSAGE + PROBABLE_SCHEDULING_ANALOG_DATE + SCHEDULE_ANALOG_WORKFLOW
-        Mockito.verify(timelineService, times(3)).addTimelineElement(Mockito.any(), Mockito.any(NotificationInt.class));
-        // ramo analogico + successo -> schedula ANALOG_WORKFLOW
-        Mockito.verify(schedulerService).scheduleEvent(Mockito.eq(notification.getIun()), Mockito.eq(0), Mockito.any(Instant.class), Mockito.eq(ActionType.ANALOG_WORKFLOW));
-        // nessuna riprogrammazione (retry) in WI-1.2
+        // SEND_COURTESY_MESSAGE + PROBABLE_SCHEDULING_ANALOG_DATE
+        Mockito.verify(timelineService, times(2)).addTimelineElement(Mockito.any(), Mockito.any(NotificationInt.class));
+        // nessuna riprogrammazione in WI-1.2
         Mockito.verify(schedulerService, never()).scheduleEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.any(Instant.class),
                 Mockito.any(ActionType.class), Mockito.any(SendCourtesyMessageActionDetails.class));
     }
@@ -188,13 +155,13 @@ class CourtesyMessageUtilsTest {
         courtesyMessageUtils.handleSendCourtesyMessageAction(notification.getIun(), 0, details(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO, DeliveryModeInt.ANALOG));
 
         //THEN
-        // chiusura senza successo (ramo analogico) -> COURTESY_CHANNEL_FAILED + ANALOG_WORKFLOW a now
+        // chiusura senza successo -> viene scritto COURTESY_CHANNEL_FAILED
         Mockito.verify(timelineUtils).buildCourtesyChannelFailedTimelineElement(
                 Mockito.eq(0), Mockito.eq(notification),
                 Mockito.eq(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO),
                 Mockito.eq(DeliveryModeInt.ANALOG), Mockito.anyString());
-        Mockito.verify(timelineService, times(2)).addTimelineElement(Mockito.any(), Mockito.any(NotificationInt.class));
-        Mockito.verify(schedulerService).scheduleEvent(Mockito.eq(notification.getIun()), Mockito.eq(0), Mockito.any(Instant.class), Mockito.eq(ActionType.ANALOG_WORKFLOW));
+        Mockito.verify(timelineService, times(1)).addTimelineElement(Mockito.any(), Mockito.any(NotificationInt.class));
+        // nessuna riprogrammazione in WI-1.2
         Mockito.verify(schedulerService, never()).scheduleEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.any(Instant.class),
                 Mockito.any(ActionType.class), Mockito.any(SendCourtesyMessageActionDetails.class));
     }
@@ -220,10 +187,8 @@ class CourtesyMessageUtilsTest {
 
         //THEN
         Mockito.verify(pnEmdIntegrationClient).sendMessage(Mockito.any(SendMessageRequestBody.class));
-        // SEND_COURTESY_MESSAGE + PROBABLE_SCHEDULING_ANALOG_DATE + SCHEDULE_ANALOG_WORKFLOW
-        Mockito.verify(timelineService, times(3)).addTimelineElement(Mockito.any(), Mockito.any(NotificationInt.class));
-        // ramo analogico + successo -> schedula ANALOG_WORKFLOW
-        Mockito.verify(schedulerService).scheduleEvent(Mockito.eq(notification.getIun()), Mockito.eq(0), Mockito.any(Instant.class), Mockito.eq(ActionType.ANALOG_WORKFLOW));
+        // SEND_COURTESY_MESSAGE + PROBABLE_SCHEDULING_ANALOG_DATE
+        Mockito.verify(timelineService, times(2)).addTimelineElement(Mockito.any(), Mockito.any(NotificationInt.class));
     }
 
     @Test
@@ -243,10 +208,8 @@ class CourtesyMessageUtilsTest {
         //THEN
         Mockito.verify(externalChannelService).sendCourtesyNotification(Mockito.eq(notification), Mockito.any(CourtesyDigitalAddressInt.class),
                 Mockito.eq(0), Mockito.anyString(), Mockito.eq(DeliveryModeInt.DIGITAL));
-        // SEND_COURTESY_MESSAGE + PROBABLE_SCHEDULING_ANALOG_DATE (nessun SCHEDULE_ANALOG: ramo digitale)
+        // SEND_COURTESY_MESSAGE + PROBABLE_SCHEDULING_ANALOG_DATE
         Mockito.verify(timelineService, times(2)).addTimelineElement(Mockito.any(), Mockito.any(NotificationInt.class));
-        // ramo digitale -> NON schedula ANALOG_WORKFLOW
-        Mockito.verify(schedulerService, never()).scheduleEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.any(Instant.class), Mockito.eq(ActionType.ANALOG_WORKFLOW));
     }
 
     @Test

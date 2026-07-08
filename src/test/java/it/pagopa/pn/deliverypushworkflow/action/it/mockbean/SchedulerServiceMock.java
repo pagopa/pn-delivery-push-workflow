@@ -33,9 +33,6 @@ public class SchedulerServiceMock implements SchedulerService {
             .details(actionDetails)
             .timelineId(timelineId)
             .build();
-    action = action.toBuilder()
-            .actionId(action.getType().buildActionId(action))
-            .build();
     actionPoolMock.addAction(action);
   }
 

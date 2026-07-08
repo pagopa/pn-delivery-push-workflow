@@ -51,15 +51,28 @@ public class CourtesyMessageUtils {
      * Get recipient courtesy addresses and schedule an independent send action per available channel.
      * Each channel is scheduled as its own {@link ActionType#SEND_COURTESY_MESSAGE_ACTION}, executed immediately,
      * carrying the channel, the retry index (0 = first send) and the delivery mode in its details.
-     * <p>
-     * For the ANALOG branch only: when there is no courtesy channel at all, ANALOG_WORKFLOW is scheduled immediately,
-     * since no courtesy outcome could later start it.
-     * TODO WI-2.1/2.2: la decorrenza "dal primo successo" e il caso critico "tutti i canali chiusi senza successo"
-     * saranno gestiti nel coordinamento definitivo.
      */
     public void scheduleCourtesyMessagesActions(NotificationInt notification, Integer recIndex, DeliveryModeInt deliveryMode) {
+        dispatchCourtesyMessagesActions(notification, recIndex, deliveryMode);
+    }
+
+    /**
+     * Dispatch the per-channel courtesy actions for the ANALOG branch and return the interim scheduling date for
+     * ANALOG_WORKFLOW: the probable date (now + waiting) if at least one courtesy channel exists, otherwise now.
+     * TODO WI-2.1/2.2: la decorrenza "dal primo successo" e il caso critico "tutti i canali chiusi senza successo"
+     * sostituiranno questa datazione interim.
+     */
+    public Instant scheduleCourtesyMessagesActionsForAnalog(NotificationInt notification, Integer recIndex) {
+        List<CourtesyDigitalAddressInt> scheduledChannels = dispatchCourtesyMessagesActions(notification, recIndex, DeliveryModeInt.ANALOG);
+        if (scheduledChannels.isEmpty()) {
+            return Instant.now();
+        }
+        return retrieveOrCalculateSchedulingAnalogDate(notification.getIun(), recIndex);
+    }
+
+    private List<CourtesyDigitalAddressInt> dispatchCourtesyMessagesActions(NotificationInt notification, Integer recIndex, DeliveryModeInt deliveryMode) {
         final String iun = notification.getIun();
-        log.debug("Start scheduleCourtesyMessagesActions - iun={} id={} delivery mode={} ", iun, recIndex, deliveryMode);
+        log.debug("Start dispatchCourtesyMessagesActions - iun={} id={} delivery mode={} ", iun, recIndex, deliveryMode);
 
         List<CourtesyDigitalAddressInt> listCourtesyAddresses = getCourtesyAddresses(notification, recIndex);
 
@@ -73,23 +86,8 @@ public class CourtesyMessageUtils {
             schedulerService.scheduleEvent(iun, recIndex, Instant.now(), ActionType.SEND_COURTESY_MESSAGE_ACTION, details);
         }
 
-        if (deliveryMode == DeliveryModeInt.ANALOG && listCourtesyAddresses.isEmpty()) {
-            log.info("No courtesy address on analog branch, scheduling ANALOG_WORKFLOW now - iun={} id={}", iun, recIndex);
-            scheduleAnalogWorkflow(notification, recIndex, Instant.now());
-        }
-
-        log.debug("End scheduleCourtesyMessagesActions - iun={} id={}", iun, recIndex);
-    }
-
-    /**
-     * Interim scheduling of ANALOG_WORKFLOW. The actionId is deterministic (iun + recIndex), so repeated invocations
-     * are deduplicated by pn-action-manager.
-     * TODO WI-2.1/2.2: coordinamento definitivo (dedup con addOnlyActionIfAbsent, precedenza del successo, caso critico
-     * "tutti i canali chiusi senza successo").
-     */
-    private void scheduleAnalogWorkflow(NotificationInt notification, Integer recIndex, Instant schedulingDate) {
-        addTimelineElement(timelineUtils.buildScheduleAnalogWorkflowTimeline(notification, recIndex, schedulingDate), notification);
-        schedulerService.scheduleEvent(notification.getIun(), recIndex, schedulingDate, ActionType.ANALOG_WORKFLOW);
+        log.debug("End dispatchCourtesyMessagesActions - iun={} id={}", iun, recIndex);
+        return listCourtesyAddresses;
     }
 
     /**
@@ -117,19 +115,11 @@ public class CourtesyMessageUtils {
 
         if (sent) {
             addProbableSchedulingElementToTimeline(notification, recIndex, schedulingAnalogDate);
-            if (details.getDeliveryMode() == DeliveryModeInt.ANALOG) {
-                scheduleAnalogWorkflow(notification, recIndex, schedulingAnalogDate);
-            }
         } else {
             // TODO WI-1.3/1.4: classificare l'esito (inatteso/transitorio vs permanente) e, su errore inatteso, riprogrammare con retryIndex+1 e backoff;
             //  il campo failureReason di COURTESY_CHANNEL_FAILED (EXPECTED_FAILURE / RETRIES_EXHAUSTED) verrà valorizzato dalla classificazione.
             log.info("Courtesy message not sent for channel={}, channel closed without success - iun={} id={}", channel, iun, recIndex);
             addCourtesyChannelFailedToTimeline(notification, recIndex, details);
-            if (details.getDeliveryMode() == DeliveryModeInt.ANALOG) {
-                // Chiusura senza successo sul ramo analogico -> ANALOG_WORKFLOW a now; dedup per actionId (iun+recIndex).
-                // TODO WI-2.2: precedenza del successo (un "+5 giorni" non deve essere sovrascritto da un "now") tramite coordinamento strongly-consistent.
-                scheduleAnalogWorkflow(notification, recIndex, Instant.now());
-            }
         }
     }
 
