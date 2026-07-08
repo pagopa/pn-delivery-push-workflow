@@ -22,7 +22,6 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationViewed
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.delivery.model.NotificationFeePolicy;
 import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,10 +43,6 @@ class NotificationCostDeceasedTestIT extends CommonTestConfiguration {
     NotificationViewedRequestHandler notificationViewedRequestHandler;
 
     @Test
-    @Disabled("Temporarily disabled in PN-20500: the analog delivery mode no longer schedules the ANALOG_WORKFLOW action " +
-            "(ChooseDeliveryModeHandler now only dispatches courtesy message actions, scheduling deferred to later work items). " +
-            "This test relies end-to-end on the analog workflow producing the ANALOG_WORKFLOW_RECIPIENT_DECEASED timeline event, " +
-            "so its await() times out. Re-enable once the analog workflow scheduling is restored in a following work item.")
     void notificationViewedAfterRecipientDeceasedWorkflow() {
         // Scenario: Notifica riceve evento DECEDUTO (ANALOG_WORKFLOW_RECIPIENT_DECEASED)
         // Se in seguito arriva l'evento di visualizzazione (NOTIFICATION_VIEW)
@@ -117,10 +112,6 @@ class NotificationCostDeceasedTestIT extends CommonTestConfiguration {
     }
 
     @Test
-    @Disabled("Temporarily disabled in PN-20500: the analog delivery mode no longer schedules the ANALOG_WORKFLOW action " +
-            "(ChooseDeliveryModeHandler now only dispatches courtesy message actions, scheduling deferred to later work items). " +
-            "This test relies end-to-end on the analog workflow producing the ANALOG_WORKFLOW_RECIPIENT_DECEASED timeline event, " +
-            "so its await() times out. Re-enable once the analog workflow scheduling is restored in a following work item.")
     void notificationViewedBeforeRecipientDeceasedWorkflow() {
         // Scenario: Notifica viene creata e VISUALIZZATA prima di ricevere un evento di DECEDUTO (ANALOG_WORKFLOW_RECIPIENT_DECEASED)
         // Accertarsi che l'evento di deceduto non comporti un aggiornamento della retention dei documenti

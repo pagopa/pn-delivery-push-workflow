@@ -40,6 +40,13 @@ public class ActionPoolMock {
     
     public void addAction(Action action){
         try {
+            // Deduplicazione per actionId tra le azioni pendenti, come pn-action-manager (addOnlyActionIfAbsent):
+            // la stessa azione schedulata più volte viene aggiunta una sola volta.
+            if (action.getActionId() != null && futureAction.stream().anyMatch(a -> action.getActionId().equals(a.getActionId()))) {
+                log.info("[TEST] Action with actionId={} already pending, skipping (dedup)", action.getActionId());
+                return;
+            }
+
             int index = Collections.binarySearch(futureAction, action, Comparator.comparing(Action::getNotBefore));
 
             if (index < 0) {

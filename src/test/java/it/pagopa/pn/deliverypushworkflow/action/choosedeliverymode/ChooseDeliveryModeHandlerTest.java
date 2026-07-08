@@ -232,9 +232,7 @@ class ChooseDeliveryModeHandlerTest {
 
         verify(chooseDeliveryUtils, times(1)).addAvailabilitySourceToTimeline(anyInt(), any(NotificationInt.class), eq(DigitalAddressSourceInt.GENERAL), eq(false));
         verifyNoInteractions(digitalWorkFlowHandler);
-        // il ramo analogico esegue solo il dispatch delle azioni di cortesia; ANALOG_WORKFLOW non è più schedulato qui (WI-2.x)
         verify(courtesyMessageUtils, times(1)).scheduleCourtesyMessagesActions(notification, recIndex, DeliveryModeInt.ANALOG);
-        verify(chooseDeliveryUtils, times(0)).addScheduleAnalogWorkflowToTimeline(eq(recIndex), eq(notification), any(Instant.class));
     }
 
     @Test

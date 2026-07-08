@@ -17,7 +17,6 @@ import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.pape
 import it.pagopa.pn.deliverypushworkflow.utils.CheckRADDExperimentation;
 import it.pagopa.pn.deliverypushworkflow.utils.PnSendMode;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -92,8 +91,6 @@ class RaddExperimentationDynamicAARITSearchModeOLDTest extends SendAarAttachment
         }
     }
 
-    // TODO WI-2.1/2.2: riabilitare quando la schedulazione di ANALOG_WORKFLOW (rimossa in WI-1.2) sarà reintrodotta dal coordinamento cortesia→analogico
-    @Disabled("Rinviato a WI-2.1/2.2: in WI-1.2 il ramo analogico non schedula ANALOG_WORKFLOW, quindi la notifica non raggiunge il refinement")
     @Test
     void analogDynamicAarGeneration_AAR_RADD_ALT(){
         /*
@@ -164,8 +161,6 @@ class RaddExperimentationDynamicAARITSearchModeOLDTest extends SendAarAttachment
         Assertions.assertTrue(paperChannelPrepareRequest.getAarWithRadd());
     }
 
-    // TODO WI-2.1/2.2: riabilitare quando la schedulazione di ANALOG_WORKFLOW (rimossa in WI-1.2) sarà reintrodotta dal coordinamento cortesia→analogico
-    @Disabled("Rinviato a WI-2.1/2.2: in WI-1.2 il ramo analogico non schedula ANALOG_WORKFLOW, quindi la notifica non raggiunge il refinement")
     @Test
     void analogDynamicAarGeneration_AAR_DEAULT(){
         /*

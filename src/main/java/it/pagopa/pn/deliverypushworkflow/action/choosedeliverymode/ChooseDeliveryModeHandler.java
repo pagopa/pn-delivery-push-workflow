@@ -75,8 +75,6 @@ public class ChooseDeliveryModeHandler {
             Optional<LegalDigitalAddressInt> platformAddressOpt = chooseDeliveryUtils.retrievePlatformAddress(notification, recIndex);
             // ... se non lo trovo, parte il flusso di invio notifica analogica.
             if (platformAddressOpt.isEmpty()) {
-                // TODO la schedulazione di ANALOG_WORKFLOW sarà gestita nei WI successivi.
-                //  Come per il ramo digitale, qui si esegue solo il dispatch delle azioni di cortesia.
                 courtesyMessageUtils.scheduleCourtesyMessagesActions(notification, recIndex, DeliveryModeInt.ANALOG);
             }else{
                 digitalWorkFlowHandler.startDigitalWorkflow(notification, platformAddressOpt.get(), DigitalAddressSourceInt.PLATFORM, recIndex);
@@ -114,8 +112,6 @@ public class ChooseDeliveryModeHandler {
                 log.info("New workflow is enabled - iun={} id={}", notification.getIun(), recIndex);
                 checkSpecialAndPlatformAddress(notification, recIndex);
             } else {
-                // TODO la schedulazione di ANALOG_WORKFLOW e il calcolo della relativa data saranno gestiti dai WI successivi.
-                //  Come per il ramo digitale, qui si esegue solo il dispatch delle azioni di cortesia.
                 courtesyMessageUtils.scheduleCourtesyMessagesActions(notification, recIndex, DeliveryModeInt.ANALOG);
             }
         }
