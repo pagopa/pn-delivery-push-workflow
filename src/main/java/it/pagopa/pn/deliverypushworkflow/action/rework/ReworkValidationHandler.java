@@ -10,15 +10,14 @@ import it.pagopa.pn.deliverypushworkflow.action.utils.NotificationReworkUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.externalchannel.ResponseStatusInt;
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkError;
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkErrorCause;
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkInfo;
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.ReworkRequestTypeEnum;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationPaidDetailsInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationViewedCreationRequestDetailsInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ScheduleRefinementDetailsInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventIdParser;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.*;
 import it.pagopa.pn.deliverypushworkflow.exceptions.NotificationReworkValidationException;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.actionmanager.api.ActionApi;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.actionmanager.model.ActionType;
@@ -37,6 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -47,13 +47,12 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkConstant.*;
+import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkErrorCause.*;
+import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.ReworkRequestTypeEnum.INVALIDATE_ELEMENTS;
 import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.ReworkRequestTypeEnum.REWORK;
 import static it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt.*;
 import static it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.handler.utils.NotificationReworkUtils.getReworkRequestEventAction;
@@ -143,14 +142,14 @@ public class ReworkValidationHandler {
 
     private Mono<NotificationReworkInfo> checkNotificationExpectedFinalStatusCodeAndThrow(NotificationReworkInfo info) {
         NotificationReworkValidationDetails detail = info.getActionDetail();
-        if (ReworkRequestTypeEnum.RESTART.equals(detail.getRequestType())) {
+        if (ReworkRequestTypeEnum.RESTART.equals(detail.getRequestType()) || INVALIDATE_ELEMENTS.equals(detail.getRequestType())) {
             return Mono.just(info);
         }
         return NotificationReworkUtils.checkNotificationExpectedFinalStatusCodeAndThrow(
-            detail.getReworkAttempt(),
-            detail.getReworkExpectedFinalStatus(),
-            detail.getReworkRecIndex(),
-            info.getTimeline()
+                detail.getReworkAttempt(),
+                detail.getReworkExpectedFinalStatus(),
+                detail.getReworkRecIndex(),
+                info.getTimeline()
         ) ? Mono.just(info) :
                 Mono.error(new NotificationReworkValidationException(NotificationReworkError.builder()
                         .cause(NotificationReworkErrorCause.INVALID_EXPECTED_STATUS_CODE.getCause())
@@ -159,7 +158,7 @@ public class ReworkValidationHandler {
     }
 
     private Mono<NotificationReworkInfo> checkNotificationAttachments(NotificationReworkInfo info, String reworkAttempt, String reworkFinalStatus) {
-        if(needToVerifyAttachments(info, reworkAttempt, reworkFinalStatus)) {
+        if (needToVerifyAttachments(info, reworkAttempt, reworkFinalStatus)) {
             return Flux.fromIterable(info.getNotification().getDocuments())
                     .flatMap(document -> safeStorageService.getFile(document.getRef().getKey(), true, false))
                     .filter(response -> response.getRetentionUntil().minusDays(pnDeliveryPushWorkflowConfigs.getNotificationReworkDocumentExpiringRange()).isBefore(OffsetDateTime.now()))
@@ -203,18 +202,18 @@ public class ReworkValidationHandler {
                 .filter(timelineElement -> timelineElement.getElementId().contains(info.getActionDetail().getReworkRecIndex()))
                 .findFirst()
                 .map(timelineElementInternal -> {
-                        if (REWORK.equals(info.getActionDetail().getRequestType())) {
-                            return timelineElementInternal.getElementId() + "." + info.getActionDetail().getReworkPcRetry();
-                        } else {
-                            return timelineElementInternal.getElementId();
-                        }
-                    })
+                    if (REWORK.equals(info.getActionDetail().getRequestType())) {
+                        return timelineElementInternal.getElementId() + "." + info.getActionDetail().getReworkPcRetry();
+                    } else {
+                        return timelineElementInternal.getElementId();
+                    }
+                })
                 .orElse(StringUtils.EMPTY);
     }
 
     private Mono<NotificationReworkInfo> checkNotificationAddress(NotificationReworkInfo externalInfo, String reworkAttempt, String reworkFinalStatus) {
         log.debug("checkNotificationAddress for iun {}, requestId {}", externalInfo.getAction().getIun(), externalInfo.getRequestId());
-        if(needToVerifyAddress(externalInfo, reworkAttempt, reworkFinalStatus)) {
+        if (needToVerifyAddress(externalInfo, reworkAttempt, reworkFinalStatus)) {
             return paperChannelAddressClient.checkAddress(computeRequestIdForAddress(externalInfo))
                     .doOnNext(checkAddressResponse -> checkTtl(checkAddressResponse, externalInfo))
                     .map(checkAddressResponse -> externalInfo)
@@ -292,10 +291,37 @@ public class ReworkValidationHandler {
     private Mono<NotificationReworkInfo> checkNotificationTimelineAndThrow(NotificationReworkInfo info) {
         String recIndex = info.getActionDetail().getReworkRecIndex();
         String attempt = info.getActionDetail().getReworkAttempt();
-        ReworkRequestTypeEnum requestType = info.getActionDetail().getRequestType();
         NotificationReworkValidationDetails detail = info.getActionDetail();
+        ReworkRequestTypeEnum requestType = info.getActionDetail().getRequestType();
+
         boolean isStatusViewed = timelineUtils.checkIsNotificationViewed(info.getNotification().getIun(), getRecIndexFromAction(info.getActionDetail()));
 
+        if (INVALIDATE_ELEMENTS.equals(requestType)) {
+            return validateTimeline(info, recIndex, detail, attempt, isStatusViewed, requestType)
+                    .thenReturn(info)
+                    .flatMap(this::validateElementsToInvalidate);
+        }
+
+        return validateTimeline(info, recIndex, detail, attempt, isStatusViewed, requestType)
+                .thenReturn(info);
+    }
+
+    private Mono<Void> validateTimeline(NotificationReworkInfo info, String recIndex, NotificationReworkValidationDetails detail, String attempt, boolean isStatusViewed, ReworkRequestTypeEnum requestType) {
+        return checkRecIndexAndFilter(info, recIndex)
+                .flatMap(timeline -> checkForPaymentCategory(timeline, detail))
+                .flatMap(timeline -> checkIfAttemptOneExistsForReworkAttemptZero(timeline, attempt, isStatusViewed, requestType))
+                .map(timeline -> timeline.stream().filter(timelineElementInternal ->
+                                INVALIDATE_ELEMENTS.equals(info.getActionDetail().getRequestType()) ||
+                                        (timelineElementInternal.getElementId().contains(attempt)
+                                                || ELEMENTS_WITHOUT_ATTEMPT_ID.contains(timelineElementInternal.getCategory())))
+                        .collect(Collectors.toSet()))
+                .filter(timelineElementInternals -> !timelineElementInternals.isEmpty())
+                .switchIfEmpty(fail(NotificationReworkErrorCause.INVALID_ATTEMPT_ID, NotificationReworkErrorCause.INVALID_ATTEMPT_ID.getErrorDetails()))
+                .doOnNext(info::setFilteredTimeline)
+                .flatMap(timeline -> checkNotificationTimeline(info, recIndex, attempt, isStatusViewed));
+    }
+
+    private Mono<Set<TimelineElementInternal>> checkRecIndexAndFilter(NotificationReworkInfo info, String recIndex) {
         return Mono.just(info.getTimeline())
                 .map(timelineElement -> timelineElement.stream().filter(timelineElementInternal -> {
                     if (TimelineElementCategoryInt.PAYMENT.equals(timelineElementInternal.getCategory())) {
@@ -305,17 +331,185 @@ public class ReworkValidationHandler {
                     return timelineElementInternal.getElementId().contains(recIndex);
                 }).collect(Collectors.toSet()))
                 .filter(set -> !set.isEmpty())
-                .switchIfEmpty(fail(NotificationReworkErrorCause.INVALID_RECINDEX, NotificationReworkErrorCause.INVALID_RECINDEX.getErrorDetails()))
-                .flatMap(timeline -> checkForPaymentCategory(timeline, detail))
-                .flatMap(timeline -> checkIfAttemptOneExistsForReworkAttemptZero(timeline, attempt, isStatusViewed, requestType))
-                .map(timeline -> timeline.stream().filter(timelineElementInternal -> timelineElementInternal.getElementId().contains(attempt)
-                                || ELEMENTS_WITHOUT_ATTEMPT_ID.contains(timelineElementInternal.getCategory()))
-                        .collect(Collectors.toSet()))
-                .filter(timelineElementInternals -> !timelineElementInternals.isEmpty())
-                .switchIfEmpty(fail(NotificationReworkErrorCause.INVALID_ATTEMPT_ID, NotificationReworkErrorCause.INVALID_ATTEMPT_ID.getErrorDetails()))
-                .doOnNext(info::setFilteredTimeline)
-                .flatMap(timeline -> checkNotificationTimeline(info, recIndex, attempt, isStatusViewed))
-                .thenReturn(info);
+                .switchIfEmpty(fail(NotificationReworkErrorCause.INVALID_RECINDEX, NotificationReworkErrorCause.INVALID_RECINDEX.getErrorDetails()));
+    }
+
+    private Mono<NotificationReworkInfo> validateElementsToInvalidate(NotificationReworkInfo info) {
+        validateRecIndex(info);
+        Set<String> elementsToInvalidate = new HashSet<>(info.getActionDetail().getElementsToInvalidate());
+        Set<TimelineElementInternal> notInvalidatedElements = info.getFilteredTimeline().stream()
+                .filter(t -> !elementsToInvalidate.contains(t.getElementId()))
+                .collect(Collectors.toSet());
+
+        boolean hasAttempt0OK = hasOKAttempt0(notInvalidatedElements);
+
+        boolean hasAttempt1Elements = notInvalidatedElements.stream()
+                .anyMatch(t -> isElementOfAttempt1(t.getElementId(), t.getCategory()));
+
+        boolean hasViewedElements = notInvalidatedElements.stream()
+                .anyMatch(t -> NOTIFICATION_VIEWED.equals(t.getCategory())
+                        || NOTIFICATION_VIEWED_CREATION_REQUEST.equals(t.getCategory()));
+
+        elementsToInvalidate.forEach(element -> validateSingleElementToInvalidate(
+                        element,
+                        info,
+                        notInvalidatedElements,
+                        hasAttempt0OK,
+                        hasAttempt1Elements,
+                        hasViewedElements
+                )
+        );
+
+        return Mono.just(info);
+    }
+
+    private void validateSingleElementToInvalidate(String element, NotificationReworkInfo info, Set<TimelineElementInternal> remainingTimeline, boolean hasAttempt0OK, boolean hasAttempt1Elements, boolean hasViewedElements) {
+        TimelineEventIdParser parser = TimelineEventIdParser.parse(element);
+
+        Optional<TimelineElementCategoryInt> categoryOpt = parser.category()
+                .map(categoryString -> {
+                    if(isKnownCategory(categoryString)){
+                        return TimelineElementCategoryInt.valueOf(categoryString);
+                    } else {
+                        return null;
+                    }
+                });
+
+        if (categoryOpt.isEmpty()) {
+            addInvalidationError(info, NotificationReworkErrorCause.INVALID_ELEMENT_CATEGORY, element);
+            return;
+        }
+
+        TimelineElementCategoryInt category = categoryOpt.get();
+
+        NotificationReworkErrorCause errorCause = switch (category) {
+
+            case ANALOG_SUCCESS_WORKFLOW, ANALOG_FAILURE_WORKFLOW -> {
+                boolean hasAnotherAnalogWorkflow = remainingTimeline.stream()
+                        .anyMatch(t -> ANALOG_SUCCESS_WORKFLOW.equals(t.getCategory())
+                                || ANALOG_FAILURE_WORKFLOW.equals(t.getCategory()));
+
+                yield hasAnotherAnalogWorkflow ? null : INVALID_ANALOG_WORKFLOW_ELEMENT;
+            }
+
+            case SEND_ANALOG_PROGRESS -> null;
+
+            case PREPARE_ANALOG_DOMICILE,
+                 SEND_ANALOG_DOMICILE,
+                 SEND_ANALOG_FEEDBACK -> {
+                if (!isElementOfAttempt1(element, category)) {
+                    yield INVALID_ATTEMPT0_ELEMENT;
+                }
+
+                if (!hasAttempt0OK) {
+                    yield INVALID_ATTEMPT1_ELEMENT;
+                }
+
+                if (hasAttempt1Elements) {
+                    yield INVALID_ATTEMPT1_ELEMENTS;
+                }
+
+                yield null;
+            }
+
+            case PREPARE_ANALOG_DOMICILE_FAILURE,
+                 COMPLETELY_UNREACHABLE,
+                 COMPLETELY_UNREACHABLE_CREATION_REQUEST -> {
+                if (!hasAttempt0OK) {
+                    yield INVALID_ATTEMPT1_ELEMENT;
+                }
+
+                if (hasAttempt1Elements) {
+                    yield INVALID_ATTEMPT1_ELEMENTS;
+                }
+
+                yield null;
+            }
+
+            case NOTIFICATION_VIEWED,
+                 NOTIFICATION_VIEWED_CREATION_REQUEST -> {
+                if (hasViewedElements) {
+                    yield INVALID_ATTEMPT1_ELEMENTS;
+                }
+
+                yield checkAttachments(info, info.getFilteredTimeline());
+            }
+
+            default -> INVALID_CATEGORY_TO_INVALIDATE;
+        };
+
+        if (errorCause != null) {
+            addInvalidationError(info, errorCause, element);
+        }
+    }
+
+    private NotificationReworkErrorCause checkAttachments(NotificationReworkInfo info, Set<TimelineElementInternal> timeline) {
+        Optional<TimelineElementInternal> viewedCreationRequestOpt = timeline.stream()
+                .filter(t -> NOTIFICATION_VIEWED_CREATION_REQUEST.equals(t.getCategory()))
+                .findFirst();
+
+        viewedCreationRequestOpt.ifPresent(viewed -> {
+            Instant viewedTimestamp = viewed.getTimestamp();
+            // TODO: controllo 120 giorni / safe storage
+        });
+
+        List<String> attachments = info.getNotification().getDocuments().stream()
+                .map(doc -> doc.getRef().getKey())
+                .toList();
+
+        return null;
+    }
+
+    private static boolean hasOKAttempt0(Set<TimelineElementInternal> timelineElements) {
+        return timelineElements.stream()
+                .filter(t -> SEND_ANALOG_FEEDBACK.equals(t.getCategory()))
+                .map(t -> (SendAnalogFeedbackDetailsInt) t.getDetails())
+                .anyMatch(details ->
+                        details.getSentAttemptMade() == 0
+                                && ResponseStatusInt.OK.equals(details.getResponseStatus())
+                );
+    }
+
+    private boolean isElementOfAttempt1(String elementId, TimelineElementCategoryInt category) {
+        TimelineEventIdParser parser = TimelineEventIdParser.parse(elementId);
+
+        Integer attempt = parser.sentAttemptMade().orElse(null);
+
+        return Objects.equals(attempt, 1)
+                || PREPARE_ANALOG_DOMICILE_FAILURE.equals(category)
+                || COMPLETELY_UNREACHABLE.equals(category)
+                || COMPLETELY_UNREACHABLE_CREATION_REQUEST.equals(category);
+    }
+
+    private void addInvalidationError(NotificationReworkInfo info, NotificationReworkErrorCause cause, String element) {
+        info.getErrorList().add(
+                NotificationReworkError.builder()
+                        .cause(cause.getCause())
+                        .description(String.format(cause.getErrorDetails(), element))
+                        .build()
+        );
+    }
+
+    private void validateRecIndex(NotificationReworkInfo info) {
+        List<String> elementsToInvalidate = info.getActionDetail().getElementsToInvalidate();
+        String reworkRecIndex = info.getActionDetail().getReworkRecIndex();
+        if (CollectionUtils.isEmpty(elementsToInvalidate) || StringUtils.isBlank(reworkRecIndex)) {
+            return;
+        }
+        List<String> invalidElements = elementsToInvalidate.stream()
+                .filter(elementId -> Objects.nonNull(elementId) && !elementId.contains(reworkRecIndex))
+                .toList();
+
+        invalidElements.forEach(elementId ->
+                info.getErrorList().add(NotificationReworkError.builder()
+                        .cause(NotificationReworkErrorCause.INVALID_REC_INDEX.getCause())
+                        .description(String.format(
+                                NotificationReworkErrorCause.INVALID_REC_INDEX.getErrorDetails(),
+                                elementId,
+                                reworkRecIndex
+                        ))
+                        .build())
+        );
     }
 
     private Mono<Set<TimelineElementInternal>> checkForPaymentCategory(Set<TimelineElementInternal> timeline, NotificationReworkValidationDetails detail) {
@@ -326,7 +520,7 @@ public class ReworkValidationHandler {
     }
 
     private Mono<Set<TimelineElementInternal>> checkIfAttemptOneExistsForReworkAttemptZero(Set<TimelineElementInternal> timeline, String attempt, boolean isStatusViewed, ReworkRequestTypeEnum requestType) {
-        if(isStatusViewed && REWORK.equals(requestType) && ATTEMPT_0.equalsIgnoreCase(attempt) &&
+        if (isStatusViewed && REWORK.equals(requestType) && ATTEMPT_0.equalsIgnoreCase(attempt) &&
                 timeline.stream().anyMatch(timelineElementInternal -> timelineElementInternal.getElementId().contains(ATTEMPT_1))) {
             return fail(NotificationReworkErrorCause.INVALID_NOTIFICATION_STATUS, "Invalid status VIEWED if ATTEMPT_1 exists");
         }
@@ -445,6 +639,7 @@ public class ReworkValidationHandler {
         request.setReworkAttempt(detail.getReworkAttempt());
         request.setCreatedAt(Instant.now());
         request.setRequestType(detail.getRequestType());
+        request.setElementsToInvalidate(detail.getElementsToInvalidate());
         try {
             objectMapper.registerModule(new JavaTimeModule());
             newAction.setDetails(objectMapper.writeValueAsString(request));
