@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -15,5 +17,6 @@ public class NotificationReworkValidationDetails implements ActionDetails {
     private String reworkPcRetry;
     private String reworkRecIndex;
     private String reworkExpectedFinalStatus;
+    private List<String> elementsToInvalidate;
     private ReworkRequestTypeEnum requestType;
 }

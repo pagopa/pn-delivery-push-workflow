@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -17,5 +18,6 @@ public class NotificationReworkRequestedDetails implements ActionDetails {
     private String reworkRecIndex;
     private String reworkId;
     private Instant createdAt;
+    private List<String> elementsToInvalidate;
     private ReworkRequestTypeEnum requestType;
 }
