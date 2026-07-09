@@ -50,6 +50,7 @@ class CourtesyMessageUtilsTest {
     private PnEmdIntegrationClient pnEmdIntegrationClient;
     private SchedulerService schedulerService;
     private NotificationService notificationService;
+    private CourtesyRetryableErrorClassifier retryableErrorClassifier;
 
     private CourtesyMessageUtils courtesyMessageUtils;
     private PnDeliveryPushWorkflowConfigs mockConfig;
@@ -66,6 +67,7 @@ class CourtesyMessageUtilsTest {
         pnEmdIntegrationClient = mock(PnEmdIntegrationClient.class);
         schedulerService = mock(SchedulerService.class);
         notificationService = mock(NotificationService.class);
+        retryableErrorClassifier = mock(CourtesyRetryableErrorClassifier.class);
 
         TimeParams timeParams = new TimeParams();
         timeParams.setWaitingForReadCourtesyMessage(Duration.ofDays(5));
@@ -73,7 +75,7 @@ class CourtesyMessageUtilsTest {
 
         courtesyMessageUtils = new CourtesyMessageUtils(addressBookService, externalChannelService,
                 timelineService, timelineUtils, notificationUtils, iOservice, mockConfig, pnEmdIntegrationClient,
-                new AuditLogServiceImpl(), schedulerService, notificationService);
+                new AuditLogServiceImpl(), schedulerService, notificationService, retryableErrorClassifier);
     }
 
     @Test
