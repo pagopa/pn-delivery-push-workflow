@@ -88,6 +88,7 @@ import static org.awaitility.Awaitility.setDefaultTimeout;
         NotificationViewedRequestHandler.class,
         DigitalWorkFlowUtils.class,
         CourtesyMessageUtils.class,
+        CourtesyRetryableErrorClassifier.class,
         AarUtils.class,
         CompletelyUnreachableUtils.class,
         ExternalChannelUtils.class,

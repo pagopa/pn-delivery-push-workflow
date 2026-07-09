@@ -1,7 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.service.impl;
 
 import it.pagopa.pn.commons.exceptions.PnHttpResponseException;
-import it.pagopa.pn.commons.exceptions.PnInternalException;
 import it.pagopa.pn.deliverypushworkflow.action.it.utils.NotificationRecipientTestBuilder;
 import it.pagopa.pn.deliverypushworkflow.action.it.utils.NotificationTestBuilder;
 import it.pagopa.pn.deliverypushworkflow.action.utils.NotificationUtils;
@@ -222,17 +221,16 @@ class IoServiceImplTest {
                 notificationInt.getRecipients().get(0)
         );
 
+        final SendMessageResponse.ResultEnum errorUserStatus = SendMessageResponse.ResultEnum.ERROR_USER_STATUS;
         Mockito.when( pnExternalRegistryClient.sendIOMessage(Mockito.any(SendMessageRequest.class))).thenReturn(
                         new SendMessageResponse()
                                 .id("1871")
-                                .result(SendMessageResponse.ResultEnum.ERROR_USER_STATUS)
+                                .result(errorUserStatus)
         );
 
         //WHEN
-        Instant schedulingAnalogDate = Instant.now();
-        assertThrows(PnInternalException.class, () ->
-                ioService.sendIOMessage(notificationInt, 0, schedulingAnalogDate, DeliveryModeInt.ANALOG)
-        );
+        SendMessageResponse.ResultEnum res = ioService.sendIOMessage(notificationInt, 0, Instant.now(), DeliveryModeInt.ANALOG);
+        assertEquals(errorUserStatus, res);
     }
 
     @Test
