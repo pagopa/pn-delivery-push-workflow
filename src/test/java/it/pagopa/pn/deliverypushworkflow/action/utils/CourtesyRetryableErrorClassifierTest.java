@@ -61,9 +61,8 @@ class CourtesyRetryableErrorClassifierTest {
     }
 
     @Test
-    void transport_forbiddenIsRetryableOnlyForTpp() {
-        // 403 = expired token on TPP (transient), unauthorized client elsewhere (permanent)
-        assertTrue(classifier.isRetryableTransportError(COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP, webClientResponse(403)));
+    void transport_forbiddenIsAlwaysPermanent() {
+        assertFalse(classifier.isRetryableTransportError(COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP, webClientResponse(403)));
         assertFalse(classifier.isRetryableTransportError(COURTESY_DIGITAL_ADDRESS_TYPE_INT.EMAIL, webClientResponse(403)));
         assertFalse(classifier.isRetryableTransportError(COURTESY_DIGITAL_ADDRESS_TYPE_INT.SMS, webClientResponse(403)));
     }

@@ -30,9 +30,8 @@ public class CourtesyRetryableErrorClassifier {
 
     /**
      * Classifies a transport error raised while sending on a courtesy channel as retryable.
-     * Transient cases are network/timeout errors and the HTTP statuses in the per-channel allowlist
-     * (429 and 5xx for every channel, plus 403 for TPP, which maps to an expired token).
-     * Any other outcome is permanent.
+     * Transient cases are network/timeout errors and the HTTP statuses 429 and 5xx, uniform across
+     * all channels. Any other status (including 400, 403, 409) is permanent (fail-safe default).
      */
     public boolean isRetryableTransportError(COURTESY_DIGITAL_ADDRESS_TYPE_INT channel, Throwable error) {
         if (isNetworkError(error)) {
@@ -42,7 +41,7 @@ public class CourtesyRetryableErrorClassifier {
 
         OptionalInt httpStatus = extractHttpStatus(error);
         if (httpStatus.isPresent()) {
-            boolean retryable = isRetryableStatus(channel, httpStatus.getAsInt());
+            boolean retryable = isRetryableStatus(httpStatus.getAsInt());
             log.debug("Transport error classified as retryable={} (httpStatus={}) for channel={}", retryable, httpStatus.getAsInt(), channel);
             return retryable;
         }
@@ -62,16 +61,11 @@ public class CourtesyRetryableErrorClassifier {
                 || SendMessageResponse.ResultEnum.ERROR_OPTIN.equals(result);
     }
 
-    private boolean isRetryableStatus(COURTESY_DIGITAL_ADDRESS_TYPE_INT channel, int httpStatus) {
+    private boolean isRetryableStatus(int httpStatus) {
         if (httpStatus == 429) {
             return true;
         }
-        if (httpStatus >= 500 && httpStatus <= 599) {
-            return true;
-        }
-        // Only for TPP the 403 maps to an expired OAuth2 token (transient); on the other channels
-        // a 403 means an unauthorized client (permanent).
-        return channel == COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP && httpStatus == 403;
+        return httpStatus >= 500 && httpStatus <= 599;
     }
 
     private OptionalInt extractHttpStatus(Throwable error) {
