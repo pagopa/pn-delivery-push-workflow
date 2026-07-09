@@ -91,6 +91,11 @@ public class ActionHandlerMock {
                     var handler = actionHandlerRegistry.getAnalogWorkflowTimeoutHandler();
                     handler.handle(message.getPayload(), message.getHeaders());
                 }
+                case SEND_COURTESY_MESSAGE_ACTION -> {
+                    final Message<Action> message = getBaseActionMessage(action);
+                    var handler = actionHandlerRegistry.getSendCourtesyMessageActionEventHandler();
+                    handler.handle(message.getPayload(), message.getHeaders());
+                }
                 default ->
                         log.error("[TEST] actionType not found {}", action.getType());
             }

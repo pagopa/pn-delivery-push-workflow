@@ -3,6 +3,7 @@ package it.pagopa.pn.deliverypushworkflow.action.utils;
 import it.pagopa.pn.commons.exceptions.PnInternalException;
 import it.pagopa.pn.commons.log.PnAuditLogEvent;
 import it.pagopa.pn.commons.log.PnAuditLogEventType;
+import it.pagopa.pn.deliverypushworkflow.action.details.SendCourtesyMessageActionDetails;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.address.CourtesyDigitalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
@@ -16,6 +17,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ProbableDateAnalog
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.emd.integration.model.SendMessageRequestBody;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregistry.model.SendMessageResponse;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.emdintegration.PnEmdIntegrationClient;
+import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ActionType;
 import it.pagopa.pn.deliverypushworkflow.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,44 +44,107 @@ public class CourtesyMessageUtils {
     private final PnDeliveryPushWorkflowConfigs pnDeliveryPushConfigs;
     private final PnEmdIntegrationClient pnEmdIntegrationClient;
     private final AuditLogService auditLogService;
+    private final SchedulerService schedulerService;
+    private final NotificationService notificationService;
 
     /**
-     * Get recipient addresses and send courtesy messages.
-     * @return report of sent courtesy messages and scheduling analog date if applicable.
+     * Get recipient courtesy addresses and schedule an independent send action per available channel.
+     * Each channel is scheduled as its own {@link ActionType#SEND_COURTESY_MESSAGE_ACTION}, executed immediately,
+     * carrying the channel, the retry index (0 = first send) and the delivery mode in its details.
      */
-    public CourtesyMessagesReport checkAddressesAndSendCourtesyMessage(NotificationInt notification, Integer recIndex, DeliveryModeInt deliveryMode) {
+    public void scheduleCourtesyMessagesActions(NotificationInt notification, Integer recIndex, DeliveryModeInt deliveryMode) {
+        dispatchCourtesyMessagesActions(notification, recIndex, deliveryMode);
+    }
+
+    /**
+     * Dispatch the per-channel courtesy actions for the ANALOG branch and return the interim scheduling date for
+     * ANALOG_WORKFLOW: the probable date (now + waiting) if at least one courtesy channel exists, otherwise now.
+     * TODO WI-2.1/2.2: la decorrenza "dal primo successo" e il caso critico "tutti i canali chiusi senza successo"
+     * sostituiranno questa datazione interim.
+     */
+    public Instant scheduleCourtesyMessagesActionsForAnalog(NotificationInt notification, Integer recIndex) {
+        List<CourtesyDigitalAddressInt> scheduledChannels = dispatchCourtesyMessagesActions(notification, recIndex, DeliveryModeInt.ANALOG);
+        if (scheduledChannels.isEmpty()) {
+            return Instant.now();
+        }
+        return retrieveOrCalculateSchedulingAnalogDate(notification.getIun(), recIndex);
+    }
+
+    private List<CourtesyDigitalAddressInt> dispatchCourtesyMessagesActions(NotificationInt notification, Integer recIndex, DeliveryModeInt deliveryMode) {
         final String iun = notification.getIun();
-        log.debug("Start checkAddressesForSendCourtesyMessage - iun={} id={} delivery mode={} ", iun, recIndex, deliveryMode);
+        log.debug("Start dispatchCourtesyMessagesActions - iun={} id={} delivery mode={} ", iun, recIndex, deliveryMode);
 
-        NotificationRecipientInt recipient = notificationUtils.getRecipientFromIndex(notification, recIndex);
-
-        // Ottiene tutti gli indirizzi di cortesia per il recipient
-        List<CourtesyDigitalAddressInt> listCourtesyAddresses = addressBookService.getCourtesyAddress(recipient.getInternalId(), notification.getSender().getPaId());
-
-        CourtesyMessagesReport courtesyMessagesReport = new CourtesyMessagesReport();
-        Instant probableSchedulingAnalogDate = retrieveOrCalculateSchedulingAnalogDate(iun , recIndex);
+        List<CourtesyDigitalAddressInt> listCourtesyAddresses = getCourtesyAddresses(notification, recIndex);
 
         for (CourtesyDigitalAddressInt courtesyAddress : listCourtesyAddresses) {
-            try {
-                if (trySendCourtesyMessage(notification, recIndex, courtesyAddress, probableSchedulingAnalogDate, deliveryMode)) {
-                    courtesyMessagesReport.addSentCourtesyType(courtesyAddress.getType());
-                } else {
-                    courtesyMessagesReport.addNotSentCourtesyType(courtesyAddress.getType());
-                }
-            } catch (Exception ex) {
-                //Se l'invio del messaggio di cortesia fallisce per un qualsiasi motivo il processo non si blocca. Viene fatto catch exception e loggata
-                log.error("Exception in send courtesy message, courtesyType={} ex={} - iun={} id={}", courtesyAddress.getType(), ex, notification.getIun(), recIndex);
-                courtesyMessagesReport.addCourtesyTypeInError(courtesyAddress.getType());
-            }
+            SendCourtesyMessageActionDetails details = SendCourtesyMessageActionDetails.builder()
+                    .channel(courtesyAddress.getType())
+                    .retryIndex(0)
+                    .deliveryMode(deliveryMode)
+                    .build();
+            log.info("Scheduling SEND_COURTESY_MESSAGE_ACTION channel={} retryIndex=0 deliveryMode={} - iun={} id={}", courtesyAddress.getType(), deliveryMode, iun, recIndex);
+            schedulerService.scheduleEvent(iun, recIndex, Instant.now(), ActionType.SEND_COURTESY_MESSAGE_ACTION, details);
         }
 
-        if (courtesyMessagesReport.hasSentAtLeastACourtesyMessage()) {
-            addProbableSchedulingElementToTimeline(notification, recIndex, probableSchedulingAnalogDate);
-            courtesyMessagesReport.setSchedulingAnalogDate(probableSchedulingAnalogDate);
+        log.debug("End dispatchCourtesyMessagesActions - iun={} id={}", iun, recIndex);
+        return listCourtesyAddresses;
+    }
+
+    /**
+     * Execute the courtesy send for a single channel, invoked by the {@code SEND_COURTESY_MESSAGE_ACTION} handler.
+     * Reuses the per-channel dispatch already present in {@link #trySendCourtesyMessage}.
+     */
+    public void handleSendCourtesyMessageAction(String iun, Integer recIndex, SendCourtesyMessageActionDetails details) {
+        NotificationInt notification = notificationService.getNotificationByIun(iun);
+        CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel = details.getChannel();
+        log.info("handleSendCourtesyMessageAction channel={} retryIndex={} deliveryMode={} - iun={} id={}", channel, details.getRetryIndex(), details.getDeliveryMode(), iun, recIndex);
+
+        if (timelineUtils.checkIsNotificationCancellationRequested(iun)) {
+            log.warn("Notification cancellation requested, skipping courtesy send for channel={} - iun={} id={}", channel, iun, recIndex);
+            return;
         }
 
-        log.debug("End sendCourtesyMessage - IUN={} id={}", iun, recIndex);
-        return courtesyMessagesReport;
+        CourtesyDigitalAddressInt courtesyAddress = resolveCourtesyAddress(notification, recIndex, channel);
+        if (courtesyAddress == null) {
+            log.warn("Courtesy address not found for channel={}, channel closed - iun={} id={}", channel, iun, recIndex);
+            return;
+        }
+
+        Instant schedulingAnalogDate = retrieveOrCalculateSchedulingAnalogDate(iun, recIndex);
+        boolean sent = trySendCourtesyMessage(notification, recIndex, courtesyAddress, schedulingAnalogDate, details.getDeliveryMode());
+
+        if (sent) {
+            addProbableSchedulingElementToTimeline(notification, recIndex, schedulingAnalogDate);
+        } else {
+            // TODO WI-1.3/1.4: classificare l'esito (inatteso/transitorio vs permanente) e, su errore inatteso, riprogrammare con retryIndex+1 e backoff;
+            //  il campo failureReason di COURTESY_CHANNEL_FAILED (EXPECTED_FAILURE / RETRIES_EXHAUSTED) verrà valorizzato dalla classificazione.
+            log.info("Courtesy message not sent for channel={}, channel closed without success - iun={} id={}", channel, iun, recIndex);
+            addCourtesyChannelFailedToTimeline(notification, recIndex, details);
+        }
+    }
+
+    private void addCourtesyChannelFailedToTimeline(NotificationInt notification, Integer recIndex, SendCourtesyMessageActionDetails details) {
+        String eventId = TimelineEventId.COURTESY_CHANNEL_FAILED.buildEventId(EventId.builder()
+                .iun(notification.getIun())
+                .recIndex(recIndex)
+                .courtesyAddressType(details.getChannel())
+                .build());
+        addTimelineElement(
+                timelineUtils.buildCourtesyChannelFailedTimelineElement(recIndex, notification, details.getChannel(), details.getDeliveryMode(), eventId),
+                notification
+        );
+    }
+
+    private CourtesyDigitalAddressInt resolveCourtesyAddress(NotificationInt notification, Integer recIndex, CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel) {
+        return getCourtesyAddresses(notification, recIndex).stream()
+                .filter(address -> channel.equals(address.getType()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private List<CourtesyDigitalAddressInt> getCourtesyAddresses(NotificationInt notification, Integer recIndex) {
+        NotificationRecipientInt recipient = notificationUtils.getRecipientFromIndex(notification, recIndex);
+        return addressBookService.getCourtesyAddress(recipient.getInternalId(), notification.getSender().getPaId());
     }
 
     private Instant retrieveOrCalculateSchedulingAnalogDate(String iun, Integer recIndex) {

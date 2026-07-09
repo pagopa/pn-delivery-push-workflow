@@ -45,7 +45,8 @@ public enum TimelineElementCategoryInt {
     SEND_ANALOG_TIMEOUT_CREATION_REQUEST(SendAnalogTimeoutCreationRequestDetailsInt.class, TimelineElementCategoryInt.VERSION_28),
     SEND_ANALOG_TIMEOUT(SendAnalogTimeoutDetailsInt.class, TimelineElementCategoryInt.VERSION_28),
     ANALOG_FAILURE_WORKFLOW_TIMEOUT(AnalogFailureWorkflowTimeoutDetailsInt.class, TimelineElementCategoryInt.PRIORITY_ANALOG_FAILURE_WORKFLOW_TIMEOUT, TimelineElementCategoryInt.VERSION_28),
-    NOTIFICATION_TIMELINE_REWORKED(NotificationTimelineReworkedDetailsInt.class, TimelineElementCategoryInt.PRIORITY_NOTIFICATION_TIMELINE_REWORKED, TimelineElementCategoryInt.VERSION_28);
+    NOTIFICATION_TIMELINE_REWORKED(NotificationTimelineReworkedDetailsInt.class, TimelineElementCategoryInt.PRIORITY_NOTIFICATION_TIMELINE_REWORKED, TimelineElementCategoryInt.VERSION_28),
+    COURTESY_CHANNEL_FAILED(CourtesyChannelFailedDetailsInt.class, TimelineElementCategoryInt.VERSION_29);
 
     private final Class<? extends TimelineElementDetailsInt> detailsJavaClass;
     private final int priority;
@@ -70,6 +71,7 @@ public enum TimelineElementCategoryInt {
     public static final int VERSION_25 = 25;
     public static final int VERSION_26 = 26;
     public static final int VERSION_28 = 28;
+    public static final int VERSION_29 = 29;
 
     TimelineElementCategoryInt(Class<? extends TimelineElementDetailsInt> detailsJavaClass, int version) {
         this(detailsJavaClass, PRIORITY_BEFORE, version);

@@ -174,6 +174,18 @@ public enum ActionType {
     public String buildActionId(Action action) {
       return String.format("%s_notification_rework_update", action.getIun());
     }
+  },
+
+  SEND_COURTESY_MESSAGE_ACTION(SendCourtesyMessageActionDetails.class) {
+    @Override
+    public String buildActionId(Action action) {
+      SendCourtesyMessageActionDetails details = (SendCourtesyMessageActionDetails) action.getDetails();
+      return String.format("%s_send_courtesy_message_recIndex_%d_channel_%s_retry_%d",
+              action.getIun(),
+              action.getRecipientIndex(),
+              details.getChannel(),
+              details.getRetryIndex());
+    }
   };
 
   private final Class<? extends ActionDetails> detailsJavaClass;

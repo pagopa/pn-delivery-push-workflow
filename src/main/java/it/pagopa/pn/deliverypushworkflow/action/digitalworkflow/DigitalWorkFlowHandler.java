@@ -81,7 +81,7 @@ public class DigitalWorkFlowHandler {
                 null,
                 false);
 
-        courtesyMessageUtils.checkAddressesAndSendCourtesyMessage(notification, recIndex, DeliveryModeInt.DIGITAL);
+        courtesyMessageUtils.scheduleCourtesyMessagesActions(notification, recIndex, DeliveryModeInt.DIGITAL);
     }
 
     /**
