@@ -29,6 +29,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.springframework.http.HttpHeaders;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -67,7 +69,7 @@ class CourtesyMessageUtilsTest {
         pnEmdIntegrationClient = mock(PnEmdIntegrationClient.class);
         schedulerService = mock(SchedulerService.class);
         notificationService = mock(NotificationService.class);
-        retryableErrorClassifier = mock(CourtesyRetryableErrorClassifier.class);
+        retryableErrorClassifier = new CourtesyRetryableErrorClassifier();
 
         TimeParams timeParams = new TimeParams();
         timeParams.setWaitingForReadCourtesyMessage(Duration.ofDays(5));
@@ -140,7 +142,7 @@ class CourtesyMessageUtilsTest {
     }
 
     @Test
-    void handleSendCourtesyMessageActionAppIoNotSent() {
+    void handleSendCourtesyMessageActionAppIoPermanentFailure() {
         //GIVEN
         NotificationRecipientInt recipient = getNotificationRecipientInt();
         NotificationInt notification = getNotificationInt(recipient);
@@ -150,6 +152,36 @@ class CourtesyMessageUtilsTest {
         Mockito.when(addressBookService.getCourtesyAddress(Mockito.anyString(), Mockito.anyString()))
                 .thenReturn(List.of(courtesyAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO)));
 
+        // NOT_SENT_APPIO_UNAVAILABLE is a permanent outcome -> the channel is closed without retry
+        Mockito.when(iOservice.sendIOMessage(Mockito.any(NotificationInt.class), Mockito.anyInt(), Mockito.any(), Mockito.any()))
+                .thenReturn(SendMessageResponse.ResultEnum.NOT_SENT_APPIO_UNAVAILABLE);
+
+        //WHEN
+        courtesyMessageUtils.handleSendCourtesyMessageAction(notification.getIun(), 0, details(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO, DeliveryModeInt.ANALOG));
+
+        //THEN
+        Mockito.verify(timelineUtils).buildCourtesyChannelFailedTimelineElement(
+                Mockito.eq(0), Mockito.eq(notification),
+                Mockito.eq(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO),
+                Mockito.eq(DeliveryModeInt.ANALOG), Mockito.anyString());
+        Mockito.verify(timelineService, times(1)).addTimelineElement(Mockito.any(), Mockito.any(NotificationInt.class));
+        Mockito.verify(schedulerService, never()).scheduleEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.any(Instant.class),
+                Mockito.any(ActionType.class), Mockito.any(SendCourtesyMessageActionDetails.class));
+    }
+
+    @Test
+    void handleSendCourtesyMessageActionAppIoRetryableErrorClosesChannelForNow() {
+        //GIVEN
+        NotificationRecipientInt recipient = getNotificationRecipientInt();
+        NotificationInt notification = getNotificationInt(recipient);
+
+        Mockito.when(notificationService.getNotificationByIun(notification.getIun())).thenReturn(notification);
+        Mockito.when(notificationUtils.getRecipientFromIndex(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(recipient);
+        Mockito.when(addressBookService.getCourtesyAddress(Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(List.of(courtesyAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO)));
+
+        // ERROR_USER_STATUS is a transient technical error -> classified as retryable;
+        // no exception is raised and, until WI-1.4, the channel is closed (fail-safe)
         Mockito.when(iOservice.sendIOMessage(Mockito.any(NotificationInt.class), Mockito.anyInt(), Mockito.any(), Mockito.any()))
                 .thenReturn(SendMessageResponse.ResultEnum.ERROR_USER_STATUS);
 
@@ -157,13 +189,11 @@ class CourtesyMessageUtilsTest {
         courtesyMessageUtils.handleSendCourtesyMessageAction(notification.getIun(), 0, details(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO, DeliveryModeInt.ANALOG));
 
         //THEN
-        // chiusura senza successo -> viene scritto COURTESY_CHANNEL_FAILED
         Mockito.verify(timelineUtils).buildCourtesyChannelFailedTimelineElement(
                 Mockito.eq(0), Mockito.eq(notification),
                 Mockito.eq(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO),
                 Mockito.eq(DeliveryModeInt.ANALOG), Mockito.anyString());
         Mockito.verify(timelineService, times(1)).addTimelineElement(Mockito.any(), Mockito.any(NotificationInt.class));
-        // nessuna riprogrammazione in WI-1.2
         Mockito.verify(schedulerService, never()).scheduleEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.any(Instant.class),
                 Mockito.any(ActionType.class), Mockito.any(SendCourtesyMessageActionDetails.class));
     }
@@ -191,6 +221,61 @@ class CourtesyMessageUtilsTest {
         Mockito.verify(pnEmdIntegrationClient).sendMessage(Mockito.any(SendMessageRequestBody.class));
         // SEND_COURTESY_MESSAGE + PROBABLE_SCHEDULING_ANALOG_DATE
         Mockito.verify(timelineService, times(2)).addTimelineElement(Mockito.any(), Mockito.any(NotificationInt.class));
+    }
+
+    @Test
+    void handleSendCourtesyMessageActionTppNoChannelsEnabledPermanent() {
+        //GIVEN
+        NotificationRecipientInt recipient = getNotificationRecipientInt();
+        NotificationInt notification = getNotificationInt(recipient);
+
+        Mockito.when(notificationService.getNotificationByIun(notification.getIun())).thenReturn(notification);
+        Mockito.when(notificationUtils.getRecipientFromIndex(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(recipient);
+        Mockito.when(addressBookService.getCourtesyAddress(Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(List.of(courtesyAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP)));
+
+        // NO_CHANNELS_ENABLED is a permanent outcome -> the channel is closed without retry
+        final it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.emd.integration.model.SendMessageResponse tppResponse =
+                new it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.emd.integration.model.SendMessageResponse();
+        tppResponse.setOutcome(it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.emd.integration.model.SendMessageResponse.OutcomeEnum.NO_CHANNELS_ENABLED);
+        Mockito.when(pnEmdIntegrationClient.sendMessage(Mockito.any(SendMessageRequestBody.class))).thenReturn(tppResponse);
+
+        //WHEN
+        courtesyMessageUtils.handleSendCourtesyMessageAction(notification.getIun(), 0, details(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP, DeliveryModeInt.ANALOG));
+
+        //THEN
+        Mockito.verify(timelineUtils).buildCourtesyChannelFailedTimelineElement(
+                Mockito.eq(0), Mockito.eq(notification),
+                Mockito.eq(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP),
+                Mockito.eq(DeliveryModeInt.ANALOG), Mockito.anyString());
+        Mockito.verify(timelineService, times(1)).addTimelineElement(Mockito.any(), Mockito.any(NotificationInt.class));
+    }
+
+    @Test
+    void handleSendCourtesyMessageActionTppRetryableErrorClosesChannelForNow() {
+        //GIVEN
+        NotificationRecipientInt recipient = getNotificationRecipientInt();
+        NotificationInt notification = getNotificationInt(recipient);
+
+        Mockito.when(notificationService.getNotificationByIun(notification.getIun())).thenReturn(notification);
+        Mockito.when(notificationUtils.getRecipientFromIndex(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(recipient);
+        Mockito.when(addressBookService.getCourtesyAddress(Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(List.of(courtesyAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP)));
+
+        // an HTTP 500 is a transient error -> classified as retryable; no exception escapes and,
+        // until WI-1.4, the channel is closed (fail-safe)
+        Mockito.when(pnEmdIntegrationClient.sendMessage(Mockito.any(SendMessageRequestBody.class)))
+                .thenThrow(WebClientResponseException.create(500, "Internal Server Error", HttpHeaders.EMPTY, new byte[0], null));
+
+        //WHEN
+        courtesyMessageUtils.handleSendCourtesyMessageAction(notification.getIun(), 0, details(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP, DeliveryModeInt.ANALOG));
+
+        //THEN
+        Mockito.verify(timelineUtils).buildCourtesyChannelFailedTimelineElement(
+                Mockito.eq(0), Mockito.eq(notification),
+                Mockito.eq(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP),
+                Mockito.eq(DeliveryModeInt.ANALOG), Mockito.anyString());
+        Mockito.verify(timelineService, times(1)).addTimelineElement(Mockito.any(), Mockito.any(NotificationInt.class));
     }
 
     @Test
