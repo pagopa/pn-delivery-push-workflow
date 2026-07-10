@@ -1,5 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.action.it.utils;
 
+import it.pagopa.pn.deliverypushworkflow.action.details.NotificationReworkRequestedDetails;
 import it.pagopa.pn.deliverypushworkflow.action.utils.InstantNowSupplier;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.deliverypushworkflow.dto.address.*;
@@ -15,6 +16,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.SendEventInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.publicregistry.NationalRegistriesResponse;
 import it.pagopa.pn.deliverypushworkflow.dto.io.IoSendMessageResultInt;
 import it.pagopa.pn.deliverypushworkflow.dto.mandate.DelegateInfoInt;
+import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.ReworkRequestTypeEnum;
 import it.pagopa.pn.deliverypushworkflow.dto.radd.RaddInfo;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.EventId;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
@@ -1520,9 +1522,11 @@ class TimelineUtilsTest {
         Integer sentAttemptMade = 1;
         List<NotificationStatusHistoryElement> invalidatedTimelineAndStatusHistory = new ArrayList<>();
         invalidatedTimelineAndStatusHistory.add(new NotificationStatusHistoryElement());
-        String reworkId = "REWORK_0_1234";
+        NotificationReworkRequestedDetails reworkDetail = new NotificationReworkRequestedDetails();
+        reworkDetail.setReworkId("REWORK_0_1234");
+        reworkDetail.setRequestType(ReworkRequestTypeEnum.REWORK);
 
-        TimelineElementInternal actual = timelineUtils.buildNotificationTimelineReworkedTimelineElement(notification, invalidatedTimelineAndStatusHistory, recIndex, sentAttemptMade, reworkId);
+        TimelineElementInternal actual = timelineUtils.buildNotificationTimelineReworkedTimelineElement(notification, invalidatedTimelineAndStatusHistory, recIndex, sentAttemptMade, reworkDetail);
         String timelineEventIdExpected = "NOTIFICATION_TIMELINE_REWORKED.IUN_Example_IUN_1234_Test.RECINDEX_1.ATTEMPT_1.REWORK_0";
 
         Assertions.assertAll(
