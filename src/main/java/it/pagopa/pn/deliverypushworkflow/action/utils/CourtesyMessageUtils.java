@@ -116,8 +116,14 @@ public class CourtesyMessageUtils {
         CourtesySendOutcome outcome = trySendCourtesyMessage(notification, recIndex, courtesyAddress, schedulingAnalogDate, details.getDeliveryMode());
 
         switch (outcome) {
-            case SENT -> addProbableSchedulingElementToTimeline(notification, recIndex, schedulingAnalogDate);
-            case RETRYABLE_ERROR -> handleRetryableError(notification, recIndex, details);
+            case SENT -> {
+                log.info("Courtesy message sent successfully for channel={} retryIndex={} - iun={} id={}", channel, details.getRetryIndex(), iun, recIndex);
+                addProbableSchedulingElementToTimeline(notification, recIndex, schedulingAnalogDate);
+            }
+            case RETRYABLE_ERROR -> {
+                log.info("Retryable error on courtesy channel={} retryIndex={} - iun={} id={}", channel, details.getRetryIndex(), iun, recIndex);
+                handleRetryableError(notification, recIndex, details);
+            }
             case PERMANENT_FAILURE -> {
                 log.info("Courtesy message not sent for channel={}, permanent failure, channel closed - iun={} id={}", channel, iun, recIndex);
                 addCourtesyChannelFailedToTimeline(notification, recIndex, details);
