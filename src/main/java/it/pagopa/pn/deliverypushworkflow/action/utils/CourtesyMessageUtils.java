@@ -125,13 +125,54 @@ public class CourtesyMessageUtils {
         }
     }
 
+    /**
+     * Reschedule the same courtesy action, moving its execution date forward by the next per-channel backoff interval.
+     * The current retry index selects the interval and, once incremented, is carried in the action details so it
+     * contributes to the {@code actionId}, keeping every rescheduling unique and avoiding pn-action-manager deduplication.
+     */
     private void handleRetryableError(NotificationInt notification, Integer recIndex, SendCourtesyMessageActionDetails details) {
-        // TODO WI-1.4: reschedule the same action with retryIndex+1 and the per-channel backoff interval;
-        //  when the interval list is exhausted, route the message to the dedicated DLQ.
-        //  Until the retry mechanism is in place the channel is closed (fail-safe), keeping today's behaviour.
-        log.info("Retryable error on courtesy channel={} retryIndex={}, retry scheduling not yet implemented (WI-1.4), closing channel for now - iun={} id={}",
-                details.getChannel(), details.getRetryIndex(), notification.getIun(), recIndex);
-        addCourtesyChannelFailedToTimeline(notification, recIndex, details);
+        final String iun = notification.getIun();
+        CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel = details.getChannel();
+        List<Integer> intervals = resolveRetryIntervalsMinutes(channel);
+        int currentRetryIndex = details.getRetryIndex();
+
+        if (currentRetryIndex >= intervals.size()) {
+            log.info("Courtesy retry intervals exhausted for channel={} retryIndex={}, channel closed - iun={} id={}",
+                    channel, currentRetryIndex, iun, recIndex);
+            addCourtesyChannelFailedToTimeline(notification, recIndex, details);
+            return;
+        }
+
+        int waitMinutes = intervals.get(currentRetryIndex);
+        int nextRetryIndex = currentRetryIndex + 1;
+        Instant schedulingDate = Instant.now().plus(Duration.ofMinutes(waitMinutes));
+        SendCourtesyMessageActionDetails nextDetails = SendCourtesyMessageActionDetails.builder()
+                .channel(channel)
+                .retryIndex(nextRetryIndex)
+                .deliveryMode(details.getDeliveryMode())
+                .build();
+        log.info("Rescheduling SEND_COURTESY_MESSAGE_ACTION channel={} nextRetryIndex={} waitMinutes={} schedulingDate={} - iun={} id={}",
+                channel, nextRetryIndex, waitMinutes, schedulingDate, iun, recIndex);
+        schedulerService.scheduleEvent(iun, recIndex, schedulingDate, ActionType.SEND_COURTESY_MESSAGE_ACTION, nextDetails);
+    }
+
+    /**
+     * Resolve the configured per-channel backoff intervals (in minutes). The list length is the number of retries and
+     * each value is the wait preceding the corresponding retry; a missing or empty list means no retry for that channel.
+     */
+    private List<Integer> resolveRetryIntervalsMinutes(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel) {
+        PnDeliveryPushWorkflowConfigs.CourtesyRetry courtesyRetry = pnDeliveryPushConfigs.getCourtesyRetry();
+        if (courtesyRetry == null || courtesyRetry.getIntervalsMinutes() == null) {
+            return List.of();
+        }
+        PnDeliveryPushWorkflowConfigs.CourtesyRetry.IntervalsMinutes intervalsMinutes = courtesyRetry.getIntervalsMinutes();
+        List<Integer> channelIntervals = switch (channel) {
+            case EMAIL -> intervalsMinutes.getEmail();
+            case SMS -> intervalsMinutes.getSms();
+            case APPIO -> intervalsMinutes.getIo();
+            case TPP -> intervalsMinutes.getTpp();
+        };
+        return channelIntervals != null ? channelIntervals : List.of();
     }
 
     private void addCourtesyChannelFailedToTimeline(NotificationInt notification, Integer recIndex, SendCourtesyMessageActionDetails details) {

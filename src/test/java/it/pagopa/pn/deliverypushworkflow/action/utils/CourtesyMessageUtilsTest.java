@@ -170,7 +170,7 @@ class CourtesyMessageUtilsTest {
     }
 
     @Test
-    void handleSendCourtesyMessageActionAppIoRetryableErrorClosesChannelForNow() {
+    void handleSendCourtesyMessageActionAppIoRetryableErrorReschedulesWithBackoff() {
         //GIVEN
         NotificationRecipientInt recipient = getNotificationRecipientInt();
         NotificationInt notification = getNotificationInt(recipient);
@@ -180,15 +180,52 @@ class CourtesyMessageUtilsTest {
         Mockito.when(addressBookService.getCourtesyAddress(Mockito.anyString(), Mockito.anyString()))
                 .thenReturn(List.of(courtesyAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO)));
 
-        // ERROR_USER_STATUS is a transient technical error -> classified as retryable;
-        // no exception is raised and, until WI-1.4, the channel is closed (fail-safe)
+        // ERROR_USER_STATUS is a transient technical error -> classified as retryable
         Mockito.when(iOservice.sendIOMessage(Mockito.any(NotificationInt.class), Mockito.anyInt(), Mockito.any(), Mockito.any()))
                 .thenReturn(SendMessageResponse.ResultEnum.ERROR_USER_STATUS);
+        configureRetryIntervals(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO, List.of(5, 10, 20, 40));
 
-        //WHEN
+        //WHEN - the first send (retryIndex=0) fails
+        Instant beforeCall = Instant.now();
         courtesyMessageUtils.handleSendCourtesyMessageAction(notification.getIun(), 0, details(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO, DeliveryModeInt.ANALOG));
+        Instant afterCall = Instant.now();
 
-        //THEN
+        //THEN - the same action is rescheduled with retryIndex=1 at now + 5 minutes (intervals[0]); the channel is not closed
+        ArgumentCaptor<SendCourtesyMessageActionDetails> detailsCaptor = ArgumentCaptor.forClass(SendCourtesyMessageActionDetails.class);
+        ArgumentCaptor<Instant> dateCaptor = ArgumentCaptor.forClass(Instant.class);
+        Mockito.verify(schedulerService).scheduleEvent(Mockito.eq(notification.getIun()), Mockito.eq(0), dateCaptor.capture(),
+                Mockito.eq(ActionType.SEND_COURTESY_MESSAGE_ACTION), detailsCaptor.capture());
+
+        SendCourtesyMessageActionDetails rescheduled = detailsCaptor.getValue();
+        assertThat(rescheduled.getChannel()).isEqualTo(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO);
+        assertThat(rescheduled.getRetryIndex()).isEqualTo(1);
+        assertThat(rescheduled.getDeliveryMode()).isEqualTo(DeliveryModeInt.ANALOG);
+        assertThat(dateCaptor.getValue()).isBetween(beforeCall.plus(Duration.ofMinutes(5)), afterCall.plus(Duration.ofMinutes(5)));
+
+        Mockito.verify(timelineUtils, never()).buildCourtesyChannelFailedTimelineElement(
+                Mockito.anyInt(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyString());
+        Mockito.verify(timelineService, never()).addTimelineElement(Mockito.any(), Mockito.any(NotificationInt.class));
+    }
+
+    @Test
+    void handleSendCourtesyMessageActionAppIoRetryableErrorIntervalsExhaustedClosesChannel() {
+        //GIVEN
+        NotificationRecipientInt recipient = getNotificationRecipientInt();
+        NotificationInt notification = getNotificationInt(recipient);
+
+        Mockito.when(notificationService.getNotificationByIun(notification.getIun())).thenReturn(notification);
+        Mockito.when(notificationUtils.getRecipientFromIndex(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(recipient);
+        Mockito.when(addressBookService.getCourtesyAddress(Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(List.of(courtesyAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO)));
+
+        Mockito.when(iOservice.sendIOMessage(Mockito.any(NotificationInt.class), Mockito.anyInt(), Mockito.any(), Mockito.any()))
+                .thenReturn(SendMessageResponse.ResultEnum.ERROR_USER_STATUS);
+        configureRetryIntervals(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO, List.of(5, 10, 20, 40));
+
+        //WHEN - the last configured retry (retryIndex=4, equal to the list size) fails: intervals are exhausted
+        courtesyMessageUtils.handleSendCourtesyMessageAction(notification.getIun(), 0, details(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO, DeliveryModeInt.ANALOG, 4));
+
+        //THEN - no further scheduling, the channel is closed
         Mockito.verify(timelineUtils).buildCourtesyChannelFailedTimelineElement(
                 Mockito.eq(0), Mockito.eq(notification),
                 Mockito.eq(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO),
@@ -252,7 +289,7 @@ class CourtesyMessageUtilsTest {
     }
 
     @Test
-    void handleSendCourtesyMessageActionTppRetryableErrorClosesChannelForNow() {
+    void handleSendCourtesyMessageActionTppRetryableErrorReschedulesWithBackoff() {
         //GIVEN
         NotificationRecipientInt recipient = getNotificationRecipientInt();
         NotificationInt notification = getNotificationInt(recipient);
@@ -262,10 +299,47 @@ class CourtesyMessageUtilsTest {
         Mockito.when(addressBookService.getCourtesyAddress(Mockito.anyString(), Mockito.anyString()))
                 .thenReturn(List.of(courtesyAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP)));
 
-        // an HTTP 500 is a transient error -> classified as retryable; no exception escapes and,
-        // until WI-1.4, the channel is closed (fail-safe)
+        // an HTTP 500 is a transient error -> classified as retryable; no exception escapes
         Mockito.when(pnEmdIntegrationClient.sendMessage(Mockito.any(SendMessageRequestBody.class)))
                 .thenThrow(WebClientResponseException.create(500, "Internal Server Error", HttpHeaders.EMPTY, new byte[0], null));
+        configureRetryIntervals(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP, List.of(2, 4, 8));
+
+        //WHEN - the second attempt (retryIndex=1) fails
+        Instant beforeCall = Instant.now();
+        courtesyMessageUtils.handleSendCourtesyMessageAction(notification.getIun(), 0, details(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP, DeliveryModeInt.ANALOG, 1));
+        Instant afterCall = Instant.now();
+
+        //THEN - rescheduled with retryIndex=2 at now + 4 minutes (intervals[1]); the channel is not closed
+        ArgumentCaptor<SendCourtesyMessageActionDetails> detailsCaptor = ArgumentCaptor.forClass(SendCourtesyMessageActionDetails.class);
+        ArgumentCaptor<Instant> dateCaptor = ArgumentCaptor.forClass(Instant.class);
+        Mockito.verify(schedulerService).scheduleEvent(Mockito.eq(notification.getIun()), Mockito.eq(0), dateCaptor.capture(),
+                Mockito.eq(ActionType.SEND_COURTESY_MESSAGE_ACTION), detailsCaptor.capture());
+
+        SendCourtesyMessageActionDetails rescheduled = detailsCaptor.getValue();
+        assertThat(rescheduled.getChannel()).isEqualTo(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP);
+        assertThat(rescheduled.getRetryIndex()).isEqualTo(2);
+        assertThat(dateCaptor.getValue()).isBetween(beforeCall.plus(Duration.ofMinutes(4)), afterCall.plus(Duration.ofMinutes(4)));
+
+        Mockito.verify(timelineUtils, never()).buildCourtesyChannelFailedTimelineElement(
+                Mockito.anyInt(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyString());
+        Mockito.verify(timelineService, never()).addTimelineElement(Mockito.any(), Mockito.any(NotificationInt.class));
+    }
+
+    @Test
+    void handleSendCourtesyMessageActionTppRetryableErrorEmptyIntervalsClosesChannel() {
+        //GIVEN
+        NotificationRecipientInt recipient = getNotificationRecipientInt();
+        NotificationInt notification = getNotificationInt(recipient);
+
+        Mockito.when(notificationService.getNotificationByIun(notification.getIun())).thenReturn(notification);
+        Mockito.when(notificationUtils.getRecipientFromIndex(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(recipient);
+        Mockito.when(addressBookService.getCourtesyAddress(Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(List.of(courtesyAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP)));
+
+        Mockito.when(pnEmdIntegrationClient.sendMessage(Mockito.any(SendMessageRequestBody.class)))
+                .thenThrow(WebClientResponseException.create(500, "Internal Server Error", HttpHeaders.EMPTY, new byte[0], null));
+        // empty interval list -> no retry for this channel, today's behaviour
+        configureRetryIntervals(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP, List.of());
 
         //WHEN
         courtesyMessageUtils.handleSendCourtesyMessageAction(notification.getIun(), 0, details(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP, DeliveryModeInt.ANALOG));
@@ -276,6 +350,8 @@ class CourtesyMessageUtilsTest {
                 Mockito.eq(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP),
                 Mockito.eq(DeliveryModeInt.ANALOG), Mockito.anyString());
         Mockito.verify(timelineService, times(1)).addTimelineElement(Mockito.any(), Mockito.any(NotificationInt.class));
+        Mockito.verify(schedulerService, never()).scheduleEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.any(Instant.class),
+                Mockito.any(ActionType.class), Mockito.any(SendCourtesyMessageActionDetails.class));
     }
 
     @Test
@@ -379,11 +455,28 @@ class CourtesyMessageUtilsTest {
     }
 
     private static SendCourtesyMessageActionDetails details(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel, DeliveryModeInt deliveryMode) {
+        return details(channel, deliveryMode, 0);
+    }
+
+    private static SendCourtesyMessageActionDetails details(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel, DeliveryModeInt deliveryMode, int retryIndex) {
         return SendCourtesyMessageActionDetails.builder()
                 .channel(channel)
-                .retryIndex(0)
+                .retryIndex(retryIndex)
                 .deliveryMode(deliveryMode)
                 .build();
+    }
+
+    private void configureRetryIntervals(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel, List<Integer> minutes) {
+        PnDeliveryPushWorkflowConfigs.CourtesyRetry.IntervalsMinutes intervalsMinutes = new PnDeliveryPushWorkflowConfigs.CourtesyRetry.IntervalsMinutes();
+        switch (channel) {
+            case EMAIL -> intervalsMinutes.setEmail(minutes);
+            case SMS -> intervalsMinutes.setSms(minutes);
+            case APPIO -> intervalsMinutes.setIo(minutes);
+            case TPP -> intervalsMinutes.setTpp(minutes);
+        }
+        PnDeliveryPushWorkflowConfigs.CourtesyRetry courtesyRetry = new PnDeliveryPushWorkflowConfigs.CourtesyRetry();
+        courtesyRetry.setIntervalsMinutes(intervalsMinutes);
+        Mockito.when(mockConfig.getCourtesyRetry()).thenReturn(courtesyRetry);
     }
 
     private static NotificationInt getNotificationInt(NotificationRecipientInt recipient) {
