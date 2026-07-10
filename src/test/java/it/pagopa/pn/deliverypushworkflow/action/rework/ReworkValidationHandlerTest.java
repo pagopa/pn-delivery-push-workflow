@@ -1403,7 +1403,7 @@ class ReworkValidationHandlerTest {
         verify(reworkRequestEventPool).scheduleFutureAction(captor.capture(), any());
 
         Assertions.assertTrue(captor.getValue().getError().stream()
-                .anyMatch(e -> NotificationReworkErrorCause.INVALID_ATTEMPT0_ELEMENT.getCause().equals(e.getCause())));
+                .anyMatch(e -> NotificationReworkErrorCause.INVALID_CATEGORY_TO_INVALIDATE.getCause().equals(e.getCause())));
     }
 
     @Test
@@ -1438,7 +1438,7 @@ class ReworkValidationHandlerTest {
         verify(reworkRequestEventPool).scheduleFutureAction(captor.capture(), any());
 
         Assertions.assertTrue(captor.getValue().getError().stream()
-                .anyMatch(e -> NotificationReworkErrorCause.INVALID_ATTEMPT1_ELEMENT.getCause().equals(e.getCause())));
+                .anyMatch(e -> NotificationReworkErrorCause.INVALID_CATEGORY_TO_INVALIDATE.getCause().equals(e.getCause())));
     }
 
     @Test
@@ -1481,7 +1481,7 @@ class ReworkValidationHandlerTest {
         verify(reworkRequestEventPool).scheduleFutureAction(captor.capture(), any());
 
         Assertions.assertTrue(captor.getValue().getError().stream()
-                .anyMatch(e -> NotificationReworkErrorCause.INVALID_ATTEMPT1_ELEMENTS.getCause().equals(e.getCause())));
+                .anyMatch(e -> NotificationReworkErrorCause.INVALID_CATEGORY_TO_INVALIDATE.getCause().equals(e.getCause())));
     }
 
     @Test
@@ -1512,8 +1512,13 @@ class ReworkValidationHandlerTest {
 
         notificationReworkHandler.handleNotificationRework(action).block();
 
-        verify(actionManagerApi).insertAction(any());
-        verify(reworkRequestEventPool, never()).scheduleFutureAction(any(), any());
+        verify(actionManagerApi, never()).insertAction(any());
+
+        ArgumentCaptor<ReworkRequestEventAction> captor = ArgumentCaptor.forClass(ReworkRequestEventAction.class);
+        verify(reworkRequestEventPool).scheduleFutureAction(captor.capture(), any());
+
+        Assertions.assertTrue(captor.getValue().getError().stream()
+                .anyMatch(e -> NotificationReworkErrorCause.INVALID_CATEGORY_TO_INVALIDATE.getCause().equals(e.getCause())));
     }
 
     @Test
@@ -1612,6 +1617,34 @@ class ReworkValidationHandlerTest {
         Assertions.assertTrue(captor.getValue().getError().stream()
                 .anyMatch(e -> NotificationReworkErrorCause.INVALID_REC_INDEX.getCause().equals(e.getCause())));
     }
+
+
+    @Test
+    void handleNotificationInvalidateElements_INVALID_PROGRESS_ELEMENT() {
+        NotificationReworkValidationDetails detail = baseInvalidateElementsDetail();
+        detail.setElementsToInvalidate(List.of(
+                "SEND_ANALOG_PROGRESS.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_1.ATTEMPT_1",
+                "NOTIFICATION_VIEWED.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0"
+        ));
+
+        Action action = baseAction(detail);
+        NotificationInt notification = baseNotification();
+
+        Set<TimelineElementInternal> timeline = validInvalidateTimeline();
+
+        mockBaseValidFlow(notification, timeline);
+
+        notificationReworkHandler.handleNotificationRework(action).block();
+
+        verify(actionManagerApi, never()).insertAction(any());
+
+        ArgumentCaptor<ReworkRequestEventAction> captor = ArgumentCaptor.forClass(ReworkRequestEventAction.class);
+        verify(reworkRequestEventPool).scheduleFutureAction(captor.capture(), any());
+
+        Assertions.assertTrue(captor.getValue().getError().stream()
+                .anyMatch(e -> NotificationReworkErrorCause.INVALID_PROGRESS_ELEMENT.getCause().equals(e.getCause())));
+    }
+
 
     @Test
     void handleNotificationInvalidateElements_SEND_ANALOG_PROGRESS_valid() {

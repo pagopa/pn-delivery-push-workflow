@@ -52,8 +52,7 @@ import java.util.stream.Collectors;
 
 import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkConstant.*;
 import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkErrorCause.*;
-import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.ReworkRequestTypeEnum.INVALIDATE_ELEMENTS;
-import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.ReworkRequestTypeEnum.REWORK;
+import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.ReworkRequestTypeEnum.*;
 import static it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt.*;
 import static it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.handler.utils.NotificationReworkUtils.getReworkRequestEventAction;
 
@@ -142,7 +141,7 @@ public class ReworkValidationHandler {
 
     private Mono<NotificationReworkInfo> checkNotificationExpectedFinalStatusCodeAndThrow(NotificationReworkInfo info) {
         NotificationReworkValidationDetails detail = info.getActionDetail();
-        if (ReworkRequestTypeEnum.RESTART.equals(detail.getRequestType()) || INVALIDATE_ELEMENTS.equals(detail.getRequestType())) {
+        if (RESTART.equals(detail.getRequestType()) || INVALIDATE_ELEMENTS.equals(detail.getRequestType())) {
             return Mono.just(info);
         }
         return NotificationReworkUtils.checkNotificationExpectedFinalStatusCodeAndThrow(
@@ -291,9 +290,8 @@ public class ReworkValidationHandler {
     private Mono<NotificationReworkInfo> checkNotificationTimelineAndThrow(NotificationReworkInfo info) {
         String recIndex = info.getActionDetail().getReworkRecIndex();
         String attempt = info.getActionDetail().getReworkAttempt();
-        NotificationReworkValidationDetails detail = info.getActionDetail();
         ReworkRequestTypeEnum requestType = info.getActionDetail().getRequestType();
-
+        NotificationReworkValidationDetails detail = info.getActionDetail();
         boolean isStatusViewed = timelineUtils.checkIsNotificationViewed(info.getNotification().getIun(), getRecIndexFromAction(info.getActionDetail()));
 
         if (INVALIDATE_ELEMENTS.equals(requestType)) {
@@ -368,7 +366,7 @@ public class ReworkValidationHandler {
 
         Optional<TimelineElementCategoryInt> categoryOpt = parser.category()
                 .map(categoryString -> {
-                    if(isKnownCategory(categoryString)){
+                    if (isKnownCategory(categoryString)) {
                         return TimelineElementCategoryInt.valueOf(categoryString);
                     } else {
                         return null;
@@ -392,29 +390,21 @@ public class ReworkValidationHandler {
                 yield hasAnotherAnalogWorkflow ? null : INVALID_ANALOG_WORKFLOW_ELEMENT;
             }
 
-            case SEND_ANALOG_PROGRESS -> null;
+            case SEND_ANALOG_PROGRESS -> {
+                if(info.getActionDetail().getElementsToInvalidate().size() > 1) {
+                    yield INVALID_PROGRESS_ELEMENT;
+                }
+                yield null;
+            }
 
             case PREPARE_ANALOG_DOMICILE,
-                 SEND_ANALOG_DOMICILE,
-                 SEND_ANALOG_FEEDBACK -> {
+                 PREPARE_ANALOG_DOMICILE_FAILURE,
+                 COMPLETELY_UNREACHABLE,
+                 COMPLETELY_UNREACHABLE_CREATION_REQUEST -> {
                 if (!isElementOfAttempt1(element, category)) {
                     yield INVALID_ATTEMPT0_ELEMENT;
                 }
 
-                if (!hasAttempt0OK) {
-                    yield INVALID_ATTEMPT1_ELEMENT;
-                }
-
-                if (hasAttempt1Elements) {
-                    yield INVALID_ATTEMPT1_ELEMENTS;
-                }
-
-                yield null;
-            }
-
-            case PREPARE_ANALOG_DOMICILE_FAILURE,
-                 COMPLETELY_UNREACHABLE,
-                 COMPLETELY_UNREACHABLE_CREATION_REQUEST -> {
                 if (!hasAttempt0OK) {
                     yield INVALID_ATTEMPT1_ELEMENT;
                 }
@@ -432,7 +422,7 @@ public class ReworkValidationHandler {
                     yield INVALID_ATTEMPT1_ELEMENTS;
                 }
 
-                yield checkAttachments(info, info.getFilteredTimeline());
+                yield checkAttachmentsForInvalidateElements(info, info.getFilteredTimeline());
             }
 
             default -> INVALID_CATEGORY_TO_INVALIDATE;
@@ -443,21 +433,18 @@ public class ReworkValidationHandler {
         }
     }
 
-    private NotificationReworkErrorCause checkAttachments(NotificationReworkInfo info, Set<TimelineElementInternal> timeline) {
-        Optional<TimelineElementInternal> viewedCreationRequestOpt = timeline.stream()
-                .filter(t -> NOTIFICATION_VIEWED_CREATION_REQUEST.equals(t.getCategory()))
-                .findFirst();
+    private NotificationReworkErrorCause checkAttachmentsForInvalidateElements(NotificationReworkInfo info, Set<TimelineElementInternal> filteredTimeline) {
+        boolean attachmentsExistOnViewed = checkAttachmentsOnViewed(info, filteredTimeline);
+        if (!attachmentsExistOnViewed) {
+            return null;
+        }
+        log.warn("Attachments exist on viewed for iun: [{}], recIndex: [{}], request to invalidate VIEWED elements cannot be processed", info.getAction().getIun(), info.getActionDetail().getReworkRecIndex());
+        return INVALID_ELEMENT_TO_INVALIDATE_ATTACHMENTS_EXIST_ONVIEWED;
+    }
 
-        viewedCreationRequestOpt.ifPresent(viewed -> {
-            Instant viewedTimestamp = viewed.getTimestamp();
-            // TODO: controllo 120 giorni / safe storage
-        });
-
-        List<String> attachments = info.getNotification().getDocuments().stream()
-                .map(doc -> doc.getRef().getKey())
-                .toList();
-
-        return null;
+    private boolean checkAttachmentsOnViewed(NotificationReworkInfo info, Set<TimelineElementInternal> filteredTimeline) {
+        //TODO: DA IMPLEMENTARE - FLUSSO LOGICO: SE LA VISUALIZZAZIONE è AVVENUTA CON ALLEGATI PRESENTI NON PUò ESSERE INVALIDATA --> TRUE SE GLI ALLEGATI ERANO PRESENTI, FALSE SE NON ERANO PRESENTI
+        return false;
     }
 
     private static boolean hasOKAttempt0(Set<TimelineElementInternal> timelineElements) {
