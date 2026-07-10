@@ -38,7 +38,6 @@ class PnEmdIntegrationClientImplTest {
         Mockito.when(messageApi.sendMessage(Mockito.any(SendMessageRequestBody.class)))
                 .thenReturn(Mono.error(new RuntimeException("Test exception")));
 
-        SendMessageResponse actualResponse = pnEmdIntegrationClient.sendMessage(request);
-        Assertions.assertEquals(SendMessageResponse.OutcomeEnum.NO_CHANNELS_ENABLED, actualResponse.getOutcome());
+        Assertions.assertThrows(RuntimeException.class, () -> pnEmdIntegrationClient.sendMessage(request));
     }
 }
