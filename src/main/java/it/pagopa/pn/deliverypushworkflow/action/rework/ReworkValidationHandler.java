@@ -141,14 +141,14 @@ public class ReworkValidationHandler {
 
     private Mono<NotificationReworkInfo> checkNotificationExpectedFinalStatusCodeAndThrow(NotificationReworkInfo info) {
         NotificationReworkValidationDetails detail = info.getActionDetail();
-        if (ReworkRequestTypeEnum.RESTART.equals(detail.getRequestType())) {
+        if (RESTART.equals(detail.getRequestType()) || INVALIDATE_ELEMENTS.equals(detail.getRequestType())) {
             return Mono.just(info);
         }
         return NotificationReworkUtils.checkNotificationExpectedFinalStatusCodeAndThrow(
-            detail.getReworkAttempt(),
-            detail.getReworkExpectedFinalStatus(),
-            detail.getReworkRecIndex(),
-            info.getTimeline()
+                detail.getReworkAttempt(),
+                detail.getReworkExpectedFinalStatus(),
+                detail.getReworkRecIndex(),
+                info.getTimeline()
         ) ? Mono.just(info) :
                 Mono.error(new NotificationReworkValidationException(NotificationReworkError.builder()
                         .cause(NotificationReworkErrorCause.INVALID_EXPECTED_STATUS_CODE.getCause())
@@ -157,7 +157,7 @@ public class ReworkValidationHandler {
     }
 
     private Mono<NotificationReworkInfo> checkNotificationAttachments(NotificationReworkInfo info, String reworkAttempt, String reworkFinalStatus) {
-        if(needToVerifyAttachments(info, reworkAttempt, reworkFinalStatus)) {
+        if (needToVerifyAttachments(info, reworkAttempt, reworkFinalStatus)) {
             return Flux.fromIterable(info.getNotification().getDocuments())
                     .flatMap(document -> safeStorageService.getFile(document.getRef().getKey(), true, false))
                     .filter(response -> response.getRetentionUntil().minusDays(pnDeliveryPushWorkflowConfigs.getNotificationReworkDocumentExpiringRange()).isBefore(OffsetDateTime.now()))
@@ -201,18 +201,18 @@ public class ReworkValidationHandler {
                 .filter(timelineElement -> timelineElement.getElementId().contains(info.getActionDetail().getReworkRecIndex()))
                 .findFirst()
                 .map(timelineElementInternal -> {
-                        if (REWORK.equals(info.getActionDetail().getRequestType())) {
-                            return timelineElementInternal.getElementId() + "." + info.getActionDetail().getReworkPcRetry();
-                        } else {
-                            return timelineElementInternal.getElementId();
-                        }
-                    })
+                    if (REWORK.equals(info.getActionDetail().getRequestType())) {
+                        return timelineElementInternal.getElementId() + "." + info.getActionDetail().getReworkPcRetry();
+                    } else {
+                        return timelineElementInternal.getElementId();
+                    }
+                })
                 .orElse(StringUtils.EMPTY);
     }
 
     private Mono<NotificationReworkInfo> checkNotificationAddress(NotificationReworkInfo externalInfo, String reworkAttempt, String reworkFinalStatus) {
         log.debug("checkNotificationAddress for iun {}, requestId {}", externalInfo.getAction().getIun(), externalInfo.getRequestId());
-        if(needToVerifyAddress(externalInfo, reworkAttempt, reworkFinalStatus)) {
+        if (needToVerifyAddress(externalInfo, reworkAttempt, reworkFinalStatus)) {
             return paperChannelAddressClient.checkAddress(computeRequestIdForAddress(externalInfo))
                     .doOnNext(checkAddressResponse -> checkTtl(checkAddressResponse, externalInfo))
                     .map(checkAddressResponse -> externalInfo)
@@ -290,9 +290,8 @@ public class ReworkValidationHandler {
     private Mono<NotificationReworkInfo> checkNotificationTimelineAndThrow(NotificationReworkInfo info) {
         String recIndex = info.getActionDetail().getReworkRecIndex();
         String attempt = info.getActionDetail().getReworkAttempt();
-        NotificationReworkValidationDetails detail = info.getActionDetail();
         ReworkRequestTypeEnum requestType = info.getActionDetail().getRequestType();
-
+        NotificationReworkValidationDetails detail = info.getActionDetail();
         boolean isStatusViewed = timelineUtils.checkIsNotificationViewed(info.getNotification().getIun(), getRecIndexFromAction(info.getActionDetail()));
         if(isStatusViewed && RESTART.equals(requestType)){
             NotificationReworkErrorCause errorCause = checkAttachmentsForRestart(info, info.getFilteredTimeline());
@@ -373,7 +372,7 @@ public class ReworkValidationHandler {
 
         Optional<TimelineElementCategoryInt> categoryOpt = parser.category()
                 .map(categoryString -> {
-                    if(isKnownCategory(categoryString)){
+                    if (isKnownCategory(categoryString)) {
                         return TimelineElementCategoryInt.valueOf(categoryString);
                     } else {
                         return null;
@@ -397,29 +396,21 @@ public class ReworkValidationHandler {
                 yield hasAnotherAnalogWorkflow ? null : INVALID_ANALOG_WORKFLOW_ELEMENT;
             }
 
-            case SEND_ANALOG_PROGRESS -> null;
+            case SEND_ANALOG_PROGRESS -> {
+                if(info.getActionDetail().getElementsToInvalidate().size() > 1) {
+                    yield INVALID_PROGRESS_ELEMENT;
+                }
+                yield null;
+            }
 
             case PREPARE_ANALOG_DOMICILE,
-                 SEND_ANALOG_DOMICILE,
-                 SEND_ANALOG_FEEDBACK -> {
+                 PREPARE_ANALOG_DOMICILE_FAILURE,
+                 COMPLETELY_UNREACHABLE,
+                 COMPLETELY_UNREACHABLE_CREATION_REQUEST -> {
                 if (!isElementOfAttempt1(element, category)) {
                     yield INVALID_ATTEMPT0_ELEMENT;
                 }
 
-                if (!hasAttempt0OK) {
-                    yield INVALID_ATTEMPT1_ELEMENT;
-                }
-
-                if (hasAttempt1Elements) {
-                    yield INVALID_ATTEMPT1_ELEMENTS;
-                }
-
-                yield null;
-            }
-
-            case PREPARE_ANALOG_DOMICILE_FAILURE,
-                 COMPLETELY_UNREACHABLE,
-                 COMPLETELY_UNREACHABLE_CREATION_REQUEST -> {
                 if (!hasAttempt0OK) {
                     yield INVALID_ATTEMPT1_ELEMENT;
                 }
@@ -450,22 +441,12 @@ public class ReworkValidationHandler {
 
     private NotificationReworkErrorCause checkAttachmentsForInvalidateElements(NotificationReworkInfo info, Set<TimelineElementInternal> filteredTimeline) {
         boolean attachmentsExistOnViewed = checkAttachmentsOnViewed(info, filteredTimeline);
-        if(!attachmentsExistOnViewed) {
+        if (!attachmentsExistOnViewed) {
             return null;
         }
         log.warn("Attachments exist on viewed for iun: [{}], recIndex: [{}], request to invalidate VIEWED elements cannot be processed", info.getAction().getIun(), info.getActionDetail().getReworkRecIndex());
         return INVALID_ELEMENT_TO_INVALIDATE_ATTACHMENTS_EXIST_ONVIEWED;
     }
-
-    private NotificationReworkErrorCause checkAttachmentsForRestart(NotificationReworkInfo info, Set<TimelineElementInternal> timeline) {
-        boolean attachmentsExistOnViewed = checkAttachmentsOnViewed(info, timeline);
-        if(!attachmentsExistOnViewed) {
-            return null;
-        }
-        log.warn("Attachments exist on viewed for iun: [{}], recIndex: [{}], RESTART request cannot be processed", info.getAction().getIun(), info.getActionDetail().getReworkRecIndex());
-        return ATTACHMENTS_EXIST_ONVIEWED;
-    }
-
 
     private boolean checkAttachmentsOnViewed(NotificationReworkInfo info, Set<TimelineElementInternal> filteredTimeline) {
         //TODO: DA IMPLEMENTARE - FLUSSO LOGICO: SE LA VISUALIZZAZIONE è AVVENUTA CON ALLEGATI PRESENTI NON PUò ESSERE INVALIDATA --> TRUE SE GLI ALLEGATI ERANO PRESENTI, FALSE SE NON ERANO PRESENTI
@@ -532,7 +513,7 @@ public class ReworkValidationHandler {
     }
 
     private Mono<Set<TimelineElementInternal>> checkIfAttemptOneExistsForReworkAttemptZero(Set<TimelineElementInternal> timeline, String attempt, boolean isStatusViewed, ReworkRequestTypeEnum requestType) {
-        if(isStatusViewed && REWORK.equals(requestType) && ATTEMPT_0.equalsIgnoreCase(attempt) &&
+        if (isStatusViewed && REWORK.equals(requestType) && ATTEMPT_0.equalsIgnoreCase(attempt) &&
                 timeline.stream().anyMatch(timelineElementInternal -> timelineElementInternal.getElementId().contains(ATTEMPT_1))) {
             return fail(NotificationReworkErrorCause.INVALID_NOTIFICATION_STATUS, "Invalid status VIEWED if ATTEMPT_1 exists");
         }

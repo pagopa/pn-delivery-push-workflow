@@ -22,6 +22,7 @@ public enum NotificationReworkErrorCause {
     INVALID_ANALOG_WORKFLOW_ELEMENT("INVALID_ANALOG_WORKFLOW_ELEMENT", "In caso di invalidazione di %s deve essere presente un ulteriore elemento non invalidato di SUCCESS o FAILURE per il workflow analogico"),
     INVALID_ATTEMPT1_ELEMENT("INVALID_ATTEMPT1_ELEMENT", "In caso di invalidazione di un elemento dell'attempt 1, l'attempt 0 deve essere in OK"),
     INVALID_ATTEMPT0_ELEMENT("INVALID_ATTEMPT0_ELEMENT", "Non è possibile invalidare la category %s dell'attempt 0"),
+    INVALID_PROGRESS_ELEMENT("INVALID_PROGRESS_ELEMENT", "è possibile invalidare un elemento di progress solo se è l'unico elemento per il quale è richiesta l'invalidazione"),
     INVALID_ATTEMPT1_ELEMENTS("INVALID_ATTEMPT1_ELEMENTS", "In caso di invalidazione di un elemento dell'attempt 1, tutti gli elementi dell'attempt 1 devono essere invalidati"),
     INVALID_VIEWED_ELEMENT("INVALID_VIEWED_ELEMENT", "In caso di invalidazione di un elemento di visualizzazione, devono essere invalidati tutti gli elementi di visualizzazione"),
     INVALID_ELEMENT_TO_INVALIDATE("INVALID_ELEMENT_TO_INVALIDATE", "Non è possibile invalidare l'elemento %s della timeline"),
