@@ -68,9 +68,23 @@ public class ReworkRequestedHandler {
 
         if (ReworkRequestTypeEnum.RESTART.name().equals(detail.getRequestType().name())) {
             return handleNotificationRestart(action, detail);
+        } else if (ReworkRequestTypeEnum.INVALIDATE_ELEMENTS.name().equals(detail.getRequestType().name())) {
+            return handleInvalidateElements(action, detail);
         } else {
             return handleNotificationRework(action, detail);
         }
+    }
+
+    private Mono<Void> handleInvalidateElements(Action action, NotificationReworkRequestedDetails detail) {
+        NotificationInt notificationInt = notificationService.getNotificationByIun(action.getIun());
+
+        return buildTimelineElementAndInvalidatePaperCostAndAddTimeline(action, detail, notificationInt, detail.getElementsToInvalidate())
+                .onErrorResume(throwable -> {
+                    log.error("Errors during handleNotificationReworkRequested for iun {}: {}", action.getIun(), throwable.getMessage(), throwable);
+                    reworkRequestEventPool.scheduleFutureAction(NotificationReworkUtils.getReworkRequestEventAction(throwable.getMessage(), detail, action), ReworkRequestEventType.NOTIFICATION_REWORK_REQUESTED);
+                    return Mono.empty();
+                })
+                .then();
     }
 
     private Mono<Void> handleNotificationRework(Action action, NotificationReworkRequestedDetails detail) {
@@ -109,22 +123,30 @@ public class ReworkRequestedHandler {
                 .doOnNext(timelineElementsToInvalidate::addAll)
                 .flatMap(timelineElementIds -> startNotificationReworkProcess(detail).thenReturn(timelineElementIds))
                 .flatMap(strings -> updateAttachmentRetention(detail.getCreatedAt(), notificationInt.getIun(), notificationInt.getDocuments(), detail.getReworkAttempt()))
-                .map(internalAction -> buildTimelineElement(notificationInt, timelineElementsToInvalidate, detail))
-                .flatMap(timelineElementInternal -> pnExternalRegistriesClientReactive.invalidatePaperCost(action.getIun(), createPaperCostToInvalidateRequest(notificationInt, detail.getReworkRecIndex(), timelineElementsToInvalidate), notificationInt.getPagoPaIntMode(), notificationInt.getNotificationFeePolicy()).thenReturn(timelineElementInternal))
-                .flatMap(timelineElementInternal -> notificationCostServiceClient.invalidatePaperCostWithHttpInfo(action.getIun(), NotificationCostServiceMapper.createPaperCostToInvalidateRequest(detail.getReworkRecIndex(), timelineElementsToInvalidate)).thenReturn(timelineElementInternal))
-                .map(timelineElementInternal -> timelineService.addTimelineElement(timelineElementInternal, notificationInt))
+                .flatMap(internalAction -> buildTimelineElementAndInvalidatePaperCostAndAddTimeline(action, detail, notificationInt, timelineElementsToInvalidate))
                 .map(ignore -> notificationInt);
     }
 
-    private Mono<List<String>> computeTimelineElementToInvalidate(Set<TimelineElementInternal> timelineElementInternalList, String recIndex, String attemptId, ReworkRequestTypeEnum requestType) {
+    private Mono<NotificationInt> buildTimelineElementAndInvalidatePaperCostAndAddTimeline(Action action,
+                                                                     NotificationReworkRequestedDetails detail,
+                                                                     NotificationInt notificationInt,
+                                                                     List<String> timelineElementsToInvalidate) {
+        TimelineElementInternal timelineElementInternal = buildTimelineElement(notificationInt, timelineElementsToInvalidate, detail);
+        return Mono.fromRunnable(() -> timelineService.addTimelineElement(timelineElementInternal, notificationInt))
+                .then(Mono.defer(() -> pnExternalRegistriesClientReactive.invalidatePaperCost(action.getIun(), createPaperCostToInvalidateRequest(notificationInt, detail.getReworkRecIndex(), timelineElementsToInvalidate), notificationInt.getPagoPaIntMode(), notificationInt.getNotificationFeePolicy())))
+                .then(Mono.defer(() -> notificationCostServiceClient.invalidatePaperCostWithHttpInfo(action.getIun(), NotificationCostServiceMapper.createPaperCostToInvalidateRequest(detail.getReworkRecIndex(), timelineElementsToInvalidate))))
+                .thenReturn(notificationInt);
+    }
+
+    private Mono<List<String>> computeTimelineElementToInvalidate(Set<TimelineElementInternal> timelineElementInternalList, String recIndex, String attemptId, ReworkRequestTypeEnum reworkRequestType) {
         log.debug("Starting computeTimelineElementToInvalidate for recIndex {} and attemptId {}", recIndex, attemptId);
         return Flux.fromIterable(timelineElementInternalList)
                 .filter(elem -> pnDeliveryPushWorkflowConfigs.getInvalidableCategories().contains(elem.getCategory().name()))
                 .filter(elem -> elem.getElementId().contains(recIndex))
                 .filter(elem -> checkAttemptId(elem, attemptId))
-                .filter(elem -> checkPrepareAnalogDomicile(elem, attemptId, requestType))
-                .filter(elem -> checkSendAnalogDomicile(elem, attemptId, requestType))
-                .filter(timelineElementInternal -> checkDeliveryDetailCode(timelineElementInternal, attemptId, requestType))
+                .filter(elem -> checkPrepareAnalogDomicile(elem, attemptId, reworkRequestType))
+                .filter(elem -> checkSendAnalogDomicile(elem, attemptId, reworkRequestType))
+                .filter(timelineElementInternal -> checkDeliveryDetailCode(timelineElementInternal, attemptId, reworkRequestType))
                 .map(TimelineElementInternal::getElementId)
                 .collectList()
                 .doOnNext(list -> log.debug("Invalidable elements found: {}", list));
@@ -168,7 +190,7 @@ public class ReworkRequestedHandler {
                     .filter(element -> !CollectionUtils.isEmpty(element.getRelatedTimelineElements()))
                     .toList();
         }
-        return timelineUtils.buildNotificationTimelineReworkedTimelineElement(notification, statusHistoryElements, recIndex, attempt, internalDetail.getReworkId());
+        return timelineUtils.buildNotificationTimelineReworkedTimelineElement(notification, statusHistoryElements, recIndex, attempt, internalDetail);
     }
 
     private Integer extractTimelineIndex(String timelineIndex, String fieldName) {

@@ -1,6 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.dto.timeline;
 
 import it.pagopa.pn.deliverypushworkflow.dto.legalfacts.LegalFactsIdInt;
+import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.ReworkRequestTypeEnum;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementDetailsInt;
 import lombok.*;
@@ -26,6 +27,7 @@ public class TimelineElementInternal implements Comparable<TimelineElementIntern
     private TimelineElementDetailsInt details;
     private StatusInfoInternal statusInfo;
     private String reworkId;
+    private ReworkRequestTypeEnum reworkRequestType;
     private Instant notificationSentAt;
     private Instant ingestionTimestamp; //Questo campo viene valorizzato solo ed esclusivamente in uscita per api e webhook dal mapper
     private Instant eventTimestamp; //Questo campo viene valorizzato solo ed esclusivamente in uscita per api e webhook dal mapper

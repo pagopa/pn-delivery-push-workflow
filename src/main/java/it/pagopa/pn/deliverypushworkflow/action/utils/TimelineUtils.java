@@ -1,5 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.action.utils;
 
+import it.pagopa.pn.deliverypushworkflow.action.details.NotificationReworkRequestedDetails;
 import it.pagopa.pn.deliverypushworkflow.dto.address.*;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notificationpaid.NotificationPaidInt;
@@ -1409,10 +1410,10 @@ public class TimelineUtils {
 
     public TimelineElementInternal buildNotificationTimelineReworkedTimelineElement(NotificationInt notification,
                                                                                     List<NotificationStatusHistoryElement> invalidatedTimelineElements,
-                                                                                    Integer recIndex, Integer sentAttemptMade, String reworkId) {
+                                                                                    Integer recIndex, Integer sentAttemptMade, NotificationReworkRequestedDetails reworkDetail) {
         log.debug("buildNotificationTimelineReworkedElement - IUN={} and id={}", notification.getIun(), recIndex);
 
-        Integer reworkIdx = ReworkIdBuilder.extractReworkIdx(reworkId);
+        Integer reworkIdx = ReworkIdBuilder.extractReworkIdx(reworkDetail.getReworkId());
 
         String elementId = TimelineEventId.NOTIFICATION_TIMELINE_REWORKED.buildEventId(
                 EventId.builder()
@@ -1430,7 +1431,8 @@ public class TimelineUtils {
                 .build();
 
         TimelineElementInternal timelineElementInternal = buildTimeline(notification, TimelineElementCategoryInt.NOTIFICATION_TIMELINE_REWORKED, elementId, details);
-        timelineElementInternal.setReworkId(reworkId);
+        timelineElementInternal.setReworkId(reworkDetail.getReworkId());
+        timelineElementInternal.setReworkRequestType(reworkDetail.getRequestType());
         return timelineElementInternal;
     }
 
