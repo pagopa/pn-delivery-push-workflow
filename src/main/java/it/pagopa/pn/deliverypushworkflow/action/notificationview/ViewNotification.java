@@ -8,6 +8,7 @@ import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.documentcreation.DocumentCreationTypeInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.datavault.BaseRecipientDtoInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationDocumentInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notificationviewed.NotificationViewedInt;
@@ -22,6 +23,9 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 @Slf4j
@@ -58,7 +62,7 @@ public class ViewNotification {
     }
 
     private Mono<Boolean> checkThatAllAttachmentsArePresent(NotificationInt notification) {
-        return Flux.fromIterable(notification.getDocuments())
+        return Flux.fromIterable(extractAttachmentsFromNotification(notification, true))
                 .concatMap(document ->
                         safeStorageService.getFile(document.getRef().getKey(), true, false)
                                 .thenReturn(true)
@@ -75,6 +79,27 @@ public class ViewNotification {
                         log.warn("View notification blocked, attachment not available in safe storage - iun={}", notification.getIun());
                     }
                 });
+    }
+
+    private List<NotificationDocumentInt> extractAttachmentsFromNotification(NotificationInt notification, boolean includeF24Metadata) {
+        List<NotificationDocumentInt> attachments = new ArrayList<>(notification.getDocuments());
+
+        for(NotificationRecipientInt recipient : notification.getRecipients()) {
+            if(recipient.getPayments() != null) {
+                recipient.getPayments().forEach(
+                        payment -> {
+                            if(payment.getPagoPA() != null && payment.getPagoPA().getAttachment() != null) {
+                                attachments.add(payment.getPagoPA().getAttachment());
+                            }
+
+                            if(includeF24Metadata && payment.getF24() != null && payment.getF24().getMetadataAttachment() != null) {
+                                attachments.add(payment.getF24().getMetadataAttachment());
+                            }
+                        }
+                );
+            }
+        }
+        return attachments;
     }
 
     private boolean isAttachmentNotAvailable(WebClientResponseException ex) {

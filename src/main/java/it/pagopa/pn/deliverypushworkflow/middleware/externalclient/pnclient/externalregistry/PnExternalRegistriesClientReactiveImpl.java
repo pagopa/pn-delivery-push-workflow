@@ -30,6 +30,10 @@ public class PnExternalRegistriesClientReactiveImpl extends CommonBaseClient imp
             log.debug("Invalidating not possible for mode: {} and feePolicy: {}", mode, notificationFeePolicy);
             return Mono.empty();
         }
+        if (paperCostToInvalidate.getCostPhases().isEmpty()) {
+            log.debug("Skipped paper cost invalidation");
+            return Mono.just(ResponseEntity.noContent().build());
+        }
         return paperCostApi.invalidatePaperCostWithHttpInfo(iun, paperCostToInvalidate);
     }
 
