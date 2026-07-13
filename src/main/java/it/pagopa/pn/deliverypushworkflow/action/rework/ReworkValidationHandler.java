@@ -447,6 +447,15 @@ public class ReworkValidationHandler {
         }
     }
 
+    private NotificationReworkErrorCause checkAttachmentsForRestart(NotificationReworkInfo info, Set<TimelineElementInternal> timeline) {
+        boolean attachmentsExistOnViewed = checkAttachmentsOnViewed(info, timeline);
+        if(!attachmentsExistOnViewed) {
+            return null;
+        }
+        log.warn("Attachments exist on viewed for iun: [{}], recIndex: [{}], RESTART request cannot be processed", info.getAction().getIun(), info.getActionDetail().getReworkRecIndex());
+        return ATTACHMENTS_EXIST_ONVIEWED;
+    }
+
     private NotificationReworkErrorCause checkAttachmentsForInvalidateElements(NotificationReworkInfo info, Set<TimelineElementInternal> filteredTimeline) {
         boolean attachmentsExistOnViewed = checkAttachmentsOnViewed(info, filteredTimeline);
         if (!attachmentsExistOnViewed) {
