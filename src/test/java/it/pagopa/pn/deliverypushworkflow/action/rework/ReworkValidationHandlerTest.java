@@ -21,6 +21,7 @@ import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.pnsafestorag
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationHistoryResponse;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationStatus;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.NotificationStatusHistoryInvalidatedElement;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.timelineservice.model.SendAnalogFeedbackDetails;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.paperchannel.PaperChannelAddressClient;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.Action;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ReworkRequestEventAction;
@@ -46,6 +47,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.externalchannel.ResponseStatusInt;
 
 import static org.mockito.Mockito.*;
 
@@ -1276,5 +1278,494 @@ class ReworkValidationHandlerTest {
 
         Assertions.assertEquals(detail.getRequestType().name(), insertedDetails.path("requestType").asText());
     }
+
+    @Test
+    void handleNotificationInvalidateElements_INVALID_CATEGORY_TO_INVALIDATE() {
+        NotificationReworkValidationDetails detail = baseInvalidateElementsDetail();
+        detail.setElementsToInvalidate(List.of("REFINEMENT.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0"));
+
+        Action action = baseAction(detail);
+        NotificationInt notification = baseNotification();
+
+        Set<TimelineElementInternal> timeline = validInvalidateTimeline();
+
+        mockBaseValidFlow(notification, timeline);
+
+        notificationReworkHandler.handleNotificationRework(action).block();
+
+        verify(actionManagerApi, never()).insertAction(any());
+
+        ArgumentCaptor<ReworkRequestEventAction> captor = ArgumentCaptor.forClass(ReworkRequestEventAction.class);
+        verify(reworkRequestEventPool).scheduleFutureAction(captor.capture(), any());
+
+        Assertions.assertTrue(captor.getValue().getError().stream()
+                .anyMatch(e -> NotificationReworkErrorCause.INVALID_CATEGORY_TO_INVALIDATE.getCause().equals(e.getCause())));
+    }
+
+    @Test
+    void handleNotificationInvalidateElements_INVALID_ANALOG_WORKFLOW_ELEMENT() {
+        NotificationReworkValidationDetails detail = baseInvalidateElementsDetail();
+        detail.setElementsToInvalidate(List.of("ANALOG_SUCCESS_WORKFLOW.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0"));
+
+        Action action = baseAction(detail);
+        NotificationInt notification = baseNotification();
+
+        Set<TimelineElementInternal> timeline = validInvalidateTimeline();
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.ANALOG_SUCCESS_WORKFLOW,
+                "ANALOG_SUCCESS_WORKFLOW.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0",
+                AnalogSuccessWorkflowDetailsInt.builder().recIndex(0).build()
+        ));
+
+        mockBaseValidFlow(notification, timeline);
+
+        notificationReworkHandler.handleNotificationRework(action).block();
+
+        verify(actionManagerApi, never()).insertAction(any());
+
+        ArgumentCaptor<ReworkRequestEventAction> captor = ArgumentCaptor.forClass(ReworkRequestEventAction.class);
+        verify(reworkRequestEventPool).scheduleFutureAction(captor.capture(), any());
+
+        Assertions.assertTrue(captor.getValue().getError().stream()
+                .anyMatch(e -> NotificationReworkErrorCause.INVALID_ANALOG_WORKFLOW_ELEMENT.getCause().equals(e.getCause())));
+    }
+
+    @Test
+    void handleNotificationInvalidateElements_ANALOG_WORKFLOW_validWhenAnotherWorkflowRemains() {
+        NotificationReworkValidationDetails detail = baseInvalidateElementsDetail();
+        detail.setElementsToInvalidate(List.of("ANALOG_SUCCESS_WORKFLOW.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0"));
+
+        Action action = baseAction(detail);
+        NotificationInt notification = baseNotification();
+
+        Set<TimelineElementInternal> timeline = validInvalidateTimeline();
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.ANALOG_SUCCESS_WORKFLOW,
+                "ANALOG_SUCCESS_WORKFLOW.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0",
+                AnalogSuccessWorkflowDetailsInt.builder().recIndex(0).build()
+        ));
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.ANALOG_FAILURE_WORKFLOW,
+                "ANALOG_FAILURE_WORKFLOW.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
+                AnalogFailureWorkflowDetailsInt.builder().recIndex(0).build()
+        ));
+
+        mockBaseValidFlow(notification, timeline);
+
+        notificationReworkHandler.handleNotificationRework(action).block();
+
+        verify(actionManagerApi).insertAction(any());
+        verify(reworkRequestEventPool, never()).scheduleFutureAction(any(), any());
+    }
+
+    @Test
+    void handleNotificationInvalidateElements_INVALID_ATTEMPT0_ELEMENT() {
+        NotificationReworkValidationDetails detail = baseInvalidateElementsDetail();
+        detail.setElementsToInvalidate(List.of(
+                "SEND_ANALOG_FEEDBACK.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0"
+        ));
+
+        Action action = baseAction(detail);
+        NotificationInt notification = baseNotification();
+
+        Set<TimelineElementInternal> timeline = validInvalidateTimeline();
+
+        mockBaseValidFlow(notification, timeline);
+
+        notificationReworkHandler.handleNotificationRework(action).block();
+
+        verify(actionManagerApi, never()).insertAction(any());
+
+        ArgumentCaptor<ReworkRequestEventAction> captor = ArgumentCaptor.forClass(ReworkRequestEventAction.class);
+        verify(reworkRequestEventPool).scheduleFutureAction(captor.capture(), any());
+
+        Assertions.assertTrue(captor.getValue().getError().stream()
+                .anyMatch(e -> NotificationReworkErrorCause.INVALID_CATEGORY_TO_INVALIDATE.getCause().equals(e.getCause())));
+    }
+
+    @Test
+    void handleNotificationInvalidateElements_INVALID_ATTEMPT1_ELEMENT_withoutAttempt0Ok() {
+        NotificationReworkValidationDetails detail = baseInvalidateElementsDetail();
+        detail.setElementsToInvalidate(List.of(
+                "SEND_ANALOG_DOMICILE.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_1"
+        ));
+
+        Action action = baseAction(detail);
+        NotificationInt notification = baseNotification();
+
+        Set<TimelineElementInternal> timeline = validInvalidateTimelineWithoutOkAttempt0();
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.SEND_ANALOG_DOMICILE,
+                "SEND_ANALOG_DOMICILE.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_1",
+                SendAnalogDetailsInt.builder().recIndex(0).sentAttemptMade(1).build()
+        ));
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK,
+                "SEND_ANALOG_FEEDBACK.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0",
+                SendAnalogFeedbackDetailsInt.builder().recIndex(0).sentAttemptMade(0).responseStatus(ResponseStatusInt.KO).build()
+        ));
+
+        mockBaseValidFlow(notification, timeline);
+
+        notificationReworkHandler.handleNotificationRework(action).block();
+
+        verify(actionManagerApi, never()).insertAction(any());
+
+        ArgumentCaptor<ReworkRequestEventAction> captor = ArgumentCaptor.forClass(ReworkRequestEventAction.class);
+        verify(reworkRequestEventPool).scheduleFutureAction(captor.capture(), any());
+
+        Assertions.assertTrue(captor.getValue().getError().stream()
+                .anyMatch(e -> NotificationReworkErrorCause.INVALID_CATEGORY_TO_INVALIDATE.getCause().equals(e.getCause())));
+    }
+
+    @Test
+    void handleNotificationInvalidateElements_INVALID_ATTEMPT1_ELEMENTS_whenOtherAttempt1Remains() {
+        NotificationReworkValidationDetails detail = baseInvalidateElementsDetail();
+        detail.setElementsToInvalidate(List.of(
+                "SEND_ANALOG_DOMICILE.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_1"
+        ));
+
+        Action action = baseAction(detail);
+        NotificationInt notification = baseNotification();
+
+        Set<TimelineElementInternal> timeline = validInvalidateTimeline();
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.SEND_ANALOG_DOMICILE,
+                "SEND_ANALOG_DOMICILE.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_1",
+                SendAnalogDetailsInt.builder().recIndex(0).sentAttemptMade(1).build()
+
+        ));
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE,
+                "PREPARE_ANALOG_DOMICILE.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_1",
+                BaseAnalogDetailsInt.builder().recIndex(0).sentAttemptMade(1).build()
+
+        ));
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK,
+                "SEND_ANALOG_FEEDBACK.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0",
+                SendAnalogFeedbackDetailsInt.builder().recIndex(0).sentAttemptMade(0).responseStatus(ResponseStatusInt.OK).build()
+
+        ));
+
+        mockBaseValidFlow(notification, timeline);
+
+        notificationReworkHandler.handleNotificationRework(action).block();
+
+        verify(actionManagerApi, never()).insertAction(any());
+
+        ArgumentCaptor<ReworkRequestEventAction> captor = ArgumentCaptor.forClass(ReworkRequestEventAction.class);
+        verify(reworkRequestEventPool).scheduleFutureAction(captor.capture(), any());
+
+        Assertions.assertTrue(captor.getValue().getError().stream()
+                .anyMatch(e -> NotificationReworkErrorCause.INVALID_CATEGORY_TO_INVALIDATE.getCause().equals(e.getCause())));
+    }
+
+    @Test
+    void handleNotificationInvalidateElements_INVALID_CATEGORY_TO_INVALIDATE_SEND_ANALOG() {
+        NotificationReworkValidationDetails detail = baseInvalidateElementsDetail();
+        detail.setElementsToInvalidate(List.of(
+                "SEND_ANALOG_DOMICILE.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_1"
+        ));
+
+        Action action = baseAction(detail);
+        NotificationInt notification = baseNotification();
+
+        Set<TimelineElementInternal> timeline = validInvalidateTimeline();
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.SEND_ANALOG_DOMICILE,
+                "SEND_ANALOG_DOMICILE.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_1",
+                SendAnalogDetailsInt.builder().recIndex(0).sentAttemptMade(1).build()
+
+        ));
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK,
+                "SEND_ANALOG_FEEDBACK.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0",
+                SendAnalogFeedbackDetailsInt.builder().recIndex(0).sentAttemptMade(0).responseStatus(ResponseStatusInt.OK).build()
+
+        ));
+
+        mockBaseValidFlow(notification, timeline);
+
+        notificationReworkHandler.handleNotificationRework(action).block();
+
+        verify(actionManagerApi, never()).insertAction(any());
+
+        ArgumentCaptor<ReworkRequestEventAction> captor = ArgumentCaptor.forClass(ReworkRequestEventAction.class);
+        verify(reworkRequestEventPool).scheduleFutureAction(captor.capture(), any());
+
+        Assertions.assertTrue(captor.getValue().getError().stream()
+                .anyMatch(e -> NotificationReworkErrorCause.INVALID_CATEGORY_TO_INVALIDATE.getCause().equals(e.getCause())));
+    }
+
+    @Test
+    void handleNotificationInvalidateElements_VIEWED_invalidWhenViewedElementRemains() {
+        NotificationReworkValidationDetails detail = baseInvalidateElementsDetail();
+        detail.setElementsToInvalidate(List.of(
+                "NOTIFICATION_VIEWED.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0"
+        ));
+
+        Action action = baseAction(detail);
+        NotificationInt notification = baseNotification();
+
+        Set<TimelineElementInternal> timeline = validInvalidateTimeline();
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.NOTIFICATION_VIEWED,
+                "NOTIFICATION_VIEWED.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
+                NotificationViewedDetailsInt.builder().recIndex(0).build()
+        ));
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.NOTIFICATION_VIEWED_CREATION_REQUEST,
+                "NOTIFICATION_VIEWED_CREATION_REQUEST.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
+                NotificationViewedCreationRequestDetailsInt.builder().recIndex(0).build()
+        ));
+
+        mockBaseValidFlow(notification, timeline);
+
+        notificationReworkHandler.handleNotificationRework(action).block();
+
+        verify(actionManagerApi, never()).insertAction(any());
+
+        ArgumentCaptor<ReworkRequestEventAction> captor = ArgumentCaptor.forClass(ReworkRequestEventAction.class);
+        verify(reworkRequestEventPool).scheduleFutureAction(captor.capture(), any());
+
+        Assertions.assertTrue(captor.getValue().getError().stream()
+                .anyMatch(e -> NotificationReworkErrorCause.INVALID_VIEWED_ELEMENT.getCause().equals(e.getCause())));
+    }
+
+    @Test
+    void handleNotificationInvalidateElements_VIEWED_validWhenNoViewedElementRemains() {
+        NotificationReworkValidationDetails detail = baseInvalidateElementsDetail();
+        detail.setElementsToInvalidate(List.of(
+                "NOTIFICATION_VIEWED.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
+                "NOTIFICATION_VIEWED_CREATION_REQUEST.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0"
+        ));
+
+        Action action = baseAction(detail);
+        NotificationInt notification = NotificationInt.builder()
+                .iun("XLJE-VRQM-VKNQ-202507-K-1")
+                .recipients(List.of(new NotificationRecipientInt()))
+                .documents(List.of(NotificationDocumentInt.builder()
+                        .ref(NotificationDocumentInt.Ref.builder().key("key").build())
+                        .build()))
+                .build();
+
+        Set<TimelineElementInternal> timeline = validInvalidateTimeline();
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.NOTIFICATION_VIEWED,
+                "NOTIFICATION_VIEWED.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
+                NotificationViewedDetailsInt.builder().recIndex(0).build()
+        ));
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.NOTIFICATION_VIEWED_CREATION_REQUEST,
+                "NOTIFICATION_VIEWED_CREATION_REQUEST.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
+                NotificationViewedCreationRequestDetailsInt.builder().recIndex(0).build()
+        ));
+
+        mockBaseValidFlow(notification, timeline);
+
+        notificationReworkHandler.handleNotificationRework(action).block();
+
+        verify(actionManagerApi).insertAction(any());
+        verify(reworkRequestEventPool, never()).scheduleFutureAction(any(), any());
+    }
+
+    @Test
+    void handleNotificationInvalidateElements_INVALID_REC_INDEX() {
+        NotificationReworkValidationDetails detail = baseInvalidateElementsDetail();
+        detail.setElementsToInvalidate(List.of(
+                "SEND_ANALOG_PROGRESS.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_1.ATTEMPT_0"
+        ));
+
+        Action action = baseAction(detail);
+        NotificationInt notification = baseNotification();
+
+        Set<TimelineElementInternal> timeline = validInvalidateTimeline();
+
+        mockBaseValidFlow(notification, timeline);
+
+        notificationReworkHandler.handleNotificationRework(action).block();
+
+        verify(actionManagerApi, never()).insertAction(any());
+
+        ArgumentCaptor<ReworkRequestEventAction> captor = ArgumentCaptor.forClass(ReworkRequestEventAction.class);
+        verify(reworkRequestEventPool).scheduleFutureAction(captor.capture(), any());
+
+        Assertions.assertTrue(captor.getValue().getError().stream()
+                .anyMatch(e -> NotificationReworkErrorCause.INVALID_REC_INDEX.getCause().equals(e.getCause())));
+    }
+
+
+    @Test
+    void handleNotificationInvalidateElements_INVALID_PROGRESS_ELEMENT() {
+        NotificationReworkValidationDetails detail = baseInvalidateElementsDetail();
+        detail.setElementsToInvalidate(List.of(
+                "SEND_ANALOG_PROGRESS.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_1.ATTEMPT_0",
+                "PREPARE_ANALOG_DOMICILE.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0"
+        ));
+
+        Action action = baseAction(detail);
+        NotificationInt notification = baseNotification();
+
+        Set<TimelineElementInternal> timeline = validInvalidateTimeline();
+
+        mockBaseValidFlow(notification, timeline);
+
+        notificationReworkHandler.handleNotificationRework(action).block();
+
+        verify(actionManagerApi, never()).insertAction(any());
+
+        ArgumentCaptor<ReworkRequestEventAction> captor = ArgumentCaptor.forClass(ReworkRequestEventAction.class);
+        verify(reworkRequestEventPool).scheduleFutureAction(captor.capture(), any());
+
+        Assertions.assertTrue(captor.getValue().getError().stream()
+                .anyMatch(e -> NotificationReworkErrorCause.INVALID_PROGRESS_ELEMENT.getCause().equals(e.getCause())));
+    }
+
+
+    @Test
+    void handleNotificationInvalidateElements_SEND_ANALOG_PROGRESS_valid() {
+        NotificationReworkValidationDetails detail = baseInvalidateElementsDetail();
+        detail.setElementsToInvalidate(List.of(
+                "SEND_ANALOG_PROGRESS.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0"
+        ));
+
+        Action action = baseAction(detail);
+        NotificationInt notification = baseNotification();
+
+        Set<TimelineElementInternal> timeline = validInvalidateTimeline();
+
+        mockBaseValidFlow(notification, timeline);
+
+        notificationReworkHandler.handleNotificationRework(action).block();
+
+        verify(actionManagerApi).insertAction(any());
+        verify(reworkRequestEventPool, never()).scheduleFutureAction(any(), any());
+    }
+
+    private NotificationReworkValidationDetails baseInvalidateElementsDetail() {
+        NotificationReworkValidationDetails detail = new NotificationReworkValidationDetails();
+        detail.setReworkId("RWK-INVALIDATE");
+        detail.setReworkAttempt("ATTEMPT_0");
+        detail.setReworkRecIndex("RECINDEX_0");
+        detail.setReworkPcRetry("PCRETRY_0");
+        detail.setRequestType(ReworkRequestTypeEnum.INVALIDATE_ELEMENTS);
+        return detail;
+    }
+
+    private Action baseAction(NotificationReworkValidationDetails detail) {
+        return Action.builder()
+                .actionId("ACTION-INVALIDATE")
+                .iun("XLJE-VRQM-VKNQ-202507-K-1")
+                .recipientIndex(0)
+                .details(detail)
+                .build();
+    }
+
+    private NotificationInt baseNotification() {
+        return NotificationInt.builder()
+                .iun("XLJE-VRQM-VKNQ-202507-K-1")
+                .recipients(List.of(new NotificationRecipientInt()))
+                .documents(List.of(NotificationDocumentInt.builder()
+                        .ref(NotificationDocumentInt.Ref.builder().key("key").build())
+                        .build()))
+                .build();
+    }
+
+    private void mockBaseValidFlow(NotificationInt notification, Set<TimelineElementInternal> timeline) {
+        NotificationHistoryResponse notificationHistoryResponse = new NotificationHistoryResponse();
+        notificationHistoryResponse.setNotificationStatus(NotificationStatus.EFFECTIVE_DATE);
+
+        when(timelineUtils.checkIsNotificationCancellationRequested(any())).thenReturn(false);
+        when(timelineUtils.checkIsNotificationViewed(any(), any())).thenReturn(false);
+        when(notificationService.getNotificationByIun(any())).thenReturn(notification);
+        when(timelineService.getTimeline(anyString(), anyBoolean())).thenReturn(timeline);
+        when(timelineService.getTimelineAndStatusHistory(any(), anyInt(), any())).thenReturn(notificationHistoryResponse);
+    }
+
+    private Set<TimelineElementInternal> validInvalidateTimeline() {
+        Set<TimelineElementInternal> timeline = new HashSet<>();
+
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE,
+                "PREPARE_ANALOG_DOMICILE.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0",
+                BaseAnalogDetailsInt.builder().recIndex(0).sentAttemptMade(0).build()
+        ));
+
+        SendAnalogFeedbackDetailsInt feedbackDetails = new SendAnalogFeedbackDetailsInt();
+        feedbackDetails.setSentAttemptMade(0);
+        feedbackDetails.setResponseStatus(ResponseStatusInt.OK);
+
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK,
+                "SEND_ANALOG_FEEDBACK.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0",
+                feedbackDetails
+        ));
+
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK,
+                "SEND_ANALOG_PROGRESS.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_1.ATTEMPT_0",
+                feedbackDetails
+        ));
+
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK,
+                "SEND_ANALOG_PROGRESS.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0",
+                feedbackDetails
+        ));
+
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.REFINEMENT,
+                "REFINEMENT.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
+                RefinementDetailsInt.builder().recIndex(0).build()
+        ));
+
+        return timeline;
+    }
+
+    private Set<TimelineElementInternal> validInvalidateTimelineWithoutOkAttempt0() {
+        Set<TimelineElementInternal> timeline = new HashSet<>();
+
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE,
+                "PREPARE_ANALOG_DOMICILE.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0",
+                BaseAnalogDetailsInt.builder().recIndex(0).sentAttemptMade(0).build()
+
+        ));
+
+        SendAnalogFeedbackDetailsInt feedbackDetails = new SendAnalogFeedbackDetailsInt();
+        feedbackDetails.setSentAttemptMade(0);
+        feedbackDetails.setResponseStatus(ResponseStatusInt.KO);
+
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK,
+                "SEND_ANALOG_FEEDBACK.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0",
+                feedbackDetails
+        ));
+
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.REFINEMENT,
+                "REFINEMENT.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
+                RefinementDetailsInt.builder().recIndex(0).build()
+
+        ));
+
+        return timeline;
+    }
+
+    private TimelineElementInternal timelineElement(
+            TimelineElementCategoryInt category,
+            String elementId,
+            TimelineElementDetailsInt details
+    ) {
+        TimelineElementInternal element = new TimelineElementInternal();
+        element.setCategory(category);
+        element.setElementId(elementId);
+        element.setTimestamp(Instant.now());
+        element.setNotificationSentAt(Instant.now());
+        element.setDetails(details);
+        return element;
+    }
+
 }
 
