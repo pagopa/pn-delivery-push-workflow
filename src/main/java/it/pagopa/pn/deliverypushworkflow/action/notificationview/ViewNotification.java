@@ -62,7 +62,7 @@ public class ViewNotification {
     }
 
     private Mono<Boolean> checkThatAllAttachmentsArePresent(NotificationInt notification) {
-        return Flux.fromIterable(extractAttachmentsFromNotification(notification, true))
+        return Flux.fromIterable(extractAttachmentsFromNotification(notification))
                 .concatMap(document ->
                         safeStorageService.getFile(document.getRef().getKey(), true, false)
                                 .thenReturn(true)
@@ -81,7 +81,7 @@ public class ViewNotification {
                 });
     }
 
-    private List<NotificationDocumentInt> extractAttachmentsFromNotification(NotificationInt notification, boolean includeF24Metadata) {
+    private List<NotificationDocumentInt> extractAttachmentsFromNotification(NotificationInt notification) {
         List<NotificationDocumentInt> attachments = new ArrayList<>(notification.getDocuments());
 
         for(NotificationRecipientInt recipient : notification.getRecipients()) {
@@ -92,7 +92,7 @@ public class ViewNotification {
                                 attachments.add(payment.getPagoPA().getAttachment());
                             }
 
-                            if(includeF24Metadata && payment.getF24() != null && payment.getF24().getMetadataAttachment() != null) {
+                            if(payment.getF24() != null && payment.getF24().getMetadataAttachment() != null) {
                                 attachments.add(payment.getF24().getMetadataAttachment());
                             }
                         }
