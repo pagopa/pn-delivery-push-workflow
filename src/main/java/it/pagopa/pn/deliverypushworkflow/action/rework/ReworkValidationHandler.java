@@ -341,6 +341,14 @@ public class ReworkValidationHandler {
     private Mono<NotificationReworkInfo> validateElementsToInvalidate(NotificationReworkInfo info) {
         validateRecIndex(info);
         Set<String> elementsToInvalidate = new HashSet<>(info.getActionDetail().getElementsToInvalidate());
+        List<String> notExistInTimeline = info.getActionDetail().getElementsToInvalidate().stream()
+                .filter(s -> info.getTimeline().stream().noneMatch(t -> t.getElementId().equals(s)))
+                .toList();
+        if (!CollectionUtils.isEmpty(notExistInTimeline)) {
+            return fail(NotificationReworkErrorCause.INVALID_ELEMENTS_TO_INVALIDATE,
+                    String.format(NotificationReworkErrorCause.INVALID_ELEMENTS_TO_INVALIDATE.getErrorDetails(), String.join(",",notExistInTimeline)));
+        }
+
         Set<TimelineElementInternal> notInvalidatedElements = info.getFilteredTimeline().stream()
                 .filter(t -> !elementsToInvalidate.contains(t.getElementId()))
                 .collect(Collectors.toSet());
@@ -425,7 +433,7 @@ public class ReworkValidationHandler {
             case NOTIFICATION_VIEWED,
                  NOTIFICATION_VIEWED_CREATION_REQUEST -> {
                 if (hasViewedElements) {
-                    yield INVALID_ATTEMPT1_ELEMENTS;
+                    yield INVALID_VIEWED_ELEMENT;
                 }
 
                 yield checkAttachmentsForInvalidateElements(info, info.getFilteredTimeline());
@@ -498,8 +506,8 @@ public class ReworkValidationHandler {
                         .cause(NotificationReworkErrorCause.INVALID_REC_INDEX.getCause())
                         .description(String.format(
                                 NotificationReworkErrorCause.INVALID_REC_INDEX.getErrorDetails(),
-                                elementId,
-                                reworkRecIndex
+                                reworkRecIndex,
+                                elementId
                         ))
                         .build())
         );

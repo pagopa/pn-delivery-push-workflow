@@ -1406,32 +1406,9 @@ class ReworkValidationHandlerTest {
     }
 
     @Test
-    void handleNotificationInvalidateElements_INVALID_ELEMENT_CATEGORY() {
-        NotificationReworkValidationDetails detail = baseInvalidateElementsDetail();
-        detail.setElementsToInvalidate(List.of("UNKNOWN_CATEGORY.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_1"));
-
-        Action action = baseAction(detail);
-        NotificationInt notification = baseNotification();
-
-        Set<TimelineElementInternal> timeline = validInvalidateTimeline();
-
-        mockBaseValidFlow(notification, timeline);
-
-        notificationReworkHandler.handleNotificationRework(action).block();
-
-        verify(actionManagerApi, never()).insertAction(any());
-
-        ArgumentCaptor<ReworkRequestEventAction> captor = ArgumentCaptor.forClass(ReworkRequestEventAction.class);
-        verify(reworkRequestEventPool).scheduleFutureAction(captor.capture(), any());
-
-        Assertions.assertTrue(captor.getValue().getError().stream()
-                .anyMatch(e -> NotificationReworkErrorCause.INVALID_ELEMENT_CATEGORY.getCause().equals(e.getCause())));
-    }
-
-    @Test
     void handleNotificationInvalidateElements_INVALID_CATEGORY_TO_INVALIDATE() {
         NotificationReworkValidationDetails detail = baseInvalidateElementsDetail();
-        detail.setElementsToInvalidate(List.of("REFINEMENT.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0"));
+        detail.setElementsToInvalidate(List.of("REFINEMENT.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0"));
 
         Action action = baseAction(detail);
         NotificationInt notification = baseNotification();
@@ -1611,7 +1588,7 @@ class ReworkValidationHandlerTest {
     }
 
     @Test
-    void handleNotificationInvalidateElements_ATTEMPT1_ELEMENT_valid() {
+    void handleNotificationInvalidateElements_INVALID_CATEGORY_TO_INVALIDATE_SEND_ANALOG() {
         NotificationReworkValidationDetails detail = baseInvalidateElementsDetail();
         detail.setElementsToInvalidate(List.of(
                 "SEND_ANALOG_DOMICILE.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_1"
@@ -1679,7 +1656,7 @@ class ReworkValidationHandlerTest {
         verify(reworkRequestEventPool).scheduleFutureAction(captor.capture(), any());
 
         Assertions.assertTrue(captor.getValue().getError().stream()
-                .anyMatch(e -> NotificationReworkErrorCause.INVALID_ATTEMPT1_ELEMENTS.getCause().equals(e.getCause())));
+                .anyMatch(e -> NotificationReworkErrorCause.INVALID_VIEWED_ELEMENT.getCause().equals(e.getCause())));
     }
 
     @Test
@@ -1723,7 +1700,7 @@ class ReworkValidationHandlerTest {
     void handleNotificationInvalidateElements_INVALID_REC_INDEX() {
         NotificationReworkValidationDetails detail = baseInvalidateElementsDetail();
         detail.setElementsToInvalidate(List.of(
-                "SEND_ANALOG_PROGRESS.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_1.ATTEMPT_1"
+                "SEND_ANALOG_PROGRESS.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_1.ATTEMPT_0"
         ));
 
         Action action = baseAction(detail);
@@ -1749,8 +1726,8 @@ class ReworkValidationHandlerTest {
     void handleNotificationInvalidateElements_INVALID_PROGRESS_ELEMENT() {
         NotificationReworkValidationDetails detail = baseInvalidateElementsDetail();
         detail.setElementsToInvalidate(List.of(
-                "SEND_ANALOG_PROGRESS.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_1.ATTEMPT_1",
-                "NOTIFICATION_VIEWED.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0"
+                "SEND_ANALOG_PROGRESS.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_1.ATTEMPT_0",
+                "PREPARE_ANALOG_DOMICILE.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0"
         ));
 
         Action action = baseAction(detail);
@@ -1776,7 +1753,7 @@ class ReworkValidationHandlerTest {
     void handleNotificationInvalidateElements_SEND_ANALOG_PROGRESS_valid() {
         NotificationReworkValidationDetails detail = baseInvalidateElementsDetail();
         detail.setElementsToInvalidate(List.of(
-                "SEND_ANALOG_PROGRESS.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_1"
+                "SEND_ANALOG_PROGRESS.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0"
         ));
 
         Action action = baseAction(detail);
@@ -1848,6 +1825,18 @@ class ReworkValidationHandlerTest {
         timeline.add(timelineElement(
                 TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK,
                 "SEND_ANALOG_FEEDBACK.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0",
+                feedbackDetails
+        ));
+
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK,
+                "SEND_ANALOG_PROGRESS.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_1.ATTEMPT_0",
+                feedbackDetails
+        ));
+
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK,
+                "SEND_ANALOG_PROGRESS.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0",
                 feedbackDetails
         ));
 
