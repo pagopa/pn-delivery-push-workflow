@@ -27,6 +27,7 @@ public enum NotificationReworkErrorCause {
     INVALID_VIEWED_ELEMENT("INVALID_VIEWED_ELEMENT", "In caso di invalidazione di un elemento di visualizzazione, devono essere invalidati tutti gli elementi di visualizzazione"),
     INVALID_ELEMENT_TO_INVALIDATE("INVALID_ELEMENT_TO_INVALIDATE", "Non è possibile invalidare l'elemento %s della timeline"),
     INVALID_ELEMENTS_TO_INVALIDATE("INVALID_ELEMENTS_TO_INVALIDATE", "Non è possibile invalidare i seguenti elementi di timeline perchè non esistenti: %s"),
+    ATTACHMENTS_EXIST_ONVIEWED("ATTACHMENTS_EXIST_ONVIEWED", "La visualizzazione è stata effettuata prima della scadenza degli allegati, non è possibile procedere con la richiesta di restart"),
     INVALID_ELEMENT_TO_INVALIDATE_ATTACHMENTS_EXIST_ONVIEWED("ATTACHMENTS_EXIST_ONVIEWED", "La visualizzazione è stata effettuata prima della scadenza degli allegati, non è possibile invalidare gli elementi di visualizzazione");
 
     private final String cause;

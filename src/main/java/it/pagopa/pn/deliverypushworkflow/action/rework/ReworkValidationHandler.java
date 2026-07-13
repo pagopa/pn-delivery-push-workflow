@@ -293,6 +293,12 @@ public class ReworkValidationHandler {
         ReworkRequestTypeEnum requestType = info.getActionDetail().getRequestType();
         NotificationReworkValidationDetails detail = info.getActionDetail();
         boolean isStatusViewed = timelineUtils.checkIsNotificationViewed(info.getNotification().getIun(), getRecIndexFromAction(info.getActionDetail()));
+        if(isStatusViewed && RESTART.equals(requestType)){
+            NotificationReworkErrorCause errorCause = checkAttachmentsForRestart(info, info.getFilteredTimeline());
+            if(Objects.nonNull(errorCause)){
+                return fail(errorCause, errorCause.getErrorDetails());
+            }
+        }
 
         if (INVALIDATE_ELEMENTS.equals(requestType)) {
             return validateTimeline(info, recIndex, detail, attempt, isStatusViewed, requestType)
@@ -439,6 +445,15 @@ public class ReworkValidationHandler {
         if (errorCause != null) {
             addInvalidationError(info, errorCause, element);
         }
+    }
+
+    private NotificationReworkErrorCause checkAttachmentsForRestart(NotificationReworkInfo info, Set<TimelineElementInternal> timeline) {
+        boolean attachmentsExistOnViewed = checkAttachmentsOnViewed(info, timeline);
+        if(!attachmentsExistOnViewed) {
+            return null;
+        }
+        log.warn("Attachments exist on viewed for iun: [{}], recIndex: [{}], RESTART request cannot be processed", info.getAction().getIun(), info.getActionDetail().getReworkRecIndex());
+        return ATTACHMENTS_EXIST_ONVIEWED;
     }
 
     private NotificationReworkErrorCause checkAttachmentsForInvalidateElements(NotificationReworkInfo info, Set<TimelineElementInternal> filteredTimeline) {
