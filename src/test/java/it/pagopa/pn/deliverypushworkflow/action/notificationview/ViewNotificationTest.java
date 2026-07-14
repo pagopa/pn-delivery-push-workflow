@@ -56,6 +56,8 @@ class ViewNotificationTest {
     @BeforeEach
     void setup() {
         Mockito.lenient().when(pnDeliveryPushWorkflowConfigs.getRetentionAttachmentDaysAfterRefinement()).thenReturn(120);
+        Mockito.lenient().when(attachmentUtils.getAllAttachments(Mockito.any(NotificationInt.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0, NotificationInt.class).getDocuments());
         viewNotification = new ViewNotification(
                 legalFactStore,
                 documentCreationRequestService,
