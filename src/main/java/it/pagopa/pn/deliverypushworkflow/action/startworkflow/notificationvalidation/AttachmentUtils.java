@@ -50,7 +50,7 @@ public class AttachmentUtils {
 
     public Flux<Void> changeAttachmentsRetention(NotificationInt notification, int retentionUntilDays) {
         log.info( "changeAttachmentsRetention iun={}", notification.getIun());
-        return Mono.just(getAllAttachment(notification))
+        return Mono.just(getAllAttachments(notification))
                 .flatMapIterable( x -> x )
                 .flatMap( doc -> this.changeAttachmentRetention(doc, retentionUntilDays));
     }
@@ -91,7 +91,7 @@ public class AttachmentUtils {
         return res;
     }
 
-    private List<NotificationDocumentInt> getAllAttachment(NotificationInt notification)
+    public List<NotificationDocumentInt> getAllAttachments(NotificationInt notification)
     {
         List<NotificationDocumentInt> notificationDocuments = new ArrayList<>(notification.getDocuments());
 
