@@ -1,5 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.action.notificationview;
 
+import it.pagopa.pn.commons.log.PnAuditLogBuilder;
+import it.pagopa.pn.commons.log.PnAuditLogEventType;
 import it.pagopa.pn.commons.utils.LogUtils;
 import it.pagopa.pn.deliverypushworkflow.action.startworkflow.notificationvalidation.AttachmentUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
@@ -10,16 +12,18 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.Notificat
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notificationviewed.NotificationViewedInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
-import it.pagopa.pn.deliverypushworkflow.service.ConfidentialInformationService;
-import it.pagopa.pn.deliverypushworkflow.service.DocumentCreationRequestService;
-import it.pagopa.pn.deliverypushworkflow.service.SaveLegalFactsService;
-import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
+import it.pagopa.pn.deliverypushworkflow.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 @Component
 @Slf4j
@@ -30,20 +34,67 @@ public class ViewNotification {
     private final TimelineUtils timelineUtils;
     private final TimelineService timelineService;
     private final AttachmentUtils attachmentUtils;
+    private final SafeStorageService safeStorageService;
     private final PnDeliveryPushWorkflowConfigs pnDeliveryPushWorkflowConfigs;
     private final ConfidentialInformationService confidentialInformationService;
 
-    public Mono<Void> startVewNotificationProcess(NotificationInt notification,
-                                                  NotificationRecipientInt recipient,
-                                                  NotificationViewedInt notificationViewed) {
+    public Mono<Boolean> startVewNotificationProcess(NotificationInt notification,
+                                                     NotificationRecipientInt recipient,
+                                                     NotificationViewedInt notificationViewed) {
         log.info("Start view notification process - iun={} id={}", notification.getIun(), notificationViewed.getRecipientIndex());
-        if(notificationViewed.getDelegateInfo() != null){
-            return changeAttachmentRetentionIfNeeded(notification, notificationViewed.getRecipientIndex())
-                    .then(getDelegateInfoAndHandleLegalFactCreation(notification, recipient, notificationViewed));
-        } else {
-            return changeAttachmentRetentionIfNeeded(notification, notificationViewed.getRecipientIndex())
-                    .then(handleLegalFactCreation(notification, recipient, notificationViewed));
-        }
+        return checkThatAllAttachmentsArePresent(notification)
+                .flatMap(allAttachmentsPresent -> {
+                    if (Boolean.FALSE.equals(allAttachmentsPresent)) {
+                        auditFlowBlocked(notificationViewed);
+                        return Mono.just(false);
+                    }
+
+                    Mono<Void> legalFactCreation = notificationViewed.getDelegateInfo() != null
+                            ? getDelegateInfoAndHandleLegalFactCreation(notification, recipient, notificationViewed)
+                            : handleLegalFactCreation(notification, recipient, notificationViewed);
+
+                    return changeAttachmentRetentionIfNeeded(notification, notificationViewed.getRecipientIndex())
+                            .then(legalFactCreation)
+                            .thenReturn(true);
+                });
+    }
+
+    private Mono<Boolean> checkThatAllAttachmentsArePresent(NotificationInt notification) {
+        return Flux.fromIterable(attachmentUtils.getAllAttachments(notification))
+                .concatMap(document ->
+                        safeStorageService.getFile(document.getRef().getKey(), true, false)
+                                .thenReturn(true)
+                                .onErrorResume(WebClientResponseException.class, ex ->
+                                        isAttachmentNotAvailable(ex)
+                                                ? Mono.just(false)
+                                                : Mono.error(ex)
+                                )
+                )
+                .takeUntil(isPresent -> !isPresent)
+                .all(Boolean::booleanValue)
+                .doOnNext(allPresent -> {
+                    if (!allPresent) {
+                        log.warn("View notification blocked, attachment not available in safe storage - iun={}", notification.getIun());
+                    }
+                });
+    }
+
+    private boolean isAttachmentNotAvailable(WebClientResponseException ex) {
+        return ex.getStatusCode() == HttpStatus.NOT_FOUND || ex.getStatusCode() == HttpStatus.GONE;
+    }
+
+    private void auditFlowBlocked(NotificationViewedInt notificationViewed) {
+        PnAuditLogEventType type = notificationViewed.getDelegateInfo() != null
+                ? PnAuditLogEventType.AUD_NT_VIEW_DEL
+                : PnAuditLogEventType.AUD_NT_VIEW_RCP;
+
+        new PnAuditLogBuilder()
+                .before(type, "View notification blocked: at least one attachment is not available - iun={} id={}",
+                        notificationViewed.getIun(), notificationViewed.getRecipientIndex())
+                .iun(notificationViewed.getIun())
+                .build()
+                .generateWarning("View notification flow blocked due to missing attachment")
+                .log();
     }
 
     private Mono<Void> changeAttachmentRetentionIfNeeded(NotificationInt notification, Integer recIndex){

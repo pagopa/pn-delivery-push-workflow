@@ -11,7 +11,6 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notificationviewed.Not
 import it.pagopa.pn.deliverypushworkflow.dto.mandate.DelegateInfoInt;
 import it.pagopa.pn.deliverypushworkflow.dto.radd.RaddInfo;
 import it.pagopa.pn.deliverypushworkflow.service.NotificationService;
-import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
@@ -74,9 +73,12 @@ public class NotificationViewedRequestHandler {
                                 .flatMap( notification -> {
                                     NotificationRecipientInt recipient = notificationUtils.getRecipientFromIndex(notification, notificationViewedInt.getRecipientIndex());
                                     return viewNotification.startVewNotificationProcess(notification, recipient, notificationViewedInt)
-                                            .doOnSuccess( x->
-                                                    logEvent.generateSuccess().log()
-                                            );
+                                            .doOnNext(processCompleted -> {
+                                                if (Boolean.TRUE.equals(processCompleted)) {
+                                                    logEvent.generateSuccess().log();
+                                                }
+                                            })
+                                            .then();
                                 })
                                 .doOnError( err -> logEvent.generateFailure("Exception in View notification iun={} id={}", notificationViewedInt.getIun(), notificationViewedInt.getRecipientIndex(), err).log());
                     } else {
