@@ -176,7 +176,7 @@ public class ReworkRequestedHandler {
 
     private TimelineElementInternal buildTimelineElement(NotificationInt notification,  List<String> elementsToInvalidate, NotificationReworkRequestedDetails internalDetail) {
         Integer recIndex = extractTimelineIndex(internalDetail.getReworkRecIndex(), "reworkRecIndex");
-        Integer attempt = extractTimelineIndex(internalDetail.getReworkAttempt(), "reworkAttempt");
+        Integer attempt = Objects.isNull(internalDetail.getReworkAttempt()) ? null : extractTimelineIndex(internalDetail.getReworkAttempt(), "reworkAttempt");
         NotificationHistoryResponse notificationHistoryResponse = timelineService.getTimelineAndStatusHistory(notification.getIun(), notification.getRecipients().size(), notification.getSentAt());
         List<NotificationStatusHistoryElement> statusHistoryElements = new ArrayList<>();
         if(Objects.nonNull(notificationHistoryResponse.getNotificationStatusHistory())) {
