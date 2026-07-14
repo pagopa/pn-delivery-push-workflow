@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.commons.exceptions.PnHttpResponseException;
 import it.pagopa.pn.deliverypushworkflow.action.details.NotificationReworkValidationDetails;
+import it.pagopa.pn.deliverypushworkflow.action.startworkflow.notificationvalidation.AttachmentUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationDocumentInt;
@@ -71,6 +72,8 @@ class ReworkValidationHandlerTest {
     private TimelineUtils timelineUtils;
     @Mock
     private SafeStorageService safeStorageService;
+    @Mock
+    private AttachmentUtils attachmentUtils;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
 
@@ -78,7 +81,7 @@ class ReworkValidationHandlerTest {
 
     @BeforeEach
     void setup() {
-        notificationReworkHandler = new ReworkValidationHandler(paperChannelAddressClient, actionManagerApi, notificationService, timelineService, timelineUtils, reworkRequestEventPool, pnDeliveryPushWorkflowConfigs, safeStorageService, objectMapper);
+        notificationReworkHandler = new ReworkValidationHandler(paperChannelAddressClient, actionManagerApi, notificationService, timelineService, timelineUtils, reworkRequestEventPool, pnDeliveryPushWorkflowConfigs, safeStorageService, objectMapper, attachmentUtils);
     }
 
     @Test
@@ -1240,6 +1243,9 @@ class ReworkValidationHandlerTest {
 
         NotificationHistoryResponse notificationHistoryResponse = new NotificationHistoryResponse();
         notificationHistoryResponse.setNotificationStatus(NotificationStatus.EFFECTIVE_DATE);
+        when(attachmentUtils.getAllAttachment(any())).thenReturn(List.of(NotificationDocumentInt.builder()
+                .ref(NotificationDocumentInt.Ref.builder().key("key").build()).build()));
+        when(safeStorageService.getFile(any(), any(), any())).thenReturn(Mono.just(new FileDownloadResponse()));
 
         when(timelineService.getTimeline(anyString(), anyBoolean())).thenReturn(timeline);
         when(timelineUtils.checkIsNotificationCancellationRequested(any())).thenReturn(false);
@@ -1643,10 +1649,17 @@ class ReworkValidationHandlerTest {
         timeline.add(timelineElement(
                 TimelineElementCategoryInt.NOTIFICATION_VIEWED_CREATION_REQUEST,
                 "NOTIFICATION_VIEWED_CREATION_REQUEST.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
-                NotificationViewedCreationRequestDetailsInt.builder().recIndex(0).build()
+                NotificationViewedCreationRequestDetailsInt.builder().recIndex(0).eventTimestamp(Instant.now()).build()
         ));
 
         mockBaseValidFlow(notification, timeline);
+
+        WebClientResponseException exception = mock(WebClientResponseException.class);
+        when(exception.getStatusCode()).thenReturn(HttpStatus.GONE);
+        when(exception.getResponseBodyAsString()).thenReturn("[deletionTimestamp=2010-06-24T10:15:30Z]");
+        when(attachmentUtils.getAllAttachment(any())).thenReturn(List.of(NotificationDocumentInt.builder()
+                .ref(NotificationDocumentInt.Ref.builder().key("key").build()).build()));
+        when(safeStorageService.getFile(any(), any(), any())).thenReturn(Mono.error(exception));
 
         notificationReworkHandler.handleNotificationRework(action).block();
 
@@ -1685,13 +1698,21 @@ class ReworkValidationHandlerTest {
         timeline.add(timelineElement(
                 TimelineElementCategoryInt.NOTIFICATION_VIEWED_CREATION_REQUEST,
                 "NOTIFICATION_VIEWED_CREATION_REQUEST.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
-                NotificationViewedCreationRequestDetailsInt.builder().recIndex(0).build()
+                NotificationViewedCreationRequestDetailsInt.builder().recIndex(0).eventTimestamp(Instant.now()).build()
         ));
+
+        WebClientResponseException exception = mock(WebClientResponseException.class);
+        when(exception.getStatusCode()).thenReturn(HttpStatus.GONE);
+        when(exception.getResponseBodyAsString()).thenReturn("[deletionTimestamp=2010-06-24T10:15:30Z]");
+        when(attachmentUtils.getAllAttachment(any())).thenReturn(List.of(NotificationDocumentInt.builder()
+                .ref(NotificationDocumentInt.Ref.builder().key("key").build()).build()));
+        when(safeStorageService.getFile(any(), any(), any())).thenReturn(Mono.error(exception));
 
         mockBaseValidFlow(notification, timeline);
 
         notificationReworkHandler.handleNotificationRework(action).block();
 
+        verify(safeStorageService, times(1)).getFile(any(), any(), any());
         verify(actionManagerApi).insertAction(any());
         verify(reworkRequestEventPool, never()).scheduleFutureAction(any(), any());
     }
@@ -1888,6 +1909,7 @@ class ReworkValidationHandlerTest {
         element.setCategory(category);
         element.setElementId(elementId);
         element.setTimestamp(Instant.now());
+        element.setEventTimestamp(Instant.now());
         element.setNotificationSentAt(Instant.now());
         element.setDetails(details);
         return element;

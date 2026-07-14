@@ -6,9 +6,11 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import it.pagopa.pn.commons.exceptions.PnHttpResponseException;
 import it.pagopa.pn.deliverypushworkflow.action.details.NotificationReworkRequestedDetails;
 import it.pagopa.pn.deliverypushworkflow.action.details.NotificationReworkValidationDetails;
+import it.pagopa.pn.deliverypushworkflow.action.startworkflow.notificationvalidation.AttachmentUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.NotificationReworkUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationDocumentInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.externalchannel.ResponseStatusInt;
 import it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkError;
@@ -48,6 +50,8 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkConstant.*;
@@ -71,6 +75,7 @@ public class ReworkValidationHandler {
     private final PnDeliveryPushWorkflowConfigs pnDeliveryPushWorkflowConfigs;
     private final SafeStorageService safeStorageService;
     private final ObjectMapper objectMapper;
+    private final AttachmentUtils attachmentUtils;
 
     private final List<TimelineElementCategoryInt> ELEMENTS_WITHOUT_ATTEMPT_ID = List.of(NOTIFICATION_VIEWED_CREATION_REQUEST, SCHEDULE_REFINEMENT, ANALOG_FAILURE_WORKFLOW, ANALOG_SUCCESS_WORKFLOW, REFINEMENT, ANALOG_WORKFLOW_RECIPIENT_DECEASED);
     private final String POST_VALIDATION_PROCESS = ".POST_VALIDATION_PROCESS";
@@ -293,11 +298,10 @@ public class ReworkValidationHandler {
         ReworkRequestTypeEnum requestType = info.getActionDetail().getRequestType();
         NotificationReworkValidationDetails detail = info.getActionDetail();
         boolean isStatusViewed = timelineUtils.checkIsNotificationViewed(info.getNotification().getIun(), getRecIndexFromAction(info.getActionDetail()));
-        if(isStatusViewed && RESTART.equals(requestType)){
-            NotificationReworkErrorCause errorCause = checkAttachmentsForRestart(info, info.getFilteredTimeline());
-            if(Objects.nonNull(errorCause)){
-                return fail(errorCause, errorCause.getErrorDetails());
-            }
+        if (isStatusViewed && RESTART.equals(requestType)) {
+            return checkAttachmentsForRestart(info, info.getFilteredTimeline())
+                    .flatMap(errorCause -> this.<NotificationReworkInfo>fail(errorCause, errorCause.getErrorDetails()))
+                    .switchIfEmpty(Mono.defer(() -> validateTimeline(info, recIndex, detail, attempt, true, requestType).thenReturn(info)));
         }
 
         if (INVALIDATE_ELEMENTS.equals(requestType)) {
@@ -346,7 +350,7 @@ public class ReworkValidationHandler {
                 .toList();
         if (!CollectionUtils.isEmpty(notExistInTimeline)) {
             return fail(NotificationReworkErrorCause.INVALID_ELEMENTS_TO_INVALIDATE,
-                    String.format(NotificationReworkErrorCause.INVALID_ELEMENTS_TO_INVALIDATE.getErrorDetails(), String.join(",",notExistInTimeline)));
+                    String.format(NotificationReworkErrorCause.INVALID_ELEMENTS_TO_INVALIDATE.getErrorDetails(), String.join(",", notExistInTimeline)));
         }
 
         Set<TimelineElementInternal> notInvalidatedElements = info.getFilteredTimeline().stream()
@@ -362,20 +366,28 @@ public class ReworkValidationHandler {
                 .anyMatch(t -> NOTIFICATION_VIEWED.equals(t.getCategory())
                         || NOTIFICATION_VIEWED_CREATION_REQUEST.equals(t.getCategory()));
 
-        elementsToInvalidate.forEach(element -> validateSingleElementToInvalidate(
+
+        return Flux.fromIterable(elementsToInvalidate)
+                .concatMap(element -> validateSingleElementToInvalidate(
                         element,
                         info,
                         notInvalidatedElements,
                         hasAttempt0OK,
                         hasAttempt1Elements,
                         hasViewedElements
-                )
-        );
-
-        return Mono.just(info);
+                ))
+                .then(Mono.just(info))
+                .flatMap(response -> {
+                    if(elementsToInvalidate.stream().anyMatch(elementId -> elementId.contains("NOTIFICATION_VIEWED"))){
+                        return checkAttachmentsForInvalidateElements(info, info.getFilteredTimeline())
+                                .flatMap(errorCause -> fail(errorCause,errorCause.getErrorDetails()))
+                                .then(Mono.just(response));
+                    }
+                    return Mono.just(response);
+                });
     }
 
-    private void validateSingleElementToInvalidate(String element, NotificationReworkInfo info, Set<TimelineElementInternal> remainingTimeline, boolean hasAttempt0OK, boolean hasAttempt1Elements, boolean hasViewedElements) {
+    private Mono<Void> validateSingleElementToInvalidate(String element, NotificationReworkInfo info, Set<TimelineElementInternal> remainingTimeline, boolean hasAttempt0OK, boolean hasAttempt1Elements, boolean hasViewedElements) {
         TimelineEventIdParser parser = TimelineEventIdParser.parse(element);
 
         Optional<TimelineElementCategoryInt> categoryOpt = parser.category()
@@ -389,85 +401,118 @@ public class ReworkValidationHandler {
 
         if (categoryOpt.isEmpty()) {
             addInvalidationError(info, NotificationReworkErrorCause.INVALID_ELEMENT_CATEGORY, element);
-            return;
+            return Mono.empty();
         }
 
         TimelineElementCategoryInt category = categoryOpt.get();
 
-        NotificationReworkErrorCause errorCause = switch (category) {
+        switch (category) {
 
             case ANALOG_SUCCESS_WORKFLOW, ANALOG_FAILURE_WORKFLOW -> {
                 boolean hasAnotherAnalogWorkflow = remainingTimeline.stream()
                         .anyMatch(t -> ANALOG_SUCCESS_WORKFLOW.equals(t.getCategory())
                                 || ANALOG_FAILURE_WORKFLOW.equals(t.getCategory()));
 
-                yield hasAnotherAnalogWorkflow ? null : INVALID_ANALOG_WORKFLOW_ELEMENT;
+                NotificationReworkErrorCause errorCause = hasAnotherAnalogWorkflow ? null : INVALID_ANALOG_WORKFLOW_ELEMENT;
+                if (errorCause != null) {
+                    addInvalidationError(info, errorCause, element);
+                }
+                return Mono.empty();
             }
 
             case SEND_ANALOG_PROGRESS -> {
-                if(info.getActionDetail().getElementsToInvalidate().size() > 1) {
-                    yield INVALID_PROGRESS_ELEMENT;
+                if (info.getActionDetail().getElementsToInvalidate().size() > 1) {
+                    addInvalidationError(info, INVALID_PROGRESS_ELEMENT, element);
                 }
-                yield null;
+                return Mono.empty();
             }
 
             case PREPARE_ANALOG_DOMICILE,
                  PREPARE_ANALOG_DOMICILE_FAILURE,
                  COMPLETELY_UNREACHABLE,
                  COMPLETELY_UNREACHABLE_CREATION_REQUEST -> {
+
+                NotificationReworkErrorCause errorCause = null;
+
                 if (!isElementOfAttempt1(element, category)) {
-                    yield INVALID_ATTEMPT0_ELEMENT;
+                    errorCause = INVALID_ATTEMPT0_ELEMENT;
+                } else if (!hasAttempt0OK) {
+                    errorCause = INVALID_ATTEMPT1_ELEMENT;
+                } else if (hasAttempt1Elements) {
+                    errorCause = INVALID_ATTEMPT1_ELEMENTS;
                 }
 
-                if (!hasAttempt0OK) {
-                    yield INVALID_ATTEMPT1_ELEMENT;
+                if (errorCause != null) {
+                    addInvalidationError(info, errorCause, element);
                 }
-
-                if (hasAttempt1Elements) {
-                    yield INVALID_ATTEMPT1_ELEMENTS;
-                }
-
-                yield null;
+                return Mono.empty();
             }
 
             case NOTIFICATION_VIEWED,
                  NOTIFICATION_VIEWED_CREATION_REQUEST -> {
                 if (hasViewedElements) {
-                    yield INVALID_VIEWED_ELEMENT;
+                    addInvalidationError(info, INVALID_VIEWED_ELEMENT, element);
                 }
-
-                yield checkAttachmentsForInvalidateElements(info, info.getFilteredTimeline());
+                return Mono.empty();
             }
 
-            default -> INVALID_CATEGORY_TO_INVALIDATE;
-        };
-
-        if (errorCause != null) {
-            addInvalidationError(info, errorCause, element);
+            default -> {
+                addInvalidationError(info, INVALID_CATEGORY_TO_INVALIDATE, element);
+                return Mono.empty();
+            }
         }
     }
 
-    private NotificationReworkErrorCause checkAttachmentsForRestart(NotificationReworkInfo info, Set<TimelineElementInternal> timeline) {
-        boolean attachmentsExistOnViewed = checkAttachmentsOnViewed(info, timeline);
-        if(!attachmentsExistOnViewed) {
-            return null;
-        }
-        log.warn("Attachments exist on viewed for iun: [{}], recIndex: [{}], RESTART request cannot be processed", info.getAction().getIun(), info.getActionDetail().getReworkRecIndex());
-        return ATTACHMENTS_EXIST_ONVIEWED;
+    private Mono<NotificationReworkErrorCause> checkAttachmentsForRestart(NotificationReworkInfo info, Set<TimelineElementInternal> timeline) {
+        return checkAttachmentsOnViewed(info, timeline)
+                .flatMap(attachmentsExistOnViewed -> {
+                    if (!attachmentsExistOnViewed) {
+                        return null;
+                    }
+                    log.warn("Attachments exist on viewed for iun: [{}], recIndex: [{}], RESTART request cannot be processed", info.getAction().getIun(), info.getActionDetail().getReworkRecIndex());
+                    return Mono.just(ATTACHMENTS_EXIST_ONVIEWED);
+                });
     }
 
-    private NotificationReworkErrorCause checkAttachmentsForInvalidateElements(NotificationReworkInfo info, Set<TimelineElementInternal> filteredTimeline) {
-        boolean attachmentsExistOnViewed = checkAttachmentsOnViewed(info, filteredTimeline);
-        if (!attachmentsExistOnViewed) {
-            return null;
-        }
-        log.warn("Attachments exist on viewed for iun: [{}], recIndex: [{}], request to invalidate VIEWED elements cannot be processed", info.getAction().getIun(), info.getActionDetail().getReworkRecIndex());
-        return INVALID_ELEMENT_TO_INVALIDATE_ATTACHMENTS_EXIST_ONVIEWED;
+    private Mono<NotificationReworkErrorCause> checkAttachmentsForInvalidateElements(NotificationReworkInfo info, Set<TimelineElementInternal> filteredTimeline) {
+        return checkAttachmentsOnViewed(info, filteredTimeline)
+                .flatMap(attachmentsExistOnViewed -> {
+                    if (!attachmentsExistOnViewed) {
+                        return Mono.empty();
+                    }
+                    log.warn("Attachments exist on viewed for iun: [{}], recIndex: [{}], request to invalidate VIEWED elements cannot be processed", info.getAction().getIun(), info.getActionDetail().getReworkRecIndex());
+                    return Mono.just(INVALID_ELEMENT_TO_INVALIDATE_ATTACHMENTS_EXIST_ONVIEWED);
+                });
     }
 
-    private boolean checkAttachmentsOnViewed(NotificationReworkInfo info, Set<TimelineElementInternal> filteredTimeline) {
-        //TODO: DA IMPLEMENTARE - FLUSSO LOGICO: SE LA VISUALIZZAZIONE è AVVENUTA CON ALLEGATI PRESENTI NON PUò ESSERE INVALIDATA --> TRUE SE GLI ALLEGATI ERANO PRESENTI, FALSE SE NON ERANO PRESENTI
-        return false;
+    private Mono<Boolean> checkAttachmentsOnViewed(NotificationReworkInfo info, Set<TimelineElementInternal> filteredTimeline) {
+        Instant viewedDate = retrieveViewedDate(filteredTimeline);
+        List<NotificationDocumentInt> allDocuments = attachmentUtils.getAllAttachment(info.getNotification());
+
+        return Flux.fromIterable(allDocuments)
+                .concatMap(document ->
+                        safeStorageService.getFile(document.getRef().getKey(), true, false)
+                                .thenReturn(true)
+                                .onErrorResume(WebClientResponseException.class, ex -> {
+                                    if(ex.getStatusCode().equals(HttpStatus.GONE)) {
+                                        String responseBody = ex.getResponseBodyAsString();
+                                        Instant deletionTimestamp = extractDeletionTimestamp(responseBody);
+                                        return Mono.just(!deletionTimestamp.isBefore(viewedDate));
+                                    }
+                                    return Mono.error(ex);
+                                })
+                )
+                .takeUntil(existedAtViewedDate -> !existedAtViewedDate)
+                .all(Boolean::booleanValue);
+    }
+
+    private Instant extractDeletionTimestamp(String message) {
+        Pattern pattern = Pattern.compile("\\[deletionTimestamp=([^\\]]+)]");
+        Matcher matcher = pattern.matcher(message);
+        if (!matcher.find()) {
+            throw new IllegalStateException("Missing deletionTimestamp in SafeStorage 410 response: " + message);
+        }
+        return Instant.parse(matcher.group(1));
     }
 
     private static boolean hasOKAttempt0(Set<TimelineElementInternal> timelineElements) {

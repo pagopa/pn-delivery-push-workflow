@@ -91,7 +91,7 @@ public class AttachmentUtils {
         return res;
     }
 
-    private List<NotificationDocumentInt> getAllAttachment(NotificationInt notification)
+    public List<NotificationDocumentInt> getAllAttachment(NotificationInt notification)
     {
         List<NotificationDocumentInt> notificationDocuments = new ArrayList<>(notification.getDocuments());
 
