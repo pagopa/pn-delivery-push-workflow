@@ -396,14 +396,6 @@ public class ReworkValidationHandler {
 
         NotificationReworkErrorCause errorCause = switch (category) {
 
-            case ANALOG_SUCCESS_WORKFLOW, ANALOG_FAILURE_WORKFLOW -> {
-                boolean hasAnotherAnalogWorkflow = remainingTimeline.stream()
-                        .anyMatch(t -> ANALOG_SUCCESS_WORKFLOW.equals(t.getCategory())
-                                || ANALOG_FAILURE_WORKFLOW.equals(t.getCategory()));
-
-                yield hasAnotherAnalogWorkflow ? null : INVALID_ANALOG_WORKFLOW_ELEMENT;
-            }
-
             case SEND_ANALOG_PROGRESS -> {
                 if(info.getActionDetail().getElementsToInvalidate().size() > 1) {
                     yield INVALID_PROGRESS_ELEMENT;
@@ -414,7 +406,8 @@ public class ReworkValidationHandler {
             case PREPARE_ANALOG_DOMICILE,
                  PREPARE_ANALOG_DOMICILE_FAILURE,
                  COMPLETELY_UNREACHABLE,
-                 COMPLETELY_UNREACHABLE_CREATION_REQUEST -> {
+                 COMPLETELY_UNREACHABLE_CREATION_REQUEST,
+                 ANALOG_FAILURE_WORKFLOW -> {
                 if (!isElementOfAttempt1(element, category)) {
                     yield INVALID_ATTEMPT0_ELEMENT;
                 }
@@ -488,7 +481,8 @@ public class ReworkValidationHandler {
         return Objects.equals(attempt, 1)
                 || PREPARE_ANALOG_DOMICILE_FAILURE.equals(category)
                 || COMPLETELY_UNREACHABLE.equals(category)
-                || COMPLETELY_UNREACHABLE_CREATION_REQUEST.equals(category);
+                || COMPLETELY_UNREACHABLE_CREATION_REQUEST.equals(category)
+                || ANALOG_FAILURE_WORKFLOW.equals(category);
     }
 
     private void addInvalidationError(NotificationReworkInfo info, NotificationReworkErrorCause cause, String element) {
