@@ -1456,22 +1456,23 @@ class ReworkValidationHandlerTest {
                 .anyMatch(e -> NotificationReworkErrorCause.INVALID_CATEGORY_TO_INVALIDATE.getCause().equals(e.getCause())));
     }
 
+
     @Test
-    void handleNotificationInvalidateElements_INVALID_ANALOG_WORKFLOW_ELEMENT() {
+    void handleNotificationInvalidateElements_INVALID_CATEGORY_TO_INVALIDATE2() {
         NotificationReworkValidationDetails detail = baseInvalidateElementsDetail();
-        detail.setElementsToInvalidate(List.of("ANALOG_SUCCESS_WORKFLOW.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0"));
+        detail.setElementsToInvalidate(List.of("ANALOG_SUCCESS_WORKFLOW.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0"));
 
         Action action = baseAction(detail);
         NotificationInt notification = baseNotification();
 
         Set<TimelineElementInternal> timeline = validInvalidateTimeline();
-        timeline.add(timelineElement(
-                TimelineElementCategoryInt.ANALOG_SUCCESS_WORKFLOW,
-                "ANALOG_SUCCESS_WORKFLOW.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0",
-                AnalogSuccessWorkflowDetailsInt.builder().recIndex(0).build()
-        ));
 
         mockBaseValidFlow(notification, timeline);
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.ANALOG_SUCCESS_WORKFLOW,
+                "ANALOG_SUCCESS_WORKFLOW.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
+                AnalogSuccessWorkflowDetailsInt.builder().recIndex(0).build()
+        ));
 
         notificationReworkHandler.handleNotificationRework(action).block();
 
@@ -1481,35 +1482,7 @@ class ReworkValidationHandlerTest {
         verify(reworkRequestEventPool).scheduleFutureAction(captor.capture(), any());
 
         Assertions.assertTrue(captor.getValue().getError().stream()
-                .anyMatch(e -> NotificationReworkErrorCause.INVALID_ANALOG_WORKFLOW_ELEMENT.getCause().equals(e.getCause())));
-    }
-
-    @Test
-    void handleNotificationInvalidateElements_ANALOG_WORKFLOW_validWhenAnotherWorkflowRemains() {
-        NotificationReworkValidationDetails detail = baseInvalidateElementsDetail();
-        detail.setElementsToInvalidate(List.of("ANALOG_SUCCESS_WORKFLOW.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0"));
-
-        Action action = baseAction(detail);
-        NotificationInt notification = baseNotification();
-
-        Set<TimelineElementInternal> timeline = validInvalidateTimeline();
-        timeline.add(timelineElement(
-                TimelineElementCategoryInt.ANALOG_SUCCESS_WORKFLOW,
-                "ANALOG_SUCCESS_WORKFLOW.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0",
-                AnalogSuccessWorkflowDetailsInt.builder().recIndex(0).build()
-        ));
-        timeline.add(timelineElement(
-                TimelineElementCategoryInt.ANALOG_FAILURE_WORKFLOW,
-                "ANALOG_FAILURE_WORKFLOW.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
-                AnalogFailureWorkflowDetailsInt.builder().recIndex(0).build()
-        ));
-
-        mockBaseValidFlow(notification, timeline);
-
-        notificationReworkHandler.handleNotificationRework(action).block();
-
-        verify(actionManagerApi).insertAction(any());
-        verify(reworkRequestEventPool, never()).scheduleFutureAction(any(), any());
+                .anyMatch(e -> NotificationReworkErrorCause.INVALID_CATEGORY_TO_INVALIDATE.getCause().equals(e.getCause())));
     }
 
     @Test
