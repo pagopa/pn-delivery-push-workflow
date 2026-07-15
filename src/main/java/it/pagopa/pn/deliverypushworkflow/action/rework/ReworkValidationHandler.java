@@ -180,6 +180,12 @@ public class ReworkValidationHandler {
                     )
                     .collectList()
                     .map(errors -> {
+                        if(RESTART.equals(info.getActionDetail().getRequestType()) && info.isStatusViewed() && CollectionUtils.isEmpty(errors)) {
+                            info.getErrorList().add(NotificationReworkError.builder()
+                                    .cause(NotificationReworkErrorCause.ATTACHMENTS_EXIST_ONVIEWED.getCause())
+                                    .description(NotificationReworkErrorCause.ATTACHMENTS_EXIST_ONVIEWED.getErrorDetails())
+                                    .build());
+                        }
                         info.getErrorList().addAll(errors);
                         return info;
                     })
@@ -298,11 +304,7 @@ public class ReworkValidationHandler {
         ReworkRequestTypeEnum requestType = info.getActionDetail().getRequestType();
         NotificationReworkValidationDetails detail = info.getActionDetail();
         boolean isStatusViewed = timelineUtils.checkIsNotificationViewed(info.getNotification().getIun(), getRecIndexFromAction(info.getActionDetail()));
-        if (isStatusViewed && RESTART.equals(requestType)) {
-            return checkAttachmentsForRestart(info, info.getFilteredTimeline())
-                    .flatMap(errorCause -> this.<NotificationReworkInfo>fail(errorCause, errorCause.getErrorDetails()))
-                    .switchIfEmpty(Mono.defer(() -> validateTimeline(info, recIndex, detail, attempt, true, requestType).thenReturn(info)));
-        }
+        info.setStatusViewed(isStatusViewed);
 
         if (INVALIDATE_ELEMENTS.equals(requestType)) {
             return validateTimeline(info, recIndex, detail, attempt, isStatusViewed, requestType)
@@ -463,17 +465,6 @@ public class ReworkValidationHandler {
         }
     }
 
-    private Mono<NotificationReworkErrorCause> checkAttachmentsForRestart(NotificationReworkInfo info, Set<TimelineElementInternal> timeline) {
-        return checkAttachmentsOnViewed(info, timeline)
-                .flatMap(attachmentsExistOnViewed -> {
-                    if (!attachmentsExistOnViewed) {
-                        return null;
-                    }
-                    log.warn("Attachments exist on viewed for iun: [{}], recIndex: [{}], RESTART request cannot be processed", info.getAction().getIun(), info.getActionDetail().getReworkRecIndex());
-                    return Mono.just(ATTACHMENTS_EXIST_ONVIEWED);
-                });
-    }
-
     private Mono<NotificationReworkErrorCause> checkAttachmentsForInvalidateElements(NotificationReworkInfo info, Set<TimelineElementInternal> filteredTimeline) {
         return checkAttachmentsOnViewed(info, filteredTimeline)
                 .flatMap(attachmentsExistOnViewed -> {
@@ -487,7 +478,7 @@ public class ReworkValidationHandler {
 
     private Mono<Boolean> checkAttachmentsOnViewed(NotificationReworkInfo info, Set<TimelineElementInternal> filteredTimeline) {
         Instant viewedDate = retrieveViewedDate(filteredTimeline);
-        List<NotificationDocumentInt> allDocuments = attachmentUtils.getAllAttachment(info.getNotification());
+        List<NotificationDocumentInt> allDocuments = attachmentUtils.getAllAttachments(info.getNotification());
 
         return Flux.fromIterable(allDocuments)
                 .concatMap(document ->

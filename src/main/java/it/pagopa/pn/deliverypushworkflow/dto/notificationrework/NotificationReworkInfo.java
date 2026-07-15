@@ -21,4 +21,5 @@ public class NotificationReworkInfo {
     private String notificationStatus;
     private NotificationInt notification;
     private int recipientSize;
+    private boolean isStatusViewed;
 }
