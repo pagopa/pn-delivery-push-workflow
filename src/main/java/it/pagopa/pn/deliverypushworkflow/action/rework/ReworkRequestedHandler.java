@@ -41,7 +41,7 @@ import java.time.OffsetDateTime;
 import java.util.*;
 
 import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkConstant.*;
-import static it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventId.SEND_ANALOG_DOMICILE;
+import static it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventId.*;
 
 @Slf4j
 @Component
@@ -119,7 +119,7 @@ public class ReworkRequestedHandler {
         List<String> timelineElementsToInvalidate = new ArrayList<>();
 
         return Mono.just(timelineElements)
-                .flatMap(timeline -> computeTimelineElementToInvalidate(timeline, detail.getReworkRecIndex(), detail.getReworkAttempt(), detail.getRequestType()))
+                .flatMap(timeline -> computeTimelineElementToInvalidate(timeline, detail.getReworkRecIndex(), detail.getReworkAttempt(), detail.getRequestType(), detail.isNeedToInvalidateViewed()))
                 .doOnNext(timelineElementsToInvalidate::addAll)
                 .flatMap(timelineElementIds -> startNotificationReworkProcess(detail).thenReturn(timelineElementIds))
                 .flatMap(strings -> updateAttachmentRetention(detail.getCreatedAt(), notificationInt.getIun(), notificationInt.getDocuments(), detail.getReworkAttempt()))
@@ -138,7 +138,7 @@ public class ReworkRequestedHandler {
                 .thenReturn(notificationInt);
     }
 
-    private Mono<List<String>> computeTimelineElementToInvalidate(Set<TimelineElementInternal> timelineElementInternalList, String recIndex, String attemptId, ReworkRequestTypeEnum reworkRequestType) {
+    private Mono<List<String>> computeTimelineElementToInvalidate(Set<TimelineElementInternal> timelineElementInternalList, String recIndex, String attemptId, ReworkRequestTypeEnum reworkRequestType, boolean needToInvalidateViewed) {
         log.debug("Starting computeTimelineElementToInvalidate for recIndex {} and attemptId {}", recIndex, attemptId);
         return Flux.fromIterable(timelineElementInternalList)
                 .filter(elem -> pnDeliveryPushWorkflowConfigs.getInvalidableCategories().contains(elem.getCategory().name()))
@@ -149,7 +149,19 @@ public class ReworkRequestedHandler {
                 .filter(timelineElementInternal -> checkDeliveryDetailCode(timelineElementInternal, attemptId, reworkRequestType))
                 .map(TimelineElementInternal::getElementId)
                 .collectList()
+                .map(elementsToInvalidate -> removeViewedElementsIfNeeded(elementsToInvalidate, needToInvalidateViewed))
                 .doOnNext(list -> log.debug("Invalidable elements found: {}", list));
+    }
+
+    private List<String> removeViewedElementsIfNeeded(List<String> timelineElementInternal, boolean needToInvalidateViewed) {
+        if (!needToInvalidateViewed) {
+            return timelineElementInternal.stream()
+                    .filter(elementId -> !elementId.contains(NOTIFICATION_VIEWED.getValue()) &&
+                            !elementId.contains(NOTIFICATION_VIEWED_CREATION_REQUEST.name()))
+                    .toList();
+        }
+
+        return timelineElementInternal;
     }
 
     private Mono<String> updateAttachmentRetention(Instant actionCreatedAt, String iun, List<NotificationDocumentInt> documents, String reworkAttempt) {

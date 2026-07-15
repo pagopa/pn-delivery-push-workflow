@@ -99,10 +99,10 @@ public class ReworkValidationHandler {
                 .doOnNext(reworkInfo::setRequestId)
                 .flatMap(notificationReworkInfo -> checkNotificationAddress(reworkInfo, reworkAttempt, reworkFinalStatus))
                 .thenReturn(reworkInfo)
-                .flatMap(info -> this.checkErrorList(info.getErrorList(), info.getAction(), reworkInfo.getActionDetail(), info.getRequestId()))
+                .flatMap(info -> this.checkErrorList(reworkInfo, info.getErrorList()))
                 .onErrorResume(NotificationReworkValidationException.class, e -> {
                     log.error("Error during handleRework for iun {}: {}", action.getIun(), e.getMessage(), e);
-                    return this.checkErrorList(e.getErrors(), action, reworkInfo.getActionDetail(), null);
+                    return this.checkErrorList(reworkInfo, e.getErrors());
                 })
                 .onErrorResume(PnHttpResponseException.class, e -> {
                     log.error("Error inserting reworked action for iun {}: {}", action.getIun(), e.getMessage(), e);
@@ -111,7 +111,7 @@ public class ReworkValidationHandler {
                             .cause(NotificationReworkErrorCause.DUPLICATED_ACTION_ERROR.getCause())
                             .description(NotificationReworkErrorCause.DUPLICATED_ACTION_ERROR.getErrorDetails())
                             .build();
-                    return this.checkErrorList(List.of(error), action, reworkInfo.getActionDetail(), null);
+                    return this.checkErrorList(reworkInfo, List.of(error));
                 });
     }
 
@@ -180,12 +180,6 @@ public class ReworkValidationHandler {
                     )
                     .collectList()
                     .map(errors -> {
-                        if(RESTART.equals(info.getActionDetail().getRequestType()) && info.isStatusViewed() && CollectionUtils.isEmpty(errors)) {
-                            info.getErrorList().add(NotificationReworkError.builder()
-                                    .cause(NotificationReworkErrorCause.ATTACHMENTS_EXIST_ONVIEWED.getCause())
-                                    .description(NotificationReworkErrorCause.ATTACHMENTS_EXIST_ONVIEWED.getErrorDetails())
-                                    .build());
-                        }
                         info.getErrorList().addAll(errors);
                         return info;
                     })
@@ -269,16 +263,16 @@ public class ReworkValidationHandler {
         }
     }
 
-    private Mono<Void> checkErrorList(List<NotificationReworkError> errorList, Action action, NotificationReworkValidationDetails detail, String requestId) {
-        log.debug("checkErrorList for iun {}: {}", action.getIun(), errorList);
+    private Mono<Void> checkErrorList(NotificationReworkInfo info, List<NotificationReworkError> errorList) {
+        log.debug("checkErrorList for iun {}: {}", info.getAction().getIun(), errorList);
         return Mono.just(errorList)
                 .flatMap(errors -> {
                     if (errors.isEmpty()) {
-                        log.info("No errors found, inserting new action for iun {}", action.getIun());
-                        actionManagerApi.insertAction(getNewAction(action, detail, requestId));
+                        log.info("No errors found, inserting new action for iun {}", info.getAction().getIun());
+                        actionManagerApi.insertAction(getNewAction(info, info.getAction(), info.getActionDetail(), info.getRequestId()));
                     } else {
-                        log.error("Errors found for iun {}: {}", action, errors);
-                        reworkRequestEventPool.scheduleFutureAction(getReworkRequestEventAction(errors, detail, action), ReworkRequestEventType.NOTIFICATION_REWORK_REQUESTED);
+                        log.error("Errors found for iun {}: {}", info.getAction(), errors);
+                        reworkRequestEventPool.scheduleFutureAction(getReworkRequestEventAction(errors, info.getActionDetail(), info.getAction()), ReworkRequestEventType.NOTIFICATION_REWORK_REQUESTED);
                     }
                     return Mono.empty();
                 });
@@ -304,7 +298,6 @@ public class ReworkValidationHandler {
         ReworkRequestTypeEnum requestType = info.getActionDetail().getRequestType();
         NotificationReworkValidationDetails detail = info.getActionDetail();
         boolean isStatusViewed = timelineUtils.checkIsNotificationViewed(info.getNotification().getIun(), getRecIndexFromAction(info.getActionDetail()));
-        info.setStatusViewed(isStatusViewed);
 
         if (INVALIDATE_ELEMENTS.equals(requestType)) {
             return validateTimeline(info, recIndex, detail, attempt, isStatusViewed, requestType)
@@ -319,7 +312,7 @@ public class ReworkValidationHandler {
     private Mono<Void> validateTimeline(NotificationReworkInfo info, String recIndex, NotificationReworkValidationDetails detail, String attempt, boolean isStatusViewed, ReworkRequestTypeEnum requestType) {
         return checkRecIndexAndFilter(info, recIndex)
                 .flatMap(timeline -> checkForPaymentCategory(timeline, detail))
-                .flatMap(timeline -> checkIfAttemptOneExistsForReworkAttemptZero(timeline, attempt, isStatusViewed, requestType))
+                .flatMap(timeline -> checkViewed(info, timeline, attempt, isStatusViewed, requestType, detail.isCanInvalidateViewed()))
                 .map(timeline -> timeline.stream().filter(timelineElementInternal ->
                                 INVALIDATE_ELEMENTS.equals(info.getActionDetail().getRequestType()) ||
                                         (timelineElementInternal.getElementId().contains(attempt)
@@ -410,18 +403,6 @@ public class ReworkValidationHandler {
 
         switch (category) {
 
-            case ANALOG_SUCCESS_WORKFLOW, ANALOG_FAILURE_WORKFLOW -> {
-                boolean hasAnotherAnalogWorkflow = remainingTimeline.stream()
-                        .anyMatch(t -> ANALOG_SUCCESS_WORKFLOW.equals(t.getCategory())
-                                || ANALOG_FAILURE_WORKFLOW.equals(t.getCategory()));
-
-                NotificationReworkErrorCause errorCause = hasAnotherAnalogWorkflow ? null : INVALID_ANALOG_WORKFLOW_ELEMENT;
-                if (errorCause != null) {
-                    addInvalidationError(info, errorCause, element);
-                }
-                return Mono.empty();
-            }
-
             case SEND_ANALOG_PROGRESS -> {
                 if (info.getActionDetail().getElementsToInvalidate().size() > 1) {
                     addInvalidationError(info, INVALID_PROGRESS_ELEMENT, element);
@@ -432,7 +413,8 @@ public class ReworkValidationHandler {
             case PREPARE_ANALOG_DOMICILE,
                  PREPARE_ANALOG_DOMICILE_FAILURE,
                  COMPLETELY_UNREACHABLE,
-                 COMPLETELY_UNREACHABLE_CREATION_REQUEST -> {
+                 COMPLETELY_UNREACHABLE_CREATION_REQUEST,
+                 ANALOG_FAILURE_WORKFLOW -> {
 
                 NotificationReworkErrorCause errorCause = null;
 
@@ -478,7 +460,7 @@ public class ReworkValidationHandler {
 
     private Mono<Boolean> checkAttachmentsOnViewed(NotificationReworkInfo info, Set<TimelineElementInternal> filteredTimeline) {
         Instant viewedDate = retrieveViewedDate(filteredTimeline);
-        List<NotificationDocumentInt> allDocuments = attachmentUtils.getAllAttachments(info.getNotification());
+        List<NotificationDocumentInt> allDocuments = attachmentUtils.getAllAttachmentsForSpecificRecipient(info.getNotification(), info.getActionDetail().getReworkRecIndex());
 
         return Flux.fromIterable(allDocuments)
                 .concatMap(document ->
@@ -524,7 +506,8 @@ public class ReworkValidationHandler {
         return Objects.equals(attempt, 1)
                 || PREPARE_ANALOG_DOMICILE_FAILURE.equals(category)
                 || COMPLETELY_UNREACHABLE.equals(category)
-                || COMPLETELY_UNREACHABLE_CREATION_REQUEST.equals(category);
+                || COMPLETELY_UNREACHABLE_CREATION_REQUEST.equals(category)
+                || ANALOG_FAILURE_WORKFLOW.equals(category);
     }
 
     private void addInvalidationError(NotificationReworkInfo info, NotificationReworkErrorCause cause, String element) {
@@ -565,13 +548,48 @@ public class ReworkValidationHandler {
         return Mono.just(timeline);
     }
 
-    private Mono<Set<TimelineElementInternal>> checkIfAttemptOneExistsForReworkAttemptZero(Set<TimelineElementInternal> timeline, String attempt, boolean isStatusViewed, ReworkRequestTypeEnum requestType) {
-        if (isStatusViewed && REWORK.equals(requestType) && ATTEMPT_0.equalsIgnoreCase(attempt) &&
-                timeline.stream().anyMatch(timelineElementInternal -> timelineElementInternal.getElementId().contains(ATTEMPT_1))) {
+    private Mono<Set<TimelineElementInternal>> checkViewed(NotificationReworkInfo info, Set<TimelineElementInternal> timeline, String attempt, boolean isStatusViewed, ReworkRequestTypeEnum requestType, boolean canInvalidateViewed) {
+        if (!isStatusViewed || INVALIDATE_ELEMENTS.equals(requestType)) {
+            return Mono.just(timeline);
+        }
+
+        boolean canInvalidateViewedElements = canInvalidateViewed && !checkIfViewedIsValid(timeline);
+
+        if (RESTART.equals(requestType)) {
+            info.setNeedToInvalidateViewed(true);
+            return canInvalidateViewedElements ? Mono.just(timeline) : fail(NotificationReworkErrorCause.INVALID_VIEWED_ELEMENTS, INVALID_VIEWED_ELEMENTS.getErrorDetails());
+        }
+
+        if (REWORK.equals(requestType) && ATTEMPT_0.equalsIgnoreCase(attempt) && timeline.stream().anyMatch(element -> element.getElementId().contains(ATTEMPT_1))) {
+            if (canInvalidateViewedElements) {
+                info.setNeedToInvalidateViewed(true);
+                return Mono.just(timeline);
+            }
+
+            if (canInvalidateViewed) {
+                return fail(NotificationReworkErrorCause.INVALID_VIEWED_ELEMENTS, INVALID_VIEWED_ELEMENTS.getErrorDetails());
+            }
+
             return fail(NotificationReworkErrorCause.INVALID_NOTIFICATION_STATUS, "Invalid status VIEWED if ATTEMPT_1 exists");
         }
 
         return Mono.just(timeline);
+    }
+
+    private boolean checkIfViewedIsValid(Set<TimelineElementInternal> timeline) {
+        Instant refinementDate = retrieveRefinementOrDeceseadDate(timeline);
+        Instant viewedDate = retrieveViewedDate(timeline);
+
+        if(Objects.isNull(refinementDate)){
+            return true;
+        }
+
+        if (Objects.nonNull(viewedDate)) {
+            return viewedDate.isBefore(refinementDate) ||
+                    Duration.between(refinementDate, viewedDate).toDays() <= pnDeliveryPushWorkflowConfigs.getRetentionAttachmentDaysAfterRefinement();
+        }
+
+        return false;
     }
 
     private Mono<Void> checkNotificationTimeline(NotificationReworkInfo info, String recIndex, String attempt, boolean isStatusViewed) {
@@ -609,6 +627,14 @@ public class ReworkValidationHandler {
                 .map(details -> (ScheduleRefinementDetailsInt) details)
                 .findFirst()
                 .map(ScheduleRefinementDetailsInt::getSchedulingDate)
+                .orElse(null);
+    }
+
+    private static Instant retrieveRefinementOrDeceseadDate(Set<TimelineElementInternal> timeline) {
+        return timeline.stream()
+                .filter(e -> e.getCategory() == REFINEMENT || e.getCategory() == ANALOG_WORKFLOW_RECIPIENT_DECEASED)
+                .findFirst()
+                .map(TimelineElementInternal::getIngestionTimestamp)
                 .orElse(null);
     }
 
@@ -672,7 +698,7 @@ public class ReworkValidationHandler {
                 NotificationReworkError.builder().cause(cause.getCause()).description(details).build()));
     }
 
-    private NewAction getNewAction(Action action, NotificationReworkValidationDetails detail, String requestId) {
+    private NewAction getNewAction(NotificationReworkInfo info, Action action, NotificationReworkValidationDetails detail, String requestId) {
         NewAction newAction = new NewAction();
         newAction.setActionId(action.getActionId() + POST_VALIDATION_PROCESS);
         newAction.setIun(action.getIun());
@@ -686,6 +712,7 @@ public class ReworkValidationHandler {
         request.setCreatedAt(Instant.now());
         request.setRequestType(detail.getRequestType());
         request.setElementsToInvalidate(detail.getElementsToInvalidate());
+        request.setNeedToInvalidateViewed(info.isNeedToInvalidateViewed());
         try {
             objectMapper.registerModule(new JavaTimeModule());
             newAction.setDetails(objectMapper.writeValueAsString(request));

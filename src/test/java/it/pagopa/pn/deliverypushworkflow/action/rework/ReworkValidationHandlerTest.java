@@ -1264,9 +1264,6 @@ class ReworkValidationHandlerTest {
 
         NotificationHistoryResponse notificationHistoryResponse = new NotificationHistoryResponse();
         notificationHistoryResponse.setNotificationStatus(NotificationStatus.EFFECTIVE_DATE);
-        FileDownloadResponse fileDownloadResponse = new FileDownloadResponse();
-        fileDownloadResponse.setRetentionUntil(OffsetDateTime.now().plusDays(120));
-        when(safeStorageService.getFile(any(), any(), any())).thenReturn(Mono.just(fileDownloadResponse));
 
         when(timelineService.getTimeline(anyString(), anyBoolean())).thenReturn(timeline);
         when(timelineUtils.checkIsNotificationCancellationRequested(any())).thenReturn(false);
@@ -1281,8 +1278,8 @@ class ReworkValidationHandlerTest {
         ArgumentCaptor<ReworkRequestEventAction> captor = ArgumentCaptor.forClass(ReworkRequestEventAction.class);
         verify(reworkRequestEventPool, times(1)).scheduleFutureAction(captor.capture(), any());
         List<NotificationReworkError> capturedErrorList = captor.getValue().getError();
-        Assertions.assertEquals(NotificationReworkErrorCause.ATTACHMENTS_EXIST_ONVIEWED.getCause(), capturedErrorList.getFirst().getCause());
-        Assertions.assertEquals("La visualizzazione è stata effettuata prima della scadenza degli allegati, non è possibile procedere con la richiesta di restart", capturedErrorList.getFirst().getDescription());
+        Assertions.assertEquals(NotificationReworkErrorCause.INVALID_VIEWED_ELEMENTS.getCause(), capturedErrorList.getFirst().getCause());
+        Assertions.assertEquals("Non è possibile procedere alla richiesta di correzione, la visualizzazione non è invalidabile", capturedErrorList.getFirst().getDescription());
     }
 
     @Test
@@ -1652,7 +1649,7 @@ class ReworkValidationHandlerTest {
         WebClientResponseException exception = mock(WebClientResponseException.class);
         when(exception.getStatusCode()).thenReturn(HttpStatus.GONE);
         when(exception.getResponseBodyAsString()).thenReturn("[deletionTimestamp=2010-06-24T10:15:30Z]");
-        when(attachmentUtils.getAllAttachments(any())).thenReturn(List.of(NotificationDocumentInt.builder()
+        when(attachmentUtils.getAllAttachmentsForSpecificRecipient(any(), anyString())).thenReturn(List.of(NotificationDocumentInt.builder()
                 .ref(NotificationDocumentInt.Ref.builder().key("key").build()).build()));
         when(safeStorageService.getFile(any(), any(), any())).thenReturn(Mono.error(exception));
 
@@ -1699,7 +1696,7 @@ class ReworkValidationHandlerTest {
         WebClientResponseException exception = mock(WebClientResponseException.class);
         when(exception.getStatusCode()).thenReturn(HttpStatus.GONE);
         when(exception.getResponseBodyAsString()).thenReturn("[deletionTimestamp=2010-06-24T10:15:30Z]");
-        when(attachmentUtils.getAllAttachments(any())).thenReturn(List.of(NotificationDocumentInt.builder()
+        when(attachmentUtils.getAllAttachmentsForSpecificRecipient(any(), anyString())).thenReturn(List.of(NotificationDocumentInt.builder()
                 .ref(NotificationDocumentInt.Ref.builder().key("key").build()).build()));
         when(safeStorageService.getFile(any(), any(), any())).thenReturn(Mono.error(exception));
 
@@ -1742,7 +1739,7 @@ class ReworkValidationHandlerTest {
         ));
 
         mockBaseValidFlow(notification, timeline);
-        when(attachmentUtils.getAllAttachments(any())).thenReturn(List.of(NotificationDocumentInt.builder()
+        when(attachmentUtils.getAllAttachmentsForSpecificRecipient(any(), anyString())).thenReturn(List.of(NotificationDocumentInt.builder()
                 .ref(NotificationDocumentInt.Ref.builder().key("key").build()).build()));
         FileDownloadResponse fileDownloadResponse = new FileDownloadResponse();
         fileDownloadResponse.setRetentionUntil(OffsetDateTime.now().plusDays(120));
@@ -1791,7 +1788,7 @@ class ReworkValidationHandlerTest {
         ));
 
         mockBaseValidFlow(notification, timeline);
-        when(attachmentUtils.getAllAttachments(any())).thenReturn(List.of(NotificationDocumentInt.builder()
+        when(attachmentUtils.getAllAttachmentsForSpecificRecipient(any(), anyString())).thenReturn(List.of(NotificationDocumentInt.builder()
                 .ref(NotificationDocumentInt.Ref.builder().key("key").build()).build()));
         FileDownloadResponse fileDownloadResponse = new FileDownloadResponse();
         fileDownloadResponse.setRetentionUntil(OffsetDateTime.now().plusDays(120));
@@ -1840,7 +1837,7 @@ class ReworkValidationHandlerTest {
         ));
 
         mockBaseValidFlow(notification, timeline);
-        when(attachmentUtils.getAllAttachments(any())).thenReturn(List.of(NotificationDocumentInt.builder()
+        when(attachmentUtils.getAllAttachmentsForSpecificRecipient(any(), anyString())).thenReturn(List.of(NotificationDocumentInt.builder()
                 .ref(NotificationDocumentInt.Ref.builder().key("key").build()).build(), NotificationDocumentInt.builder()
                 .ref(NotificationDocumentInt.Ref.builder().key("key2").build()).build()));
         FileDownloadResponse fileDownloadResponse = new FileDownloadResponse();
@@ -1889,7 +1886,7 @@ class ReworkValidationHandlerTest {
         ));
 
         mockBaseValidFlow(notification, timeline);
-        when(attachmentUtils.getAllAttachments(any())).thenReturn(List.of(NotificationDocumentInt.builder()
+        when(attachmentUtils.getAllAttachmentsForSpecificRecipient(any(), anyString())).thenReturn(List.of(NotificationDocumentInt.builder()
                 .ref(NotificationDocumentInt.Ref.builder().key("key").build()).build(), NotificationDocumentInt.builder()
                 .ref(NotificationDocumentInt.Ref.builder().key("key2").build()).build()));
         WebClientResponseException exception = mock(WebClientResponseException.class);
