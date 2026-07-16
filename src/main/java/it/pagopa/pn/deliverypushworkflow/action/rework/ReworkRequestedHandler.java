@@ -149,11 +149,11 @@ public class ReworkRequestedHandler {
                 .filter(timelineElementInternal -> checkDeliveryDetailCode(timelineElementInternal, attemptId, reworkRequestType))
                 .map(TimelineElementInternal::getElementId)
                 .collectList()
-                .map(elementsToInvalidate -> removeViewedElementsIfNeeded(elementsToInvalidate, needToInvalidateViewed))
+                .map(elementsToInvalidate -> removeViewedElementsIfNotNeeded(elementsToInvalidate, needToInvalidateViewed))
                 .doOnNext(list -> log.debug("Invalidable elements found: {}", list));
     }
 
-    private List<String> removeViewedElementsIfNeeded(List<String> timelineElementInternal, boolean needToInvalidateViewed) {
+    private List<String> removeViewedElementsIfNotNeeded(List<String> timelineElementInternal, boolean needToInvalidateViewed) {
         if (!needToInvalidateViewed) {
             return timelineElementInternal.stream()
                     .filter(elementId -> !elementId.contains(NOTIFICATION_VIEWED.getValue()) &&

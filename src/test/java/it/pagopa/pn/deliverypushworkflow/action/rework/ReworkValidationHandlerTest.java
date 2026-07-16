@@ -1730,12 +1730,12 @@ class ReworkValidationHandlerTest {
         timeline.add(timelineElement(
                 TimelineElementCategoryInt.NOTIFICATION_VIEWED,
                 "NOTIFICATION_VIEWED.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
-                NotificationViewedDetailsInt.builder().recIndex(0).build()
+                NotificationViewedDetailsInt.builder().recIndex(0).eventTimestamp(Instant.EPOCH).build()
         ));
         timeline.add(timelineElement(
                 TimelineElementCategoryInt.NOTIFICATION_VIEWED_CREATION_REQUEST,
                 "NOTIFICATION_VIEWED_CREATION_REQUEST.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
-                NotificationViewedCreationRequestDetailsInt.builder().recIndex(0).build()
+                NotificationViewedCreationRequestDetailsInt.builder().recIndex(0).eventTimestamp(Instant.EPOCH).build()
         ));
 
         mockBaseValidFlow(notification, timeline);
@@ -1779,12 +1779,12 @@ class ReworkValidationHandlerTest {
         timeline.add(timelineElement(
                 TimelineElementCategoryInt.NOTIFICATION_VIEWED,
                 "NOTIFICATION_VIEWED.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
-                NotificationViewedDetailsInt.builder().recIndex(0).build()
+                NotificationViewedDetailsInt.builder().recIndex(0).eventTimestamp(Instant.EPOCH).build()
         ));
         timeline.add(timelineElement(
                 TimelineElementCategoryInt.NOTIFICATION_VIEWED_CREATION_REQUEST,
                 "NOTIFICATION_VIEWED_CREATION_REQUEST.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
-                NotificationViewedCreationRequestDetailsInt.builder().recIndex(0).build()
+                NotificationViewedCreationRequestDetailsInt.builder().recIndex(0).eventTimestamp(Instant.EPOCH).build()
         ));
 
         mockBaseValidFlow(notification, timeline);

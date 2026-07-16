@@ -448,7 +448,7 @@ public class ReworkValidationHandler {
     }
 
     private Mono<NotificationReworkErrorCause> checkAttachmentsForInvalidateElements(NotificationReworkInfo info, Set<TimelineElementInternal> filteredTimeline) {
-        return checkAttachmentsOnViewed(info, filteredTimeline)
+        return allAttachmentsWerePresentOnViewed(info, filteredTimeline)
                 .flatMap(attachmentsExistOnViewed -> {
                     if (!attachmentsExistOnViewed) {
                         return Mono.empty();
@@ -458,10 +458,12 @@ public class ReworkValidationHandler {
                 });
     }
 
-    private Mono<Boolean> checkAttachmentsOnViewed(NotificationReworkInfo info, Set<TimelineElementInternal> filteredTimeline) {
+    private Mono<Boolean> allAttachmentsWerePresentOnViewed(NotificationReworkInfo info, Set<TimelineElementInternal> filteredTimeline) {
         Instant viewedDate = retrieveViewedDate(filteredTimeline);
         List<NotificationDocumentInt> allDocuments = attachmentUtils.getAllAttachmentsForSpecificRecipient(info.getNotification(), info.getActionDetail().getReworkRecIndex());
-
+        if(CollectionUtils.isEmpty(allDocuments) || Objects.isNull(viewedDate)){
+            return Mono.just(false);
+        }
         return Flux.fromIterable(allDocuments)
                 .concatMap(document ->
                         safeStorageService.getFile(document.getRef().getKey(), true, false)
@@ -475,7 +477,6 @@ public class ReworkValidationHandler {
                                     return Mono.error(ex);
                                 })
                 )
-                .takeUntil(existedAtViewedDate -> !existedAtViewedDate)
                 .all(Boolean::booleanValue);
     }
 
@@ -577,7 +578,7 @@ public class ReworkValidationHandler {
     }
 
     private boolean checkIfViewedIsValid(Set<TimelineElementInternal> timeline) {
-        Instant refinementDate = retrieveRefinementOrDeceseadDate(timeline);
+        Instant refinementDate = retrieveRefinementOrDeceasedDate(timeline);
         Instant viewedDate = retrieveViewedDate(timeline);
 
         if(Objects.isNull(refinementDate)){
@@ -630,7 +631,7 @@ public class ReworkValidationHandler {
                 .orElse(null);
     }
 
-    private static Instant retrieveRefinementOrDeceseadDate(Set<TimelineElementInternal> timeline) {
+    private static Instant retrieveRefinementOrDeceasedDate(Set<TimelineElementInternal> timeline) {
         return timeline.stream()
                 .filter(e -> e.getCategory() == REFINEMENT || e.getCategory() == ANALOG_WORKFLOW_RECIPIENT_DECEASED)
                 .findFirst()
