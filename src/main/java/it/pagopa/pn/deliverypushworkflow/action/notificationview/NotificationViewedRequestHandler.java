@@ -38,16 +38,16 @@ public class NotificationViewedRequestHandler {
     //La richiesta proviene da delivery (La visualizzazione potrebbe essere da parte del delegato o da parte del destinatario)
     public void handleViewNotificationDelivery(NotificationViewedInt notificationViewedInt) {
         MDCUtils.addMDCToContextAndExecute(
-                handleViewNotification(notificationViewedInt)
+                handleViewNotification(notificationViewedInt, false)
         ).block();
     }
 
     //La richiesta proviene da RADD, visualizzazione da parte del destinatario
     public Mono<Void> handleViewNotificationRadd(NotificationViewedInt notificationViewedInt) {
-        return handleViewNotification(notificationViewedInt);
+        return handleViewNotification(notificationViewedInt, true);
     }
 
-    private Mono<Void> handleViewNotification(NotificationViewedInt notificationViewedInt) {
+    private Mono<Void> handleViewNotification(NotificationViewedInt notificationViewedInt, boolean isRadd) {
 
         return Mono.fromCallable(() -> (
                         timelineUtils.checkIsNotificationCancellationRequested(notificationViewedInt.getIun())))
@@ -72,7 +72,7 @@ public class NotificationViewedRequestHandler {
                         return Mono.fromCallable(() -> notificationService.getNotificationByIun(notificationViewedInt.getIun()))
                                 .flatMap( notification -> {
                                     NotificationRecipientInt recipient = notificationUtils.getRecipientFromIndex(notification, notificationViewedInt.getRecipientIndex());
-                                    return viewNotification.startVewNotificationProcess(notification, recipient, notificationViewedInt)
+                                    return viewNotification.startVewNotificationProcess(notification, recipient, notificationViewedInt, isRadd)
                                             .doOnNext(processCompleted -> {
                                                 if (Boolean.TRUE.equals(processCompleted)) {
                                                     logEvent.generateSuccess().log();
