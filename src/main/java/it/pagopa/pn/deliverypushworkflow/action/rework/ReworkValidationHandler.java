@@ -395,7 +395,7 @@ public class ReworkValidationHandler {
                 });
 
         if (categoryOpt.isEmpty()) {
-            addInvalidationError(info, NotificationReworkErrorCause.INVALID_ELEMENT_CATEGORY, element);
+            addInvalidationError(info, NotificationReworkErrorCause.INVALID_ELEMENT_CATEGORY.getCause(), String.format(INVALID_ELEMENT_CATEGORY.getErrorDetails(),element));
             return Mono.empty();
         }
 
@@ -405,7 +405,7 @@ public class ReworkValidationHandler {
 
             case SEND_ANALOG_PROGRESS -> {
                 if (info.getActionDetail().getElementsToInvalidate().size() > 1) {
-                    addInvalidationError(info, INVALID_PROGRESS_ELEMENT, element);
+                    addInvalidationError(info, INVALID_PROGRESS_ELEMENT.getCause(), String.format(INVALID_PROGRESS_ELEMENT.getErrorDetails(),element));
                 }
                 return Mono.empty();
             }
@@ -416,18 +416,22 @@ public class ReworkValidationHandler {
                  COMPLETELY_UNREACHABLE_CREATION_REQUEST,
                  ANALOG_FAILURE_WORKFLOW -> {
 
-                NotificationReworkErrorCause errorCause = null;
+                String errorCause = null;
+                String errorDetails = null;
 
                 if (!isElementOfAttempt1(element, category)) {
-                    errorCause = INVALID_ATTEMPT0_ELEMENT;
+                    errorCause = INVALID_ATTEMPT0_ELEMENT.getCause();
+                    errorDetails = String.format(INVALID_ATTEMPT0_ELEMENT.getErrorDetails(), category.name());
                 } else if (!hasAttempt0OK) {
-                    errorCause = INVALID_ATTEMPT1_ELEMENT;
+                    errorCause = INVALID_ATTEMPT1_ELEMENT.getCause();
+                    errorDetails = String.format(INVALID_ATTEMPT1_ELEMENT.getErrorDetails(), element);
                 } else if (hasAttempt1Elements) {
-                    errorCause = INVALID_ATTEMPT1_ELEMENTS;
+                    errorCause = INVALID_ATTEMPT1_ELEMENTS.getCause();
+                    errorDetails = String.format(INVALID_ATTEMPT1_ELEMENTS.getErrorDetails(), element);
                 }
 
                 if (errorCause != null) {
-                    addInvalidationError(info, errorCause, element);
+                    addInvalidationError(info, errorCause, errorDetails);
                 }
                 return Mono.empty();
             }
@@ -435,13 +439,13 @@ public class ReworkValidationHandler {
             case NOTIFICATION_VIEWED,
                  NOTIFICATION_VIEWED_CREATION_REQUEST -> {
                 if (hasViewedElements) {
-                    addInvalidationError(info, INVALID_VIEWED_ELEMENT, element);
+                    addInvalidationError(info, INVALID_VIEWED_ELEMENT.getCause(), String.format(INVALID_VIEWED_ELEMENT.getErrorDetails(), element));
                 }
                 return Mono.empty();
             }
 
             default -> {
-                addInvalidationError(info, INVALID_CATEGORY_TO_INVALIDATE, element);
+                addInvalidationError(info, INVALID_CATEGORY_TO_INVALIDATE.getCause(), String.format(INVALID_CATEGORY_TO_INVALIDATE.getErrorDetails(), element));
                 return Mono.empty();
             }
         }
@@ -511,11 +515,11 @@ public class ReworkValidationHandler {
                 || ANALOG_FAILURE_WORKFLOW.equals(category);
     }
 
-    private void addInvalidationError(NotificationReworkInfo info, NotificationReworkErrorCause cause, String element) {
+    private void addInvalidationError(NotificationReworkInfo info, String cause, String details) {
         info.getErrorList().add(
                 NotificationReworkError.builder()
-                        .cause(cause.getCause())
-                        .description(String.format(cause.getErrorDetails(), element))
+                        .cause(cause)
+                        .description(details)
                         .build()
         );
     }
