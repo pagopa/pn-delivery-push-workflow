@@ -19,4 +19,5 @@ public class NotificationReworkValidationDetails implements ActionDetails {
     private String reworkExpectedFinalStatus;
     private List<String> elementsToInvalidate;
     private ReworkRequestTypeEnum requestType;
+    private boolean canInvalidateViewed;
 }

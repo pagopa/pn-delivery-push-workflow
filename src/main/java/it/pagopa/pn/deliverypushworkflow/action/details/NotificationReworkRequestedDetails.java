@@ -20,4 +20,5 @@ public class NotificationReworkRequestedDetails implements ActionDetails {
     private Instant createdAt;
     private List<String> elementsToInvalidate;
     private ReworkRequestTypeEnum requestType;
+    private boolean needToInvalidateViewed;
 }

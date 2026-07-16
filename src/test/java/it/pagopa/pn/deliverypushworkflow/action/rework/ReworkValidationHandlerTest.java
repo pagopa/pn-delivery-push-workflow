@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.commons.exceptions.PnHttpResponseException;
 import it.pagopa.pn.deliverypushworkflow.action.details.NotificationReworkValidationDetails;
+import it.pagopa.pn.deliverypushworkflow.action.startworkflow.notificationvalidation.AttachmentUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationDocumentInt;
@@ -71,6 +72,8 @@ class ReworkValidationHandlerTest {
     private TimelineUtils timelineUtils;
     @Mock
     private SafeStorageService safeStorageService;
+    @Mock
+    private AttachmentUtils attachmentUtils;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
 
@@ -78,7 +81,7 @@ class ReworkValidationHandlerTest {
 
     @BeforeEach
     void setup() {
-        notificationReworkHandler = new ReworkValidationHandler(paperChannelAddressClient, actionManagerApi, notificationService, timelineService, timelineUtils, reworkRequestEventPool, pnDeliveryPushWorkflowConfigs, safeStorageService, objectMapper);
+        notificationReworkHandler = new ReworkValidationHandler(paperChannelAddressClient, actionManagerApi, notificationService, timelineService, timelineUtils, reworkRequestEventPool, pnDeliveryPushWorkflowConfigs, safeStorageService, objectMapper, attachmentUtils);
     }
 
     @Test
@@ -1212,7 +1215,6 @@ class ReworkValidationHandlerTest {
     }
 
     @Test
-    @Disabled("Riabilitare quando sarà implementato il metodo checkAttachmentsOnViewed, aggiungendo mock per allegati")
     void handleNotificationReworkWithViewed_attachmentsExistOnViewed() {
         NotificationReworkValidationDetails detail = new NotificationReworkValidationDetails();
         detail.setReworkAttempt("ATTEMPT_0");
@@ -1229,13 +1231,35 @@ class ReworkValidationHandlerTest {
         NotificationInt notification = NotificationInt.builder()
                 .iun("XLJE-VRQM-VKNQ-202507-K-1")
                 .recipients(List.of(new NotificationRecipientInt()))
+                .documents(List.of(NotificationDocumentInt.builder()
+                        .ref(NotificationDocumentInt.Ref.builder().key("key").build())
+                        .build()))
                 .build();
 
         Set<TimelineElementInternal> timeline = new HashSet<>();
         TimelineElementInternal timelineElement = new TimelineElementInternal();
-        timelineElement.setCategory(TimelineElementCategoryInt.PAYMENT);
-        timelineElement.setElementId("NOTIFICATION_PAID.IUN_AJDN-ZDVK-UGMU-202605-E-1.CODE_PPA30201140004608200077777777777");
-        timelineElement.setDetails(NotificationPaidDetailsInt.builder().recIndex(0).build());
+        timelineElement.setCategory(TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE);
+        timelineElement.setElementId("PREPARE_ANALOG_DOMICILE.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0");
+        timeline.add(timelineElement);
+
+        timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK);
+        timelineElement.setElementId("SEND_ANALOG_FEEDBACK.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0");
+        timeline.add(timelineElement);
+
+        timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.NOTIFICATION_VIEWED_CREATION_REQUEST);
+        timelineElement.setElementId("NOTIFICATION_VIEWED_CREATION_REQUEST.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0");
+        timeline.add(timelineElement);
+
+        timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.NOTIFICATION_VIEWED);
+        timelineElement.setElementId("NOTIFICATION_VIEWED.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0");
+        timeline.add(timelineElement);
+
+        timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.REFINEMENT);
+        timelineElement.setElementId("REFINEMENT.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0");
         timeline.add(timelineElement);
 
         NotificationHistoryResponse notificationHistoryResponse = new NotificationHistoryResponse();
@@ -1243,6 +1267,7 @@ class ReworkValidationHandlerTest {
 
         when(timelineService.getTimeline(anyString(), anyBoolean())).thenReturn(timeline);
         when(timelineUtils.checkIsNotificationCancellationRequested(any())).thenReturn(false);
+        when(timelineUtils.checkIsNotificationViewed(any(), any())).thenReturn(true);
         when(notificationService.getNotificationByIun(any())).thenReturn(notification);
         when(timelineService.getTimelineAndStatusHistory(any(), anyInt(), any())).thenReturn(notificationHistoryResponse);
 
@@ -1253,8 +1278,8 @@ class ReworkValidationHandlerTest {
         ArgumentCaptor<ReworkRequestEventAction> captor = ArgumentCaptor.forClass(ReworkRequestEventAction.class);
         verify(reworkRequestEventPool, times(1)).scheduleFutureAction(captor.capture(), any());
         List<NotificationReworkError> capturedErrorList = captor.getValue().getError();
-        Assertions.assertEquals(NotificationReworkErrorCause.ATTACHMENTS_EXIST_ONVIEWED.getCause(), capturedErrorList.getFirst().getCause());
-        Assertions.assertEquals("La visualizzazione è stata effettuata prima della scadenza degli allegati, non è possibile procedere con la richiesta di restart", capturedErrorList.getFirst().getDescription());
+        Assertions.assertEquals(NotificationReworkErrorCause.INVALID_VIEWED_ELEMENTS.getCause(), capturedErrorList.getFirst().getCause());
+        Assertions.assertEquals("Non è possibile procedere alla richiesta di correzione, la visualizzazione non è invalidabile", capturedErrorList.getFirst().getDescription());
     }
 
     @Test
@@ -1616,10 +1641,17 @@ class ReworkValidationHandlerTest {
         timeline.add(timelineElement(
                 TimelineElementCategoryInt.NOTIFICATION_VIEWED_CREATION_REQUEST,
                 "NOTIFICATION_VIEWED_CREATION_REQUEST.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
-                NotificationViewedCreationRequestDetailsInt.builder().recIndex(0).build()
+                NotificationViewedCreationRequestDetailsInt.builder().recIndex(0).eventTimestamp(Instant.now()).build()
         ));
 
         mockBaseValidFlow(notification, timeline);
+
+        WebClientResponseException exception = mock(WebClientResponseException.class);
+        when(exception.getStatusCode()).thenReturn(HttpStatus.GONE);
+        when(exception.getResponseBodyAsString()).thenReturn("[deletionTimestamp=2010-06-24T10:15:30Z]");
+        when(attachmentUtils.getAllAttachmentsForSpecificRecipient(any(), anyString())).thenReturn(List.of(NotificationDocumentInt.builder()
+                .ref(NotificationDocumentInt.Ref.builder().key("key").build()).build()));
+        when(safeStorageService.getFile(any(), any(), any())).thenReturn(Mono.error(exception));
 
         notificationReworkHandler.handleNotificationRework(action).block();
 
@@ -1658,15 +1690,218 @@ class ReworkValidationHandlerTest {
         timeline.add(timelineElement(
                 TimelineElementCategoryInt.NOTIFICATION_VIEWED_CREATION_REQUEST,
                 "NOTIFICATION_VIEWED_CREATION_REQUEST.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
-                NotificationViewedCreationRequestDetailsInt.builder().recIndex(0).build()
+                NotificationViewedCreationRequestDetailsInt.builder().recIndex(0).eventTimestamp(Instant.now()).build()
         ));
+
+        WebClientResponseException exception = mock(WebClientResponseException.class);
+        when(exception.getStatusCode()).thenReturn(HttpStatus.GONE);
+        when(exception.getResponseBodyAsString()).thenReturn("[deletionTimestamp=2010-06-24T10:15:30Z]");
+        when(attachmentUtils.getAllAttachmentsForSpecificRecipient(any(), anyString())).thenReturn(List.of(NotificationDocumentInt.builder()
+                .ref(NotificationDocumentInt.Ref.builder().key("key").build()).build()));
+        when(safeStorageService.getFile(any(), any(), any())).thenReturn(Mono.error(exception));
 
         mockBaseValidFlow(notification, timeline);
 
         notificationReworkHandler.handleNotificationRework(action).block();
 
+        verify(safeStorageService, times(1)).getFile(any(), any(), any());
         verify(actionManagerApi).insertAction(any());
         verify(reworkRequestEventPool, never()).scheduleFutureAction(any(), any());
+    }
+
+    @Test
+    void handleNotificationInvalidateElements_VIEWED_AttachmentsPresentOnViewed() {
+        NotificationReworkValidationDetails detail = baseInvalidateElementsDetail();
+        detail.setElementsToInvalidate(List.of(
+                "NOTIFICATION_VIEWED.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
+                "NOTIFICATION_VIEWED_CREATION_REQUEST.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0"
+        ));
+
+        Action action = baseAction(detail);
+        NotificationInt notification = NotificationInt.builder()
+                .iun("XLJE-VRQM-VKNQ-202507-K-1")
+                .recipients(List.of(new NotificationRecipientInt()))
+                .documents(List.of(NotificationDocumentInt.builder()
+                        .ref(NotificationDocumentInt.Ref.builder().key("key").build())
+                        .build()))
+                .build();
+
+        Set<TimelineElementInternal> timeline = validInvalidateTimeline();
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.NOTIFICATION_VIEWED,
+                "NOTIFICATION_VIEWED.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
+                NotificationViewedDetailsInt.builder().recIndex(0).eventTimestamp(Instant.EPOCH).build()
+        ));
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.NOTIFICATION_VIEWED_CREATION_REQUEST,
+                "NOTIFICATION_VIEWED_CREATION_REQUEST.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
+                NotificationViewedCreationRequestDetailsInt.builder().recIndex(0).eventTimestamp(Instant.EPOCH).build()
+        ));
+
+        mockBaseValidFlow(notification, timeline);
+        when(attachmentUtils.getAllAttachmentsForSpecificRecipient(any(), anyString())).thenReturn(List.of(NotificationDocumentInt.builder()
+                .ref(NotificationDocumentInt.Ref.builder().key("key").build()).build()));
+        FileDownloadResponse fileDownloadResponse = new FileDownloadResponse();
+        fileDownloadResponse.setRetentionUntil(OffsetDateTime.now().plusDays(120));
+        when(safeStorageService.getFile(any(), any(), any())).thenReturn(Mono.just(fileDownloadResponse));
+
+        notificationReworkHandler.handleNotificationRework(action).block();
+
+        verify(actionManagerApi, never()).insertAction(any());
+
+        ArgumentCaptor<ReworkRequestEventAction> captor = ArgumentCaptor.forClass(ReworkRequestEventAction.class);
+        verify(reworkRequestEventPool).scheduleFutureAction(captor.capture(), any());
+
+        Assertions.assertTrue(captor.getValue().getError().stream()
+                .anyMatch(e -> NotificationReworkErrorCause.INVALID_ELEMENT_TO_INVALIDATE_ATTACHMENTS_EXIST_ONVIEWED.getCause().equals(e.getCause())));
+    }
+
+    @Test
+    void handleNotificationInvalidateElements_VIEWED_AllAttachmentsPresentOnViewed() {
+        NotificationReworkValidationDetails detail = baseInvalidateElementsDetail();
+        detail.setElementsToInvalidate(List.of(
+                "NOTIFICATION_VIEWED.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
+                "NOTIFICATION_VIEWED_CREATION_REQUEST.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0"
+        ));
+
+        Action action = baseAction(detail);
+        NotificationInt notification = NotificationInt.builder()
+                .iun("XLJE-VRQM-VKNQ-202507-K-1")
+                .recipients(List.of(new NotificationRecipientInt()))
+                .documents(List.of(NotificationDocumentInt.builder()
+                        .ref(NotificationDocumentInt.Ref.builder().key("key").build())
+                        .build(), NotificationDocumentInt.builder()
+                        .ref(NotificationDocumentInt.Ref.builder().key("key2").build())
+                        .build()))
+                .build();
+
+        Set<TimelineElementInternal> timeline = validInvalidateTimeline();
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.NOTIFICATION_VIEWED,
+                "NOTIFICATION_VIEWED.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
+                NotificationViewedDetailsInt.builder().recIndex(0).eventTimestamp(Instant.EPOCH).build()
+        ));
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.NOTIFICATION_VIEWED_CREATION_REQUEST,
+                "NOTIFICATION_VIEWED_CREATION_REQUEST.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
+                NotificationViewedCreationRequestDetailsInt.builder().recIndex(0).eventTimestamp(Instant.EPOCH).build()
+        ));
+
+        mockBaseValidFlow(notification, timeline);
+        when(attachmentUtils.getAllAttachmentsForSpecificRecipient(any(), anyString())).thenReturn(List.of(NotificationDocumentInt.builder()
+                .ref(NotificationDocumentInt.Ref.builder().key("key").build()).build()));
+        FileDownloadResponse fileDownloadResponse = new FileDownloadResponse();
+        fileDownloadResponse.setRetentionUntil(OffsetDateTime.now().plusDays(120));
+        when(safeStorageService.getFile(any(), any(), any())).thenReturn(Mono.just(fileDownloadResponse));
+
+        notificationReworkHandler.handleNotificationRework(action).block();
+
+        verify(actionManagerApi, never()).insertAction(any());
+
+        ArgumentCaptor<ReworkRequestEventAction> captor = ArgumentCaptor.forClass(ReworkRequestEventAction.class);
+        verify(reworkRequestEventPool).scheduleFutureAction(captor.capture(), any());
+
+        Assertions.assertTrue(captor.getValue().getError().stream()
+                .anyMatch(e -> NotificationReworkErrorCause.INVALID_ELEMENT_TO_INVALIDATE_ATTACHMENTS_EXIST_ONVIEWED.getCause().equals(e.getCause())));
+    }
+
+    @Test
+    void handleNotificationInvalidateElements_VIEWED_OnlyOneAttachmentsPresentOnViewed() {
+        NotificationReworkValidationDetails detail = baseInvalidateElementsDetail();
+        detail.setElementsToInvalidate(List.of(
+                "NOTIFICATION_VIEWED.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
+                "NOTIFICATION_VIEWED_CREATION_REQUEST.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0"
+        ));
+
+        Action action = baseAction(detail);
+        NotificationInt notification = NotificationInt.builder()
+                .iun("XLJE-VRQM-VKNQ-202507-K-1")
+                .recipients(List.of(new NotificationRecipientInt()))
+                .documents(List.of(NotificationDocumentInt.builder()
+                        .ref(NotificationDocumentInt.Ref.builder().key("key").build())
+                        .build(), NotificationDocumentInt.builder()
+                        .ref(NotificationDocumentInt.Ref.builder().key("key2").build())
+                        .build()))
+                .build();
+
+        Set<TimelineElementInternal> timeline = validInvalidateTimeline();
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.NOTIFICATION_VIEWED,
+                "NOTIFICATION_VIEWED.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
+                NotificationViewedDetailsInt.builder().recIndex(0).build()
+        ));
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.NOTIFICATION_VIEWED_CREATION_REQUEST,
+                "NOTIFICATION_VIEWED_CREATION_REQUEST.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
+                NotificationViewedCreationRequestDetailsInt.builder().recIndex(0).eventTimestamp(Instant.now()).build()
+        ));
+
+        mockBaseValidFlow(notification, timeline);
+        when(attachmentUtils.getAllAttachmentsForSpecificRecipient(any(), anyString())).thenReturn(List.of(NotificationDocumentInt.builder()
+                .ref(NotificationDocumentInt.Ref.builder().key("key").build()).build(), NotificationDocumentInt.builder()
+                .ref(NotificationDocumentInt.Ref.builder().key("key2").build()).build()));
+        FileDownloadResponse fileDownloadResponse = new FileDownloadResponse();
+        fileDownloadResponse.setRetentionUntil(OffsetDateTime.now().plusDays(120));
+        WebClientResponseException exception = mock(WebClientResponseException.class);
+        when(exception.getStatusCode()).thenReturn(HttpStatus.GONE);
+        when(exception.getResponseBodyAsString()).thenReturn("[deletionTimestamp=2010-06-24T10:15:30Z]");
+        when(safeStorageService.getFile(any(), any(), any())).thenReturn(Mono.just(fileDownloadResponse)).thenReturn(Mono.error(exception));
+
+        notificationReworkHandler.handleNotificationRework(action).block();
+
+        verify(safeStorageService, times(2)).getFile(any(), any(), any());
+        verify(actionManagerApi).insertAction(any());
+        verify(reworkRequestEventPool, never()).scheduleFutureAction(any(), any());
+    }
+
+    @Test
+    void handleNotificationInvalidateElements_VIEWED_AttachmentsRemovedAfterViewed() {
+        NotificationReworkValidationDetails detail = baseInvalidateElementsDetail();
+        detail.setElementsToInvalidate(List.of(
+                "NOTIFICATION_VIEWED.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
+                "NOTIFICATION_VIEWED_CREATION_REQUEST.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0"
+        ));
+
+        Action action = baseAction(detail);
+        NotificationInt notification = NotificationInt.builder()
+                .iun("XLJE-VRQM-VKNQ-202507-K-1")
+                .recipients(List.of(new NotificationRecipientInt()))
+                .documents(List.of(NotificationDocumentInt.builder()
+                        .ref(NotificationDocumentInt.Ref.builder().key("key").build())
+                        .build(), NotificationDocumentInt.builder()
+                        .ref(NotificationDocumentInt.Ref.builder().key("key2").build())
+                        .build()))
+                .build();
+
+        Set<TimelineElementInternal> timeline = validInvalidateTimeline();
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.NOTIFICATION_VIEWED,
+                "NOTIFICATION_VIEWED.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
+                NotificationViewedDetailsInt.builder().recIndex(0).build()
+        ));
+        timeline.add(timelineElement(
+                TimelineElementCategoryInt.NOTIFICATION_VIEWED_CREATION_REQUEST,
+                "NOTIFICATION_VIEWED_CREATION_REQUEST.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0",
+                NotificationViewedCreationRequestDetailsInt.builder().recIndex(0).eventTimestamp(Instant.now()).build()
+        ));
+
+        mockBaseValidFlow(notification, timeline);
+        when(attachmentUtils.getAllAttachmentsForSpecificRecipient(any(), anyString())).thenReturn(List.of(NotificationDocumentInt.builder()
+                .ref(NotificationDocumentInt.Ref.builder().key("key").build()).build(), NotificationDocumentInt.builder()
+                .ref(NotificationDocumentInt.Ref.builder().key("key2").build()).build()));
+        WebClientResponseException exception = mock(WebClientResponseException.class);
+        when(exception.getStatusCode()).thenReturn(HttpStatus.GONE);
+        when(exception.getResponseBodyAsString()).thenReturn("[deletionTimestamp=2099-06-24T10:15:30Z]");
+        when(safeStorageService.getFile(any(), any(), any())).thenReturn(Mono.error(exception));
+
+        notificationReworkHandler.handleNotificationRework(action).block();
+        verify(actionManagerApi, never()).insertAction(any());
+
+        ArgumentCaptor<ReworkRequestEventAction> captor = ArgumentCaptor.forClass(ReworkRequestEventAction.class);
+        verify(reworkRequestEventPool).scheduleFutureAction(captor.capture(), any());
+
+        Assertions.assertTrue(captor.getValue().getError().stream()
+                .anyMatch(e -> NotificationReworkErrorCause.INVALID_ELEMENT_TO_INVALIDATE_ATTACHMENTS_EXIST_ONVIEWED.getCause().equals(e.getCause())));
     }
 
     @Test
@@ -1861,6 +2096,7 @@ class ReworkValidationHandlerTest {
         element.setCategory(category);
         element.setElementId(elementId);
         element.setTimestamp(Instant.now());
+        element.setEventTimestamp(Instant.now());
         element.setNotificationSentAt(Instant.now());
         element.setDetails(details);
         return element;

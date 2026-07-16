@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkConstant.REC_INDEX;
 import static it.pagopa.pn.deliverypushworkflow.exceptions.PnDeliveryPushExceptionCodes.*;
 
 @Component
@@ -97,6 +98,15 @@ public class AttachmentUtils {
 
         notification.getRecipients().forEach( recipient -> addAllRecipientPaymentsToAttachmentList(notificationDocuments, recipient));
         
+        return notificationDocuments;
+    }
+
+    public List<NotificationDocumentInt> getAllAttachmentsForSpecificRecipient(NotificationInt notification, String recIndex)
+    {
+        List<NotificationDocumentInt> notificationDocuments = new ArrayList<>(notification.getDocuments());
+        int recIdx = Integer.parseInt(recIndex.replace(REC_INDEX, ""));
+        addAllRecipientPaymentsToAttachmentList(notificationDocuments, notificationUtils.getRecipientFromIndex(notification, recIdx));
+
         return notificationDocuments;
     }
 
