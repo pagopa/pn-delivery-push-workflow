@@ -40,9 +40,10 @@ public class ViewNotification {
 
     public Mono<Boolean> startVewNotificationProcess(NotificationInt notification,
                                                      NotificationRecipientInt recipient,
-                                                     NotificationViewedInt notificationViewed) {
+                                                     NotificationViewedInt notificationViewed,
+                                                     boolean isRadd) {
         log.info("Start view notification process - iun={} id={}", notification.getIun(), notificationViewed.getRecipientIndex());
-        return checkThatAllAttachmentsArePresent(notification)
+        return checkThatAllAttachmentsArePresent(notification, isRadd)
                 .flatMap(allAttachmentsPresent -> {
                     if (Boolean.FALSE.equals(allAttachmentsPresent)) {
                         auditFlowBlocked(notificationViewed);
@@ -59,7 +60,11 @@ public class ViewNotification {
                 });
     }
 
-    private Mono<Boolean> checkThatAllAttachmentsArePresent(NotificationInt notification) {
+    private Mono<Boolean> checkThatAllAttachmentsArePresent(NotificationInt notification, boolean isRadd) {
+        if (isRadd) {
+            return Mono.just(true);
+        }
+
         return Flux.fromIterable(attachmentUtils.getAllAttachments(notification))
                 .concatMap(document ->
                         safeStorageService.getFile(document.getRef().getKey(), true, false)

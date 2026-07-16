@@ -28,7 +28,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
@@ -104,7 +104,7 @@ class ViewNotificationTest {
         NotificationViewedInt notificationViewedInt = buildNotificationViewedInt(notification.getIun(), recIndex, viewDate, null);
 
         //WHEN
-        viewNotification.startVewNotificationProcess(notification, recipient, notificationViewedInt).block();
+        viewNotification.startVewNotificationProcess(notification, recipient, notificationViewedInt, false).block();
 
         //THEN
         Mockito.verify(legalFactStore).sendCreationRequestForNotificationViewedLegalFact(notification, recipient, null, viewDate);
@@ -165,7 +165,7 @@ class ViewNotificationTest {
 
         NotificationViewedInt notificationViewedInt = buildNotificationViewedInt(notification.getIun(), recIndex, viewDate, delegateInfo);
         //WHEN
-        viewNotification.startVewNotificationProcess(notification, recipient, notificationViewedInt).block();
+        viewNotification.startVewNotificationProcess(notification, recipient, notificationViewedInt, false).block();
 
         //THEN
 
@@ -238,7 +238,7 @@ class ViewNotificationTest {
 
         NotificationViewedInt notificationViewedInt = buildNotificationViewedInt(notification.getIun(), recIndex, viewDate, delegateInfo);
         //WHEN
-        viewNotification.startVewNotificationProcess(notification, recipient, notificationViewedInt).block();
+        viewNotification.startVewNotificationProcess(notification, recipient, notificationViewedInt,false).block();
 
         //THEN
 
@@ -289,7 +289,7 @@ class ViewNotificationTest {
 
         NotificationViewedInt notificationViewedInt = buildNotificationViewedInt(notification.getIun(), recIndex, viewDate, null);
         //WHEN
-        viewNotification.startVewNotificationProcess(notification, recipient, notificationViewedInt).block();
+        viewNotification.startVewNotificationProcess(notification, recipient, notificationViewedInt, false).block();
 
         //THEN
         Mockito.verify(legalFactStore).sendCreationRequestForNotificationViewedLegalFact(notification, recipient, null, viewDate);
@@ -349,7 +349,7 @@ class ViewNotificationTest {
 
         NotificationViewedInt notificationViewedInt = buildNotificationViewedInt(notification.getIun(), recIndex, viewDate, delegateInfo);
         //WHEN
-        viewNotification.startVewNotificationProcess(notification, recipient, notificationViewedInt).block();
+        viewNotification.startVewNotificationProcess(notification, recipient, notificationViewedInt, false).block();
 
         //THEN
 
@@ -403,7 +403,7 @@ class ViewNotificationTest {
         NotificationViewedInt notificationViewedInt = buildNotificationViewedInt(notification.getIun(), recIndex, viewDate, null);
 
         //WHEN
-        viewNotification.startVewNotificationProcess(notification, recipient, notificationViewedInt).block();
+        viewNotification.startVewNotificationProcess(notification, recipient, notificationViewedInt, false).block();
 
         //THEN
         Mockito.verify(legalFactStore).sendCreationRequestForNotificationViewedLegalFact(notification, recipient, null, viewDate);
@@ -465,7 +465,7 @@ class ViewNotificationTest {
         NotificationViewedInt notificationViewedInt = buildNotificationViewedInt(notification.getIun(), recIndex, viewDate, delegateInfo);
 
         //WHEN
-        viewNotification.startVewNotificationProcess(notification, recipient, notificationViewedInt).block();
+        viewNotification.startVewNotificationProcess(notification, recipient, notificationViewedInt, false).block();
 
         //THEN
 
@@ -520,7 +520,7 @@ class ViewNotificationTest {
         NotificationViewedInt notificationViewedInt = buildNotificationViewedInt(notification.getIun(), recIndex, viewDate, null);
 
         //WHEN
-        viewNotification.startVewNotificationProcess(notification, recipient, notificationViewedInt).block();
+        viewNotification.startVewNotificationProcess(notification, recipient, notificationViewedInt, false).block();
 
         //THEN
         Mockito.verify(legalFactStore).sendCreationRequestForNotificationViewedLegalFact(notification, recipient, null, viewDate);
@@ -554,10 +554,10 @@ class ViewNotificationTest {
         NotificationViewedInt notificationViewedInt = buildNotificationViewedInt(notification.getIun(), recIndex, Instant.now(), null);
 
         //WHEN
-        Boolean result = viewNotification.startVewNotificationProcess(notification, recipient, notificationViewedInt).block();
+        Boolean result = viewNotification.startVewNotificationProcess(notification, recipient, notificationViewedInt,false).block();
 
         //THEN
-        assertFalse(Boolean.TRUE.equals(result));
+        assertNotEquals(Boolean.TRUE, result);
         Mockito.verify(legalFactStore, never()).sendCreationRequestForNotificationViewedLegalFact(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(attachmentUtils, never()).changeAttachmentsRetention(Mockito.any(), Mockito.anyInt());
     }
