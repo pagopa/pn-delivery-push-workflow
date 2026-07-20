@@ -61,7 +61,7 @@ public class ViewNotification {
     }
 
     private Mono<Boolean> checkThatAllAttachmentsArePresent(NotificationInt notification, boolean isRadd) {
-        if (isRadd) {
+        if (!pnDeliveryPushWorkflowConfigs.isCheckAttachmentsForViewedEnabled() || isRadd) {
             return Mono.just(true);
         }
 
