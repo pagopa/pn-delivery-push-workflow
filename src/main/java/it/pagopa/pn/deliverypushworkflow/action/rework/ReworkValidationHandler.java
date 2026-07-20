@@ -639,7 +639,7 @@ public class ReworkValidationHandler {
         return timeline.stream()
                 .filter(e -> e.getCategory() == REFINEMENT || e.getCategory() == ANALOG_WORKFLOW_RECIPIENT_DECEASED)
                 .findFirst()
-                .map(TimelineElementInternal::getIngestionTimestamp)
+                .map(TimelineElementInternal::getTimestamp)
                 .orElse(null);
     }
 
