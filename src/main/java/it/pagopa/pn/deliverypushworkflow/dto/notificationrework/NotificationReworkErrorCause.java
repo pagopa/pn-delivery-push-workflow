@@ -15,7 +15,19 @@ public enum NotificationReworkErrorCause {
     INVALID_ANALOG_ADDRESS("INVALID_ANALOG_ADDRESS", "L'indirizzo trovato ma scade nel %s"),
     EXPIRED_ANALOG_ADDRESS("EXPIRED_ANALOG_ADDRESS", "Indirizzo non trovato"),
     DUPLICATED_ACTION_ERROR("DUPLICATED_ACTION_ERROR", "Errore inserimento azione duplicata"),
-    REWORK_REQUESTED_PHASE_ERROR("REWORK_REQUESTED_PHASE_ERROR", "Errore durante la fase di inizializzazione della richiesta di rework"),;
+    REWORK_REQUESTED_PHASE_ERROR("REWORK_REQUESTED_PHASE_ERROR", "Errore durante la fase di inizializzazione della richiesta di rework"),
+    INVALID_ELEMENT_CATEGORY("INVALID_ELEMENT_CATEGORY", "TimelineCategory non valida per l'elemento: %s"),
+    INVALID_CATEGORY_TO_INVALIDATE("INVALID_CATEGORY_TO_INVALIDATE", "Non è possibile invalidare l'elemento %s, la category non è invalidabile"),
+    INVALID_REC_INDEX("INVALID_REC_INDEX", "Il recIndex per il quale è stata richiesta l'invalidazione timeline [%s] non corrisponde a quello dell'elemento di timeline da invalidare [%s]"),
+    INVALID_ATTEMPT1_ELEMENT("INVALID_ATTEMPT1_ELEMENT", "Non è possibile invalidare l'elemento [%s], in caso di invalidazione di un elemento dell'attempt 1, l'attempt 0 deve essere in OK"),
+    INVALID_ATTEMPT0_ELEMENT("INVALID_ATTEMPT0_ELEMENT", "Non è possibile invalidare la category %s dell'attempt 0"),
+    INVALID_PROGRESS_ELEMENT("INVALID_PROGRESS_ELEMENT", "Non è possibile invalidare l'elemento [%s], è possibile invalidare un elemento di progress solo se è l'unico elemento per il quale è richiesta l'invalidazione"),
+    INVALID_ATTEMPT1_ELEMENTS("INVALID_ATTEMPT1_ELEMENTS", "Non è possibile invalidare l'elemento [%s], in caso di invalidazione di un elemento dell'attempt 1, tutti gli elementi dell'attempt 1 devono essere invalidati"),
+    INVALID_VIEWED_ELEMENT("INVALID_VIEWED_ELEMENT", "Non è possibile invalidare l'elemento [%s], in caso di invalidazione di un elemento di visualizzazione, devono essere invalidati tutti gli elementi di visualizzazione"),
+    INVALID_ELEMENT_TO_INVALIDATE("INVALID_ELEMENT_TO_INVALIDATE", "Non è possibile invalidare l'elemento %s della timeline"),
+    INVALID_ELEMENTS_TO_INVALIDATE("INVALID_ELEMENTS_TO_INVALIDATE", "Non è possibile invalidare i seguenti elementi di timeline perchè non esistenti: %s"),
+    INVALID_VIEWED_ELEMENTS("INVALID_VIEWED_ELEMENTS", "Non è possibile procedere alla richiesta di correzione, la visualizzazione non è invalidabile"),
+    INVALID_ELEMENT_TO_INVALIDATE_ATTACHMENTS_EXIST_ONVIEWED("ATTACHMENTS_EXIST_ONVIEWED", "La visualizzazione è stata effettuata prima della scadenza degli allegati, non è possibile invalidare gli elementi di visualizzazione");
 
     private final String cause;
     private final String errorDetails;

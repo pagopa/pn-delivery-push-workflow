@@ -325,6 +325,42 @@ class AttachmentUtilsTest {
     }
 
     @Test
+    void getAllAttachmentsAggregatesNotificationDocumentsAndRecipientPayments() {
+        NotificationInt notification = NotificationInt.builder()
+                .documents(List.of(
+                        NotificationDocumentInt.builder()
+                                .ref(NotificationDocumentInt.Ref.builder().key("documentKey").build())
+                                .build()
+                ))
+                .recipients(List.of(
+                        NotificationRecipientInt.builder()
+                                .payments(List.of(
+                                        NotificationPaymentInfoInt.builder()
+                                                .pagoPA(PagoPaInt.builder()
+                                                        .attachment(NotificationDocumentInt.builder()
+                                                                .ref(NotificationDocumentInt.Ref.builder().key("pagoPaKey").build())
+                                                                .build())
+                                                        .build())
+                                                .f24(F24Int.builder()
+                                                        .metadataAttachment(NotificationDocumentInt.builder()
+                                                                .ref(NotificationDocumentInt.Ref.builder().key("f24Key").build())
+                                                                .build())
+                                                        .build())
+                                                .build()
+                                ))
+                                .build()
+                ))
+                .build();
+
+        List<NotificationDocumentInt> attachments = attachmentUtils.getAllAttachments(notification);
+
+        Assertions.assertEquals(3, attachments.size());
+        Assertions.assertEquals("documentKey", attachments.get(0).getRef().getKey());
+        Assertions.assertEquals("pagoPaKey", attachments.get(1).getRef().getKey());
+        Assertions.assertEquals("f24Key", attachments.get(2).getRef().getKey());
+    }
+
+    @Test
     void changeAttachmentsRetentionKO() {
         //GIVEN
         NotificationRecipientInt recipient = getNotificationRecipientInt();

@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import static it.pagopa.pn.deliverypushworkflow.dto.notificationrework.NotificationReworkConstant.REC_INDEX;
 import static it.pagopa.pn.deliverypushworkflow.exceptions.PnDeliveryPushExceptionCodes.*;
 
 @Component
@@ -50,7 +51,7 @@ public class AttachmentUtils {
 
     public Flux<Void> changeAttachmentsRetention(NotificationInt notification, int retentionUntilDays) {
         log.info( "changeAttachmentsRetention iun={}", notification.getIun());
-        return Mono.just(getAllAttachment(notification))
+        return Mono.just(getAllAttachments(notification))
                 .flatMapIterable( x -> x )
                 .flatMap( doc -> this.changeAttachmentRetention(doc, retentionUntilDays));
     }
@@ -91,12 +92,21 @@ public class AttachmentUtils {
         return res;
     }
 
-    private List<NotificationDocumentInt> getAllAttachment(NotificationInt notification)
+    public List<NotificationDocumentInt> getAllAttachments(NotificationInt notification)
     {
         List<NotificationDocumentInt> notificationDocuments = new ArrayList<>(notification.getDocuments());
 
         notification.getRecipients().forEach( recipient -> addAllRecipientPaymentsToAttachmentList(notificationDocuments, recipient));
         
+        return notificationDocuments;
+    }
+
+    public List<NotificationDocumentInt> getAllAttachmentsForSpecificRecipient(NotificationInt notification, String recIndex)
+    {
+        List<NotificationDocumentInt> notificationDocuments = new ArrayList<>(notification.getDocuments());
+        int recIdx = Integer.parseInt(recIndex.replace(REC_INDEX, ""));
+        addAllRecipientPaymentsToAttachmentList(notificationDocuments, notificationUtils.getRecipientFromIndex(notification, recIdx));
+
         return notificationDocuments;
     }
 

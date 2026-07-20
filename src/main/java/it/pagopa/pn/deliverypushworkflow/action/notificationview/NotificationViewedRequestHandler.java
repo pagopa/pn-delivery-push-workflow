@@ -11,7 +11,6 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notificationviewed.Not
 import it.pagopa.pn.deliverypushworkflow.dto.mandate.DelegateInfoInt;
 import it.pagopa.pn.deliverypushworkflow.dto.radd.RaddInfo;
 import it.pagopa.pn.deliverypushworkflow.service.NotificationService;
-import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
@@ -39,16 +38,16 @@ public class NotificationViewedRequestHandler {
     //La richiesta proviene da delivery (La visualizzazione potrebbe essere da parte del delegato o da parte del destinatario)
     public void handleViewNotificationDelivery(NotificationViewedInt notificationViewedInt) {
         MDCUtils.addMDCToContextAndExecute(
-                handleViewNotification(notificationViewedInt)
+                handleViewNotification(notificationViewedInt, false)
         ).block();
     }
 
     //La richiesta proviene da RADD, visualizzazione da parte del destinatario
     public Mono<Void> handleViewNotificationRadd(NotificationViewedInt notificationViewedInt) {
-        return handleViewNotification(notificationViewedInt);
+        return handleViewNotification(notificationViewedInt, true);
     }
 
-    private Mono<Void> handleViewNotification(NotificationViewedInt notificationViewedInt) {
+    private Mono<Void> handleViewNotification(NotificationViewedInt notificationViewedInt, boolean isRadd) {
 
         return Mono.fromCallable(() -> (
                         timelineUtils.checkIsNotificationCancellationRequested(notificationViewedInt.getIun())))
@@ -73,10 +72,13 @@ public class NotificationViewedRequestHandler {
                         return Mono.fromCallable(() -> notificationService.getNotificationByIun(notificationViewedInt.getIun()))
                                 .flatMap( notification -> {
                                     NotificationRecipientInt recipient = notificationUtils.getRecipientFromIndex(notification, notificationViewedInt.getRecipientIndex());
-                                    return viewNotification.startVewNotificationProcess(notification, recipient, notificationViewedInt)
-                                            .doOnSuccess( x->
-                                                    logEvent.generateSuccess().log()
-                                            );
+                                    return viewNotification.startVewNotificationProcess(notification, recipient, notificationViewedInt, isRadd)
+                                            .doOnNext(processCompleted -> {
+                                                if (Boolean.TRUE.equals(processCompleted)) {
+                                                    logEvent.generateSuccess().log();
+                                                }
+                                            })
+                                            .then();
                                 })
                                 .doOnError( err -> logEvent.generateFailure("Exception in View notification iun={} id={}", notificationViewedInt.getIun(), notificationViewedInt.getRecipientIndex(), err).log());
                     } else {
