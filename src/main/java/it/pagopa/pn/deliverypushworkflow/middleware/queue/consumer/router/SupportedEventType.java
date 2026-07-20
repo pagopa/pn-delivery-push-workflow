@@ -23,6 +23,7 @@ public enum SupportedEventType {
     POST_ACCEPTED_PROCESSING_COMPLETED,
     SEND_ANALOG_FINAL_STATUS_RESPONSE,
     ANALOG_WORKFLOW_NO_FEEDBACK_TIMEOUT,
+    SEND_COURTESY_MESSAGE_ACTION,
     // Fine eventi coda Actions
     // Inizio eventi coda ExternalChannels
     SEND_PEC_RESPONSE,

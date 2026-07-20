@@ -2,13 +2,11 @@ package it.pagopa.pn.deliverypushworkflow.action.choosedeliverymode;
 
 import it.pagopa.pn.deliverypushworkflow.action.digitalworkflow.DigitalWorkFlowHandler;
 import it.pagopa.pn.deliverypushworkflow.action.utils.CourtesyMessageUtils;
-import it.pagopa.pn.deliverypushworkflow.action.utils.CourtesyMessagesReport;
 import it.pagopa.pn.deliverypushworkflow.dto.address.DigitalAddressSourceInt;
 import it.pagopa.pn.deliverypushworkflow.dto.address.LegalDigitalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.publicregistry.NationalRegistriesResponse;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ContactPhaseInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.DeliveryModeInt;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ActionType;
 import it.pagopa.pn.deliverypushworkflow.service.NationalRegistriesService;
 import it.pagopa.pn.deliverypushworkflow.service.NotificationService;
@@ -33,8 +31,6 @@ public class ChooseDeliveryModeHandler {
     private final NotificationService notificationService;
     private final FeatureEnabledUtils featureEnabledUtils;
     private final CourtesyMessageUtils courtesyMessageUtils;
-    private static final String PROBABLE_SCHEDULING_ANALOG_DATE_FOUND = "ProbableSchedulingAnalogDate is present, need to schedule analog workflow at";
-    private static final String PROBABLE_SCHEDULING_ANALOG_DATE_NOT_FOUND = "Courtesy message is not present, analog workflow can be started now";
 
 
     /**
@@ -124,32 +120,16 @@ public class ChooseDeliveryModeHandler {
         }
     }
 
-    /**
-     * Start analog workflow, if courtesy message has been sent to the user, it is necessary to wait 5 days (from sent message date) before start Analog workflow
-     *
-     * @param notification   Notification
-     * @param recIndex User identifier
-     */
-    public void scheduleAnalogWorkflow(NotificationInt notification, Integer recIndex) {
+    private void scheduleAnalogWorkflow(NotificationInt notification, Integer recIndex) {
         String iun = notification.getIun();
         log.debug("Scheduling analog workflow for iun={} id={} ", iun, recIndex);
 
-        Instant schedulingDate = sendCourtesyMessagesAndRetrieveProbableSchedulingAnalogDate(notification, recIndex, iun);
+        // TODO WI-2.1/2.2: con gli invii di cortesia asincroni la decorrenza dei 5 giorni dovrà partire dal primo
+        //  recapito riuscito e il caso "tutti i canali chiusi senza successo" richiede coordinamento; qui la datazione
+        //  di ANALOG_WORKFLOW è interim (data probabile al dispatch), coerente col comportamento precedente.
+        Instant schedulingDate = courtesyMessageUtils.scheduleCourtesyMessagesActionsForAnalog(notification, recIndex);
 
         chooseDeliveryUtils.addScheduleAnalogWorkflowToTimeline(recIndex, notification, schedulingDate);
         schedulerService.scheduleEvent(iun, recIndex, schedulingDate, ActionType.ANALOG_WORKFLOW);
-    }
-
-    private Instant sendCourtesyMessagesAndRetrieveProbableSchedulingAnalogDate(NotificationInt notification, Integer recIndex, String iun) {
-        Instant schedulingDate;
-        CourtesyMessagesReport courtesyMessagesReport = courtesyMessageUtils.checkAddressesAndSendCourtesyMessage(notification, recIndex, DeliveryModeInt.ANALOG);
-        if (courtesyMessagesReport.getSchedulingAnalogDate() != null) {
-            log.info(PROBABLE_SCHEDULING_ANALOG_DATE_FOUND + " ={} - iun={} id={} ", courtesyMessagesReport.getSchedulingAnalogDate(), iun, recIndex);
-            schedulingDate = courtesyMessagesReport.getSchedulingAnalogDate();
-        } else {
-            log.info(PROBABLE_SCHEDULING_ANALOG_DATE_NOT_FOUND + " - iun={} id={} ", iun, recIndex);
-            schedulingDate = Instant.now();
-        }
-        return schedulingDate;
     }
 }

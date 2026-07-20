@@ -3,8 +3,10 @@ package it.pagopa.pn.deliverypushworkflow.action.utils;
 import it.pagopa.pn.commons.exceptions.PnInternalException;
 import it.pagopa.pn.commons.log.PnAuditLogEvent;
 import it.pagopa.pn.commons.log.PnAuditLogEventType;
+import it.pagopa.pn.deliverypushworkflow.action.details.SendCourtesyMessageActionDetails;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.address.CourtesyDigitalAddressInt;
+import it.pagopa.pn.deliverypushworkflow.dto.courtesy.CourtesySendOutcome;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
 import it.pagopa.pn.deliverypushworkflow.dto.io.IoSendMessageResultInt;
@@ -16,6 +18,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ProbableDateAnalog
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.emd.integration.model.SendMessageRequestBody;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregistry.model.SendMessageResponse;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.emdintegration.PnEmdIntegrationClient;
+import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ActionType;
 import it.pagopa.pn.deliverypushworkflow.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,44 +45,164 @@ public class CourtesyMessageUtils {
     private final PnDeliveryPushWorkflowConfigs pnDeliveryPushConfigs;
     private final PnEmdIntegrationClient pnEmdIntegrationClient;
     private final AuditLogService auditLogService;
+    private final SchedulerService schedulerService;
+    private final NotificationService notificationService;
+    private final CourtesyRetryableErrorClassifier retryableErrorClassifier;
 
     /**
-     * Get recipient addresses and send courtesy messages.
-     * @return report of sent courtesy messages and scheduling analog date if applicable.
+     * Get recipient courtesy addresses and schedule an independent send action per available channel.
+     * Each channel is scheduled as its own {@link ActionType#SEND_COURTESY_MESSAGE_ACTION}, executed immediately,
+     * carrying the channel, the retry index (0 = first send) and the delivery mode in its details.
      */
-    public CourtesyMessagesReport checkAddressesAndSendCourtesyMessage(NotificationInt notification, Integer recIndex, DeliveryModeInt deliveryMode) {
+    public void scheduleCourtesyMessagesActions(NotificationInt notification, Integer recIndex, DeliveryModeInt deliveryMode) {
+        dispatchCourtesyMessagesActions(notification, recIndex, deliveryMode);
+    }
+
+    /**
+     * Dispatch the per-channel courtesy actions for the ANALOG branch and return the interim scheduling date for
+     * ANALOG_WORKFLOW: the probable date (now + waiting) if at least one courtesy channel exists, otherwise now.
+     * TODO WI-2.1/2.2: la decorrenza "dal primo successo" e il caso critico "tutti i canali chiusi senza successo"
+     * sostituiranno questa datazione interim.
+     */
+    public Instant scheduleCourtesyMessagesActionsForAnalog(NotificationInt notification, Integer recIndex) {
+        List<CourtesyDigitalAddressInt> scheduledChannels = dispatchCourtesyMessagesActions(notification, recIndex, DeliveryModeInt.ANALOG);
+        if (scheduledChannels.isEmpty()) {
+            return Instant.now();
+        }
+        return retrieveOrCalculateSchedulingAnalogDate(notification.getIun(), recIndex);
+    }
+
+    private List<CourtesyDigitalAddressInt> dispatchCourtesyMessagesActions(NotificationInt notification, Integer recIndex, DeliveryModeInt deliveryMode) {
         final String iun = notification.getIun();
-        log.debug("Start checkAddressesForSendCourtesyMessage - iun={} id={} delivery mode={} ", iun, recIndex, deliveryMode);
+        log.debug("Start dispatchCourtesyMessagesActions - iun={} id={} delivery mode={} ", iun, recIndex, deliveryMode);
 
-        NotificationRecipientInt recipient = notificationUtils.getRecipientFromIndex(notification, recIndex);
-
-        // Ottiene tutti gli indirizzi di cortesia per il recipient
-        List<CourtesyDigitalAddressInt> listCourtesyAddresses = addressBookService.getCourtesyAddress(recipient.getInternalId(), notification.getSender().getPaId());
-
-        CourtesyMessagesReport courtesyMessagesReport = new CourtesyMessagesReport();
-        Instant probableSchedulingAnalogDate = retrieveOrCalculateSchedulingAnalogDate(iun , recIndex);
+        List<CourtesyDigitalAddressInt> listCourtesyAddresses = getCourtesyAddresses(notification, recIndex);
 
         for (CourtesyDigitalAddressInt courtesyAddress : listCourtesyAddresses) {
-            try {
-                if (trySendCourtesyMessage(notification, recIndex, courtesyAddress, probableSchedulingAnalogDate, deliveryMode)) {
-                    courtesyMessagesReport.addSentCourtesyType(courtesyAddress.getType());
-                } else {
-                    courtesyMessagesReport.addNotSentCourtesyType(courtesyAddress.getType());
-                }
-            } catch (Exception ex) {
-                //Se l'invio del messaggio di cortesia fallisce per un qualsiasi motivo il processo non si blocca. Viene fatto catch exception e loggata
-                log.error("Exception in send courtesy message, courtesyType={} ex={} - iun={} id={}", courtesyAddress.getType(), ex, notification.getIun(), recIndex);
-                courtesyMessagesReport.addCourtesyTypeInError(courtesyAddress.getType());
+            SendCourtesyMessageActionDetails details = SendCourtesyMessageActionDetails.builder()
+                    .channel(courtesyAddress.getType())
+                    .retryIndex(0)
+                    .deliveryMode(deliveryMode)
+                    .build();
+            log.info("Scheduling SEND_COURTESY_MESSAGE_ACTION channel={} retryIndex=0 deliveryMode={} - iun={} id={}", courtesyAddress.getType(), deliveryMode, iun, recIndex);
+            schedulerService.scheduleEvent(iun, recIndex, Instant.now(), ActionType.SEND_COURTESY_MESSAGE_ACTION, details);
+        }
+
+        log.debug("End dispatchCourtesyMessagesActions - iun={} id={}", iun, recIndex);
+        return listCourtesyAddresses;
+    }
+
+    /**
+     * Execute the courtesy send for a single channel, invoked by the {@code SEND_COURTESY_MESSAGE_ACTION} handler.
+     * Reuses the per-channel dispatch already present in {@link #trySendCourtesyMessage}.
+     */
+    public void handleSendCourtesyMessageAction(String iun, Integer recIndex, SendCourtesyMessageActionDetails details) {
+        NotificationInt notification = notificationService.getNotificationByIun(iun);
+        CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel = details.getChannel();
+        log.info("handleSendCourtesyMessageAction channel={} retryIndex={} deliveryMode={} - iun={} id={}", channel, details.getRetryIndex(), details.getDeliveryMode(), iun, recIndex);
+
+        if (timelineUtils.checkIsNotificationCancellationRequested(iun)) {
+            log.warn("Notification cancellation requested, skipping courtesy send for channel={} - iun={} id={}", channel, iun, recIndex);
+            return;
+        }
+
+        CourtesyDigitalAddressInt courtesyAddress = resolveCourtesyAddress(notification, recIndex, channel);
+        if (courtesyAddress == null) {
+            log.warn("Courtesy address not found for channel={}, channel closed - iun={} id={}", channel, iun, recIndex);
+            return;
+        }
+
+        Instant schedulingAnalogDate = retrieveOrCalculateSchedulingAnalogDate(iun, recIndex);
+        CourtesySendOutcome outcome = trySendCourtesyMessage(notification, recIndex, courtesyAddress, schedulingAnalogDate, details.getDeliveryMode());
+
+        switch (outcome) {
+            case SENT -> {
+                log.info("Courtesy message sent successfully for channel={} retryIndex={} - iun={} id={}", channel, details.getRetryIndex(), iun, recIndex);
+                addProbableSchedulingElementToTimeline(notification, recIndex, schedulingAnalogDate);
+            }
+            case RETRYABLE_ERROR -> {
+                log.info("Retryable error on courtesy channel={} retryIndex={} - iun={} id={}", channel, details.getRetryIndex(), iun, recIndex);
+                handleRetryableError(notification, recIndex, details);
+            }
+            case PERMANENT_FAILURE -> {
+                log.info("Courtesy message not sent for channel={}, permanent failure, channel closed - iun={} id={}", channel, iun, recIndex);
+                addCourtesyChannelFailedToTimeline(notification, recIndex, details);
             }
         }
+    }
 
-        if (courtesyMessagesReport.hasSentAtLeastACourtesyMessage()) {
-            addProbableSchedulingElementToTimeline(notification, recIndex, probableSchedulingAnalogDate);
-            courtesyMessagesReport.setSchedulingAnalogDate(probableSchedulingAnalogDate);
+    /**
+     * Reschedule the same courtesy action, moving its execution date forward by the next per-channel backoff interval.
+     * The current retry index selects the interval and, once incremented, is carried in the action details so it
+     * contributes to the {@code actionId}, keeping every rescheduling unique and avoiding pn-action-manager deduplication.
+     */
+    private void handleRetryableError(NotificationInt notification, Integer recIndex, SendCourtesyMessageActionDetails details) {
+        final String iun = notification.getIun();
+        CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel = details.getChannel();
+        List<Integer> intervals = resolveRetryIntervalsMinutes(channel);
+        int currentRetryIndex = details.getRetryIndex();
+
+        if (currentRetryIndex >= intervals.size()) {
+            log.info("Courtesy retry intervals exhausted for channel={} retryIndex={}, channel closed - iun={} id={}",
+                    channel, currentRetryIndex, iun, recIndex);
+            addCourtesyChannelFailedToTimeline(notification, recIndex, details);
+            return;
         }
 
-        log.debug("End sendCourtesyMessage - IUN={} id={}", iun, recIndex);
-        return courtesyMessagesReport;
+        int waitMinutes = intervals.get(currentRetryIndex);
+        int nextRetryIndex = currentRetryIndex + 1;
+        Instant schedulingDate = Instant.now().plus(Duration.ofMinutes(waitMinutes));
+        SendCourtesyMessageActionDetails nextDetails = SendCourtesyMessageActionDetails.builder()
+                .channel(channel)
+                .retryIndex(nextRetryIndex)
+                .deliveryMode(details.getDeliveryMode())
+                .build();
+        log.info("Rescheduling SEND_COURTESY_MESSAGE_ACTION channel={} nextRetryIndex={} waitMinutes={} schedulingDate={} - iun={} id={}",
+                channel, nextRetryIndex, waitMinutes, schedulingDate, iun, recIndex);
+        schedulerService.scheduleEvent(iun, recIndex, schedulingDate, ActionType.SEND_COURTESY_MESSAGE_ACTION, nextDetails);
+    }
+
+    /**
+     * Resolve the configured per-channel backoff intervals (in minutes). The list length is the number of retries and
+     * each value is the wait preceding the corresponding retry; a missing or empty list means no retry for that channel.
+     */
+    private List<Integer> resolveRetryIntervalsMinutes(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel) {
+        PnDeliveryPushWorkflowConfigs.CourtesyRetry courtesyRetry = pnDeliveryPushConfigs.getCourtesyRetry();
+        if (courtesyRetry == null || courtesyRetry.getIntervalsMinutes() == null) {
+            return List.of();
+        }
+        PnDeliveryPushWorkflowConfigs.CourtesyRetry.IntervalsMinutes intervalsMinutes = courtesyRetry.getIntervalsMinutes();
+        List<Integer> channelIntervals = switch (channel) {
+            case EMAIL -> intervalsMinutes.getEmail();
+            case SMS -> intervalsMinutes.getSms();
+            case APPIO -> intervalsMinutes.getIo();
+            case TPP -> intervalsMinutes.getTpp();
+        };
+        return channelIntervals != null ? channelIntervals : List.of();
+    }
+
+    private void addCourtesyChannelFailedToTimeline(NotificationInt notification, Integer recIndex, SendCourtesyMessageActionDetails details) {
+        String eventId = TimelineEventId.COURTESY_CHANNEL_FAILED.buildEventId(EventId.builder()
+                .iun(notification.getIun())
+                .recIndex(recIndex)
+                .courtesyAddressType(details.getChannel())
+                .build());
+        addTimelineElement(
+                timelineUtils.buildCourtesyChannelFailedTimelineElement(recIndex, notification, details.getChannel(), details.getDeliveryMode(), eventId),
+                notification
+        );
+    }
+
+    private CourtesyDigitalAddressInt resolveCourtesyAddress(NotificationInt notification, Integer recIndex, CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel) {
+        return getCourtesyAddresses(notification, recIndex).stream()
+                .filter(address -> channel.equals(address.getType()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private List<CourtesyDigitalAddressInt> getCourtesyAddresses(NotificationInt notification, Integer recIndex) {
+        NotificationRecipientInt recipient = notificationUtils.getRecipientFromIndex(notification, recIndex);
+        return addressBookService.getCourtesyAddress(recipient.getInternalId(), notification.getSender().getPaId());
     }
 
     private Instant retrieveOrCalculateSchedulingAnalogDate(String iun, Integer recIndex) {
@@ -97,31 +220,34 @@ public class CourtesyMessageUtils {
     }
 
     /**
-     * Tenta di inviare il messaggio di cortesia specifico in base al tipo.
-     * @return true se il messaggio è stato inviato con successo.
+     * Tries to send the courtesy message on the given channel and classifies the outcome.
+     * @return the classified {@link CourtesySendOutcome} of the attempt.
      */
-    private boolean trySendCourtesyMessage(NotificationInt notification,
-                                           Integer recIndex,
-                                           CourtesyDigitalAddressInt courtesyAddress,
-                                           Instant schedulingAnalogDate,
-                                           DeliveryModeInt deliveryMode) {
+    private CourtesySendOutcome trySendCourtesyMessage(NotificationInt notification,
+                                                       Integer recIndex,
+                                                       CourtesyDigitalAddressInt courtesyAddress,
+                                                       Instant schedulingAnalogDate,
+                                                       DeliveryModeInt deliveryMode) {
 
         log.debug("Send courtesy message attempt for address type {} - iun={} id={}", courtesyAddress.getType(), notification.getIun(), recIndex);
 
         if (timelineUtils.checkIsNotificationCancellationRequested(notification.getIun())) {
             log.warn("{} courtesy blocked for cancelled notification iun={}", courtesyAddress.getType(), notification.getIun());
-            return false;
+            return CourtesySendOutcome.PERMANENT_FAILURE;
         }
 
-        boolean messageSent = false;
+        CourtesySendOutcome outcome;
         switch (courtesyAddress.getType()) {
-            case EMAIL, SMS -> messageSent = manageCourtesyMessage(notification, recIndex, courtesyAddress, deliveryMode);
-            case APPIO -> messageSent = manageIOMessage(notification, recIndex, courtesyAddress, schedulingAnalogDate, deliveryMode);
-            case TPP -> messageSent = manageTPPMessage(notification, recIndex, courtesyAddress, deliveryMode, schedulingAnalogDate);
-            default -> handleCourtesyTypeError(notification, recIndex, courtesyAddress);
+            case EMAIL, SMS -> outcome = manageCourtesyMessage(notification, recIndex, courtesyAddress, deliveryMode);
+            case APPIO -> outcome = manageIOMessage(notification, recIndex, courtesyAddress, schedulingAnalogDate, deliveryMode);
+            case TPP -> outcome = manageTPPMessage(notification, recIndex, courtesyAddress, deliveryMode, schedulingAnalogDate);
+            default -> {
+                handleCourtesyTypeError(notification, recIndex, courtesyAddress);
+                outcome = CourtesySendOutcome.PERMANENT_FAILURE;
+            }
         }
 
-        return messageSent;
+        return outcome;
     }
 
     private void handleCourtesyTypeError(NotificationInt notification, Integer recIndex, CourtesyDigitalAddressInt courtesyAddress) {
@@ -187,38 +313,55 @@ public class CourtesyMessageUtils {
 
     // --- Gestori dei Messaggi ---
 
-    private boolean manageCourtesyMessage(NotificationInt notification, int recIndex, CourtesyDigitalAddressInt courtesyAddress, DeliveryModeInt deliveryMode) {
+    private CourtesySendOutcome manageCourtesyMessage(NotificationInt notification, int recIndex, CourtesyDigitalAddressInt courtesyAddress, DeliveryModeInt deliveryMode) {
         log.info("Send courtesy message to externalChannel courtesyType={} - iun={} id={} ", courtesyAddress.getType(), notification.getIun(), recIndex);
 
         String eventId = getSendCourtesyTimelineElementId(recIndex, notification.getIun(), courtesyAddress.getType(), Boolean.FALSE);
-        externalChannelService.sendCourtesyNotification(notification, courtesyAddress, recIndex, eventId, deliveryMode);
+        try {
+            externalChannelService.sendCourtesyNotification(notification, courtesyAddress, recIndex, eventId, deliveryMode);
+        } catch (Exception e) {
+            boolean retryable = retryableErrorClassifier.isRetryableTransportError(courtesyAddress.getType(), e);
+            log.warn("Error sending courtesy message on channel={} retryable={} - iun={} id={}", courtesyAddress.getType(), retryable, notification.getIun(), recIndex, e);
+            return retryable ? CourtesySendOutcome.RETRYABLE_ERROR : CourtesySendOutcome.PERMANENT_FAILURE;
+        }
         addSendCourtesyMessageToTimeline(notification, recIndex, courtesyAddress, Instant.now(), eventId, null);
-        return true;
+        return CourtesySendOutcome.SENT;
     }
 
-    private boolean manageIOMessage(NotificationInt notification, int recIndex, CourtesyDigitalAddressInt courtesyAddress, Instant schedulingAnalogDate, DeliveryModeInt deliveryMode) {
-        // nel caso di IO, il messaggio potrebbe NON essere inviato. Al netto del fatto di eccezioni, che vengono catchate sotto
-        // ci sono casi in cui non viene inviato perchè l'utente non ha abilitato IO. Quindi in questi casi non viene salvato l'evento di timeline
-        // NB: anche nel caso di invio di Opt-in, non salvo l'evento in timeline.
+    private CourtesySendOutcome manageIOMessage(NotificationInt notification, int recIndex, CourtesyDigitalAddressInt courtesyAddress, Instant schedulingAnalogDate, DeliveryModeInt deliveryMode) {
+        // App IO may not actually send the message: besides transport exceptions (classified below),
+        // there are cases where the message is not sent because the user has not enabled App IO;
+        // in those cases no timeline event is saved. The same applies to the opt-in flow.
         log.info("Send courtesy message to App IO - iun={} id={} ", notification.getIun(), recIndex);
 
-        SendMessageResponse.ResultEnum result = iOservice.sendIOMessage(notification, recIndex, schedulingAnalogDate, deliveryMode);
+        SendMessageResponse.ResultEnum result;
+        try {
+            result = iOservice.sendIOMessage(notification, recIndex, schedulingAnalogDate, deliveryMode);
+        } catch (Exception e) {
+            boolean retryable = retryableErrorClassifier.isRetryableTransportError(courtesyAddress.getType(), e);
+            log.warn("Error sending courtesy message to App IO retryable={} - iun={} id={}", retryable, notification.getIun(), recIndex, e);
+            return retryable ? CourtesySendOutcome.RETRYABLE_ERROR : CourtesySendOutcome.PERMANENT_FAILURE;
+        }
 
         if (SENT_COURTESY.equals(result) || SENT_OPTIN.equals(result) || NOT_SENT_OPTIN_ALREADY_SENT.equals(result)) {
-            // Se l'invio ha avuto successo o ha gestito l'opt-in, salviamo l'evento in timeline
             IoSendMessageResultInt ioSendMessageResult = IoSendMessageResultInt.valueOf(result.getValue());
             boolean isOptin = SENT_OPTIN.equals(result) || NOT_SENT_OPTIN_ALREADY_SENT.equals(result);
             String eventId = getSendCourtesyTimelineElementId(recIndex, notification.getIun(), courtesyAddress.getType(), isOptin);
 
             addSendCourtesyMessageToTimeline(notification, recIndex, courtesyAddress, Instant.now(), eventId, ioSendMessageResult);
-            return true;
-        } else {
-            log.info("skipping saving courtesy timeline iun={} id={}", notification.getIun(), recIndex);
-            return false;
+            return CourtesySendOutcome.SENT;
         }
+
+        if (retryableErrorClassifier.isRetryableIoResult(result)) {
+            log.info("App IO returned a transient error result={} - iun={} id={}", result, notification.getIun(), recIndex);
+            return CourtesySendOutcome.RETRYABLE_ERROR;
+        }
+
+        log.info("App IO did not send the courtesy message, permanent result={} - iun={} id={}", result, notification.getIun(), recIndex);
+        return CourtesySendOutcome.PERMANENT_FAILURE;
     }
 
-    private boolean manageTPPMessage(NotificationInt notification, Integer recIndex, CourtesyDigitalAddressInt courtesyAddress, DeliveryModeInt deliveryMode, Instant schedulingAnalogDate) {
+    private CourtesySendOutcome manageTPPMessage(NotificationInt notification, Integer recIndex, CourtesyDigitalAddressInt courtesyAddress, DeliveryModeInt deliveryMode, Instant schedulingAnalogDate) {
         final String iun = notification.getIun();
         log.info("manageTPPMessage - iun={} id={} ", iun, recIndex);
 
@@ -226,15 +369,22 @@ public class CourtesyMessageUtils {
         SendMessageRequestBody request = buildSendMessageRequest(notification, recIndex, deliveryMode, schedulingAnalogDate);
         PnAuditLogEvent logEvent = buildAuditLogEvent(iun, recIndex, eventId);
 
-        it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.emd.integration.model.SendMessageResponse response = pnEmdIntegrationClient.sendMessage(request);
+        it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.emd.integration.model.SendMessageResponse response;
+        try {
+            response = pnEmdIntegrationClient.sendMessage(request);
+        } catch (Exception e) {
+            boolean retryable = retryableErrorClassifier.isRetryableTransportError(courtesyAddress.getType(), e);
+            logEvent.generateFailure("Error sending courtesy message via TPP channel retryable={} with recIndex={} and iun={}", retryable, recIndex, iun, e).log();
+            return retryable ? CourtesySendOutcome.RETRYABLE_ERROR : CourtesySendOutcome.PERMANENT_FAILURE;
+        }
 
         if (response.getOutcome() == it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.emd.integration.model.SendMessageResponse.OutcomeEnum.OK) {
             addSendCourtesyMessageToTimeline(notification, recIndex, courtesyAddress, Instant.now(), eventId, null);
             logEvent.generateSuccess("successful sent courtesy message via TPP channel with recIndex ={} and iun ={}", recIndex, iun).log();
-            return true;
+            return CourtesySendOutcome.SENT;
         } else {
             logEvent.generateSuccess("TPP channel not enabled for recipient with recIndex={} and iun={}", recIndex, iun).log();
-            return false;
+            return CourtesySendOutcome.PERMANENT_FAILURE;
         }
     }
 

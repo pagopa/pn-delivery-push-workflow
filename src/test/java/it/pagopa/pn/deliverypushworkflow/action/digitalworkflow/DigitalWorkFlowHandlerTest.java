@@ -2036,7 +2036,7 @@ class DigitalWorkFlowHandlerTest {
         handler.startDigitalWorkflow(notification, address, DigitalAddressSourceInt.PLATFORM, recIndex);
 
         verify(courtesyMessageUtils, Mockito.times(1))
-                .checkAddressesAndSendCourtesyMessage(notification, recIndex, DeliveryModeInt.DIGITAL);
+                .scheduleCourtesyMessagesActions(notification, recIndex, DeliveryModeInt.DIGITAL);
     }
 
 
