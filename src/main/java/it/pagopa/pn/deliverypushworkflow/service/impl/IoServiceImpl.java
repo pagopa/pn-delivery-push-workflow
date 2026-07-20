@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 
 import static it.pagopa.pn.deliverypushworkflow.exceptions.PnDeliveryPushExceptionCodes.ERROR_CODE_DELIVERYPUSH_ERRORCOURTESYIO;
+import static it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregistry.model.SendMessageResponse.ResultEnum.*;
 
 
 @Slf4j
@@ -47,21 +48,30 @@ public class IoServiceImpl implements IoService {
                 .build();
         logEvent.log();
         
+        SendMessageResponse sendIoMessageResponse;
         try {
-          SendMessageResponse sendIoMessageResponse = pnExternalRegistryClient.sendIOMessage(sendMessageRequest);
-
-          if(sendIoMessageResponse != null){
-              logEvent.generateSuccess("Send io message completed, with result={}", sendIoMessageResponse.getResult()).log();
-              return sendIoMessageResponse.getResult();
-          }else {
-              logEvent.generateFailure("endIOMessage return not valid response response - iun={} id={} ", notification.getIun(), recIndex).log();
-              throw new PnInternalException("sendIOMessage return not valid response response - iun="+ notification.getIun() +" id="+ recIndex, ERROR_CODE_DELIVERYPUSH_ERRORCOURTESYIO);
-          }
-
+            sendIoMessageResponse = pnExternalRegistryClient.sendIOMessage(sendMessageRequest);
         } catch (Exception ex){
             logEvent.generateFailure("Error in sendIoMessage", ex).log();
             throw ex;
         }
+
+        if(sendIoMessageResponse == null){
+            logEvent.generateFailure("endIOMessage return not valid response response - iun={} id={} ", notification.getIun(), recIndex).log();
+            throw new PnInternalException("sendIOMessage return not valid response response - iun="+ notification.getIun() +" id="+ recIndex, ERROR_CODE_DELIVERYPUSH_ERRORCOURTESYIO);
+        }
+
+        SendMessageResponse.ResultEnum result = sendIoMessageResponse.getResult();
+        if( isErrorStatus(result) ){
+            logEvent.generateFailure("Error in sendIoMessage, with errorStatus={} - iun={} id={} ", result, notification.getIun(), recIndex).log();
+        } else {
+            logEvent.generateSuccess("Send io message completed, with result={}", result).log();
+        }
+        return result;
+    }
+
+    private boolean isErrorStatus(SendMessageResponse.ResultEnum result) {
+        return ERROR_USER_STATUS.equals(result) || ERROR_COURTESY.equals(result) || ERROR_OPTIN.equals(result);
     }
 
     @NotNull
