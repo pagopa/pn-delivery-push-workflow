@@ -50,26 +50,16 @@ public class CourtesyMessageUtils {
     private final CourtesyRetryableErrorClassifier retryableErrorClassifier;
 
     /**
-     * Get recipient courtesy addresses and schedule an independent send action per available channel.
-     * Each channel is scheduled as its own {@link ActionType#SEND_COURTESY_MESSAGE_ACTION}, executed immediately,
-     * carrying the channel, the retry index (0 = first send) and the delivery mode in its details.
+     * Schedule an independent {@link ActionType#SEND_COURTESY_MESSAGE_ACTION} per available courtesy channel, executed
+     * immediately. On the ANALOG branch with no channel available the analog workflow is scheduled immediately, since
+     * no delivery can ever succeed.
      */
     public void scheduleCourtesyMessagesActions(NotificationInt notification, Integer recIndex, DeliveryModeInt deliveryMode) {
-        dispatchCourtesyMessagesActions(notification, recIndex, deliveryMode);
-    }
-
-    /**
-     * Dispatch the per-channel courtesy actions for the ANALOG branch and return the interim scheduling date for
-     * ANALOG_WORKFLOW: the probable date (now + waiting) if at least one courtesy channel exists, otherwise now.
-     * TODO WI-2.1/2.2: la decorrenza "dal primo successo" e il caso critico "tutti i canali chiusi senza successo"
-     * sostituiranno questa datazione interim.
-     */
-    public Instant scheduleCourtesyMessagesActionsForAnalog(NotificationInt notification, Integer recIndex) {
-        List<CourtesyDigitalAddressInt> scheduledChannels = dispatchCourtesyMessagesActions(notification, recIndex, DeliveryModeInt.ANALOG);
-        if (scheduledChannels.isEmpty()) {
-            return Instant.now();
+        List<CourtesyDigitalAddressInt> scheduledChannels = dispatchCourtesyMessagesActions(notification, recIndex, deliveryMode);
+        if (deliveryMode == DeliveryModeInt.ANALOG && scheduledChannels.isEmpty()) {
+            log.info("No courtesy channel available, scheduling analog workflow immediately - iun={} id={}", notification.getIun(), recIndex);
+            scheduleAnalogWorkflow(notification, recIndex, Instant.now());
         }
-        return retrieveOrCalculateSchedulingAnalogDate(notification.getIun(), recIndex);
     }
 
     private List<CourtesyDigitalAddressInt> dispatchCourtesyMessagesActions(NotificationInt notification, Integer recIndex, DeliveryModeInt deliveryMode) {
@@ -118,7 +108,9 @@ public class CourtesyMessageUtils {
         switch (outcome) {
             case SENT -> {
                 log.info("Courtesy message sent successfully for channel={} retryIndex={} - iun={} id={}", channel, details.getRetryIndex(), iun, recIndex);
-                addProbableSchedulingElementToTimeline(notification, recIndex, schedulingAnalogDate);
+                if (details.getDeliveryMode() == DeliveryModeInt.ANALOG) {
+                    scheduleAnalogWorkflow(notification, recIndex, schedulingAnalogDate);
+                }
             }
             case RETRYABLE_ERROR -> {
                 log.info("Retryable error on courtesy channel={} retryIndex={} - iun={} id={}", channel, details.getRetryIndex(), iun, recIndex);
@@ -303,6 +295,19 @@ public class CourtesyMessageUtils {
         String timelineElementId = getProbableSchedulingAnalogTimelineElementId(recIndex, notification.getIun());
         addTimelineElement(
                 timelineUtils.buildProbableDateSchedulingAnalogTimelineElement(recIndex, notification, timelineElementId, schedulingAnalogDate),
+                notification
+        );
+    }
+
+    private void scheduleAnalogWorkflow(NotificationInt notification, Integer recIndex, Instant schedulingAnalogDate) {
+        addProbableSchedulingElementToTimeline(notification, recIndex, schedulingAnalogDate);
+        addScheduleAnalogWorkflowToTimeline(notification, recIndex, schedulingAnalogDate);
+        schedulerService.scheduleEvent(notification.getIun(), recIndex, schedulingAnalogDate, ActionType.ANALOG_WORKFLOW);
+    }
+
+    private void addScheduleAnalogWorkflowToTimeline(NotificationInt notification, Integer recIndex, Instant schedulingAnalogDate) {
+        addTimelineElement(
+                timelineUtils.buildScheduleAnalogWorkflowTimeline(notification, recIndex, schedulingAnalogDate),
                 notification
         );
     }

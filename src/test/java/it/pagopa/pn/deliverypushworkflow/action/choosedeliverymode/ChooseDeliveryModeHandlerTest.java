@@ -12,10 +12,9 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.Notificat
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationSenderInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.publicregistry.NationalRegistriesResponse;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ContactPhaseInt;
-import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ActionType;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.DeliveryModeInt;
 import it.pagopa.pn.deliverypushworkflow.service.NationalRegistriesService;
 import it.pagopa.pn.deliverypushworkflow.service.NotificationService;
-import it.pagopa.pn.deliverypushworkflow.service.SchedulerService;
 import it.pagopa.pn.deliverypushworkflow.utils.FeatureEnabledUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,8 +36,6 @@ import static org.mockito.Mockito.*;
 class ChooseDeliveryModeHandlerTest {
 
     private DigitalWorkFlowHandler digitalWorkFlowHandler;
-    @Mock
-    private SchedulerService schedulerService;
     @Mock
     private NationalRegistriesService nationalRegistriesService;
     @Mock
@@ -64,7 +61,7 @@ class ChooseDeliveryModeHandlerTest {
 
         cfg = mock(PnDeliveryPushWorkflowConfigs.class);
         FeatureEnabledUtils featureEnabledUtils = new FeatureEnabledUtils(cfg);
-        handler = new ChooseDeliveryModeHandler(digitalWorkFlowHandler, schedulerService, nationalRegistriesService,
+        handler = new ChooseDeliveryModeHandler(digitalWorkFlowHandler, nationalRegistriesService,
                 chooseDeliveryUtils, notificationService, featureEnabledUtils, courtesyMessageUtils);
         notificationUtils= new NotificationUtils();
     }
@@ -198,9 +195,6 @@ class ChooseDeliveryModeHandlerTest {
         NationalRegistriesResponse response = NationalRegistriesResponse.builder()
                 .digitalAddress(null).build();
 
-        Instant expectedDate = Instant.now().plusSeconds(1000);
-        when(courtesyMessageUtils.scheduleCourtesyMessagesActionsForAnalog(notification, recIndex)).thenReturn(expectedDate);
-
         //WHEN
         handler.handleGeneralAddressResponse(response, notification, recIndex);
 
@@ -214,9 +208,8 @@ class ChooseDeliveryModeHandlerTest {
         Assertions.assertFalse(isAvailableCaptor.getValue());
         Assertions.assertEquals(DigitalAddressSourceInt.GENERAL, digitalAddressSourceCaptor.getValue());
 
-        // il ramo analogico schedula ANALOG_WORKFLOW a valle del dispatch cortesia (datazione interim WI-2.x)
-        verify(chooseDeliveryUtils).addScheduleAnalogWorkflowToTimeline(recIndex, notification, expectedDate);
-        verify(schedulerService).scheduleEvent(notification.getIun(), recIndex, expectedDate, ActionType.ANALOG_WORKFLOW);
+        verify(courtesyMessageUtils).scheduleCourtesyMessagesActions(notification, recIndex, DeliveryModeInt.ANALOG);
+        verify(chooseDeliveryUtils, times(0)).addScheduleAnalogWorkflowToTimeline(eq(recIndex), eq(notification), any(Instant.class));
     }
 
     @Test
@@ -234,16 +227,13 @@ class ChooseDeliveryModeHandlerTest {
         when(chooseDeliveryUtils.retrieveSpecialAddress(notification, recIndex)).thenReturn(null);
         when(chooseDeliveryUtils.retrievePlatformAddress(notification, recIndex)).thenReturn(Optional.empty());
 
-        Instant expectedDate = Instant.now().plusSeconds(1000);
-        when(courtesyMessageUtils.scheduleCourtesyMessagesActionsForAnalog(notification, recIndex)).thenReturn(expectedDate);
-
         //WHEN
         handler.handleGeneralAddressResponse(response, notification, recIndex);
 
         verify(chooseDeliveryUtils, times(1)).addAvailabilitySourceToTimeline(anyInt(), any(NotificationInt.class), eq(DigitalAddressSourceInt.GENERAL), eq(false));
         verifyNoInteractions(digitalWorkFlowHandler);
-        verify(chooseDeliveryUtils, times(1)).addScheduleAnalogWorkflowToTimeline(recIndex, notification, expectedDate);
-        verify(schedulerService, times(1)).scheduleEvent(notification.getIun(), recIndex, expectedDate, ActionType.ANALOG_WORKFLOW);
+        verify(courtesyMessageUtils, times(1)).scheduleCourtesyMessagesActions(notification, recIndex, DeliveryModeInt.ANALOG);
+        verify(chooseDeliveryUtils, times(0)).addScheduleAnalogWorkflowToTimeline(eq(recIndex), eq(notification), any(Instant.class));
     }
 
     @Test
