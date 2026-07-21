@@ -10,7 +10,9 @@ import it.pagopa.pn.deliverypushworkflow.dto.address.LegalDigitalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.*;
 import it.pagopa.pn.deliverypushworkflow.dto.io.IoSendMessageResultInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.EventId;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventId;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.CourtesyChannelFailedDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.DeliveryModeInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.emd.integration.model.SendMessageRequestBody;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregistry.model.SendMessageResponse;
@@ -36,6 +38,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static it.pagopa.pn.deliverypushworkflow.action.it.mockbean.ExternalChannelMock.EXTCHANNEL_SEND_SUCCESS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -443,6 +446,82 @@ class CourtesyMessageUtilsTest {
     }
 
     @Test
+    void handleSendCourtesyMessageActionAnalogAllChannelsClosedWithoutSuccessSchedulesAnalogWorkflow() {
+        //GIVEN
+        NotificationRecipientInt recipient = getNotificationRecipientInt();
+        NotificationInt notification = getNotificationInt(recipient);
+        String iun = notification.getIun();
+
+        Mockito.when(notificationService.getNotificationByIun(iun)).thenReturn(notification);
+        Mockito.when(notificationUtils.getRecipientFromIndex(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(recipient);
+        Mockito.when(addressBookService.getCourtesyAddress(Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(List.of(courtesyAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP)));
+        Mockito.when(pnEmdIntegrationClient.sendMessage(Mockito.any(SendMessageRequestBody.class))).thenReturn(tppPermanentFailure());
+
+        // the just-written COURTESY_CHANNEL_FAILED is visible via strongly consistent read; no delivery exists
+        Mockito.when(timelineService.getTimelineElementStrongly(iun, courtesyChannelFailedId(iun, CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP)))
+                .thenReturn(Optional.of(courtesyChannelFailedElement(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP)));
+
+        //WHEN
+        courtesyMessageUtils.handleSendCourtesyMessageAction(iun, 0, details(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP, DeliveryModeInt.ANALOG));
+
+        //THEN
+        Mockito.verify(schedulerService).scheduleEvent(Mockito.eq(iun), Mockito.eq(0), Mockito.any(Instant.class), Mockito.eq(ActionType.ANALOG_WORKFLOW));
+    }
+
+    @Test
+    void handleSendCourtesyMessageActionAnalogChannelStillOpenDoesNotScheduleAnalogWorkflow() {
+        //GIVEN
+        NotificationRecipientInt recipient = getNotificationRecipientInt();
+        NotificationInt notification = getNotificationInt(recipient);
+        String iun = notification.getIun();
+
+        Mockito.when(notificationService.getNotificationByIun(iun)).thenReturn(notification);
+        Mockito.when(notificationUtils.getRecipientFromIndex(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(recipient);
+        Mockito.when(addressBookService.getCourtesyAddress(Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(List.of(courtesyAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP),
+                        courtesyAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.SMS)));
+        Mockito.when(pnEmdIntegrationClient.sendMessage(Mockito.any(SendMessageRequestBody.class))).thenReturn(tppPermanentFailure());
+
+        // only TPP is closed; SMS has no outcome yet
+        Mockito.when(timelineService.getTimelineElementStrongly(iun, courtesyChannelFailedId(iun, CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP)))
+                .thenReturn(Optional.of(courtesyChannelFailedElement(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP)));
+
+        //WHEN
+        courtesyMessageUtils.handleSendCourtesyMessageAction(iun, 0, details(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP, DeliveryModeInt.ANALOG));
+
+        //THEN
+        Mockito.verify(schedulerService, never()).scheduleEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.any(Instant.class), Mockito.eq(ActionType.ANALOG_WORKFLOW));
+    }
+
+    @Test
+    void handleSendCourtesyMessageActionAnalogSuccessOnAnotherChannelTakesPrecedence() {
+        //GIVEN
+        NotificationRecipientInt recipient = getNotificationRecipientInt();
+        NotificationInt notification = getNotificationInt(recipient);
+        String iun = notification.getIun();
+
+        Mockito.when(notificationService.getNotificationByIun(iun)).thenReturn(notification);
+        Mockito.when(notificationUtils.getRecipientFromIndex(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(recipient);
+        Mockito.when(addressBookService.getCourtesyAddress(Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(List.of(courtesyAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP),
+                        courtesyAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.EMAIL)));
+        Mockito.when(pnEmdIntegrationClient.sendMessage(Mockito.any(SendMessageRequestBody.class))).thenReturn(tppPermanentFailure());
+
+        // TPP is closed without success, but EMAIL already delivered: the +waiting scheduling takes precedence
+        Mockito.when(timelineService.getTimelineElementStrongly(iun, courtesyChannelFailedId(iun, CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP)))
+                .thenReturn(Optional.of(courtesyChannelFailedElement(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP)));
+        String emailDeliveredId = CourtesyMessageUtils.getSendCourtesyTimelineElementId(0, iun, CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.EMAIL, Boolean.FALSE);
+        Mockito.when(timelineService.getTimelineElementStrongly(iun, emailDeliveredId)).thenReturn(Optional.of(new TimelineElementInternal()));
+
+        //WHEN
+        courtesyMessageUtils.handleSendCourtesyMessageAction(iun, 0, details(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP, DeliveryModeInt.ANALOG));
+
+        //THEN
+        Mockito.verify(schedulerService, never()).scheduleEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.any(Instant.class), Mockito.eq(ActionType.ANALOG_WORKFLOW));
+    }
+
+    @Test
     void addSendCourtesyMessageToTimeline() {
         // GIVEN
         NotificationRecipientInt recipient = getNotificationRecipientInt();
@@ -472,6 +551,29 @@ class CourtesyMessageUtilsTest {
         );
 
         Assertions.assertEquals(firstEventIdExpected, firstEventIdInTimeline);
+    }
+
+    private static String courtesyChannelFailedId(String iun, CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel) {
+        return TimelineEventId.COURTESY_CHANNEL_FAILED.buildEventId(EventId.builder()
+                .iun(iun)
+                .recIndex(0)
+                .courtesyAddressType(channel)
+                .build());
+    }
+
+    private static TimelineElementInternal courtesyChannelFailedElement(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel) {
+        return TimelineElementInternal.builder()
+                .details(CourtesyChannelFailedDetailsInt.builder()
+                        .channelType(channel)
+                        .deliveryMode(DeliveryModeInt.ANALOG)
+                        .build())
+                .build();
+    }
+
+    private static it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.emd.integration.model.SendMessageResponse tppPermanentFailure() {
+        var response = new it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.emd.integration.model.SendMessageResponse();
+        response.setOutcome(it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.emd.integration.model.SendMessageResponse.OutcomeEnum.NO_CHANNELS_ENABLED);
+        return response;
     }
 
     private static CourtesyDigitalAddressInt courtesyAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT type) {

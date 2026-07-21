@@ -13,6 +13,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.io.IoSendMessageResultInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.EventId;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventId;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.CourtesyChannelFailedDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.DeliveryModeInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ProbableDateAnalogWorkflowDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.emd.integration.model.SendMessageRequestBody;
@@ -118,7 +119,7 @@ public class CourtesyMessageUtils {
             }
             case PERMANENT_FAILURE -> {
                 log.info("Courtesy message not sent for channel={}, permanent failure, channel closed - iun={} id={}", channel, iun, recIndex);
-                addCourtesyChannelFailedToTimeline(notification, recIndex, details);
+                closeCourtesyChannelWithoutSuccess(notification, recIndex, details);
             }
         }
     }
@@ -137,7 +138,7 @@ public class CourtesyMessageUtils {
         if (currentRetryIndex >= intervals.size()) {
             log.info("Courtesy retry intervals exhausted for channel={} retryIndex={}, channel closed - iun={} id={}",
                     channel, currentRetryIndex, iun, recIndex);
-            addCourtesyChannelFailedToTimeline(notification, recIndex, details);
+            closeCourtesyChannelWithoutSuccess(notification, recIndex, details);
             return;
         }
 
@@ -173,16 +174,78 @@ public class CourtesyMessageUtils {
         return channelIntervals != null ? channelIntervals : List.of();
     }
 
+    /**
+     * Record the closed-without-success outcome of a courtesy channel and, on the ANALOG branch, coordinate the
+     * critical case: if every expected channel is now closed and none delivered, start the analog workflow.
+     */
+    private void closeCourtesyChannelWithoutSuccess(NotificationInt notification, Integer recIndex, SendCourtesyMessageActionDetails details) {
+        addCourtesyChannelFailedToTimeline(notification, recIndex, details);
+        if (details.getDeliveryMode() == DeliveryModeInt.ANALOG) {
+            scheduleAnalogWorkflowIfAllChannelsClosedWithoutSuccess(notification, recIndex);
+        }
+    }
+
     private void addCourtesyChannelFailedToTimeline(NotificationInt notification, Integer recIndex, SendCourtesyMessageActionDetails details) {
-        String eventId = TimelineEventId.COURTESY_CHANNEL_FAILED.buildEventId(EventId.builder()
-                .iun(notification.getIun())
-                .recIndex(recIndex)
-                .courtesyAddressType(details.getChannel())
-                .build());
+        String eventId = courtesyChannelFailedEventId(notification.getIun(), recIndex, details.getChannel());
         addTimelineElement(
                 timelineUtils.buildCourtesyChannelFailedTimelineElement(recIndex, notification, details.getChannel(), details.getDeliveryMode(), eventId),
                 notification
         );
+    }
+
+    /**
+     * Critical-case coordination for the analog branch. After a courtesy channel closes without success, verify with
+     * strongly consistent reads whether every expected channel now has an outcome: with all channels closed and no
+     * delivery, schedule ANALOG_WORKFLOW immediately; a single delivered channel keeps the +waiting scheduling and
+     * takes precedence. The scheduling is idempotent and deduplicated by the deterministic ANALOG_WORKFLOW actionId,
+     * so concurrent closures still start the analog workflow once.
+     */
+    private void scheduleAnalogWorkflowIfAllChannelsClosedWithoutSuccess(NotificationInt notification, Integer recIndex) {
+        final String iun = notification.getIun();
+        boolean anySuccess = false;
+        for (CourtesyDigitalAddressInt courtesyAddress : getCourtesyAddresses(notification, recIndex)) {
+            CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel = courtesyAddress.getType();
+            if (isCourtesyChannelDelivered(iun, recIndex, channel)) {
+                anySuccess = true;
+            } else if (!isCourtesyChannelFailedForAnalog(iun, recIndex, channel)) {
+                log.info("Courtesy channel={} still open, analog workflow not scheduled yet - iun={} id={}", channel, iun, recIndex);
+                return;
+            }
+        }
+
+        if (anySuccess) {
+            log.info("At least one courtesy channel delivered, analog workflow already scheduled from the first success - iun={} id={}", iun, recIndex);
+            return;
+        }
+
+        log.info("All courtesy channels closed without success, scheduling analog workflow now - iun={} id={}", iun, recIndex);
+        scheduleAnalogWorkflow(notification, recIndex, Instant.now());
+    }
+
+    private boolean isCourtesyChannelDelivered(String iun, Integer recIndex, CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel) {
+        if (timelineService.getTimelineElementStrongly(iun, getSendCourtesyTimelineElementId(recIndex, iun, channel, Boolean.FALSE)).isPresent()) {
+            return true;
+        }
+        // App IO records opt-in deliveries under a dedicated elementId
+        return channel == CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO
+                && timelineService.getTimelineElementStrongly(iun, getSendCourtesyTimelineElementId(recIndex, iun, channel, Boolean.TRUE)).isPresent();
+    }
+
+    private boolean isCourtesyChannelFailedForAnalog(String iun, Integer recIndex, CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel) {
+        return timelineService.getTimelineElementStrongly(iun, courtesyChannelFailedEventId(iun, recIndex, channel))
+                .map(TimelineElementInternal::getDetails)
+                .filter(CourtesyChannelFailedDetailsInt.class::isInstance)
+                .map(CourtesyChannelFailedDetailsInt.class::cast)
+                .filter(failed -> failed.getDeliveryMode() == DeliveryModeInt.ANALOG)
+                .isPresent();
+    }
+
+    private static String courtesyChannelFailedEventId(String iun, Integer recIndex, CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel) {
+        return TimelineEventId.COURTESY_CHANNEL_FAILED.buildEventId(EventId.builder()
+                .iun(iun)
+                .recIndex(recIndex)
+                .courtesyAddressType(channel)
+                .build());
     }
 
     private CourtesyDigitalAddressInt resolveCourtesyAddress(NotificationInt notification, Integer recIndex, CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel) {
