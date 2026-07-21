@@ -8,6 +8,7 @@ import it.pagopa.pn.deliverypushworkflow.action.checkattachmentretention.CheckAt
 import it.pagopa.pn.deliverypushworkflow.action.choosedeliverymode.ChooseDeliveryModeHandler;
 import it.pagopa.pn.deliverypushworkflow.action.choosedeliverymode.ChooseDeliveryModeUtilsImpl;
 import it.pagopa.pn.deliverypushworkflow.action.completionworkflow.*;
+import it.pagopa.pn.deliverypushworkflow.action.courtesymessage.SendCourtesyMessageHandler;
 import it.pagopa.pn.deliverypushworkflow.action.digitalworkflow.*;
 import it.pagopa.pn.deliverypushworkflow.action.it.mockbean.*;
 import it.pagopa.pn.deliverypushworkflow.action.it.utils.TestUtils;
@@ -88,6 +89,7 @@ import static org.awaitility.Awaitility.setDefaultTimeout;
         NotificationViewedRequestHandler.class,
         DigitalWorkFlowUtils.class,
         CourtesyMessageUtils.class,
+        SendCourtesyMessageHandler.class,
         CourtesyRetryableErrorClassifier.class,
         AarUtils.class,
         CompletelyUnreachableUtils.class,

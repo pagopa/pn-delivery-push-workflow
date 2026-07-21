@@ -1,7 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.handler.action;
 
+import it.pagopa.pn.deliverypushworkflow.action.courtesymessage.SendCourtesyMessageHandler;
 import it.pagopa.pn.deliverypushworkflow.action.details.SendCourtesyMessageActionDetails;
-import it.pagopa.pn.deliverypushworkflow.action.utils.CourtesyMessageUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.handler.utils.HandleEventUtils;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.router.SupportedEventType;
@@ -14,11 +14,11 @@ import org.springframework.stereotype.Component;
 @Component
 @CustomLog
 public class SendCourtesyMessageActionEventHandler extends AbstractActionEventHandler {
-    private final CourtesyMessageUtils courtesyMessageUtils;
+    private final SendCourtesyMessageHandler sendCourtesyMessageHandler;
 
-    public SendCourtesyMessageActionEventHandler(TimelineUtils timelineUtils, CourtesyMessageUtils courtesyMessageUtils) {
+    public SendCourtesyMessageActionEventHandler(TimelineUtils timelineUtils, SendCourtesyMessageHandler sendCourtesyMessageHandler) {
         super(timelineUtils);
-        this.courtesyMessageUtils = courtesyMessageUtils;
+        this.sendCourtesyMessageHandler = sendCourtesyMessageHandler;
     }
 
     @Override
@@ -37,7 +37,7 @@ public class SendCourtesyMessageActionEventHandler extends AbstractActionEventHa
             log.logStartingProcess(processName);
             checkNotificationCancelledAndExecute(
                     action,
-                    a -> courtesyMessageUtils.handleSendCourtesyMessageAction(a.getIun(), a.getRecipientIndex(), (SendCourtesyMessageActionDetails) a.getDetails())
+                    a -> sendCourtesyMessageHandler.handleSendCourtesyMessageAction(a.getIun(), a.getRecipientIndex(), (SendCourtesyMessageActionDetails) a.getDetails())
             );
             log.logEndingProcess(processName);
         } catch (Exception ex) {

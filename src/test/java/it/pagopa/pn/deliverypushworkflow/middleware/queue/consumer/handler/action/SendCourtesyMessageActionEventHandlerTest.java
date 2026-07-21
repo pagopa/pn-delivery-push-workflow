@@ -1,7 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.handler.action;
 
+import it.pagopa.pn.deliverypushworkflow.action.courtesymessage.SendCourtesyMessageHandler;
 import it.pagopa.pn.deliverypushworkflow.action.details.SendCourtesyMessageActionDetails;
-import it.pagopa.pn.deliverypushworkflow.action.utils.CourtesyMessageUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.deliverypushworkflow.dto.address.CourtesyDigitalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.DeliveryModeInt;
@@ -20,7 +20,7 @@ class SendCourtesyMessageActionEventHandlerTest {
     @Mock
     private TimelineUtils timelineUtils;
     @Mock
-    private CourtesyMessageUtils courtesyMessageUtils;
+    private SendCourtesyMessageHandler sendCourtesyMessageHandler;
     @Mock
     private MessageHeaders headers;
 
@@ -29,11 +29,11 @@ class SendCourtesyMessageActionEventHandlerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        handler = new SendCourtesyMessageActionEventHandler(timelineUtils, courtesyMessageUtils);
+        handler = new SendCourtesyMessageActionEventHandler(timelineUtils, sendCourtesyMessageHandler);
     }
 
     @Test
-    void handleCallsCourtesyMessageUtils() {
+    void handleCallsSendCourtesyMessageHandler() {
         String iun = "iun";
         int recIndex = 1;
         SendCourtesyMessageActionDetails details = SendCourtesyMessageActionDetails.builder()
@@ -49,7 +49,7 @@ class SendCourtesyMessageActionEventHandlerTest {
 
         handler.handle(action, headers);
 
-        verify(courtesyMessageUtils, times(1)).handleSendCourtesyMessageAction(iun, recIndex, details);
+        verify(sendCourtesyMessageHandler, times(1)).handleSendCourtesyMessageAction(iun, recIndex, details);
     }
 
     @Test
@@ -62,7 +62,7 @@ class SendCourtesyMessageActionEventHandlerTest {
 
         handler.handle(action, headers);
 
-        verify(courtesyMessageUtils, never()).handleSendCourtesyMessageAction(any(), any(), any());
+        verify(sendCourtesyMessageHandler, never()).handleSendCourtesyMessageAction(any(), any(), any());
     }
 
     @Test
