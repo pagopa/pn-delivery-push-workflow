@@ -29,9 +29,8 @@ public class CourtesyMessageUtils {
     private final SchedulerService schedulerService;
 
     /**
-     * Schedule an independent {@link ActionType#SEND_COURTESY_MESSAGE_ACTION} per available courtesy channel, executed
-     * immediately. On the ANALOG branch with no channel available the analog workflow is scheduled immediately, since
-     * no delivery can ever succeed.
+     * Schedule one immediate {@code SEND_COURTESY_MESSAGE_ACTION} per available channel. On the ANALOG branch with no
+     * channel available, start the analog workflow immediately since no delivery can succeed.
      */
     public void scheduleCourtesyMessagesActions(NotificationInt notification, Integer recIndex, DeliveryModeInt deliveryMode) {
         List<CourtesyDigitalAddressInt> scheduledChannels = dispatchCourtesyMessagesActions(notification, recIndex, deliveryMode);

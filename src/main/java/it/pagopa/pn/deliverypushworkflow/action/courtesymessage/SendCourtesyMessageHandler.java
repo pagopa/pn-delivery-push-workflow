@@ -51,10 +51,7 @@ public class SendCourtesyMessageHandler {
     private final PnDeliveryPushWorkflowConfigs pnDeliveryPushConfigs;
     private final CourtesyRetryableErrorClassifier retryableErrorClassifier;
 
-    /**
-     * Execute the courtesy send for a single channel, invoked by the {@code SEND_COURTESY_MESSAGE_ACTION} handler.
-     * Reuses the per-channel dispatch already present in {@link #trySendCourtesyMessage}.
-     */
+    /** Entry point for the {@code SEND_COURTESY_MESSAGE_ACTION}: send the courtesy on a single channel and handle the outcome. */
     public void handleSendCourtesyMessageAction(String iun, Integer recIndex, SendCourtesyMessageActionDetails details) {
         NotificationInt notification = notificationService.getNotificationByIun(iun);
         CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel = details.getChannel();
@@ -93,9 +90,8 @@ public class SendCourtesyMessageHandler {
     }
 
     /**
-     * Reschedule the same courtesy action, moving its execution date forward by the next per-channel backoff interval.
-     * The current retry index selects the interval and, once incremented, is carried in the action details so it
-     * contributes to the {@code actionId}, keeping every rescheduling unique and avoiding pn-action-manager deduplication.
+     * Reschedule the same action with the next backoff interval; the incremented retryIndex is carried in the details
+     * so the resulting {@code actionId} stays unique and is not deduplicated by pn-action-manager.
      */
     private void handleRetryableError(NotificationInt notification, Integer recIndex, SendCourtesyMessageActionDetails details) {
         final String iun = notification.getIun();
@@ -123,10 +119,7 @@ public class SendCourtesyMessageHandler {
         schedulerService.scheduleEvent(iun, recIndex, schedulingDate, ActionType.SEND_COURTESY_MESSAGE_ACTION, nextDetails);
     }
 
-    /**
-     * Resolve the configured per-channel backoff intervals (in minutes). The list length is the number of retries and
-     * each value is the wait preceding the corresponding retry; a missing or empty list means no retry for that channel.
-     */
+    /** Per-channel backoff intervals (minutes): size = number of retries, each value = wait before that retry; empty = no retry. */
     private List<Integer> resolveRetryIntervalsMinutes(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel) {
         PnDeliveryPushWorkflowConfigs.CourtesyRetry courtesyRetry = pnDeliveryPushConfigs.getCourtesyRetry();
         if (courtesyRetry == null || courtesyRetry.getIntervalsMinutes() == null) {
@@ -142,10 +135,7 @@ public class SendCourtesyMessageHandler {
         return channelIntervals != null ? channelIntervals : List.of();
     }
 
-    /**
-     * Record the closed-without-success outcome of a courtesy channel and, on the ANALOG branch, coordinate the
-     * critical case: if every expected channel is now closed and none delivered, start the analog workflow.
-     */
+    /** Record the channel failure on the timeline and, on the ANALOG branch, evaluate whether to start the analog workflow. */
     private void closeCourtesyChannelWithoutSuccess(NotificationInt notification, Integer recIndex, SendCourtesyMessageActionDetails details) {
         addCourtesyChannelFailedToTimeline(notification, recIndex, details);
         if (details.getDeliveryMode() == DeliveryModeInt.ANALOG) {
@@ -162,11 +152,9 @@ public class SendCourtesyMessageHandler {
     }
 
     /**
-     * Critical-case coordination for the analog branch. After a courtesy channel closes without success, verify with
-     * strongly consistent reads whether every expected channel now has an outcome: with all channels closed and no
-     * delivery, schedule ANALOG_WORKFLOW immediately; a single delivered channel keeps the +waiting scheduling and
-     * takes precedence. The scheduling is idempotent and deduplicated by the deterministic ANALOG_WORKFLOW actionId,
-     * so concurrent closures still start the analog workflow once.
+     * ANALOG coordination via strongly consistent reads: if every channel is now closed with no delivery, schedule
+     * ANALOG_WORKFLOW immediately; a delivered channel keeps the +waiting scheduling and wins. Idempotent through the
+     * deterministic ANALOG_WORKFLOW actionId, so concurrent closures start it once.
      */
     private void scheduleAnalogWorkflowIfAllChannelsClosedWithoutSuccess(NotificationInt notification, Integer recIndex) {
         final String iun = notification.getIun();
@@ -224,14 +212,12 @@ public class SendCourtesyMessageHandler {
     }
 
     private Instant retrieveOrCalculateSchedulingAnalogDate(String iun, Integer recIndex) {
-        // Provo a recuperare la data dalla timeline
         String probableSchedulingElementId = courtesyMessageUtils.getProbableSchedulingAnalogTimelineElementId(recIndex, iun);
         Instant schedulingAnalogDate = retrieveProbableSchedulingAnalogTimeline(iun, probableSchedulingElementId);
         if (schedulingAnalogDate != null) {
             log.info("Scheduling analog date found in timeline - iun={} id={} schedulingAnalogDate={}", iun, recIndex, schedulingAnalogDate);
             return schedulingAnalogDate;
         }
-        // Se non esiste, la calcolo ex-novo
         Duration waitingTime = pnDeliveryPushConfigs.getTimeParams().getWaitingForReadCourtesyMessage();
         log.info("Scheduling analog date not found in timeline, calculating new one - iun={} id={} waitingTime={}", iun, recIndex, waitingTime);
         return Instant.now().plus(waitingTime);
@@ -246,10 +232,6 @@ public class SendCourtesyMessageHandler {
                 });
     }
 
-    /**
-     * Tries to send the courtesy message on the given channel and classifies the outcome.
-     * @return the classified {@link CourtesySendOutcome} of the attempt.
-     */
     private CourtesySendOutcome trySendCourtesyMessage(NotificationInt notification,
                                                        Integer recIndex,
                                                        CourtesyDigitalAddressInt courtesyAddress,
