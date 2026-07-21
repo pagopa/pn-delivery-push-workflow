@@ -17,6 +17,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.EventId;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventId;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.CourtesyChannelFailedDetailsInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.CourtesyChannelFailureReasonInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.DeliveryModeInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.emd.integration.model.SendMessageRequestBody;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregistry.model.SendMessageResponse;
@@ -141,7 +142,7 @@ class SendCourtesyMessageHandlerTest {
         Mockito.verify(timelineUtils).buildCourtesyChannelFailedTimelineElement(
                 Mockito.eq(0), Mockito.eq(notification),
                 Mockito.eq(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO),
-                Mockito.eq(DeliveryModeInt.ANALOG), Mockito.anyString());
+                Mockito.eq(DeliveryModeInt.ANALOG), Mockito.eq(CourtesyChannelFailureReasonInt.EXPECTED_FAILURE), Mockito.anyString());
         Mockito.verify(timelineService, times(1)).addTimelineElement(Mockito.any(), Mockito.any(NotificationInt.class));
         Mockito.verify(schedulerService, never()).scheduleEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.any(Instant.class),
                 Mockito.any(ActionType.class), Mockito.any(SendCourtesyMessageActionDetails.class));
@@ -181,7 +182,7 @@ class SendCourtesyMessageHandlerTest {
         assertThat(dateCaptor.getValue()).isBetween(beforeCall.plus(Duration.ofMinutes(5)), afterCall.plus(Duration.ofMinutes(5)));
 
         Mockito.verify(timelineUtils, never()).buildCourtesyChannelFailedTimelineElement(
-                Mockito.anyInt(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyString());
+                Mockito.anyInt(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyString());
         Mockito.verify(timelineService, never()).addTimelineElement(Mockito.any(), Mockito.any(NotificationInt.class));
     }
 
@@ -207,7 +208,7 @@ class SendCourtesyMessageHandlerTest {
         Mockito.verify(timelineUtils).buildCourtesyChannelFailedTimelineElement(
                 Mockito.eq(0), Mockito.eq(notification),
                 Mockito.eq(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO),
-                Mockito.eq(DeliveryModeInt.ANALOG), Mockito.anyString());
+                Mockito.eq(DeliveryModeInt.ANALOG), Mockito.eq(CourtesyChannelFailureReasonInt.RETRIES_EXHAUSTED), Mockito.anyString());
         Mockito.verify(timelineService, times(1)).addTimelineElement(Mockito.any(), Mockito.any(NotificationInt.class));
         Mockito.verify(schedulerService, never()).scheduleEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.any(Instant.class),
                 Mockito.any(ActionType.class), Mockito.any(SendCourtesyMessageActionDetails.class));
@@ -264,7 +265,7 @@ class SendCourtesyMessageHandlerTest {
         Mockito.verify(timelineUtils).buildCourtesyChannelFailedTimelineElement(
                 Mockito.eq(0), Mockito.eq(notification),
                 Mockito.eq(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP),
-                Mockito.eq(DeliveryModeInt.ANALOG), Mockito.anyString());
+                Mockito.eq(DeliveryModeInt.ANALOG), Mockito.eq(CourtesyChannelFailureReasonInt.EXPECTED_FAILURE), Mockito.anyString());
         Mockito.verify(timelineService, times(1)).addTimelineElement(Mockito.any(), Mockito.any(NotificationInt.class));
     }
 
@@ -301,7 +302,7 @@ class SendCourtesyMessageHandlerTest {
         assertThat(dateCaptor.getValue()).isBetween(beforeCall.plus(Duration.ofMinutes(4)), afterCall.plus(Duration.ofMinutes(4)));
 
         Mockito.verify(timelineUtils, never()).buildCourtesyChannelFailedTimelineElement(
-                Mockito.anyInt(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyString());
+                Mockito.anyInt(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyString());
         Mockito.verify(timelineService, never()).addTimelineElement(Mockito.any(), Mockito.any(NotificationInt.class));
     }
 
@@ -328,7 +329,7 @@ class SendCourtesyMessageHandlerTest {
         Mockito.verify(timelineUtils).buildCourtesyChannelFailedTimelineElement(
                 Mockito.eq(0), Mockito.eq(notification),
                 Mockito.eq(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP),
-                Mockito.eq(DeliveryModeInt.ANALOG), Mockito.anyString());
+                Mockito.eq(DeliveryModeInt.ANALOG), Mockito.eq(CourtesyChannelFailureReasonInt.RETRIES_EXHAUSTED), Mockito.anyString());
         Mockito.verify(timelineService, times(1)).addTimelineElement(Mockito.any(), Mockito.any(NotificationInt.class));
         Mockito.verify(schedulerService, never()).scheduleEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.any(Instant.class),
                 Mockito.any(ActionType.class), Mockito.any(SendCourtesyMessageActionDetails.class));

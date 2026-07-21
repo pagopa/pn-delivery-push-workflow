@@ -15,6 +15,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.EventId;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventId;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.CourtesyChannelFailedDetailsInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.CourtesyChannelFailureReasonInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.DeliveryModeInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ProbableDateAnalogWorkflowDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.emd.integration.model.SendMessageRequestBody;
@@ -84,7 +85,7 @@ public class SendCourtesyMessageHandler {
             }
             case PERMANENT_FAILURE -> {
                 log.info("Courtesy message not sent for channel={}, permanent failure, channel closed - iun={} id={}", channel, iun, recIndex);
-                closeCourtesyChannelWithoutSuccess(notification, recIndex, details);
+                closeCourtesyChannelWithoutSuccess(notification, recIndex, details, CourtesyChannelFailureReasonInt.EXPECTED_FAILURE);
             }
         }
     }
@@ -102,7 +103,7 @@ public class SendCourtesyMessageHandler {
         if (currentRetryIndex >= intervals.size()) {
             log.info("Courtesy retry intervals exhausted for channel={} retryIndex={}, channel closed - iun={} id={}",
                     channel, currentRetryIndex, iun, recIndex);
-            closeCourtesyChannelWithoutSuccess(notification, recIndex, details);
+            closeCourtesyChannelWithoutSuccess(notification, recIndex, details, CourtesyChannelFailureReasonInt.RETRIES_EXHAUSTED);
             return;
         }
 
@@ -136,17 +137,17 @@ public class SendCourtesyMessageHandler {
     }
 
     /** Record the channel failure on the timeline and, on the ANALOG branch, evaluate whether to start the analog workflow. */
-    private void closeCourtesyChannelWithoutSuccess(NotificationInt notification, Integer recIndex, SendCourtesyMessageActionDetails details) {
-        addCourtesyChannelFailedToTimeline(notification, recIndex, details);
+    private void closeCourtesyChannelWithoutSuccess(NotificationInt notification, Integer recIndex, SendCourtesyMessageActionDetails details, CourtesyChannelFailureReasonInt failureReason) {
+        addCourtesyChannelFailedToTimeline(notification, recIndex, details, failureReason);
         if (details.getDeliveryMode() == DeliveryModeInt.ANALOG) {
             scheduleAnalogWorkflowIfAllChannelsClosedWithoutSuccess(notification, recIndex);
         }
     }
 
-    private void addCourtesyChannelFailedToTimeline(NotificationInt notification, Integer recIndex, SendCourtesyMessageActionDetails details) {
+    private void addCourtesyChannelFailedToTimeline(NotificationInt notification, Integer recIndex, SendCourtesyMessageActionDetails details, CourtesyChannelFailureReasonInt failureReason) {
         String eventId = courtesyChannelFailedEventId(notification.getIun(), recIndex, details.getChannel());
         timelineService.addTimelineElement(
-                timelineUtils.buildCourtesyChannelFailedTimelineElement(recIndex, notification, details.getChannel(), details.getDeliveryMode(), eventId),
+                timelineUtils.buildCourtesyChannelFailedTimelineElement(recIndex, notification, details.getChannel(), details.getDeliveryMode(), failureReason, eventId),
                 notification
         );
     }
