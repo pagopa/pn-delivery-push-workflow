@@ -28,6 +28,8 @@ public class PnDeliveryPushWorkflowConfigs {
 
     private boolean additionalLangsEnabled;
 
+    private boolean checkAttachmentsForViewedEnabled;
+
     private String templatesEngineBaseUrl;
 
     private String deliveryBaseUrl;
