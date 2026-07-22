@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -2093,8 +2094,8 @@ class ReworkValidationHandlerTest {
         when(timelineUtils.checkIsNotificationCancellationRequested(any())).thenReturn(false);
         when(timelineUtils.checkIsNotificationViewed(any(), any())).thenReturn(false);
         when(notificationService.getNotificationByIun(any())).thenReturn(notification);
-        when(timelineService.getTimeline(anyString(), anyBoolean())).thenReturn(timeline);
-        when(timelineService.getTimelineAndStatusHistory(any(), anyInt(), any())).thenReturn(notificationHistoryResponse);
+        Mockito.lenient().when(timelineService.getTimeline(anyString(), anyBoolean())).thenReturn(timeline);
+        Mockito.lenient().when(timelineService.getTimelineAndStatusHistory(any(), anyInt(), any())).thenReturn(notificationHistoryResponse);
     }
 
     private Set<TimelineElementInternal> validInvalidateTimeline() {
