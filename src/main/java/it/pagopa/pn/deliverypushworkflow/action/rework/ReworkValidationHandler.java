@@ -276,6 +276,9 @@ public class ReworkValidationHandler {
     }
 
     private Mono<NotificationReworkInfo> checkNotificationStatus(NotificationInt notification, NotificationReworkInfo info) {
+        if(ReworkRequestTypeEnum.INVALIDATE_ELEMENTS.equals(info.getActionDetail().getRequestType())){
+            return Mono.just(info);
+        }
         NotificationHistoryResponse response = timelineService.getTimelineAndStatusHistory(notification.getIun(), notification.getRecipients().size(), notification.getSentAt());
         info.setNotificationStatus(Objects.nonNull(response.getNotificationStatus()) ? response.getNotificationStatus().getValue() : null);
         if ((notification.getRecipients().size() == 1 && !MONO_REC_NOTIFICATION_VALID_STATUS.contains(response.getNotificationStatus().getValue())) ||
