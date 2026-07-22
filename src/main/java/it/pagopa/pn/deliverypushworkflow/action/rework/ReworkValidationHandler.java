@@ -43,10 +43,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -589,12 +586,23 @@ public class ReworkValidationHandler {
             return true;
         }
 
-        if (Objects.nonNull(viewedDate)) {
-            return viewedDate.isBefore(refinementDate) ||
-                    Duration.between(refinementDate, viewedDate).toDays() <= pnDeliveryPushWorkflowConfigs.getRetentionAttachmentDaysAfterRefinement();
+        if (Objects.isNull(viewedDate)) {
+            return false;
         }
 
-        return false;
+        if (viewedDate.isBefore(refinementDate)) {
+            return true;
+        }
+
+        Instant expirationDate = refinementDate
+                .atZone(ZoneOffset.UTC)
+                .toLocalDate()
+                .plusDays(pnDeliveryPushWorkflowConfigs.getRetentionAttachmentDaysAfterRefinement())
+                .atTime(LocalTime.MAX)
+                .atZone(ZoneOffset.UTC)
+                .toInstant();
+
+        return !viewedDate.isAfter(expirationDate);
     }
 
     private Mono<Void> checkNotificationTimeline(NotificationReworkInfo info, String recIndex, String attempt, boolean isStatusViewed) {

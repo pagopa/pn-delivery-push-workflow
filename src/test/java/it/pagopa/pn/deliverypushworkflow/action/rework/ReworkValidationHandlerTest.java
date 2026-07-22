@@ -1283,6 +1283,86 @@ class ReworkValidationHandlerTest {
     }
 
     @Test
+    void handleNotificationReworkWithViewed_attachmentsExistOnViewed2() {
+        NotificationReworkValidationDetails detail = new NotificationReworkValidationDetails();
+        detail.setReworkAttempt("ATTEMPT_0");
+        detail.setReworkRecIndex("RECINDEX_0");
+        detail.setReworkPcRetry("PCRETRY_0");
+        detail.setRequestType(ReworkRequestTypeEnum.RESTART);
+        detail.setCanInvalidateViewed(true);
+
+        Action action = Action.builder()
+                .iun("XLJE-VRQM-VKNQ-202507-K-1")
+                .details(detail)
+                .recipientIndex(1)
+                .build();
+
+        NotificationInt notification = NotificationInt.builder()
+                .iun("XLJE-VRQM-VKNQ-202507-K-1")
+                .recipients(List.of(new NotificationRecipientInt()))
+                .documents(List.of(NotificationDocumentInt.builder()
+                        .ref(NotificationDocumentInt.Ref.builder().key("key").build())
+                        .build()))
+                .build();
+
+        Set<TimelineElementInternal> timeline = new HashSet<>();
+        TimelineElementInternal timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.PREPARE_ANALOG_DOMICILE);
+        timelineElement.setElementId("PREPARE_ANALOG_DOMICILE.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0");
+        timeline.add(timelineElement);
+
+        timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK);
+        timelineElement.setElementId("SEND_ANALOG_FEEDBACK.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0");
+        timeline.add(timelineElement);
+
+        timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.NOTIFICATION_VIEWED_CREATION_REQUEST);
+        timelineElement.setElementId("NOTIFICATION_VIEWED_CREATION_REQUEST.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0");
+        timeline.add(timelineElement);
+
+        timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.NOTIFICATION_VIEWED);
+        timelineElement.setElementId("NOTIFICATION_VIEWED.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0");
+        timeline.add(timelineElement);
+
+
+        timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.NOTIFICATION_VIEWED_CREATION_REQUEST);
+        timelineElement.setElementId("NOTIFICATION_VIEWED.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0");
+        NotificationViewedCreationRequestDetailsInt detailsInt = NotificationViewedCreationRequestDetailsInt.builder()
+                        .eventTimestamp(Instant.parse("2026-05-01T18:00:00Z")).build();
+        timelineElement.setDetails(detailsInt);
+        timeline.add(timelineElement);
+
+        timelineElement = new TimelineElementInternal();
+        timelineElement.setCategory(TimelineElementCategoryInt.REFINEMENT);
+        timelineElement.setElementId("REFINEMENT.IUN_XLJE-VRQM-VKNQ-202507-K-1.RECINDEX_0.ATTEMPT_0");
+        timelineElement.setTimestamp(Instant.parse("2026-01-01T10:00:00Z"));
+        timeline.add(timelineElement);
+
+        NotificationHistoryResponse notificationHistoryResponse = new NotificationHistoryResponse();
+        notificationHistoryResponse.setNotificationStatus(NotificationStatus.EFFECTIVE_DATE);
+
+        when(timelineService.getTimeline(anyString(), anyBoolean())).thenReturn(timeline);
+        when(timelineUtils.checkIsNotificationCancellationRequested(any())).thenReturn(false);
+        when(timelineUtils.checkIsNotificationViewed(any(), any())).thenReturn(true);
+        when(notificationService.getNotificationByIun(any())).thenReturn(notification);
+        when(timelineService.getTimelineAndStatusHistory(any(), anyInt(), any())).thenReturn(notificationHistoryResponse);
+        when((pnDeliveryPushWorkflowConfigs.getRetentionAttachmentDaysAfterRefinement())).thenReturn(120);
+
+        notificationReworkHandler.handleNotificationRework(action).block();
+
+        verify(actionManagerApi, never()).insertAction(any());
+
+        ArgumentCaptor<ReworkRequestEventAction> captor = ArgumentCaptor.forClass(ReworkRequestEventAction.class);
+        verify(reworkRequestEventPool, times(1)).scheduleFutureAction(captor.capture(), any());
+        List<NotificationReworkError> capturedErrorList = captor.getValue().getError();
+        Assertions.assertEquals(NotificationReworkErrorCause.INVALID_VIEWED_ELEMENTS.getCause(), capturedErrorList.getFirst().getCause());
+        Assertions.assertEquals("Non è possibile procedere alla richiesta di correzione, la visualizzazione non è invalidabile", capturedErrorList.getFirst().getDescription());
+    }
+
+    @Test
     void handleNotificationReworkWithViewed_insertActionContainsRequestType() throws Exception {
         NotificationReworkValidationDetails detail = new NotificationReworkValidationDetails();
         detail.setReworkId("RWK-123");
