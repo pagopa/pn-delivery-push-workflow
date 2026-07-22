@@ -25,6 +25,7 @@ import it.pagopa.pn.deliverypushworkflow.action.details.*;
         @JsonSubTypes.Type(value = NotificationReworkValidationDetails.class, name = "NOTIFICATION_REWORK_VALIDATION"),
         @JsonSubTypes.Type(value = NotificationReworkRequestedDetails.class, name = "NOTIFICATION_REWORK_REQUESTED"),
         @JsonSubTypes.Type(value = NotificationReworkUpdateDetails.class, name = "NOTIFICATION_REWORK_UPDATE"),
+        @JsonSubTypes.Type(value = SendCourtesyMessageActionDetails.class, name = "SEND_COURTESY_MESSAGE_ACTION"),
 })
 public interface ActionDetails {
 
