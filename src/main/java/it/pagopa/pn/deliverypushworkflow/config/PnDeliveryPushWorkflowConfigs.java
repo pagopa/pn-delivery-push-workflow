@@ -118,6 +118,8 @@ public class PnDeliveryPushWorkflowConfigs {
 
     private List<String> invalidableCategories;
 
+    private CourtesyRetry courtesyRetry;
+
     @Data
     public static class Topics {
         private String newNotifications;
@@ -183,6 +185,19 @@ public class PnDeliveryPushWorkflowConfigs {
                     .municipality(senderAddress.getCity())
                     .foreignState(senderAddress.getCountry())
                     .build();
+        }
+    }
+
+    @Data
+    public static class CourtesyRetry {
+        private IntervalsMinutes intervalsMinutes;
+
+        @Data
+        public static class IntervalsMinutes {
+            private List<Integer> io;
+            private List<Integer> sms;
+            private List<Integer> email;
+            private List<Integer> tpp;
         }
     }
 

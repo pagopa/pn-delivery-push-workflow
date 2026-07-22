@@ -1,6 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.service.mapper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import it.pagopa.pn.deliverypushworkflow.dto.address.CourtesyDigitalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
 import it.pagopa.pn.deliverypushworkflow.dto.legalfacts.LegalFactCategoryInt;
@@ -173,6 +174,49 @@ class TimelineServiceMapperTest {
         assertEquals(TimelineElementCategoryInt.NOTIFICATION_VIEWED, result.getCategory());
         assertNotNull(result.getDetails());
         assertNotNull(result.getStatusInfo());
+    }
+
+    @Test
+    void courtesyChannelFailed_roundTrip() {
+        // internal -> external
+        CourtesyChannelFailedDetailsInt internalDetails = CourtesyChannelFailedDetailsInt.builder()
+                .channelType(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO)
+                .deliveryMode(DeliveryModeInt.ANALOG)
+                .failureReason(CourtesyChannelFailureReasonInt.RETRIES_EXHAUSTED)
+                .build();
+
+        TimelineElementInternal internal = TimelineElementInternal.builder()
+                .iun("IUN_TEST")
+                .elementId("ELEM_ID")
+                .category(TimelineElementCategoryInt.COURTESY_CHANNEL_FAILED)
+                .details(internalDetails)
+                .build();
+
+        NotificationInt notification = NotificationInt.builder()
+                .iun("IUN_TEST")
+                .paProtocolNumber("PROT_123")
+                .sentAt(Instant.now())
+                .recipients(List.of(NotificationRecipientInt.builder().internalId("rec1").build()))
+                .build();
+
+        TimelineElement external = timelineServiceMapper.getNewTimelineElement(internal, notification).getTimelineElement();
+
+        assertEquals(TimelineCategory.COURTESY_CHANNEL_FAILED, external.getCategory());
+        assertInstanceOf(CourtesyChannelFailedDetails.class, external.getDetails());
+        CourtesyChannelFailedDetails extDetails = (CourtesyChannelFailedDetails) external.getDetails();
+        assertEquals("APPIO", extDetails.getChannelType());
+        assertEquals(DeliveryMode.ANALOG, extDetails.getDeliveryMode());
+        assertEquals(CourtesyChannelFailureReason.RETRIES_EXHAUSTED, extDetails.getFailureReason());
+
+        // external -> internal
+        TimelineElementInternal back = timelineServiceMapper.toTimelineElementInternal(external);
+
+        assertEquals(TimelineElementCategoryInt.COURTESY_CHANNEL_FAILED, back.getCategory());
+        assertInstanceOf(CourtesyChannelFailedDetailsInt.class, back.getDetails());
+        CourtesyChannelFailedDetailsInt backDetails = (CourtesyChannelFailedDetailsInt) back.getDetails();
+        assertEquals(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO, backDetails.getChannelType());
+        assertEquals(DeliveryModeInt.ANALOG, backDetails.getDeliveryMode());
+        assertEquals(CourtesyChannelFailureReasonInt.RETRIES_EXHAUSTED, backDetails.getFailureReason());
     }
 
 }

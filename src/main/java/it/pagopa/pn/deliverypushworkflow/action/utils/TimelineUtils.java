@@ -220,6 +220,22 @@ public class TimelineUtils {
         return buildTimeline(notification, TimelineElementCategoryInt.SEND_COURTESY_MESSAGE, eventId, details);
     }
 
+    public TimelineElementInternal buildCourtesyChannelFailedTimelineElement(Integer recIndex, NotificationInt notification,
+                                                                            CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channelType,
+                                                                            DeliveryModeInt deliveryMode,
+                                                                            CourtesyChannelFailureReasonInt failureReason,
+                                                                            String eventId) {
+        log.debug("buildCourtesyChannelFailedTimelineElement - IUN={} and id={}", notification.getIun(), recIndex);
+
+        CourtesyChannelFailedDetailsInt details = CourtesyChannelFailedDetailsInt.builder()
+                .channelType(channelType)
+                .deliveryMode(deliveryMode)
+                .failureReason(failureReason)
+                .build();
+
+        return buildTimeline(notification, TimelineElementCategoryInt.COURTESY_CHANNEL_FAILED, eventId, details);
+    }
+
 
     public TimelineElementInternal buildPrepareSimpleRegisteredLetterTimelineElement(Integer recIndex, NotificationInt notification, PhysicalAddressInt address,
                                                                                      String eventId) {

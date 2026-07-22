@@ -70,7 +70,7 @@ public class ViewNotification {
                         safeStorageService.getFile(document.getRef().getKey(), true, false)
                                 .thenReturn(true)
                                 .onErrorResume(WebClientResponseException.class, ex ->
-                                        isAttachmentNotAvailable(ex)
+                                        isAttachmentNotAvailable(ex, notification.getIun(), document.getRef().getKey())
                                                 ? Mono.just(false)
                                                 : Mono.error(ex)
                                 )
@@ -84,8 +84,12 @@ public class ViewNotification {
                 });
     }
 
-    private boolean isAttachmentNotAvailable(WebClientResponseException ex) {
-        return ex.getStatusCode() == HttpStatus.NOT_FOUND || ex.getStatusCode() == HttpStatus.GONE;
+    private boolean isAttachmentNotAvailable(WebClientResponseException ex, String iun, String key) {
+        if (ex.getStatusCode() == HttpStatus.GONE) {
+            return true;
+        }
+        log.error("Error during attachment retrieval from safe storage - iun={} key={}", iun, key, ex);
+        return false;
     }
 
     private void auditFlowBlocked(NotificationViewedInt notificationViewed) {
