@@ -549,7 +549,7 @@ class ViewNotificationTest {
         Integer recIndex = NotificationUtils.getRecipientIndexFromTaxId(notification, recipient.getTaxId());
 
         when(safeStorageService.getFile(Mockito.anyString(), Mockito.eq(true), Mockito.eq(false)))
-                .thenReturn(Mono.error(WebClientResponseException.create(404, "Not Found", null, null, null)));
+                .thenReturn(Mono.error(WebClientResponseException.create(410, "Gone", null, null, null)));
 
         NotificationViewedInt notificationViewedInt = buildNotificationViewedInt(notification.getIun(), recIndex, Instant.now(), null);
 
