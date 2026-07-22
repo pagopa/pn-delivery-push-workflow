@@ -222,12 +222,15 @@ public class TimelineUtils {
 
     public TimelineElementInternal buildCourtesyChannelFailedTimelineElement(Integer recIndex, NotificationInt notification,
                                                                             CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channelType,
-                                                                            DeliveryModeInt deliveryMode, String eventId) {
+                                                                            DeliveryModeInt deliveryMode,
+                                                                            CourtesyChannelFailureReasonInt failureReason,
+                                                                            String eventId) {
         log.debug("buildCourtesyChannelFailedTimelineElement - IUN={} and id={}", notification.getIun(), recIndex);
 
         CourtesyChannelFailedDetailsInt details = CourtesyChannelFailedDetailsInt.builder()
                 .channelType(channelType)
                 .deliveryMode(deliveryMode)
+                .failureReason(failureReason)
                 .build();
 
         return buildTimeline(notification, TimelineElementCategoryInt.COURTESY_CHANNEL_FAILED, eventId, details);

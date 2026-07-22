@@ -277,6 +277,34 @@ class CourtesyMessageRetryTestIT extends CommonTestConfiguration {
         assertAbsent(iun, channel, true);
     }
 
+    // ============================ ANALOG scheduling ============================
+
+    @Test
+    void analogFirstSuccessSchedulesAnalogWorkflow() {
+        NotificationInt notification = prepareNotification();
+        configureSingleRetry(COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP);
+        Mockito.doReturn(tppResponse(true)).when(pnEmdIntegrationClientMock).sendMessage(Mockito.any(SendMessageRequestBody.class));
+
+        courtesyMessageUtils.scheduleCourtesyMessagesActions(notification, 0, DeliveryModeInt.ANALOG);
+
+        String iun = notification.getIun();
+        awaitPresent(iun, COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP, true);
+        await().untilAsserted(() -> Assertions.assertTrue(timelineService.getTimelineElement(iun, scheduleAnalogWorkflowId(iun)).isPresent()));
+    }
+
+    @Test
+    void analogAllChannelsClosedWithoutSuccessSchedulesAnalogWorkflow() {
+        NotificationInt notification = prepareNotification();
+        configureSingleRetry(COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP);
+        Mockito.doReturn(tppResponse(false)).when(pnEmdIntegrationClientMock).sendMessage(Mockito.any(SendMessageRequestBody.class));
+
+        courtesyMessageUtils.scheduleCourtesyMessagesActions(notification, 0, DeliveryModeInt.ANALOG);
+
+        String iun = notification.getIun();
+        awaitPresent(iun, COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP, false);
+        await().untilAsserted(() -> Assertions.assertTrue(timelineService.getTimelineElement(iun, scheduleAnalogWorkflowId(iun)).isPresent()));
+    }
+
     // --- Helpers ---
 
     private org.mockito.stubbing.OngoingStubbing<SendMessageResponse> stubIo() {
@@ -366,6 +394,13 @@ class CourtesyMessageRetryTestIT extends CommonTestConfiguration {
                 .iun(iun)
                 .recIndex(0)
                 .courtesyAddressType(channel)
+                .build());
+    }
+
+    private static String scheduleAnalogWorkflowId(String iun) {
+        return TimelineEventId.SCHEDULE_ANALOG_WORKFLOW.buildEventId(EventId.builder()
+                .iun(iun)
+                .recIndex(0)
                 .build());
     }
 }

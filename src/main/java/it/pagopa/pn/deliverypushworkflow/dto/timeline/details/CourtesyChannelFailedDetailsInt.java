@@ -14,8 +14,9 @@ import lombok.experimental.SuperBuilder;
 public class CourtesyChannelFailedDetailsInt extends CategoryTypeTimelineElementDetailsInt implements TimelineElementDetailsInt {
     private CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channelType;
     private DeliveryModeInt deliveryMode;
+    private CourtesyChannelFailureReasonInt failureReason;
 
     public String toLog() {
-        return String.format("channelType=%s deliveryMode=%s", channelType, deliveryMode);
+        return String.format("channelType=%s deliveryMode=%s failureReason=%s", channelType, deliveryMode, failureReason);
     }
 }

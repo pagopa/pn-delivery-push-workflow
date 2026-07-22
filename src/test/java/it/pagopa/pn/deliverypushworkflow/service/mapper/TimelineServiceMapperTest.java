@@ -182,6 +182,7 @@ class TimelineServiceMapperTest {
         CourtesyChannelFailedDetailsInt internalDetails = CourtesyChannelFailedDetailsInt.builder()
                 .channelType(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO)
                 .deliveryMode(DeliveryModeInt.ANALOG)
+                .failureReason(CourtesyChannelFailureReasonInt.RETRIES_EXHAUSTED)
                 .build();
 
         TimelineElementInternal internal = TimelineElementInternal.builder()
@@ -205,7 +206,7 @@ class TimelineServiceMapperTest {
         CourtesyChannelFailedDetails extDetails = (CourtesyChannelFailedDetails) external.getDetails();
         assertEquals("APPIO", extDetails.getChannelType());
         assertEquals(DeliveryMode.ANALOG, extDetails.getDeliveryMode());
-        assertNull(extDetails.getFailureReason());
+        assertEquals(CourtesyChannelFailureReason.RETRIES_EXHAUSTED, extDetails.getFailureReason());
 
         // external -> internal
         TimelineElementInternal back = timelineServiceMapper.toTimelineElementInternal(external);
@@ -215,6 +216,7 @@ class TimelineServiceMapperTest {
         CourtesyChannelFailedDetailsInt backDetails = (CourtesyChannelFailedDetailsInt) back.getDetails();
         assertEquals(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO, backDetails.getChannelType());
         assertEquals(DeliveryModeInt.ANALOG, backDetails.getDeliveryMode());
+        assertEquals(CourtesyChannelFailureReasonInt.RETRIES_EXHAUSTED, backDetails.getFailureReason());
     }
 
 }
