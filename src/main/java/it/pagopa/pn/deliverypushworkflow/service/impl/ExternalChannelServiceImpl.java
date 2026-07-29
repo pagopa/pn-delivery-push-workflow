@@ -104,7 +104,7 @@ public class ExternalChannelServiceImpl implements ExternalChannelService {
             boolean shouldRetrieveAarOnly = isFeatureAarOnlyEnabled && isRetrieveAarOnly(notification, recIndex);
             DigitalParameters digitalParameters = retrieveDigitalParameters(notification, recIndex, shouldRetrieveAarOnly);
 
-            log.info("Feature AAROnlyPECForRADDAndPF is {} - DigitalParameters: {}", isFeatureAarOnlyEnabled ? "true" : "false", digitalParameters);
+            log.info("Feature AAROnlyPECForRADDAndPF is {} - DigitalParameters: {}", isFeatureAarOnlyEnabled, digitalParameters);
 
             if (!featureEnabledUtils.isPfNewWorkflowEnabled(notification.getSentAt())
                     && sendInformation.getDigitalAddress().getType().equals(LegalDigitalAddressInt.LEGAL_DIGITAL_ADDRESS_TYPE.SERCQ))
@@ -199,7 +199,7 @@ public class ExternalChannelServiceImpl implements ExternalChannelService {
         try {
             DigitalParameters digitalParameters = retrieveDigitalParameters(notification, recIndex, true);
             externalChannel.sendCourtesyNotification(notification, notificationUtils.getRecipientFromIndex(notification,recIndex), courtesyAddress, eventId,
-                digitalParameters.fileKeys.get(0), //AAR is always the first element
+                digitalParameters.fileKeys.getFirst(), //AAR is always the first element
                 digitalParameters.quickAccessToken,
                     deliveryMode);
             logEvent.generateSuccess().log();
@@ -267,6 +267,4 @@ public class ExternalChannelServiceImpl implements ExternalChannelService {
     private record DigitalParameters(List<String> fileKeys,
                                      NotificationRecipientInt recipientFromIndex,
                                      String quickAccessToken) {}
-
-
 }
