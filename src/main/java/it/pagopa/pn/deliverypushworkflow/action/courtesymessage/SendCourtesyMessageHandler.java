@@ -65,7 +65,8 @@ public class SendCourtesyMessageHandler {
 
         CourtesyDigitalAddressInt courtesyAddress = resolveCourtesyAddress(notification, recIndex, channel);
         if (courtesyAddress == null) {
-            log.warn("Courtesy address not found for channel={}, channel closed - iun={} id={}", channel, iun, recIndex);
+            log.warn("Courtesy address not found for channel={}, closing channel - iun={} id={}", channel, iun, recIndex);
+            closeCourtesyChannelWithoutSuccess(notification, recIndex, details, CourtesyChannelFailureReasonInt.EXPECTED_FAILURE);
             return;
         }
 
@@ -114,6 +115,7 @@ public class SendCourtesyMessageHandler {
                 .channel(channel)
                 .retryIndex(nextRetryIndex)
                 .deliveryMode(details.getDeliveryMode())
+                .plannedChannels(details.getPlannedChannels())
                 .build();
         log.info("Rescheduling SEND_COURTESY_MESSAGE_ACTION channel={} nextRetryIndex={} waitMinutes={} schedulingDate={} - iun={} id={}",
                 channel, nextRetryIndex, waitMinutes, schedulingDate, iun, recIndex);
@@ -140,7 +142,7 @@ public class SendCourtesyMessageHandler {
     private void closeCourtesyChannelWithoutSuccess(NotificationInt notification, Integer recIndex, SendCourtesyMessageActionDetails details, CourtesyChannelFailureReasonInt failureReason) {
         addCourtesyChannelFailedToTimeline(notification, recIndex, details, failureReason);
         if (details.getDeliveryMode() == DeliveryModeInt.ANALOG) {
-            scheduleAnalogWorkflowIfAllChannelsClosedWithoutSuccess(notification, recIndex);
+            scheduleAnalogWorkflowIfAllChannelsClosedWithoutSuccess(notification, recIndex, details.getPlannedChannels());
         }
     }
 
@@ -155,13 +157,15 @@ public class SendCourtesyMessageHandler {
     /**
      * ANALOG coordination via strongly consistent reads: if every channel is now closed with no delivery, schedule
      * ANALOG_WORKFLOW immediately; a delivered channel keeps the +waiting scheduling and wins. Idempotent through the
-     * deterministic ANALOG_WORKFLOW actionId, so concurrent closures start it once.
+     * deterministic ANALOG_WORKFLOW actionId, so concurrent closures start it once. The expected channels are the set
+     * frozen at dispatch (carried in the action), so adding or removing a courtesy address during the retry window
+     * cannot alter the coordination and block the notification.
      */
-    private void scheduleAnalogWorkflowIfAllChannelsClosedWithoutSuccess(NotificationInt notification, Integer recIndex) {
+    private void scheduleAnalogWorkflowIfAllChannelsClosedWithoutSuccess(NotificationInt notification, Integer recIndex,
+                                                                         List<CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT> plannedChannels) {
         final String iun = notification.getIun();
         boolean anySuccess = false;
-        for (CourtesyDigitalAddressInt courtesyAddress : courtesyMessageUtils.getCourtesyAddresses(notification, recIndex)) {
-            CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel = courtesyAddress.getType();
+        for (CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel : plannedChannels) {
             if (isCourtesyChannelDelivered(iun, recIndex, channel)) {
                 anySuccess = true;
             } else if (!isCourtesyChannelFailedForAnalog(iun, recIndex, channel)) {

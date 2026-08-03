@@ -45,12 +45,16 @@ public class CourtesyMessageUtils {
         log.debug("Start dispatchCourtesyMessagesActions - iun={} id={} delivery mode={} ", iun, recIndex, deliveryMode);
 
         List<CourtesyDigitalAddressInt> listCourtesyAddresses = getCourtesyAddresses(notification, recIndex);
+        List<CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT> plannedChannels = listCourtesyAddresses.stream()
+                .map(CourtesyDigitalAddressInt::getType)
+                .toList();
 
         for (CourtesyDigitalAddressInt courtesyAddress : listCourtesyAddresses) {
             SendCourtesyMessageActionDetails details = SendCourtesyMessageActionDetails.builder()
                     .channel(courtesyAddress.getType())
                     .retryIndex(0)
                     .deliveryMode(deliveryMode)
+                    .plannedChannels(plannedChannels)
                     .build();
             log.info("Scheduling SEND_COURTESY_MESSAGE_ACTION channel={} retryIndex=0 deliveryMode={} - iun={} id={}", courtesyAddress.getType(), deliveryMode, iun, recIndex);
             schedulerService.scheduleEvent(iun, recIndex, Instant.now(), ActionType.SEND_COURTESY_MESSAGE_ACTION, details);
