@@ -373,9 +373,13 @@ class SendCourtesyMessageHandlerTest {
         //WHEN
         sendCourtesyMessageHandler.handleSendCourtesyMessageAction(notification.getIun(), 0, details(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP, DeliveryModeInt.ANALOG));
 
-        //THEN
+        //THEN - indirizzo non risolvibile: nessun invio, ma il canale viene chiuso con EXPECTED_FAILURE
         Mockito.verifyNoInteractions(iOservice, externalChannelService, pnEmdIntegrationClient);
-        Mockito.verify(timelineService, never()).addTimelineElement(Mockito.any(), Mockito.any(NotificationInt.class));
+        Mockito.verify(timelineUtils).buildCourtesyChannelFailedTimelineElement(
+                Mockito.eq(0), Mockito.eq(notification),
+                Mockito.eq(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP),
+                Mockito.eq(DeliveryModeInt.ANALOG), Mockito.eq(CourtesyChannelFailureReasonInt.EXPECTED_FAILURE), Mockito.anyString());
+        Mockito.verify(timelineService, times(1)).addTimelineElement(Mockito.any(), Mockito.any(NotificationInt.class));
     }
 
     @Test
@@ -441,7 +445,8 @@ class SendCourtesyMessageHandlerTest {
                 .thenReturn(Optional.of(courtesyChannelFailedElement(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP)));
 
         //WHEN
-        sendCourtesyMessageHandler.handleSendCourtesyMessageAction(iun, 0, details(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP, DeliveryModeInt.ANALOG));
+        sendCourtesyMessageHandler.handleSendCourtesyMessageAction(iun, 0, detailsWithPlanned(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP, DeliveryModeInt.ANALOG,
+                List.of(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP, CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.SMS)));
 
         //THEN
         Mockito.verify(schedulerService, never()).scheduleEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.any(Instant.class), Mockito.eq(ActionType.ANALOG_WORKFLOW));
@@ -468,10 +473,72 @@ class SendCourtesyMessageHandlerTest {
         Mockito.when(timelineService.getTimelineElementStrongly(iun, emailDeliveredId)).thenReturn(Optional.of(new TimelineElementInternal()));
 
         //WHEN
-        sendCourtesyMessageHandler.handleSendCourtesyMessageAction(iun, 0, details(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP, DeliveryModeInt.ANALOG));
+        sendCourtesyMessageHandler.handleSendCourtesyMessageAction(iun, 0, detailsWithPlanned(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP, DeliveryModeInt.ANALOG,
+                List.of(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP, CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.EMAIL)));
 
         //THEN
         Mockito.verify(schedulerService, never()).scheduleEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.any(Instant.class), Mockito.eq(ActionType.ANALOG_WORKFLOW));
+    }
+
+    @Test
+    void handleSendCourtesyMessageActionAnalogAddressRemovedDuringRetryClosesChannelAndSchedulesAnalog() {
+        //GIVEN
+        NotificationRecipientInt recipient = getNotificationRecipientInt();
+        NotificationInt notification = getNotificationInt(recipient);
+        String iun = notification.getIun();
+
+        Mockito.when(notificationService.getNotificationByIun(iun)).thenReturn(notification);
+        Mockito.when(notificationUtils.getRecipientFromIndex(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(recipient);
+        // l'indirizzo TPP è stato rimosso durante la finestra di retry: non è più tra gli indirizzi correnti
+        Mockito.when(addressBookService.getCourtesyAddress(Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(Collections.emptyList());
+        // l'esito appena scritto (TPP failed) è visibile in lettura strongly consistent
+        Mockito.when(timelineService.getTimelineElementStrongly(iun, courtesyChannelFailedId(iun, CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP)))
+                .thenReturn(Optional.of(courtesyChannelFailedElement(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP)));
+
+        // l'azione porta con sé l'insieme congelato al dispatch: solo TPP
+        SendCourtesyMessageActionDetails details = detailsWithPlanned(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP,
+                DeliveryModeInt.ANALOG, List.of(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP));
+
+        //WHEN
+        sendCourtesyMessageHandler.handleSendCourtesyMessageAction(iun, 0, details);
+
+        //THEN - il canale è chiuso con EXPECTED_FAILURE senza alcun invio e, essendo l'unico pianificato ormai chiuso, l'analogico viene schedulato
+        Mockito.verify(timelineUtils).buildCourtesyChannelFailedTimelineElement(
+                Mockito.eq(0), Mockito.eq(notification),
+                Mockito.eq(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP),
+                Mockito.eq(DeliveryModeInt.ANALOG), Mockito.eq(CourtesyChannelFailureReasonInt.EXPECTED_FAILURE), Mockito.anyString());
+        Mockito.verifyNoInteractions(iOservice, externalChannelService, pnEmdIntegrationClient);
+        Mockito.verify(schedulerService).scheduleEvent(Mockito.eq(iun), Mockito.eq(0), Mockito.any(Instant.class), Mockito.eq(ActionType.ANALOG_WORKFLOW));
+    }
+
+    @Test
+    void handleSendCourtesyMessageActionAnalogAddressAddedDuringRetryDoesNotBlockAnalog() {
+        //GIVEN
+        NotificationRecipientInt recipient = getNotificationRecipientInt();
+        NotificationInt notification = getNotificationInt(recipient);
+        String iun = notification.getIun();
+
+        Mockito.when(notificationService.getNotificationByIun(iun)).thenReturn(notification);
+        Mockito.when(notificationUtils.getRecipientFromIndex(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(recipient);
+        // durante i retry viene aggiunto SMS: l'address book ora contiene TPP + SMS
+        Mockito.when(addressBookService.getCourtesyAddress(Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(List.of(courtesyAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP),
+                        courtesyAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.SMS)));
+        Mockito.when(pnEmdIntegrationClient.sendMessage(Mockito.any(SendMessageRequestBody.class))).thenReturn(tppPermanentFailure());
+        // solo l'esito di TPP è visibile; SMS non ha (né avrà) alcun esito perché non pianificato
+        Mockito.when(timelineService.getTimelineElementStrongly(iun, courtesyChannelFailedId(iun, CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP)))
+                .thenReturn(Optional.of(courtesyChannelFailedElement(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP)));
+
+        // insieme congelato al dispatch: solo TPP
+        SendCourtesyMessageActionDetails details = detailsWithPlanned(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP,
+                DeliveryModeInt.ANALOG, List.of(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP));
+
+        //WHEN
+        sendCourtesyMessageHandler.handleSendCourtesyMessageAction(iun, 0, details);
+
+        //THEN - il coordinamento considera solo i canali pianificati (TPP), non l'SMS aggiunto: l'analogico viene comunque schedulato
+        Mockito.verify(schedulerService).scheduleEvent(Mockito.eq(iun), Mockito.eq(0), Mockito.any(Instant.class), Mockito.eq(ActionType.ANALOG_WORKFLOW));
     }
 
     private static String courtesyChannelFailedId(String iun, CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel) {
@@ -513,6 +580,17 @@ class SendCourtesyMessageHandlerTest {
                 .channel(channel)
                 .retryIndex(retryIndex)
                 .deliveryMode(deliveryMode)
+                .plannedChannels(List.of(channel))
+                .build();
+    }
+
+    private static SendCourtesyMessageActionDetails detailsWithPlanned(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel, DeliveryModeInt deliveryMode,
+                                                                       List<CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT> plannedChannels) {
+        return SendCourtesyMessageActionDetails.builder()
+                .channel(channel)
+                .retryIndex(0)
+                .deliveryMode(deliveryMode)
+                .plannedChannels(plannedChannels)
                 .build();
     }
 

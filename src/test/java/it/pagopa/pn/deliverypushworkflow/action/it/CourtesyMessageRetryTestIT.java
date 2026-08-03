@@ -305,6 +305,65 @@ class CourtesyMessageRetryTestIT extends CommonTestConfiguration {
         await().untilAsserted(() -> Assertions.assertTrue(timelineService.getTimelineElement(iun, scheduleAnalogWorkflowId(iun)).isPresent()));
     }
 
+    /**
+     * A courtesy address added during the retry window must not block the analog workflow. The expected set is frozen
+     * at dispatch (only TPP here); adding SMS afterwards must not make the coordination wait for a channel that was
+     * never dispatched. Without the fix the coordination would read the live addresses, see SMS "still open" and never
+     * schedule the analog workflow.
+     */
+    @Test
+    void analogAddressAddedDuringRetryDoesNotBlockAnalogWorkflow() {
+        NotificationInt notification = prepareNotification();
+        configureSingleRetry(COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP);
+        Mockito.doReturn(tppResponse(false)).when(pnEmdIntegrationClientMock).sendMessage(Mockito.any(SendMessageRequestBody.class));
+
+        // dispatch freezes the expected set to [TPP]
+        courtesyMessageUtils.scheduleCourtesyMessagesActions(notification, 0, DeliveryModeInt.ANALOG);
+
+        // an SMS courtesy address is added after dispatch: it is not part of the frozen set
+        addressBookMock.addCourtesyDigitalAddresses(INTERNAL_ID, PA_ID,
+                List.of(CourtesyDigitalAddressInt.builder().address("courtesy-SMS").type(COURTESY_DIGITAL_ADDRESS_TYPE_INT.SMS).build()));
+
+        String iun = notification.getIun();
+        awaitPresent(iun, COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP, false);
+        // the analog workflow is scheduled despite the SMS added mid-window
+        await().untilAsserted(() -> Assertions.assertTrue(timelineService.getTimelineElement(iun, scheduleAnalogWorkflowId(iun)).isPresent()));
+        // SMS was never dispatched: no courtesy events for it
+        assertAbsent(iun, COURTESY_DIGITAL_ADDRESS_TYPE_INT.SMS, true);
+        assertAbsent(iun, COURTESY_DIGITAL_ADDRESS_TYPE_INT.SMS, false);
+    }
+
+    /**
+     * A courtesy address removed during the retry window must not block the analog workflow: the channel, no longer
+     * resolvable, is closed with COURTESY_CHANNEL_FAILED so the frozen coordination set [SMS, TPP] still converges and
+     * the analog workflow starts. A permanent error is stubbed on the removed channel as a safety net in case its
+     * action runs before the removal (either ordering closes the channel).
+     */
+    @Test
+    void analogAddressRemovedDuringRetryDoesNotBlockAnalogWorkflow() {
+        NotificationInt notification = prepareNotification(COURTESY_DIGITAL_ADDRESS_TYPE_INT.SMS);
+        configureSingleRetry(COURTESY_DIGITAL_ADDRESS_TYPE_INT.SMS);
+        Mockito.doReturn(tppResponse(false)).when(pnEmdIntegrationClientMock).sendMessage(Mockito.any(SendMessageRequestBody.class));
+        Mockito.reset(externalChannelService);
+        applyToExternalChannelSend(Mockito.doThrow(permanentError()));
+
+        // dispatch freezes the expected set to [SMS, TPP]
+        courtesyMessageUtils.scheduleCourtesyMessagesActions(notification, 0, DeliveryModeInt.ANALOG);
+
+        // the SMS courtesy address is removed after dispatch
+        addressBookMock.addCourtesyDigitalAddresses(INTERNAL_ID, PA_ID, Collections.emptyList());
+
+        String iun = notification.getIun();
+        // both frozen channels are closed without success (SMS no longer resolvable, TPP permanent failure)
+        awaitPresent(iun, COURTESY_DIGITAL_ADDRESS_TYPE_INT.SMS, false);
+        awaitPresent(iun, COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP, false);
+        // the analog workflow is scheduled despite the SMS removed mid-window
+        await().untilAsserted(() -> Assertions.assertTrue(timelineService.getTimelineElement(iun, scheduleAnalogWorkflowId(iun)).isPresent()));
+        // nothing was delivered
+        assertAbsent(iun, COURTESY_DIGITAL_ADDRESS_TYPE_INT.SMS, true);
+        assertAbsent(iun, COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP, true);
+    }
+
     // --- Helpers ---
 
     private org.mockito.stubbing.OngoingStubbing<SendMessageResponse> stubIo() {
