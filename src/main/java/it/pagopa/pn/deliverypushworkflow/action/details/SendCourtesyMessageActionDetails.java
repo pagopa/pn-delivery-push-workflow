@@ -8,6 +8,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -16,4 +18,5 @@ public class SendCourtesyMessageActionDetails implements ActionDetails {
     private CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel;
     private int retryIndex;
     private DeliveryModeInt deliveryMode;
+    private List<CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT> plannedChannels;
 }
