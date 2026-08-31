@@ -39,6 +39,11 @@ public class ResumePostPaymentConsumer {
                 log.logEndingProcess(PROCESS_NAME);
                 return;
             }
+            if (event == null) {
+                log.error("{} invalid payload reason=null event", VALIDATION_ERROR);
+                log.logEndingProcess(PROCESS_NAME);
+                return;
+            }
 
             List<String> validationErrors = validator.validate(event);
             if (!validationErrors.isEmpty()) {
