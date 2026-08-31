@@ -1,17 +1,22 @@
 package it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.resumepostpayment;
 
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import it.pagopa.pn.deliverypushworkflow.action.completionworkflow.RegisteredLetterSender;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.service.PaperChannelService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -32,10 +37,22 @@ class ResumePostPaymentHandlerImplTest {
     private NotificationInt notification;
 
     private ResumePostPaymentHandlerImpl handler;
+    private ch.qos.logback.classic.Logger logger;
+    private ListAppender<ILoggingEvent> logAppender;
 
     @BeforeEach
     void setUp() {
         handler = new ResumePostPaymentHandlerImpl(eligibilityService, paperChannelService, registeredLetterSender);
+        logger = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(ResumePostPaymentHandlerImpl.class);
+        logAppender = new ListAppender<>();
+        logAppender.start();
+        logger.addAppender(logAppender);
+    }
+
+    @AfterEach
+    void tearDown() {
+        logger.detachAppender(logAppender);
+        logAppender.stop();
     }
 
     @Test
@@ -47,6 +64,7 @@ class ResumePostPaymentHandlerImplTest {
 
         verify(paperChannelService).prepareAnalogNotification(notification, REC_INDEX, 0);
         verifyNoInteractions(registeredLetterSender);
+        assertLogContains(ResumePostPaymentHandlerImpl.SUCCESS_MARKER);
     }
 
     @Test
@@ -80,6 +98,7 @@ class ResumePostPaymentHandlerImplTest {
         handler.handle(event);
 
         verifyNoInteractions(paperChannelService, registeredLetterSender);
+        assertLogContains(ResumePostPaymentHandlerImpl.ERROR_MARKER);
     }
 
     @Test
@@ -122,5 +141,11 @@ class ResumePostPaymentHandlerImplTest {
                 .recIndex(REC_INDEX)
                 .resumeType(resumeType)
                 .build();
+    }
+
+    private void assertLogContains(String marker) {
+        assertTrue(logAppender.list.stream()
+                .map(ILoggingEvent::getFormattedMessage)
+                .anyMatch(message -> message.contains(marker)));
     }
 }

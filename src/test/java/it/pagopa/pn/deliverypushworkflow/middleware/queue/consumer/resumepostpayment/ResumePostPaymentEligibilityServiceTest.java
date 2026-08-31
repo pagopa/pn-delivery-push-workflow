@@ -1,6 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.resumepostpayment;
 
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
+import it.pagopa.pn.commons.exceptions.PnInternalException;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
@@ -40,6 +41,8 @@ import static it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineEle
 import static it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK;
 import static it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt.SEND_ANALOG_TIMEOUT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(MockitoExtension.class)
 class ResumePostPaymentEligibilityServiceTest {
@@ -260,6 +263,18 @@ class ResumePostPaymentEligibilityServiceTest {
 
         assertResult(result, ResumeValidationOutcome.NOT_ELIGIBLE,
                 ResumeValidationReason.NOTIFICATION_IUN_MISMATCH);
+        Mockito.verifyNoInteractions(timelineService, timelineUtils);
+    }
+
+    @Test
+    void notificationNotFoundIsPropagatedWithoutReadingTimeline() {
+        PnInternalException exception = new PnInternalException("Notification not found", "NOTIFICATION_NOT_FOUND");
+        Mockito.when(notificationService.getNotificationByIun(IUN)).thenThrow(exception);
+
+        PnInternalException thrown = assertThrows(PnInternalException.class,
+                () -> service.validate(event(ResumeType.FIRST_ATTEMPT)));
+
+        assertSame(exception, thrown);
         Mockito.verifyNoInteractions(timelineService, timelineUtils);
     }
 
