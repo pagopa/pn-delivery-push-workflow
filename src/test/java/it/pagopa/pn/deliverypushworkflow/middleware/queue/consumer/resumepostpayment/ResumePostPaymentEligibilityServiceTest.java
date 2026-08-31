@@ -95,7 +95,8 @@ class ResumePostPaymentEligibilityServiceTest {
 
     @Test
     void firstAttemptWithoutScheduleIsNotEligible() {
-        Mockito.when(timelineService.getTimelineStrongly(IUN, false)).thenReturn(commonTimeline());
+        Set<TimelineElementInternal> timeline = commonTimeline();
+        Mockito.when(timelineService.getTimelineStrongly(IUN, false)).thenReturn(timeline);
 
         ResumeValidationResult result = service.validate(event(ResumeType.FIRST_ATTEMPT));
 
@@ -129,7 +130,8 @@ class ResumePostPaymentEligibilityServiceTest {
 
     @Test
     void secondAttemptWithoutFirstSendIsNotEligible() {
-        Mockito.when(timelineService.getTimelineStrongly(IUN, false)).thenReturn(commonTimeline());
+        Set<TimelineElementInternal> timeline = commonTimeline();
+        Mockito.when(timelineService.getTimelineStrongly(IUN, false)).thenReturn(timeline);
 
         ResumeValidationResult result = service.validate(event(ResumeType.SECOND_ATTEMPT));
 
@@ -201,7 +203,8 @@ class ResumePostPaymentEligibilityServiceTest {
 
     @Test
     void cancelledNotificationIsNotEligible() {
-        Mockito.when(timelineService.getTimelineStrongly(IUN, false)).thenReturn(commonTimeline());
+        Set<TimelineElementInternal> timeline = commonTimeline();
+        Mockito.when(timelineService.getTimelineStrongly(IUN, false)).thenReturn(timeline);
         Mockito.when(timelineUtils.checkIsNotificationCancellationRequested(IUN)).thenReturn(true);
 
         ResumeValidationResult result = service.validate(event(ResumeType.FIRST_ATTEMPT));
@@ -211,7 +214,8 @@ class ResumePostPaymentEligibilityServiceTest {
 
     @Test
     void viewedNotificationIsNotEligible() {
-        Mockito.when(timelineService.getTimelineStrongly(IUN, false)).thenReturn(commonTimeline());
+        Set<TimelineElementInternal> timeline = commonTimeline();
+        Mockito.when(timelineService.getTimelineStrongly(IUN, false)).thenReturn(timeline);
         Mockito.when(timelineUtils.checkIsNotificationViewed(IUN, REC_INDEX)).thenReturn(true);
 
         ResumeValidationResult result = service.validate(event(ResumeType.FIRST_ATTEMPT));
