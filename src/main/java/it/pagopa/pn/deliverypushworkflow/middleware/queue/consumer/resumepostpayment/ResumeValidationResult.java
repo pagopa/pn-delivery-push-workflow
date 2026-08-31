@@ -10,24 +10,32 @@ public record ResumeValidationResult(
         ResumeValidationOutcome outcome,
         ResumeValidationReason reason,
         NotificationInt notification,
-        Set<TimelineElementCategoryInt> relevantTimelineCategories
+        Set<TimelineElementCategoryInt> recipientTimelineCategories
 ) {
     public static ResumeValidationResult eligible(NotificationInt notification) {
-        return new ResumeValidationResult(ResumeValidationOutcome.ELIGIBLE, ResumeValidationReason.VALID,
-                notification, Collections.emptySet());
+        return eligible(notification, Collections.emptySet());
     }
 
-    public static ResumeValidationResult alreadyProcessed(NotificationInt notification) {
+    public static ResumeValidationResult eligible(NotificationInt notification,
+                                                  Set<TimelineElementCategoryInt> recipientTimelineCategories) {
+        return new ResumeValidationResult(ResumeValidationOutcome.ELIGIBLE, ResumeValidationReason.VALID,
+                notification, Set.copyOf(recipientTimelineCategories));
+    }
+
+    public static ResumeValidationResult alreadyProcessed(NotificationInt notification,
+                                                          Set<TimelineElementCategoryInt> recipientTimelineCategories) {
         return new ResumeValidationResult(ResumeValidationOutcome.ALREADY_PROCESSED,
-                ResumeValidationReason.PREPARE_ALREADY_PRESENT, notification, Collections.emptySet());
+                ResumeValidationReason.PREPARE_ALREADY_PRESENT, notification,
+                Set.copyOf(recipientTimelineCategories));
     }
 
     public static ResumeValidationResult notEligible(ResumeValidationReason reason, NotificationInt notification) {
-        return new ResumeValidationResult(ResumeValidationOutcome.NOT_ELIGIBLE, reason,
-                notification, Collections.emptySet());
+        return notEligible(reason, notification, Collections.emptySet());
     }
 
-    public ResumeValidationResult withRelevantTimelineCategories(Set<TimelineElementCategoryInt> categories) {
-        return new ResumeValidationResult(outcome, reason, notification, Set.copyOf(categories));
+    public static ResumeValidationResult notEligible(ResumeValidationReason reason, NotificationInt notification,
+                                                     Set<TimelineElementCategoryInt> recipientTimelineCategories) {
+        return new ResumeValidationResult(ResumeValidationOutcome.NOT_ELIGIBLE, reason,
+                notification, Set.copyOf(recipientTimelineCategories));
     }
 }

@@ -9,6 +9,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Collections;
+
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
@@ -83,7 +85,8 @@ class ResumePostPaymentHandlerImplTest {
     @Test
     void doesNotRestartWhenEventWasAlreadyProcessed() {
         ResumePostPaymentEvent event = event(ResumeType.SECOND_ATTEMPT);
-        when(eligibilityService.validate(event)).thenReturn(ResumeValidationResult.alreadyProcessed(notification));
+        when(eligibilityService.validate(event)).thenReturn(
+            ResumeValidationResult.alreadyProcessed(notification, Collections.emptySet()));
 
         handler.handle(event);
 

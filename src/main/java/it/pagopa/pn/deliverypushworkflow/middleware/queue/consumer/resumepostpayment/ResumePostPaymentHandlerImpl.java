@@ -22,11 +22,11 @@ public class ResumePostPaymentHandlerImpl implements ResumePostPaymentHandler {
     public void handle(ResumePostPaymentEvent event) {
         ResumeValidationResult validationResult = eligibilityService.validate(event);
         if (validationResult.outcome() != ResumeValidationOutcome.ELIGIBLE) {
-            var relevantTimelineCategories = validationResult.relevantTimelineCategories().stream()
+            var recipientTimelineCategories = validationResult.recipientTimelineCategories().stream()
                     .map(Enum::name)
                     .sorted()
                     .toList();
-            log.error("{} iun={} recIndex={} resumeType={} outcome={} reasonCode={} reasonDescription={} relevantTimelineCategories={}",
+            log.error("{} iun={} recIndex={} resumeType={} outcome={} reasonCode={} reasonDescription={} recipientTimelineCategories={}",
                     ERROR_MARKER,
                     event.getIun(),
                     event.getRecIndex(),
@@ -34,7 +34,7 @@ public class ResumePostPaymentHandlerImpl implements ResumePostPaymentHandler {
                     validationResult.outcome(),
                     validationResult.reason().name(),
                     validationResult.reason().getDescription(),
-                    relevantTimelineCategories);
+                    recipientTimelineCategories);
             return;
         }
 
