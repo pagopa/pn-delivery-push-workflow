@@ -6,7 +6,6 @@ import io.awspring.cloud.sqs.annotation.SqsListener;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.handler.utils.HandleEventUtils;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 
@@ -23,7 +22,7 @@ public class ResumePostPaymentConsumer {
 
     private final ObjectMapper objectMapper;
     private final ResumePostPaymentEventValidator validator;
-    private final ObjectProvider<ResumePostPaymentHandler> handlerProvider;
+    private final ResumePostPaymentHandler resumePostPaymentHandler;
 
     @SqsListener(queueNames = "#{@pnDeliveryPushWorkflowConfigs.topics.resumePostPayment}")
     public void consume(Message<String> message) {
@@ -54,8 +53,7 @@ public class ResumePostPaymentConsumer {
             }
 
             HandleEventUtils.addIunAndRecIndexToMdc(event.getIun(), event.getRecIndex());
-            ResumePostPaymentHandler handler = handlerProvider.getObject();
-            handler.handle(event);
+            resumePostPaymentHandler.handle(event);
             log.logEndingProcess(PROCESS_NAME);
         } catch (Exception exception) {
             log.logEndingProcess(PROCESS_NAME, false, exception.getMessage(), exception);

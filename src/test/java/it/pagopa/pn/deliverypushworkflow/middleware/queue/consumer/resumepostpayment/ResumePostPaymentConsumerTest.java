@@ -14,7 +14,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.MDC;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
@@ -32,18 +31,15 @@ class ResumePostPaymentConsumerTest {
 
     @Mock
     private ResumePostPaymentHandler handler;
-    @Mock
-    private ObjectProvider<ResumePostPaymentHandler> handlerProvider;
 
     private ResumePostPaymentConsumer consumer;
 
     @BeforeEach
     void setUp() {
-        Mockito.lenient().when(handlerProvider.getObject()).thenReturn(handler);
         consumer = new ResumePostPaymentConsumer(
                 new ObjectMapper(),
                 new ResumePostPaymentEventValidator(),
-            handlerProvider
+                handler
         );
     }
 

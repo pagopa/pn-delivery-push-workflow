@@ -36,14 +36,14 @@ class ResumePostPaymentHandlerImplTest {
     @Mock
     private NotificationInt notification;
 
-    private ResumePostPaymentHandlerImpl handler;
+    private ResumePostPaymentHandler handler;
     private ch.qos.logback.classic.Logger logger;
     private ListAppender<ILoggingEvent> logAppender;
 
     @BeforeEach
     void setUp() {
-        handler = new ResumePostPaymentHandlerImpl(eligibilityService, paperChannelService, registeredLetterSender);
-        logger = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(ResumePostPaymentHandlerImpl.class);
+        handler = new ResumePostPaymentHandler(eligibilityService, paperChannelService, registeredLetterSender);
+        logger = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(ResumePostPaymentHandler.class);
         logAppender = new ListAppender<>();
         logAppender.start();
         logger.addAppender(logAppender);
@@ -64,7 +64,7 @@ class ResumePostPaymentHandlerImplTest {
 
         verify(paperChannelService).prepareAnalogNotification(notification, REC_INDEX, 0);
         verifyNoInteractions(registeredLetterSender);
-        assertLogContains(ResumePostPaymentHandlerImpl.SUCCESS_MARKER);
+        assertLogContains(ResumePostPaymentHandler.SUCCESS_MARKER);
     }
 
     @Test
@@ -98,7 +98,7 @@ class ResumePostPaymentHandlerImplTest {
         handler.handle(event);
 
         verifyNoInteractions(paperChannelService, registeredLetterSender);
-        assertLogContains(ResumePostPaymentHandlerImpl.ERROR_MARKER);
+        assertLogContains(ResumePostPaymentHandler.ERROR_MARKER);
     }
 
     @Test

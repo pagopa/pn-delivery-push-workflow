@@ -2,7 +2,7 @@ package it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.resumepostpa
 
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.commons.exceptions.PnInternalException;
-import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
+import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.externalchannel.ResponseStatusInt;
@@ -24,6 +24,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.HashSet;
@@ -56,24 +57,28 @@ class ResumePostPaymentEligibilityServiceTest {
     private TimelineService timelineService;
     @Mock
     private TimelineUtils timelineUtils;
+    @Mock
+    private PnDeliveryPushWorkflowConfigs configs;
 
     private ResumePostPaymentEligibilityService service;
     private NotificationInt notification;
 
     @BeforeEach
     void setUp() {
-        notification = notification(true);
+        notification = notification();
         service = new ResumePostPaymentEligibilityService(
                 notificationService,
                 timelineService,
                 timelineUtils,
-                Clock.fixed(NOW, ZoneOffset.UTC)
+                Clock.fixed(NOW, ZoneOffset.UTC),
+                configs
         );
         Mockito.lenient().when(notificationService.getNotificationByIun(IUN)).thenReturn(notification);
+            Mockito.lenient().when(configs.getResumPostPaymentMinimumDelayScheduleAnalogWorkflow()).thenReturn(null);
     }
 
     @Test
-    void firstAttemptIsEligibleAtMinimumDelayBoundary() {
+    void firstAttemptUsesTenHoursAsDefaultMinimumDelayAtBoundary() {
         Set<TimelineElementInternal> timeline = commonTimeline();
         timeline.add(scheduleAnalog(NOW.minusSeconds(10 * 60 * 60)));
         Mockito.when(timelineService.getTimelineStrongly(IUN, false)).thenReturn(timeline);
@@ -94,6 +99,19 @@ class ResumePostPaymentEligibilityServiceTest {
 
         assertResult(result, ResumeValidationOutcome.NOT_ELIGIBLE,
                 ResumeValidationReason.SCHEDULE_ANALOG_WORKFLOW_TOO_RECENT);
+    }
+
+    @Test
+    void firstAttemptUsesConfiguredMinimumDelay() {
+        Set<TimelineElementInternal> timeline = commonTimeline();
+        timeline.add(scheduleAnalog(NOW.minus(Duration.ofHours(2))));
+        Mockito.when(timelineService.getTimelineStrongly(IUN, false)).thenReturn(timeline);
+        Mockito.when(configs.getResumPostPaymentMinimumDelayScheduleAnalogWorkflow())
+                .thenReturn(Duration.ofHours(1));
+
+        ResumeValidationResult result = service.validate(event(ResumeType.FIRST_ATTEMPT));
+
+        assertResult(result, ResumeValidationOutcome.ELIGIBLE, ResumeValidationReason.VALID);
     }
 
     @Test
@@ -252,21 +270,6 @@ class ResumePostPaymentEligibilityServiceTest {
     }
 
     @Test
-    void notificationIunMismatchIsNotEligible() {
-        notification = NotificationInt.builder()
-                .iun("DIFFERENT_IUN")
-                .recipients(notification.getRecipients())
-            .build();
-        Mockito.when(notificationService.getNotificationByIun(IUN)).thenReturn(notification);
-
-        ResumeValidationResult result = service.validate(event(ResumeType.FIRST_ATTEMPT));
-
-        assertResult(result, ResumeValidationOutcome.NOT_ELIGIBLE,
-                ResumeValidationReason.NOTIFICATION_IUN_MISMATCH);
-        Mockito.verifyNoInteractions(timelineService, timelineUtils);
-    }
-
-    @Test
     void notificationNotFoundIsPropagatedWithoutReadingTimeline() {
         PnInternalException exception = new PnInternalException("Notification not found", "NOTIFICATION_NOT_FOUND");
         Mockito.when(notificationService.getNotificationByIun(IUN)).thenThrow(exception);
@@ -288,21 +291,6 @@ class ResumePostPaymentEligibilityServiceTest {
 
         assertResult(result, ResumeValidationOutcome.NOT_ELIGIBLE,
                 ResumeValidationReason.SECOND_ATTEMPT_TRIGGER_NOT_FOUND);
-    }
-
-    @Test
-    void simpleRegisteredLetterWithoutPhysicalAddressIsNotEligible() {
-        notification = notification(false);
-        Mockito.when(notificationService.getNotificationByIun(IUN)).thenReturn(notification);
-        Set<TimelineElementInternal> timeline = commonTimeline();
-        timeline.add(recipientElement(DIGITAL_FAILURE_WORKFLOW));
-        timeline.add(recipientElement(SCHEDULE_REFINEMENT));
-        Mockito.when(timelineService.getTimelineStrongly(IUN, false)).thenReturn(timeline);
-
-        ResumeValidationResult result = service.validate(event(ResumeType.SIMPLE_REGISTERED_LETTER));
-
-        assertResult(result, ResumeValidationOutcome.NOT_ELIGIBLE,
-                ResumeValidationReason.PHYSICAL_ADDRESS_NOT_FOUND);
     }
 
     @Test
@@ -375,9 +363,8 @@ class ResumePostPaymentEligibilityServiceTest {
                 .build();
     }
 
-    private NotificationInt notification(boolean withPhysicalAddress) {
+    private NotificationInt notification() {
         NotificationRecipientInt recipient = NotificationRecipientInt.builder()
-                .physicalAddress(withPhysicalAddress ? PhysicalAddressInt.builder().address("Via Roma 1").build() : null)
                 .build();
         return NotificationInt.builder()
                 .iun(IUN)

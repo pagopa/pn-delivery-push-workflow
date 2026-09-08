@@ -1,6 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.resumepostpayment;
 
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
+import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.externalchannel.ResponseStatusInt;
@@ -36,18 +37,17 @@ import static it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineEle
 @Service
 @RequiredArgsConstructor
 public class ResumePostPaymentEligibilityService {
-    private static final Duration FIRST_ATTEMPT_MINIMUM_DELAY = Duration.ofHours(10);
+    private static final Duration DEFAULT_MINIMUM_DELAY_SCHEDULE_ANALOG_WORKFLOW = Duration.ofHours(10);
 
     private final NotificationService notificationService;
     private final TimelineService timelineService;
     private final TimelineUtils timelineUtils;
     private final Clock clock;
+    private final PnDeliveryPushWorkflowConfigs configs;
 
     public ResumeValidationResult validate(ResumePostPaymentEvent event) {
         NotificationInt notification = notificationService.getNotificationByIun(event.getIun());
-        if (!Objects.equals(event.getIun(), notification.getIun())) {
-            return ResumeValidationResult.notEligible(ResumeValidationReason.NOTIFICATION_IUN_MISMATCH, notification);
-        }
+
         if (!recipientExists(notification, event.getRecIndex())) {
             return ResumeValidationResult.notEligible(ResumeValidationReason.RECIPIENT_NOT_FOUND, notification);
         }
@@ -58,6 +58,7 @@ public class ResumePostPaymentEligibilityService {
                 .map(TimelineElementInternal::getCategory)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toUnmodifiableSet());
+
         if (isAlreadyProcessed(event, timeline)) {
             return ResumeValidationResult.alreadyProcessed(notification, recipientTimelineCategories);
         }
@@ -80,19 +81,19 @@ public class ResumePostPaymentEligibilityService {
     private ResumeValidationResult validateCommonRules(ResumePostPaymentEvent event, NotificationInt notification,
                                                         Set<TimelineElementInternal> timeline,
                                                         Set<TimelineElementCategoryInt> recipientTimelineCategories) {
-        if (!hasRecipientCategory(timeline, PAYMENT, event.getRecIndex())) {
+        if (!hasGenericRecipientCategory(timeline, PAYMENT, event.getRecIndex())) {
             return ResumeValidationResult.notEligible(
                     ResumeValidationReason.PAYMENT_NOT_FOUND, notification, recipientTimelineCategories);
         }
-        if (timelineUtils.checkIsNotificationCancellationRequested(event.getIun())) {
+        if (timelineUtils.checkIsNotificationCancellationRequested(event.getIun())) { // Non esiste l'elemento in dp-workflow, non lo importiamo per questa casistica di gestione una tantum
             return ResumeValidationResult.notEligible(
                     ResumeValidationReason.NOTIFICATION_CANCELLED, notification, recipientTimelineCategories);
         }
-        if (timelineUtils.checkIsNotificationViewed(event.getIun(), event.getRecIndex())) {
+        if (timelineUtils.checkIsNotificationViewed(event.getIun(), event.getRecIndex())) { // Non esiste l'elemento in dp-workflow, non lo importiamo per questa casistica di gestione una tantum
             return ResumeValidationResult.notEligible(
                     ResumeValidationReason.NOTIFICATION_VIEWED, notification, recipientTimelineCategories);
         }
-        if (hasRecipientCategory(timeline, NOTIFICATION_TIMELINE_REWORKED, event.getRecIndex())) {
+        if (hasGenericRecipientCategory(timeline, NOTIFICATION_TIMELINE_REWORKED, event.getRecIndex())) {
             return ResumeValidationResult.notEligible(
                     ResumeValidationReason.NOTIFICATION_REWORKED, notification, recipientTimelineCategories);
         }
@@ -114,7 +115,9 @@ public class ResumePostPaymentEligibilityService {
             return ResumeValidationResult.notEligible(ResumeValidationReason.SCHEDULE_ANALOG_WORKFLOW_NOT_FOUND,
                     notification, recipientTimelineCategories);
         }
-        Instant latestEligibleSchedulingDate = clock.instant().minus(FIRST_ATTEMPT_MINIMUM_DELAY);
+        Duration minimumDelay = configs.getResumPostPaymentMinimumDelayScheduleAnalogWorkflow();
+        Instant latestEligibleSchedulingDate = clock.instant().minus(
+            minimumDelay != null ? minimumDelay : DEFAULT_MINIMUM_DELAY_SCHEDULE_ANALOG_WORKFLOW);
         if (schedule.getSchedulingDate() == null || schedule.getSchedulingDate().isAfter(latestEligibleSchedulingDate)) {
             return ResumeValidationResult.notEligible(ResumeValidationReason.SCHEDULE_ANALOG_WORKFLOW_TOO_RECENT,
                     notification, recipientTimelineCategories);
@@ -137,6 +140,7 @@ public class ResumePostPaymentEligibilityService {
                 .anyMatch(details -> details.getRecIndex() == event.getRecIndex()
                         && Objects.equals(details.getSentAttemptMade(), 0)
                         && details.getResponseStatus() == ResponseStatusInt.KO);
+        //Timeout e feedback ovviamente ha senso controllarli solo per secondo tentativo, in quanto riguarda il primo tentativo andato in timeout
         boolean hasTimeout = hasAnalogAttempt(timeline, SEND_ANALOG_TIMEOUT, event.getRecIndex(), 0);
         if (!hasKoFeedback && !hasTimeout) {
             return ResumeValidationResult.notEligible(ResumeValidationReason.SECOND_ATTEMPT_TRIGGER_NOT_FOUND,
@@ -149,19 +153,15 @@ public class ResumePostPaymentEligibilityService {
                                                                    NotificationInt notification,
                                                                    Set<TimelineElementInternal> timeline,
                                                                    Set<TimelineElementCategoryInt> recipientTimelineCategories) {
-        if (!hasRecipientCategory(timeline, DIGITAL_FAILURE_WORKFLOW, event.getRecIndex())) {
+        if (!hasGenericRecipientCategory(timeline, DIGITAL_FAILURE_WORKFLOW, event.getRecIndex())) {
             return ResumeValidationResult.notEligible(ResumeValidationReason.DIGITAL_FAILURE_WORKFLOW_NOT_FOUND,
                     notification, recipientTimelineCategories);
         }
-        if (!hasRecipientCategory(timeline, SCHEDULE_REFINEMENT, event.getRecIndex())) {
+        if (!hasGenericRecipientCategory(timeline, SCHEDULE_REFINEMENT, event.getRecIndex())) {
             return ResumeValidationResult.notEligible(ResumeValidationReason.SCHEDULE_REFINEMENT_NOT_FOUND,
                     notification, recipientTimelineCategories);
         }
-        NotificationRecipientInt recipient = notification.getRecipients().get(event.getRecIndex());
-        if (recipient.getPhysicalAddress() == null) {
-            return ResumeValidationResult.notEligible(ResumeValidationReason.PHYSICAL_ADDRESS_NOT_FOUND,
-                    notification, recipientTimelineCategories);
-        }
+
         return ResumeValidationResult.eligible(notification, recipientTimelineCategories);
     }
 
@@ -170,7 +170,7 @@ public class ResumePostPaymentEligibilityService {
             case FIRST_ATTEMPT -> hasAnalogAttempt(timeline, PREPARE_ANALOG_DOMICILE, event.getRecIndex(), 0);
             case SECOND_ATTEMPT -> hasAnalogAttempt(timeline, PREPARE_ANALOG_DOMICILE, event.getRecIndex(), 1);
             case SIMPLE_REGISTERED_LETTER ->
-                    hasRecipientCategory(timeline, PREPARE_SIMPLE_REGISTERED_LETTER, event.getRecIndex());
+                    hasGenericRecipientCategory(timeline, PREPARE_SIMPLE_REGISTERED_LETTER, event.getRecIndex());
         };
     }
 
@@ -184,9 +184,9 @@ public class ResumePostPaymentEligibilityService {
                 && details.getRecIndex() == recIndex;
     }
 
-    private boolean hasRecipientCategory(Set<TimelineElementInternal> timeline,
-                                         TimelineElementCategoryInt category,
-                                         int recIndex) {
+    private boolean hasGenericRecipientCategory(Set<TimelineElementInternal> timeline,
+                                                TimelineElementCategoryInt category,
+                                                int recIndex) {
         return timeline.stream()
                 .filter(element -> element.getCategory() == category)
                 .map(TimelineElementInternal::getDetails)
