@@ -1,0 +1,72 @@
+[
+  {
+    "priority": 10,
+    "httpRequest": {"method": "GET", "path": "/delivery-private/notifications/TECH_ERROR"},
+    "httpResponse": {"statusCode": 500, "headers": {"Content-Type": ["application/problem+json"]}, "body": "{\"status\":500,\"title\":\"Technical error\",\"errors\":[{\"code\":\"TECHNICAL_ERROR\",\"detail\":\"Simulated Delivery failure\"}]}"}
+  },
+  {
+    "priority": 5,
+    "httpRequest": {"method": "GET", "path": "/delivery-private/notifications/NO_PAYMENT"},
+    "httpResponse": {"statusCode": 200, "headers": {"Content-Type": ["application/json"]}, "body": "{\"iun\":\"NO_PAYMENT\",\"paProtocolNumber\":\"PROTO-01\",\"subject\":\"Resume post payment local test\",\"sentAt\":\"2026-08-30T10:00:00Z\",\"recipients\":[{\"recipientType\":\"PF\",\"taxId\":\"RSSMRA80A01H501U\",\"internalId\":\"ANON-01\",\"denomination\":\"Mario Rossi\",\"physicalAddress\":{\"address\":\"Via Roma 1\",\"zip\":\"00100\",\"municipality\":\"Roma\",\"province\":\"RM\"},\"payments\":[]}],\"documents\":[{\"digests\":{\"sha256\":\"c2hhMjU2\"},\"ref\":{\"key\":\"doc-key\",\"versionToken\":\"v1\"}}],\"notificationFeePolicy\":\"FLAT_RATE\",\"physicalCommunicationType\":\"AR_REGISTERED_LETTER\",\"senderDenomination\":\"Comune di Test\",\"senderTaxId\":\"01234567890\",\"senderPaId\":\"PA-TEST\",\"physicalCommunicationPriority\":1,\"amount\":100,\"paFee\":0,\"vat\":0,\"version\":\"2.6\"}"}
+  },
+  {
+    "priority": 5,
+    "httpRequest": {"method": "GET", "path": "/delivery-private/notifications/DUPLICATE"},
+    "httpResponse": {"statusCode": 200, "headers": {"Content-Type": ["application/json"]}, "body": "{\"iun\":\"DUPLICATE\",\"paProtocolNumber\":\"PROTO-01\",\"subject\":\"Resume post payment local test\",\"sentAt\":\"2026-08-30T10:00:00Z\",\"recipients\":[{\"recipientType\":\"PF\",\"taxId\":\"RSSMRA80A01H501U\",\"internalId\":\"ANON-01\",\"denomination\":\"Mario Rossi\",\"physicalAddress\":{\"address\":\"Via Roma 1\",\"zip\":\"00100\",\"municipality\":\"Roma\",\"province\":\"RM\"},\"payments\":[]}],\"documents\":[{\"digests\":{\"sha256\":\"c2hhMjU2\"},\"ref\":{\"key\":\"doc-key\",\"versionToken\":\"v1\"}}],\"notificationFeePolicy\":\"FLAT_RATE\",\"physicalCommunicationType\":\"AR_REGISTERED_LETTER\",\"senderDenomination\":\"Comune di Test\",\"senderTaxId\":\"01234567890\",\"senderPaId\":\"PA-TEST\",\"physicalCommunicationPriority\":1,\"amount\":100,\"paFee\":0,\"vat\":0,\"version\":\"2.6\"}"}
+  },
+  {
+    "priority": 5,
+    "httpRequest": {"method": "GET", "path": "/delivery-private/notifications/FIRST_SUCCESS"},
+    "httpResponse": {"statusCode": 200, "headers": {"Content-Type": ["application/json"]}, "body": "{\"iun\":\"FIRST_SUCCESS\",\"paProtocolNumber\":\"PROTO-01\",\"subject\":\"Resume post payment local test\",\"sentAt\":\"2026-08-30T10:00:00Z\",\"recipients\":[{\"recipientType\":\"PF\",\"taxId\":\"RSSMRA80A01H501U\",\"internalId\":\"ANON-01\",\"denomination\":\"Mario Rossi\",\"physicalAddress\":{\"address\":\"Via Roma 1\",\"zip\":\"00100\",\"municipality\":\"Roma\",\"province\":\"RM\"},\"payments\":[]}],\"documents\":[{\"digests\":{\"sha256\":\"c2hhMjU2\"},\"ref\":{\"key\":\"doc-key\",\"versionToken\":\"v1\"}}],\"notificationFeePolicy\":\"FLAT_RATE\",\"physicalCommunicationType\":\"AR_REGISTERED_LETTER\",\"senderDenomination\":\"Comune di Test\",\"senderTaxId\":\"01234567890\",\"senderPaId\":\"PA-TEST\",\"physicalCommunicationPriority\":1,\"amount\":100,\"paFee\":0,\"vat\":0,\"version\":\"2.6\"}"}
+  },
+  {
+    "priority": 10,
+    "httpRequest": {"method": "GET", "path": "/timeline-service-private/timelines/NO_PAYMENT/elements", "queryStringParameters": {"strongly": ["true"]}},
+    "httpResponse": {"statusCode": 200, "headers": {"Content-Type": ["application/json"]}, "body": "[]"}
+  },
+  {
+    "priority": 10,
+    "httpRequest": {"method": "GET", "path": "/timeline-service-private/timelines/DUPLICATE/elements", "queryStringParameters": {"strongly": ["true"]}},
+    "httpResponse": {"statusCode": 200, "headers": {"Content-Type": ["application/json"]}, "body": "[{\"iun\":\"DUPLICATE\",\"elementId\":\"PAYMENT.DUPLICATE\",\"timestamp\":\"2026-08-30T00:00:00Z\",\"category\":\"PAYMENT\",\"details\":{\"recIndex\":0,\"categoryType\":\"PAYMENT\"}},{\"iun\":\"DUPLICATE\",\"elementId\":\"PREPARE_ANALOG_DOMICILE.DUPLICATE.RECINDEX_0.ATTEMPT_0\",\"timestamp\":\"2026-08-30T00:00:00Z\",\"category\":\"PREPARE_ANALOG_DOMICILE\",\"details\":{\"recIndex\":0,\"sentAttemptMade\":0,\"categoryType\":\"PREPARE_ANALOG_DOMICILE\"}}]"}
+  },
+  {
+    "priority": 10,
+    "httpRequest": {"method": "GET", "path": "/timeline-service-private/timelines/FIRST_SUCCESS/elements", "queryStringParameters": {"strongly": ["true"]}},
+    "httpResponse": {"statusCode": 200, "headers": {"Content-Type": ["application/json"]}, "body": "[{\"iun\":\"FIRST_SUCCESS\",\"elementId\":\"PAYMENT.FIRST_SUCCESS\",\"timestamp\":\"2026-08-30T00:00:00Z\",\"category\":\"PAYMENT\",\"details\":{\"recIndex\":0,\"categoryType\":\"PAYMENT\"}},{\"iun\":\"FIRST_SUCCESS\",\"elementId\":\"SCHEDULE_ANALOG_WORKFLOW.FIRST_SUCCESS.RECINDEX_0\",\"timestamp\":\"2026-08-30T00:00:00Z\",\"category\":\"SCHEDULE_ANALOG_WORKFLOW\",\"details\":{\"recIndex\":0,\"schedulingDate\":\"2026-08-30T00:00:00Z\",\"categoryType\":\"SCHEDULE_ANALOG_WORKFLOW\"}}]"}
+  },
+  {
+    "priority": 10,
+    "httpRequest": {"method": "GET", "path": "/timeline-service-private/timelines/FIRST_SUCCESS/cancelled"},
+    "httpResponse": {"statusCode": 404, "headers": {"Content-Type": ["application/problem+json"]}, "body": "{\"status\":404,\"title\":\"Not found\",\"errors\":[{\"code\":\"PN_TIMELINESERVICE_TIMELINEELEMENTNOTPRESENT\",\"detail\":\"Cancellation not found\"}]}"}
+  },
+  {
+    "priority": 20,
+    "httpRequest": {"method": "GET", "path": "/timeline-service-private/timelines/FIRST_SUCCESS/elements/AAR_GEN.IUN_FIRST_SUCCESS.RECINDEX_0/details"},
+    "httpResponse": {"statusCode": 200, "headers": {"Content-Type": ["application/json"]}, "body": "{\"recIndex\":0,\"generatedAarUrl\":\"https://local.test/aar/FIRST_SUCCESS.pdf\",\"numberOfPages\":1,\"categoryType\":\"AAR_GENERATION\"}"}
+  },
+  {
+    "priority": 20,
+    "httpRequest": {"method": "GET", "path": "/timeline-service-private/timelines/FIRST_SUCCESS/elements/AAR_CREATION_REQUEST.IUN_FIRST_SUCCESS.RECINDEX_0/details"},
+    "httpResponse": {"statusCode": 200, "headers": {"Content-Type": ["application/json"]}, "body": "{\"recIndex\":0,\"aarKey\":\"aar-key-FIRST_SUCCESS\",\"numberOfPages\":1,\"aarTemplateType\":\"AAR_NOTIFICATION\",\"categoryType\":\"AAR_CREATION_REQUEST\"}"}
+  },
+  {
+    "priority": 10,
+    "httpRequest": {"method": "GET", "path": "/timeline-service-private/timelines/FIRST_SUCCESS/elements/.*"},
+    "httpResponse": {"statusCode": 200, "headers": {"Content-Type": ["application/json"]}}
+  },
+  {
+    "priority": 10,
+    "httpRequest": {"method": "GET", "path": "/timeline-service-private/timelines/FIRST_SUCCESS/elements", "queryStringParameters": {"strongly": ["false"]}},
+    "httpResponse": {"statusCode": 200, "headers": {"Content-Type": ["application/json"]}, "body": "[]"}
+  },
+  {
+    "priority": 5,
+    "httpRequest": {"method": "POST", "path": "/paper-channel-private/v1/b2b/paper-deliveries-prepare/.*"},
+    "httpResponse": {"statusCode": 204}
+  },
+  {
+    "priority": 5,
+    "httpRequest": {"method": "POST", "path": "/timeline-service-private/timelines/element"},
+    "httpResponse": {"statusCode": 200, "headers": {"Content-Type": ["application/json"]}, "body": "{\"elementId\":\"PREPARE_ANALOG_DOMICILE.LOCAL\"}"}
+  }
+]

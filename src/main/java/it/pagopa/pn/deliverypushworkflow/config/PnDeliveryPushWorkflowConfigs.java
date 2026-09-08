@@ -120,6 +120,8 @@ public class PnDeliveryPushWorkflowConfigs {
 
     private CourtesyRetry courtesyRetry;
 
+    private Duration resumPostPaymentMinimumDelayScheduleAnalogWorkflow;
+
     @Data
     public static class Topics {
         private String newNotifications;
@@ -128,6 +130,7 @@ public class PnDeliveryPushWorkflowConfigs {
         private String nationalRegistriesEvents;
         private String notificationReworkUpdaterEvent;
         private String analogResponseEvents;
+        private String resumePostPayment;
     }
 
     @Data
