@@ -4,6 +4,7 @@ import it.pagopa.pn.commons.pnclients.CommonBaseClient;
 
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.datavault_reactive.ApiClient;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.datavault_reactive.api.AddressBookApi;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.datavault_reactive.api.MandatesApi;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.datavault_reactive.api.NotificationsApi;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.datavault_reactive.api.RecipientsApi;
@@ -27,6 +28,11 @@ public class DataVaultApiReactiveConfigurator extends CommonBaseClient {
     @Bean
     public MandatesApi mandatesApiReactive(PnDeliveryPushWorkflowConfigs cfg){
         return new MandatesApi(getNewApiClient(cfg));
+    }
+
+    @Bean
+    public AddressBookApi addressBookApiReactive(PnDeliveryPushWorkflowConfigs cfg){
+        return new AddressBookApi(getNewApiClient(cfg));
     }
     
     @NotNull
