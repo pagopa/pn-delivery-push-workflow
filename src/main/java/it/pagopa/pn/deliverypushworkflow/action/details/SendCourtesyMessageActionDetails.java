@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 @Data
-@Builder
+@Builder(toBuilder = true)
 @AllArgsConstructor
 @NoArgsConstructor
 public class SendCourtesyMessageActionDetails implements ActionDetails {
@@ -19,4 +19,5 @@ public class SendCourtesyMessageActionDetails implements ActionDetails {
     private int retryIndex;
     private DeliveryModeInt deliveryMode;
     private List<CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT> plannedChannels;
+    private String plannedAddressId;
 }

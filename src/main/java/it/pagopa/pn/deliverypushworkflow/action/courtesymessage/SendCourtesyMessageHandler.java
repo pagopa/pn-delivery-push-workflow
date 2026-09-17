@@ -111,11 +111,8 @@ public class SendCourtesyMessageHandler {
         int waitMinutes = intervals.get(currentRetryIndex);
         int nextRetryIndex = currentRetryIndex + 1;
         Instant schedulingDate = Instant.now().plus(Duration.ofMinutes(waitMinutes));
-        SendCourtesyMessageActionDetails nextDetails = SendCourtesyMessageActionDetails.builder()
-                .channel(channel)
+        SendCourtesyMessageActionDetails nextDetails = details.toBuilder()
                 .retryIndex(nextRetryIndex)
-                .deliveryMode(details.getDeliveryMode())
-                .plannedChannels(details.getPlannedChannels())
                 .build();
         log.info("Rescheduling SEND_COURTESY_MESSAGE_ACTION channel={} nextRetryIndex={} waitMinutes={} schedulingDate={} - iun={} id={}",
                 channel, nextRetryIndex, waitMinutes, schedulingDate, iun, recIndex);
