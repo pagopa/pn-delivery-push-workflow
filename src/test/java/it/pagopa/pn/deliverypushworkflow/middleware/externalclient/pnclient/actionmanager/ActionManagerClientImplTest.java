@@ -35,7 +35,8 @@ import static org.mockserver.model.HttpResponse.response;
 
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
-        "pn.delivery-push-workflow.action-manager-base-url=http://localhost:9999"
+        "pn.delivery-push-workflow.action-manager-base-url=http://localhost:9999",
+        "pn.delivery-push-workflow.courtesy-retry.planned-address-ttl=180m"
 })
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = {
