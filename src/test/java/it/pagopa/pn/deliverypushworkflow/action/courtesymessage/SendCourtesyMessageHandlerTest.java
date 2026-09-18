@@ -17,6 +17,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.EventId;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventId;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.CourtesyChannelFailedDetailsInt;
+import it.pagopa.pn.commons.exceptions.PnInternalException;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.CourtesyChannelFailureReasonInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.DeliveryModeInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.emd.integration.model.SendMessageRequestBody;
@@ -24,6 +25,7 @@ import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalregi
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.emdintegration.PnEmdIntegrationClient;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ActionType;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.impl.TimeParams;
+import it.pagopa.pn.deliverypushworkflow.service.ConfidentialInformationService;
 import it.pagopa.pn.deliverypushworkflow.service.AddressBookService;
 import it.pagopa.pn.deliverypushworkflow.service.ExternalChannelService;
 import it.pagopa.pn.deliverypushworkflow.service.IoService;
@@ -32,9 +34,11 @@ import it.pagopa.pn.deliverypushworkflow.service.SchedulerService;
 import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import it.pagopa.pn.deliverypushworkflow.service.impl.AuditLogServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import reactor.core.publisher.Mono;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
@@ -60,6 +64,7 @@ class SendCourtesyMessageHandlerTest {
     private SchedulerService schedulerService;
     private NotificationService notificationService;
     private CourtesyRetryableErrorClassifier retryableErrorClassifier;
+    private ConfidentialInformationService confidentialInformationService;
 
     private CourtesyMessageUtils courtesyMessageUtils;
     private SendCourtesyMessageHandler sendCourtesyMessageHandler;
@@ -83,11 +88,17 @@ class SendCourtesyMessageHandlerTest {
         timeParams.setWaitingForReadCourtesyMessage(Duration.ofDays(5));
         Mockito.lenient().when(mockConfig.getTimeParams()).thenReturn(timeParams);
 
-        courtesyMessageUtils = new CourtesyMessageUtils(addressBookService, timelineService, timelineUtils,
+        confidentialInformationService = mock(ConfidentialInformationService.class);
+        Mockito.lenient().when(confidentialInformationService.savePlannedCourtesyAddress(Mockito.anyString(), Mockito.anyString(),
+                        Mockito.anyInt(), Mockito.any(), Mockito.anyString()))
+                .thenAnswer(invocation -> Mono.just("COURTESY_PLANNED#" + invocation.getArgument(1) + "#"
+                        + invocation.getArgument(2) + "#" + invocation.getArgument(3)));
+
+        courtesyMessageUtils = new CourtesyMessageUtils(addressBookService, confidentialInformationService, timelineService, timelineUtils,
                 notificationUtils, schedulerService);
         sendCourtesyMessageHandler = new SendCourtesyMessageHandler(courtesyMessageUtils, notificationService,
                 timelineService, timelineUtils, externalChannelService, iOservice, pnEmdIntegrationClient,
-                new AuditLogServiceImpl(), schedulerService, mockConfig, retryableErrorClassifier);
+                new AuditLogServiceImpl(), schedulerService, mockConfig, retryableErrorClassifier, confidentialInformationService);
     }
 
     @Test
@@ -568,6 +579,122 @@ class SendCourtesyMessageHandlerTest {
         return CourtesyDigitalAddressInt.builder()
                 .type(type)
                 .address("indirizzo@test.it")
+                .build();
+    }
+
+    @Test
+    void handleSendCourtesyMessageActionUsesFrozenAddressWhenPlannedAddressIdIsSet() {
+        //GIVEN
+        NotificationRecipientInt recipient = getNotificationRecipientInt();
+        NotificationInt notification = getNotificationInt(recipient);
+        String plannedAddressId = "COURTESY_PLANNED#" + notification.getIun() + "#0#EMAIL";
+
+        Mockito.when(notificationService.getNotificationByIun(notification.getIun())).thenReturn(notification);
+        Mockito.when(notificationUtils.getRecipientFromIndex(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(recipient);
+        Mockito.when(addressBookService.getCourtesyAddress(Mockito.anyString(), Mockito.anyString())).thenReturn(Collections.emptyList());
+        Mockito.when(confidentialInformationService.getPlannedCourtesyAddress(recipient.getInternalId(), plannedAddressId))
+                .thenReturn(Mono.just("congelato@test.it"));
+
+        //WHEN
+        sendCourtesyMessageHandler.handleSendCourtesyMessageAction(notification.getIun(), 0,
+                detailsWithPlannedAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.EMAIL, DeliveryModeInt.DIGITAL, plannedAddressId));
+
+        //THEN
+        ArgumentCaptor<CourtesyDigitalAddressInt> addressCaptor = ArgumentCaptor.forClass(CourtesyDigitalAddressInt.class);
+        Mockito.verify(externalChannelService).sendCourtesyNotification(Mockito.eq(notification), addressCaptor.capture(),
+                Mockito.eq(0), Mockito.anyString(), Mockito.eq(DeliveryModeInt.DIGITAL));
+        assertThat(addressCaptor.getValue().getAddress()).isEqualTo("congelato@test.it");
+        assertThat(addressCaptor.getValue().getType()).isEqualTo(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.EMAIL);
+        Mockito.verify(addressBookService, never()).getCourtesyAddress(Mockito.anyString(), Mockito.anyString());
+    }
+
+    @Test
+    void handleSendCourtesyMessageActionFrozenAddressMissingClosesChannel() {
+        //GIVEN
+        NotificationRecipientInt recipient = getNotificationRecipientInt();
+        NotificationInt notification = getNotificationInt(recipient);
+        String plannedAddressId = "COURTESY_PLANNED#" + notification.getIun() + "#0#EMAIL";
+
+        Mockito.when(notificationService.getNotificationByIun(notification.getIun())).thenReturn(notification);
+        Mockito.when(notificationUtils.getRecipientFromIndex(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(recipient);
+        Mockito.when(confidentialInformationService.getPlannedCourtesyAddress(recipient.getInternalId(), plannedAddressId))
+                .thenReturn(Mono.empty());
+
+        //WHEN
+        sendCourtesyMessageHandler.handleSendCourtesyMessageAction(notification.getIun(), 0,
+                detailsWithPlannedAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.EMAIL, DeliveryModeInt.DIGITAL, plannedAddressId));
+
+        //THEN
+        Mockito.verify(timelineUtils).buildCourtesyChannelFailedTimelineElement(
+                Mockito.eq(0), Mockito.eq(notification), Mockito.eq(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.EMAIL),
+                Mockito.eq(DeliveryModeInt.DIGITAL), Mockito.eq(CourtesyChannelFailureReasonInt.EXPECTED_FAILURE), Mockito.anyString());
+        Mockito.verify(externalChannelService, never()).sendCourtesyNotification(Mockito.any(), Mockito.any(), Mockito.anyInt(), Mockito.anyString(), Mockito.any());
+    }
+
+    @Test
+    void handleSendCourtesyMessageActionFrozenAddressReadFailurePropagates() {
+        //GIVEN
+        NotificationRecipientInt recipient = getNotificationRecipientInt();
+        NotificationInt notification = getNotificationInt(recipient);
+        String plannedAddressId = "COURTESY_PLANNED#" + notification.getIun() + "#0#EMAIL";
+
+        Mockito.when(notificationService.getNotificationByIun(notification.getIun())).thenReturn(notification);
+        Mockito.when(notificationUtils.getRecipientFromIndex(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(recipient);
+        Mockito.when(confidentialInformationService.getPlannedCourtesyAddress(recipient.getInternalId(), plannedAddressId))
+                .thenReturn(Mono.error(new PnInternalException("data vault unreachable", "PN_DELIVERYPUSH_DATAVAULTADDRESSERROR")));
+
+        SendCourtesyMessageActionDetails actionDetails =
+                detailsWithPlannedAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.EMAIL, DeliveryModeInt.DIGITAL, plannedAddressId);
+
+        //WHEN - THEN the technical failure reaches the consumer instead of closing the channel
+        Assertions.assertThrows(PnInternalException.class,
+                () -> sendCourtesyMessageHandler.handleSendCourtesyMessageAction(notification.getIun(), 0, actionDetails));
+
+        Mockito.verify(timelineUtils, never()).buildCourtesyChannelFailedTimelineElement(
+                Mockito.anyInt(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyString());
+        Mockito.verify(schedulerService, never()).scheduleEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.any(Instant.class),
+                Mockito.eq(ActionType.SEND_COURTESY_MESSAGE_ACTION), Mockito.any(SendCourtesyMessageActionDetails.class));
+    }
+
+    @Test
+    void handleSendCourtesyMessageActionRetryKeepsPlannedAddressId() {
+        //GIVEN
+        NotificationRecipientInt recipient = getNotificationRecipientInt();
+        NotificationInt notification = getNotificationInt(recipient);
+        String plannedAddressId = "COURTESY_PLANNED#" + notification.getIun() + "#0#EMAIL";
+
+        Mockito.when(notificationService.getNotificationByIun(notification.getIun())).thenReturn(notification);
+        Mockito.when(notificationUtils.getRecipientFromIndex(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(recipient);
+        Mockito.when(confidentialInformationService.getPlannedCourtesyAddress(recipient.getInternalId(), plannedAddressId))
+                .thenReturn(Mono.just("congelato@test.it"));
+        Mockito.doThrow(new WebClientResponseException(503, "Service Unavailable", new HttpHeaders(), null, null))
+                .when(externalChannelService).sendCourtesyNotification(Mockito.any(), Mockito.any(), Mockito.anyInt(), Mockito.anyString(), Mockito.any());
+        configureRetryIntervals(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.EMAIL, List.of(1, 2, 4, 8));
+
+        //WHEN
+        sendCourtesyMessageHandler.handleSendCourtesyMessageAction(notification.getIun(), 0,
+                detailsWithPlannedAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.EMAIL, DeliveryModeInt.DIGITAL, plannedAddressId));
+
+        //THEN
+        ArgumentCaptor<SendCourtesyMessageActionDetails> detailsCaptor = ArgumentCaptor.forClass(SendCourtesyMessageActionDetails.class);
+        Mockito.verify(schedulerService).scheduleEvent(Mockito.eq(notification.getIun()), Mockito.eq(0), Mockito.any(Instant.class),
+                Mockito.eq(ActionType.SEND_COURTESY_MESSAGE_ACTION), detailsCaptor.capture());
+
+        SendCourtesyMessageActionDetails rescheduled = detailsCaptor.getValue();
+        assertThat(rescheduled.getPlannedAddressId()).isEqualTo(plannedAddressId);
+        assertThat(rescheduled.getRetryIndex()).isEqualTo(1);
+        assertThat(rescheduled.getPlannedChannels()).isEqualTo(List.of(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.EMAIL));
+        assertThat(rescheduled.getDeliveryMode()).isEqualTo(DeliveryModeInt.DIGITAL);
+    }
+
+    private static SendCourtesyMessageActionDetails detailsWithPlannedAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel,
+                                                                              DeliveryModeInt deliveryMode, String plannedAddressId) {
+        return SendCourtesyMessageActionDetails.builder()
+                .channel(channel)
+                .retryIndex(0)
+                .deliveryMode(deliveryMode)
+                .plannedChannels(List.of(channel))
+                .plannedAddressId(plannedAddressId)
                 .build();
     }
 

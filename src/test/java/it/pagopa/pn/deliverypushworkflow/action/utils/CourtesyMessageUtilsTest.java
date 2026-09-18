@@ -1,5 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.action.utils;
 
+import it.pagopa.pn.commons.exceptions.PnInternalException;
 import it.pagopa.pn.deliverypushworkflow.action.details.SendCourtesyMessageActionDetails;
 import it.pagopa.pn.deliverypushworkflow.action.it.utils.NotificationRecipientTestBuilder;
 import it.pagopa.pn.deliverypushworkflow.action.it.utils.NotificationTestBuilder;
@@ -13,6 +14,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventId;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.DeliveryModeInt;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.emdintegration.PnEmdIntegrationClient;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ActionType;
+import it.pagopa.pn.deliverypushworkflow.service.ConfidentialInformationService;
 import it.pagopa.pn.deliverypushworkflow.service.AddressBookService;
 import it.pagopa.pn.deliverypushworkflow.service.ExternalChannelService;
 import it.pagopa.pn.deliverypushworkflow.service.IoService;
@@ -23,9 +25,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 
 import static it.pagopa.pn.deliverypushworkflow.action.it.mockbean.ExternalChannelMock.EXTCHANNEL_SEND_SUCCESS;
@@ -42,6 +47,7 @@ class CourtesyMessageUtilsTest {
     private IoService iOservice;
     private PnEmdIntegrationClient pnEmdIntegrationClient;
     private SchedulerService schedulerService;
+    private ConfidentialInformationService confidentialInformationService;
 
     private CourtesyMessageUtils courtesyMessageUtils;
 
@@ -56,7 +62,13 @@ class CourtesyMessageUtilsTest {
         pnEmdIntegrationClient = mock(PnEmdIntegrationClient.class);
         schedulerService = mock(SchedulerService.class);
 
-        courtesyMessageUtils = new CourtesyMessageUtils(addressBookService, timelineService, timelineUtils,
+        confidentialInformationService = mock(ConfidentialInformationService.class);
+        Mockito.lenient().when(confidentialInformationService.savePlannedCourtesyAddress(Mockito.anyString(), Mockito.anyString(),
+                        Mockito.anyInt(), Mockito.any(), Mockito.anyString()))
+                .thenAnswer(invocation -> Mono.just("COURTESY_PLANNED#" + invocation.getArgument(1) + "#"
+                        + invocation.getArgument(2) + "#" + invocation.getArgument(3)));
+
+        courtesyMessageUtils = new CourtesyMessageUtils(addressBookService, confidentialInformationService, timelineService, timelineUtils,
                 notificationUtils, schedulerService);
     }
 
@@ -144,6 +156,72 @@ class CourtesyMessageUtilsTest {
         );
 
         Assertions.assertEquals(firstEventIdExpected, firstEventIdInTimeline);
+    }
+
+    @Test
+    void dispatchFreezesOnlyEmailAndSmsAddresses() {
+        //GIVEN
+        NotificationRecipientInt recipient = getNotificationRecipientInt();
+        NotificationInt notification = getNotificationInt(recipient);
+
+        Mockito.when(notificationUtils.getRecipientFromIndex(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(recipient);
+        Mockito.when(addressBookService.getCourtesyAddress(Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(List.of(courtesyAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.EMAIL),
+                        courtesyAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.SMS),
+                        courtesyAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO),
+                        courtesyAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP)));
+
+        //WHEN
+        courtesyMessageUtils.scheduleCourtesyMessagesActions(notification, 0, DeliveryModeInt.DIGITAL);
+
+        //THEN
+        Mockito.verify(confidentialInformationService).savePlannedCourtesyAddress(recipient.getInternalId(), notification.getIun(), 0,
+                CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.EMAIL, "indirizzo@test.it");
+        Mockito.verify(confidentialInformationService).savePlannedCourtesyAddress(recipient.getInternalId(), notification.getIun(), 0,
+                CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.SMS, "indirizzo@test.it");
+        Mockito.verify(confidentialInformationService, never()).savePlannedCourtesyAddress(Mockito.anyString(), Mockito.anyString(), Mockito.anyInt(),
+                Mockito.eq(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO), Mockito.anyString());
+        Mockito.verify(confidentialInformationService, never()).savePlannedCourtesyAddress(Mockito.anyString(), Mockito.anyString(), Mockito.anyInt(),
+                Mockito.eq(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP), Mockito.anyString());
+
+        ArgumentCaptor<SendCourtesyMessageActionDetails> detailsCaptor = ArgumentCaptor.forClass(SendCourtesyMessageActionDetails.class);
+        Mockito.verify(schedulerService, times(4)).scheduleEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.any(Instant.class),
+                Mockito.eq(ActionType.SEND_COURTESY_MESSAGE_ACTION), detailsCaptor.capture());
+
+        Map<CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT, String> plannedByChannel = detailsCaptor.getAllValues().stream()
+                .collect(HashMap::new, (map, det) -> map.put(det.getChannel(), det.getPlannedAddressId()), HashMap::putAll);
+
+        assertThat(plannedByChannel.get(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.EMAIL))
+                .isEqualTo("COURTESY_PLANNED#" + notification.getIun() + "#0#EMAIL");
+        assertThat(plannedByChannel.get(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.SMS))
+                .isEqualTo("COURTESY_PLANNED#" + notification.getIun() + "#0#SMS");
+        assertThat(plannedByChannel.get(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO)).isNull();
+        assertThat(plannedByChannel.get(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.TPP)).isNull();
+    }
+
+    @Test
+    void dispatchSchedulesWithoutPlannedAddressIdWhenFreezeFails() {
+        //GIVEN
+        NotificationRecipientInt recipient = getNotificationRecipientInt();
+        NotificationInt notification = getNotificationInt(recipient);
+
+        Mockito.when(notificationUtils.getRecipientFromIndex(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(recipient);
+        Mockito.when(addressBookService.getCourtesyAddress(Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(List.of(courtesyAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.EMAIL)));
+        Mockito.when(confidentialInformationService.savePlannedCourtesyAddress(Mockito.anyString(), Mockito.anyString(), Mockito.anyInt(),
+                        Mockito.any(), Mockito.anyString()))
+                .thenReturn(Mono.error(new PnInternalException("data vault unreachable", "PN_DELIVERYPUSH_DATAVAULTADDRESSERROR")));
+
+        //WHEN - the dispatch must not fail
+        courtesyMessageUtils.scheduleCourtesyMessagesActions(notification, 0, DeliveryModeInt.DIGITAL);
+
+        //THEN
+        ArgumentCaptor<SendCourtesyMessageActionDetails> detailsCaptor = ArgumentCaptor.forClass(SendCourtesyMessageActionDetails.class);
+        Mockito.verify(schedulerService).scheduleEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.any(Instant.class),
+                Mockito.eq(ActionType.SEND_COURTESY_MESSAGE_ACTION), detailsCaptor.capture());
+
+        assertThat(detailsCaptor.getValue().getPlannedAddressId()).isNull();
+        assertThat(detailsCaptor.getValue().getChannel()).isEqualTo(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.EMAIL);
     }
 
     private static CourtesyDigitalAddressInt courtesyAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT type) {

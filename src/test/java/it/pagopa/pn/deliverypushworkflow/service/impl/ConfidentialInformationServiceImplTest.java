@@ -1,6 +1,8 @@
 package it.pagopa.pn.deliverypushworkflow.service.impl;
 
 import it.pagopa.pn.commons.exceptions.PnInternalException;
+import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
+import it.pagopa.pn.deliverypushworkflow.dto.address.CourtesyDigitalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.datavault.BaseRecipientDtoInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.datavault.RecipientTypeInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.datavault_reactive.model.BaseRecipientDto;
@@ -15,15 +17,24 @@ import org.mockito.Mockito;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
+import java.time.Duration;
+
 class ConfidentialInformationServiceImplTest {
     private ConfidentialInformationService confidentialInformationService;
     private PnDataVaultClientReactive pnDataVaultClientReactive;
-    
+    private PnDeliveryPushWorkflowConfigs cfg;
+
     @BeforeEach
     void setup() {
         pnDataVaultClientReactive = Mockito.mock( PnDataVaultClientReactive.class );
+        cfg = Mockito.mock( PnDeliveryPushWorkflowConfigs.class );
 
-        confidentialInformationService = new ConfidentialInformationServiceImpl(pnDataVaultClientReactive);
+        PnDeliveryPushWorkflowConfigs.CourtesyRetry courtesyRetry = new PnDeliveryPushWorkflowConfigs.CourtesyRetry();
+        courtesyRetry.setPlannedAddressTtl(Duration.ofMinutes(180));
+        Mockito.lenient().when(cfg.getCourtesyRetry()).thenReturn(courtesyRetry);
+
+        confidentialInformationService = new ConfidentialInformationServiceImpl(pnDataVaultClientReactive, cfg);
 
     }
     @Test
@@ -104,5 +115,44 @@ class ConfidentialInformationServiceImplTest {
         Mono<BaseRecipientDtoInt> monoDelegateInfo = confidentialInformationService.getDelegateInformationByMandateId(mandateId, delegateType);
 
         Assertions.assertThrows(PnInternalException.class, monoDelegateInfo::block);
+    }
+
+    @Test
+    void savePlannedCourtesyAddress() {
+        String internalId = "ANON_testTaxId";
+        String iun = "iun_01";
+        String address = "congelato@test.it";
+
+        Mockito.when(pnDataVaultClientReactive.updateRecipientAddress(Mockito.anyString(), Mockito.anyString(), Mockito.any(), Mockito.anyString()))
+                .thenReturn(Mono.empty());
+
+        String plannedAddressId = confidentialInformationService.savePlannedCourtesyAddress(internalId, iun, 0,
+                CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.EMAIL, address).block();
+
+        Assertions.assertEquals("COURTESY_PLANNED#iun_01#0#EMAIL", plannedAddressId);
+        Mockito.verify(pnDataVaultClientReactive).updateRecipientAddress(internalId, "COURTESY_PLANNED#iun_01#0#EMAIL",
+                BigDecimal.valueOf(Duration.ofMinutes(180).toSeconds()), address);
+    }
+
+    @Test
+    void getPlannedCourtesyAddress() {
+        String internalId = "ANON_testTaxId";
+        String plannedAddressId = "COURTESY_PLANNED#iun_01#0#EMAIL";
+
+        Mockito.when(pnDataVaultClientReactive.getRecipientAddress(internalId, plannedAddressId))
+                .thenReturn(Mono.just("congelato@test.it"));
+
+        Assertions.assertEquals("congelato@test.it",
+                confidentialInformationService.getPlannedCourtesyAddress(internalId, plannedAddressId).block());
+    }
+
+    @Test
+    void getPlannedCourtesyAddressNotFound() {
+        String internalId = "ANON_testTaxId";
+        String plannedAddressId = "COURTESY_PLANNED#iun_01#0#EMAIL";
+
+        Mockito.when(pnDataVaultClientReactive.getRecipientAddress(internalId, plannedAddressId)).thenReturn(Mono.empty());
+
+        Assertions.assertNull(confidentialInformationService.getPlannedCourtesyAddress(internalId, plannedAddressId).block());
     }
 }
