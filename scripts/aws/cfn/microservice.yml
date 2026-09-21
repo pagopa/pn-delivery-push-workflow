@@ -368,6 +368,16 @@ Parameters:
   DeliveryPushCxId:
     Type: String
     Description: 'delivery push cx id '
+    
+  CpuArchitecture:
+    Type: String
+    Default: 'ARM'
+    Description: CPU architecture for the Fargate tasks
+
+  JavaToolOptions:
+    Type: String
+    Default: '-Dreactor.netty.ioWorkerCount=50'
+    Description: Java tool options for the Fargate tasks
 
 Conditions:
     UseExternalChannelMock: !Equals [ !Ref ExternalChannelBaseUrl, "Mock" ]
@@ -435,7 +445,7 @@ Resources:
         ContainerEnvEntry32: !Sub 'PN_DELIVERYPUSHWORKFLOW_NOTIFICATIONCOSTSERVICEBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
         ApplicativeEnvFileChecksum: !Ref ApplicativeEnvFileChecksum
         ParentMicroserviceName: !Sub '${ProjectName}-delivery-push-workflow'
-        JavaToolOptions: '-Dreactor.netty.ioWorkerCount=50'
+        JavaToolOptions: !Ref JavaToolOptions
         MappedPaths: '/pn-delivery-push-workflow-service-not-available'
         ECSClusterName: !Ref ECSClusterName
         Subnets: !Join [ ',', !Ref SubnetsIds ]
@@ -447,6 +457,7 @@ Resources:
         AlbSecurityGroup: !Ref AlbSecurityGroup
         EcsLogGroup: !Ref EcsWorkflowLogGroup
         LogAlarmStrategyV1: !Ref LogAlarmStrategy
+        CpuArchitecture: !Ref CpuArchitecture
 
   ## Dashboard
   DeliveryPushWorkflowServiceMicroserviceCloudWatchDashboard:
