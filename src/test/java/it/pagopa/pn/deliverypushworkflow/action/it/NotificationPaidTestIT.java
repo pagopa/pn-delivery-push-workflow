@@ -124,8 +124,8 @@ class NotificationPaidTestIT extends CommonTestConfiguration{
         TestUtils.checkGetAddress(iun, recIndex, false, DigitalAddressSourceInt.GENERAL, ChooseDeliveryModeUtilsImpl.ZERO_SENT_ATTEMPT_NUMBER, timelineService);
 
         //Viene verificata l'assenza degli invii verso external channel
-        TestUtils.checkNotSendPaperToExtChannel(iun, recIndex, 0, timelineService);
-        Mockito.verify(paperChannelMock, Mockito.times(0)).send(Mockito.any(PaperChannelSendRequest.class));
+        TestUtils.checkSendPaperToExtChannel(iun, recIndex, paPhysicalAddress,0, timelineService);
+        Mockito.verify(paperChannelMock, Mockito.times(2)).send(Mockito.any(PaperChannelSendRequest.class));
 
         //Viene verificato che la notifica sia stata pagata
         Assertions.assertTrue(timelineService.getTimelineElement(

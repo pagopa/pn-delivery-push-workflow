@@ -97,6 +97,19 @@ Resources:
         MaxReceiveCount: 10
         DelaySeconds: 1
 
+  ResumePostPaymentQueue:
+    Type: AWS::CloudFormation::Stack
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Properties:
+      TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/sqs-queue.yaml"
+      Parameters:
+        QueueName: !Sub '${ProjectName}-resume-post-payment-queue'
+        AlarmSNSTopicName: !Ref AlarmSNSTopicName
+        VisibilityTimeout: 300
+        MaxReceiveCount: 10
+        DelaySeconds: 1
+
 Outputs:
   # Lambda functions
   NotificationCancellationActionInsertLambdaName:
@@ -131,6 +144,23 @@ Outputs:
   ScheduledActionsQueueAgeAlarmARN:
     Value: !GetAtt ScheduledActionsQueue.Outputs.SqsAgeAlarmArn
     Description: pn-delivery-push actions queue age alarm ARN
+
+  # Resume post payment
+  ResumePostPaymentQueueName:
+    Value: !GetAtt ResumePostPaymentQueue.Outputs.QueueName
+    Description: Resume post payment queue name
+  ResumePostPaymentQueueURL:
+    Value: !GetAtt ResumePostPaymentQueue.Outputs.QueueURL
+    Description: Resume post payment queue URL
+  ResumePostPaymentQueueARN:
+    Value: !GetAtt ResumePostPaymentQueue.Outputs.QueueARN
+    Description: Resume post payment queue ARN
+  ResumePostPaymentQueueAlarmARN:
+    Value: !GetAtt ResumePostPaymentQueue.Outputs.SqsDLQAlarmArn
+    Description: Resume post payment queue DLQ alarm ARN
+  ResumePostPaymentQueueAgeAlarmARN:
+    Value: !GetAtt ResumePostPaymentQueue.Outputs.SqsAgeAlarmArn
+    Description: Resume post payment queue age alarm ARN
 
   # Log groups
   EcsWorkflowLogGroup:

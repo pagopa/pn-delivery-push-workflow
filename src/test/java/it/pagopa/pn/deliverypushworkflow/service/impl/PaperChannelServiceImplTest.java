@@ -98,7 +98,6 @@ class PaperChannelServiceImplTest {
         NotificationInt notificationInt = newNotificationWithPayments();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
-        Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
 
         PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
         Mockito.when(auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_PD_PREPARE), Mockito.anyString(), any(), any(), any())).thenReturn(auditLogEvent);
@@ -125,7 +124,6 @@ class PaperChannelServiceImplTest {
         NotificationInt notificationInt = newNotificationWithPayments();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
-        Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
         PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
         Mockito.when(auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_PD_PREPARE), Mockito.anyString(), any(), any(), any())).thenReturn(auditLogEvent);
         Mockito.when(auditLogEvent.generateSuccess(Mockito.anyString(), any())).thenReturn(auditLogEvent);
@@ -152,7 +150,6 @@ class PaperChannelServiceImplTest {
         NotificationInt notificationInt = newNotificationWithPayments();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
-        Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
 
         PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
         Mockito.when(auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_PD_PREPARE), Mockito.anyString(), any(), any(), any())).thenReturn(auditLogEvent);
@@ -179,7 +176,6 @@ class PaperChannelServiceImplTest {
         NotificationInt notificationInt = newNotificationWithPayments();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
-        Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
 
         PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
         Mockito.when(auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_PD_PREPARE), Mockito.anyString(), any(), any(), any())).thenReturn(auditLogEvent);
@@ -217,18 +213,25 @@ class PaperChannelServiceImplTest {
 
     @ExtendWith(MockitoExtension.class)
     @Test
-    void prepareAnalogNotificationForSimpleRegisteredLetterAlreadyPaid() {
+    void prepareAnalogNotificationForSimpleRegisteredLetterWhenPaid() {
         //GIVEN
         NotificationInt notificationInt = newNotification();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
-        Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(true);
+        Mockito.lenient().when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(true);
+        PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
+        Mockito.when(auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_PD_PREPARE), Mockito.anyString(), any(), any(), any())).thenReturn(auditLogEvent);
+        Mockito.when(auditLogEvent.generateSuccess(Mockito.anyString(), any())).thenReturn(auditLogEvent);
 
         // WHEN
         paperChannelService.prepareAnalogNotificationForSimpleRegisteredLetter(notificationInt, 0);
 
         // THEN
-        Mockito.verify(paperChannelSendClient,Mockito.never()).prepare(Mockito.any());
+        Mockito.verify(paperChannelSendClient).prepare(Mockito.any());
+        Mockito.verify(paperChannelUtils).addPrepareSimpleRegisteredLetterToTimeline(any(), any(), eq(0), any());
+        Mockito.verify(auditLogEvent).generateSuccess(Mockito.anyString(), any());
+        Mockito.verify(auditLogEvent).log();
+        Mockito.verify(timelineUtils, Mockito.never()).checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt());
     }
 
     @ExtendWith(MockitoExtension.class)
@@ -265,18 +268,25 @@ class PaperChannelServiceImplTest {
 
     @ExtendWith(MockitoExtension.class)
     @Test
-    void prepareAnalogNotificationAlreadyPaid() {
+    void prepareAnalogNotificationWhenPaid() {
         //GIVEN
         NotificationInt notificationInt = newNotification();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
-        Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(true);
+        Mockito.lenient().when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(true);
+        PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
+        Mockito.when(auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_PD_PREPARE), Mockito.anyString(), any(), any(), any())).thenReturn(auditLogEvent);
+        Mockito.when(auditLogEvent.generateSuccess(Mockito.anyString(), any())).thenReturn(auditLogEvent);
 
         // WHEN
         paperChannelService.prepareAnalogNotification(notificationInt, 0, 0);
 
         // THEN
-        Mockito.verify(paperChannelSendClient, Mockito.never()).prepare(Mockito.any());
+        Mockito.verify(paperChannelSendClient).prepare(Mockito.any());
+        Mockito.verify(paperChannelUtils).addPrepareAnalogNotificationToTimeline(any(), any(), eq(0), any(), eq(0), any(), any());
+        Mockito.verify(auditLogEvent).generateSuccess(Mockito.anyString(), any());
+        Mockito.verify(auditLogEvent).log();
+        Mockito.verify(timelineUtils, Mockito.never()).checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt());
     }
 
     @ExtendWith(MockitoExtension.class)
@@ -305,7 +315,6 @@ class PaperChannelServiceImplTest {
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = CategorizedAttachmentsResultInt.builder().acceptedAttachments(new ArrayList<>()).discardedAttachments(new ArrayList<>()).build();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
-        Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
 
         PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
         Mockito.when(auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_PD_EXECUTE), Mockito.anyString(), Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(auditLogEvent);
@@ -366,7 +375,7 @@ class PaperChannelServiceImplTest {
 
     @ExtendWith(MockitoExtension.class)
     @Test
-    void sendSimpleRegisteredLetterAlreadyPaid() {
+    void sendSimpleRegisteredLetterWhenPaid() {
         //GIVEN
         PhysicalAddressInt physicalAddressInt = PhysicalAddressInt.builder().address("via casa").fullname("full name").build();
 
@@ -375,13 +384,21 @@ class PaperChannelServiceImplTest {
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = CategorizedAttachmentsResultInt.builder().acceptedAttachments(new ArrayList<>()).discardedAttachments(new ArrayList<>()).build();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
-        Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(true);
+        Mockito.lenient().when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(true);
+        PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
+        Mockito.when(auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_PD_EXECUTE), Mockito.anyString(), any(), any(), any())).thenReturn(auditLogEvent);
+        Mockito.when(auditLogEvent.generateSuccess(any(), (Integer) any(), any())).thenReturn(auditLogEvent);
+        Mockito.when(paperChannelSendClient.send(Mockito.any(PaperChannelSendRequest.class))).thenReturn(new SendResponse());
 
         // WHEN
         paperChannelService.sendSimpleRegisteredLetter(notificationInt, 0, "req123", physicalAddressInt, "NR_SR", List.of("replacedF24Url"), categorizedAttachmentsResult);
 
         // THEN
-        Mockito.verify(paperChannelSendClient, Mockito.never()).send(any());
+        Mockito.verify(paperChannelSendClient).send(any());
+        Mockito.verify(paperChannelUtils).addSendSimpleRegisteredLetterToTimeline(any(), any(), eq(0), any(), any(), eq("req123"), any(), any());
+        Mockito.verify(auditLogEvent).generateSuccess(any(), (Integer) any(), any());
+        Mockito.verify(auditLogEvent).log();
+        Mockito.verify(timelineUtils, Mockito.never()).checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt());
     }
 
     @ExtendWith(MockitoExtension.class)
@@ -395,7 +412,6 @@ class PaperChannelServiceImplTest {
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = CategorizedAttachmentsResultInt.builder().acceptedAttachments(new ArrayList<>()).discardedAttachments(new ArrayList<>()).build();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
-        Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
 
 
         PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
@@ -439,7 +455,7 @@ class PaperChannelServiceImplTest {
 
     @ExtendWith(MockitoExtension.class)
     @Test
-    void sendAnalogNotificationAlreadyPaid() {
+    void sendAnalogNotificationWhenPaid() {
         //GIVEN
         PhysicalAddressInt physicalAddressInt = PhysicalAddressInt.builder().address("via casa").fullname("full name").build();
 
@@ -448,13 +464,21 @@ class PaperChannelServiceImplTest {
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = CategorizedAttachmentsResultInt.builder().acceptedAttachments(new ArrayList<>()).discardedAttachments(new ArrayList<>()).build();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
-        Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(true);
+        Mockito.lenient().when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(true);
+        PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
+        Mockito.when(auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_PD_EXECUTE), Mockito.anyString(), any(), any(), any())).thenReturn(auditLogEvent);
+        Mockito.when(auditLogEvent.generateSuccess(any(), (Integer) any(), any())).thenReturn(auditLogEvent);
+        Mockito.when(paperChannelSendClient.send(Mockito.any(PaperChannelSendRequest.class))).thenReturn(new SendResponse());
 
         // WHEN
         paperChannelService.sendAnalogNotification(notificationInt, 0, 0, "req123", physicalAddressInt, "NR_SR", List.of("replacedF24Url"), categorizedAttachmentsResult);
 
         // THEN
-        Mockito.verify(paperChannelSendClient, Mockito.never()).send(any());
+        Mockito.verify(paperChannelSendClient).send(any());
+        Mockito.verify(paperChannelUtils).addSendAnalogNotificationToTimeline(any(), any(), eq(0), any(), any(), any(), eq("req123"));
+        Mockito.verify(auditLogEvent).generateSuccess(any(), (Integer) any(), any());
+        Mockito.verify(auditLogEvent).log();
+        Mockito.verify(timelineUtils, Mockito.never()).checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt());
     }
 
     @ExtendWith(MockitoExtension.class)
@@ -487,7 +511,6 @@ class PaperChannelServiceImplTest {
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = CategorizedAttachmentsResultInt.builder().acceptedAttachments(new ArrayList<>()).discardedAttachments(new ArrayList<>()).build();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
-        Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
 
         PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
         Mockito.when(auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_PD_EXECUTE), Mockito.anyString(), any(), any(), any())).thenReturn(auditLogEvent);
@@ -513,7 +536,6 @@ class PaperChannelServiceImplTest {
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = CategorizedAttachmentsResultInt.builder().acceptedAttachments(new ArrayList<>()).discardedAttachments(new ArrayList<>()).build();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
-        Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
 
         PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
         Mockito.when(notificationUtils.getRecipientFromIndex(any(), anyInt())).thenReturn(notificationInt.getRecipients().getFirst());
@@ -541,7 +563,6 @@ class PaperChannelServiceImplTest {
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = CategorizedAttachmentsResultInt.builder().acceptedAttachments(new ArrayList<>()).discardedAttachments(new ArrayList<>()).build();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
-        Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
         Mockito.when(notificationUtils.getRecipientFromIndex(any(), anyInt())).thenReturn(notificationInt.getRecipients().getFirst());
 
         PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
@@ -570,7 +591,6 @@ class PaperChannelServiceImplTest {
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = CategorizedAttachmentsResultInt.builder().acceptedAttachments(new ArrayList<>()).discardedAttachments(new ArrayList<>()).build();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
-        Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
 
         PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
         Mockito.when(auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_PD_EXECUTE), Mockito.anyString(), any(), any(), any())).thenReturn(auditLogEvent);
@@ -598,7 +618,6 @@ class PaperChannelServiceImplTest {
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = CategorizedAttachmentsResultInt.builder().acceptedAttachments(new ArrayList<>()).discardedAttachments(new ArrayList<>()).build();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
-        Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
 
         PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
         Mockito.when(auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_PD_EXECUTE), Mockito.anyString(), any(), any(), any())).thenReturn(auditLogEvent);
@@ -629,7 +648,6 @@ class PaperChannelServiceImplTest {
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = CategorizedAttachmentsResultInt.builder().acceptedAttachments(List.of(acceptedAttachments)).discardedAttachments(new ArrayList<>()).build();
         System.out.println(categorizedAttachmentsResult.getAcceptedAttachments());
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
-        Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
 
         PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
         Mockito.when(auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_PD_EXECUTE), Mockito.anyString(), any(), any(), any())).thenReturn(auditLogEvent);
@@ -694,12 +712,12 @@ class PaperChannelServiceImplTest {
 
     @ExtendWith(MockitoExtension.class)
     @Test
-    void prepareAnalogNotificationWithAarAndDocument_withSendAnalogTimeoutCreationRequest() {
+    void prepareAnalogNotificationSecondAttemptWhenPaid_withSendAnalogTimeoutCreationRequest() {
         //GIVEN
         NotificationInt notificationInt = newNotificationWithPayments();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
-        Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
+        Mockito.lenient().when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(true);
 
         PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
         Mockito.when(auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_PD_PREPARE), Mockito.anyString(), Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(auditLogEvent);
@@ -724,6 +742,7 @@ class PaperChannelServiceImplTest {
         Mockito.verify(auditLogEvent).log();
         Mockito.verify(auditLogEvent, Mockito.never()).generateFailure(Mockito.any());
         Mockito.verify(paperChannelUtils, Mockito.never()).buildSendAnalogFeedbackEventId(eq(notificationInt), Mockito.anyInt(), Mockito.anyInt());
+        Mockito.verify(timelineUtils, Mockito.never()).checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt());
     }
 
     @ExtendWith(MockitoExtension.class)
@@ -733,7 +752,6 @@ class PaperChannelServiceImplTest {
         NotificationInt notificationInt = newNotificationWithPayments();
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
-        Mockito.when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
 
         PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
         Mockito.when(auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_PD_PREPARE), Mockito.anyString(), Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(auditLogEvent);

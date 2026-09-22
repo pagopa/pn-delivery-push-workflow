@@ -2,6 +2,11 @@ echo "### CREATE DELIVERY-PUSH COMPONENT ###"
 
 bash <(curl -s https://raw.githubusercontent.com/pagopa/pn-delivery-push-workflow/991711781600ef9d88bde2a3520a4393026785b7/src/test/resources/testcontainers/init.sh)
 
+aws --profile default --region us-east-1 --endpoint-url http://localstack:4566 \
+    sqs create-queue \
+    --attributes '{"DelaySeconds":"2"}' \
+    --queue-name local-resume-post-payment-queue
+
 ## La creazione delle queue local-delivery-push-inputs.fifo è già presente nel file init.sh di delivery. Viene duplicata su deliveryPush per solo per test-container
 
 echo "### CREATE QUEUES FIFO ###"
