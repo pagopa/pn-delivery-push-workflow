@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt.DIGITAL_FAILURE_WORKFLOW;
 import static it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt.NOTIFICATION_TIMELINE_REWORKED;
@@ -52,40 +53,55 @@ public class ResumePostPaymentEligibilityService {
         }
 
         Set<TimelineElementInternal> timeline = timelineService.getTimelineStrongly(event.getIun(), false);
+        Set<TimelineElementCategoryInt> recipientTimelineCategories = timeline.stream()
+                .filter(element -> isRelatedToRecipient(element, event.getRecIndex()))
+                .map(TimelineElementInternal::getCategory)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toUnmodifiableSet());
         if (isAlreadyProcessed(event, timeline)) {
-            return ResumeValidationResult.alreadyProcessed(notification);
+            return ResumeValidationResult.alreadyProcessed(notification, recipientTimelineCategories);
         }
-        ResumeValidationResult commonResult = validateCommonRules(event, notification, timeline);
+        ResumeValidationResult commonResult = validateCommonRules(
+                event, notification, timeline, recipientTimelineCategories);
         if (commonResult != null) {
             return commonResult;
         }
 
         return switch (event.getResumeType()) {
-            case FIRST_ATTEMPT -> validateFirstAttempt(event, notification, timeline);
-            case SECOND_ATTEMPT -> validateSecondAttempt(event, notification, timeline);
-            case SIMPLE_REGISTERED_LETTER -> validateSimpleRegisteredLetter(event, notification, timeline);
+            case FIRST_ATTEMPT -> validateFirstAttempt(
+                    event, notification, timeline, recipientTimelineCategories);
+            case SECOND_ATTEMPT -> validateSecondAttempt(
+                    event, notification, timeline, recipientTimelineCategories);
+            case SIMPLE_REGISTERED_LETTER -> validateSimpleRegisteredLetter(
+                    event, notification, timeline, recipientTimelineCategories);
         };
     }
 
     private ResumeValidationResult validateCommonRules(ResumePostPaymentEvent event, NotificationInt notification,
-                                                        Set<TimelineElementInternal> timeline) {
+                                                        Set<TimelineElementInternal> timeline,
+                                                        Set<TimelineElementCategoryInt> recipientTimelineCategories) {
         if (!hasRecipientCategory(timeline, PAYMENT, event.getRecIndex())) {
-            return ResumeValidationResult.notEligible(ResumeValidationReason.PAYMENT_NOT_FOUND, notification);
+            return ResumeValidationResult.notEligible(
+                    ResumeValidationReason.PAYMENT_NOT_FOUND, notification, recipientTimelineCategories);
         }
         if (timelineUtils.checkIsNotificationCancellationRequested(event.getIun())) {
-            return ResumeValidationResult.notEligible(ResumeValidationReason.NOTIFICATION_CANCELLED, notification);
+            return ResumeValidationResult.notEligible(
+                    ResumeValidationReason.NOTIFICATION_CANCELLED, notification, recipientTimelineCategories);
         }
         if (timelineUtils.checkIsNotificationViewed(event.getIun(), event.getRecIndex())) {
-            return ResumeValidationResult.notEligible(ResumeValidationReason.NOTIFICATION_VIEWED, notification);
+            return ResumeValidationResult.notEligible(
+                    ResumeValidationReason.NOTIFICATION_VIEWED, notification, recipientTimelineCategories);
         }
         if (hasRecipientCategory(timeline, NOTIFICATION_TIMELINE_REWORKED, event.getRecIndex())) {
-            return ResumeValidationResult.notEligible(ResumeValidationReason.NOTIFICATION_REWORKED, notification);
+            return ResumeValidationResult.notEligible(
+                    ResumeValidationReason.NOTIFICATION_REWORKED, notification, recipientTimelineCategories);
         }
         return null;
     }
 
     private ResumeValidationResult validateFirstAttempt(ResumePostPaymentEvent event, NotificationInt notification,
-                                                         Set<TimelineElementInternal> timeline) {
+                                                         Set<TimelineElementInternal> timeline,
+                                                         Set<TimelineElementCategoryInt> recipientTimelineCategories) {
         ScheduleAnalogWorkflowDetailsInt schedule = timeline.stream()
                 .filter(element -> element.getCategory() == SCHEDULE_ANALOG_WORKFLOW)
                 .map(TimelineElementInternal::getDetails)
@@ -95,19 +111,23 @@ public class ResumePostPaymentEligibilityService {
                 .findFirst()
                 .orElse(null);
         if (schedule == null) {
-            return ResumeValidationResult.notEligible(ResumeValidationReason.SCHEDULE_ANALOG_WORKFLOW_NOT_FOUND, notification);
+            return ResumeValidationResult.notEligible(ResumeValidationReason.SCHEDULE_ANALOG_WORKFLOW_NOT_FOUND,
+                    notification, recipientTimelineCategories);
         }
         Instant latestEligibleSchedulingDate = clock.instant().minus(FIRST_ATTEMPT_MINIMUM_DELAY);
         if (schedule.getSchedulingDate() == null || schedule.getSchedulingDate().isAfter(latestEligibleSchedulingDate)) {
-            return ResumeValidationResult.notEligible(ResumeValidationReason.SCHEDULE_ANALOG_WORKFLOW_TOO_RECENT, notification);
+            return ResumeValidationResult.notEligible(ResumeValidationReason.SCHEDULE_ANALOG_WORKFLOW_TOO_RECENT,
+                    notification, recipientTimelineCategories);
         }
-        return ResumeValidationResult.eligible(notification);
+        return ResumeValidationResult.eligible(notification, recipientTimelineCategories);
     }
 
     private ResumeValidationResult validateSecondAttempt(ResumePostPaymentEvent event, NotificationInt notification,
-                                                          Set<TimelineElementInternal> timeline) {
+                                                          Set<TimelineElementInternal> timeline,
+                                                          Set<TimelineElementCategoryInt> recipientTimelineCategories) {
         if (!hasAnalogAttempt(timeline, SEND_ANALOG_DOMICILE, event.getRecIndex(), 0)) {
-            return ResumeValidationResult.notEligible(ResumeValidationReason.FIRST_ANALOG_SEND_NOT_FOUND, notification);
+            return ResumeValidationResult.notEligible(ResumeValidationReason.FIRST_ANALOG_SEND_NOT_FOUND,
+                    notification, recipientTimelineCategories);
         }
         boolean hasKoFeedback = timeline.stream()
                 .filter(element -> element.getCategory() == SEND_ANALOG_FEEDBACK)
@@ -119,25 +139,30 @@ public class ResumePostPaymentEligibilityService {
                         && details.getResponseStatus() == ResponseStatusInt.KO);
         boolean hasTimeout = hasAnalogAttempt(timeline, SEND_ANALOG_TIMEOUT, event.getRecIndex(), 0);
         if (!hasKoFeedback && !hasTimeout) {
-            return ResumeValidationResult.notEligible(ResumeValidationReason.SECOND_ATTEMPT_TRIGGER_NOT_FOUND, notification);
+            return ResumeValidationResult.notEligible(ResumeValidationReason.SECOND_ATTEMPT_TRIGGER_NOT_FOUND,
+                    notification, recipientTimelineCategories);
         }
-        return ResumeValidationResult.eligible(notification);
+        return ResumeValidationResult.eligible(notification, recipientTimelineCategories);
     }
 
     private ResumeValidationResult validateSimpleRegisteredLetter(ResumePostPaymentEvent event,
                                                                    NotificationInt notification,
-                                                                   Set<TimelineElementInternal> timeline) {
+                                                                   Set<TimelineElementInternal> timeline,
+                                                                   Set<TimelineElementCategoryInt> recipientTimelineCategories) {
         if (!hasRecipientCategory(timeline, DIGITAL_FAILURE_WORKFLOW, event.getRecIndex())) {
-            return ResumeValidationResult.notEligible(ResumeValidationReason.DIGITAL_FAILURE_WORKFLOW_NOT_FOUND, notification);
+            return ResumeValidationResult.notEligible(ResumeValidationReason.DIGITAL_FAILURE_WORKFLOW_NOT_FOUND,
+                    notification, recipientTimelineCategories);
         }
         if (!hasRecipientCategory(timeline, SCHEDULE_REFINEMENT, event.getRecIndex())) {
-            return ResumeValidationResult.notEligible(ResumeValidationReason.SCHEDULE_REFINEMENT_NOT_FOUND, notification);
+            return ResumeValidationResult.notEligible(ResumeValidationReason.SCHEDULE_REFINEMENT_NOT_FOUND,
+                    notification, recipientTimelineCategories);
         }
         NotificationRecipientInt recipient = notification.getRecipients().get(event.getRecIndex());
         if (recipient.getPhysicalAddress() == null) {
-            return ResumeValidationResult.notEligible(ResumeValidationReason.PHYSICAL_ADDRESS_NOT_FOUND, notification);
+            return ResumeValidationResult.notEligible(ResumeValidationReason.PHYSICAL_ADDRESS_NOT_FOUND,
+                    notification, recipientTimelineCategories);
         }
-        return ResumeValidationResult.eligible(notification);
+        return ResumeValidationResult.eligible(notification, recipientTimelineCategories);
     }
 
     private boolean isAlreadyProcessed(ResumePostPaymentEvent event, Set<TimelineElementInternal> timeline) {
@@ -152,6 +177,11 @@ public class ResumePostPaymentEligibilityService {
     private boolean recipientExists(NotificationInt notification, Integer recIndex) {
         return recIndex != null && recIndex >= 0 && notification.getRecipients() != null
                 && recIndex < notification.getRecipients().size();
+    }
+
+    private boolean isRelatedToRecipient(TimelineElementInternal element, int recIndex) {
+        return element.getDetails() instanceof RecipientRelatedTimelineElementDetails details
+                && details.getRecIndex() == recIndex;
     }
 
     private boolean hasRecipientCategory(Set<TimelineElementInternal> timeline,
