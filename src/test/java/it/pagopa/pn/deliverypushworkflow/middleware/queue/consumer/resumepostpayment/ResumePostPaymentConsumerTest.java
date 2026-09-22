@@ -1,6 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.resumepostpayment;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.awspring.cloud.sqs.annotation.SqsListener;
 import it.pagopa.pn.commons.utils.MDCUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,11 +14,15 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.MDC;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
+import java.lang.reflect.Method;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -26,18 +31,15 @@ class ResumePostPaymentConsumerTest {
 
     @Mock
     private ResumePostPaymentHandler handler;
-    @Mock
-    private ObjectProvider<ResumePostPaymentHandler> handlerProvider;
 
     private ResumePostPaymentConsumer consumer;
 
     @BeforeEach
     void setUp() {
-        Mockito.lenient().when(handlerProvider.getObject()).thenReturn(handler);
         consumer = new ResumePostPaymentConsumer(
                 new ObjectMapper(),
                 new ResumePostPaymentEventValidator(),
-            handlerProvider
+                handler
         );
     }
 
@@ -76,9 +78,19 @@ class ResumePostPaymentConsumerTest {
             "{\"iun\":\"IUN_01\",\"recIndex\":0,\"resumeType\":\"UNKNOWN\"}"
     })
     void consumeInvalidPayloadDoesNotDelegate(String payload) {
-        consumer.consume(message(payload));
+        assertDoesNotThrow(() -> consumer.consume(message(payload)));
 
         Mockito.verifyNoInteractions(handler);
+    }
+
+    @Test
+    void consumeUsesResumePostPaymentQueueConfiguration() throws NoSuchMethodException {
+        Method consumeMethod = ResumePostPaymentConsumer.class.getDeclaredMethod("consume", Message.class);
+        SqsListener listener = consumeMethod.getAnnotation(SqsListener.class);
+
+        assertNotNull(listener);
+        assertArrayEquals(new String[]{"#{@pnDeliveryPushWorkflowConfigs.topics.resumePostPayment}"},
+                listener.queueNames());
     }
 
     @Test
