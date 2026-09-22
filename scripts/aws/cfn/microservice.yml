@@ -203,6 +203,26 @@ Parameters:
     Type: String
     Description: 'Analog to delivery push queue ARN'
 
+  ResumePostPaymentQueueName:
+    Type: String
+    Description: 'Resume post payment queue name'
+
+  ResumePostPaymentQueueURL:
+    Type: String
+    Description: 'Resume post payment queue URL'
+
+  ResumePostPaymentQueueARN:
+    Type: String
+    Description: 'Resume post payment queue ARN'
+
+  ResumePostPaymentQueueAlarmARN:
+    Type: String
+    Description: 'Resume post payment queue DLQ alarm ARN'
+
+  ResumePostPaymentQueueAgeAlarmARN:
+    Type: String
+    Description: 'Resume post payment queue age alarm ARN'
+
   ConsumedQueueMessagePerMinuteWorkflow:
     Type: Number
     Default: 0
@@ -433,6 +453,7 @@ Resources:
         ContainerEnvEntry30: 'PN_DELIVERYPUSHWORKFLOW_RADDSEARCHMODE={{resolve:ssm:/config/radd-coverage/search-mode}}'
         ContainerEnvEntry31: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_ANALOGRESPONSEEVENTS=${AnalogToDeliveryPushQueueName}'
         ContainerEnvEntry32: !Sub 'PN_DELIVERYPUSHWORKFLOW_NOTIFICATIONCOSTSERVICEBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
+        ContainerEnvEntry33: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_RESUMEPOSTPAYMENT=${ResumePostPaymentQueueName}'
         ApplicativeEnvFileChecksum: !Ref ApplicativeEnvFileChecksum
         ParentMicroserviceName: !Sub '${ProjectName}-delivery-push-workflow'
         JavaToolOptions: '-Dreactor.netty.ioWorkerCount=50'
@@ -512,6 +533,7 @@ Resources:
               - !Ref NationalRegistries2DeliveryPushQueueARN
               - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${DeliveryPushToNotificationReworkUpdaterQueueName}
               - !Ref AnalogToDeliveryPushQueueARN
+              - !Ref ResumePostPaymentQueueARN
           - Effect: Allow
             Action:
               - 'ssm:GetParameter'

@@ -128,6 +128,7 @@ public class PnDeliveryPushWorkflowConfigs {
         private String nationalRegistriesEvents;
         private String notificationReworkUpdaterEvent;
         private String analogResponseEvents;
+        private String resumePostPayment;
     }
 
     @Data
