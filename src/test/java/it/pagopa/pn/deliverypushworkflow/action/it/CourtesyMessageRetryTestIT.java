@@ -27,6 +27,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -401,6 +402,42 @@ class CourtesyMessageRetryTestIT extends CommonTestConfiguration {
         return notification;
     }
 
+    // ============================ Recapito rimosso durante i retry ============================
+
+    @ParameterizedTest
+    @EnumSource(value = COURTESY_DIGITAL_ADDRESS_TYPE_INT.class, names = {"EMAIL", "SMS"})
+    void frozenAddressRemovedDuringRetriesStillDelivers(COURTESY_DIGITAL_ADDRESS_TYPE_INT channel) {
+        NotificationInt notification = prepareNotification(channel);
+        configureSingleRetry(channel);
+        applyToExternalChannelSend(Mockito.doAnswer(invocation -> {
+            addressBookMock.clear();
+            throw transientError();
+        }).doNothing());
+
+        courtesyMessageUtils.scheduleCourtesyMessagesActions(notification, 0, DeliveryModeInt.DIGITAL);
+
+        String iun = notification.getIun();
+        awaitPresent(iun, channel, true);
+        verifyExternalChannelSend(2);
+        assertAbsent(iun, channel, false);
+    }
+
+    @Test
+    void appIoAddressRemovedDuringRetriesClosesChannel() {
+        NotificationInt notification = prepareNotification(COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO);
+        configureSingleRetry(COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO);
+        stubIo().thenAnswer(invocation -> {
+            addressBookMock.clear();
+            return ioResult(SendMessageResponse.ResultEnum.ERROR_USER_STATUS);
+        });
+
+        courtesyMessageUtils.scheduleCourtesyMessagesActions(notification, 0, DeliveryModeInt.DIGITAL);
+
+        String iun = notification.getIun();
+        awaitPresent(iun, COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO, false);
+        assertAbsent(iun, COURTESY_DIGITAL_ADDRESS_TYPE_INT.APPIO, true);
+    }
+
     private void configureSingleRetry(COURTESY_DIGITAL_ADDRESS_TYPE_INT channel) {
         PnDeliveryPushWorkflowConfigs.CourtesyRetry.IntervalsMinutes intervalsMinutes = new PnDeliveryPushWorkflowConfigs.CourtesyRetry.IntervalsMinutes();
         switch (channel) {
@@ -411,6 +448,7 @@ class CourtesyMessageRetryTestIT extends CommonTestConfiguration {
         }
         PnDeliveryPushWorkflowConfigs.CourtesyRetry courtesyRetry = new PnDeliveryPushWorkflowConfigs.CourtesyRetry();
         courtesyRetry.setIntervalsMinutes(intervalsMinutes);
+        courtesyRetry.setPlannedAddressTtl(Duration.ofMinutes(180));
         Mockito.when(cfg.getCourtesyRetry()).thenReturn(courtesyRetry);
     }
 

@@ -28,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -51,6 +52,7 @@ public class SendCourtesyMessageHandler {
     private final SchedulerService schedulerService;
     private final PnDeliveryPushWorkflowConfigs pnDeliveryPushConfigs;
     private final CourtesyRetryableErrorClassifier retryableErrorClassifier;
+    private final ConfidentialInformationService confidentialInformationService;
 
     /** Entry point for the {@code SEND_COURTESY_MESSAGE_ACTION}: send the courtesy on a single channel and handle the outcome. */
     public void handleSendCourtesyMessageAction(String iun, Integer recIndex, SendCourtesyMessageActionDetails details) {
@@ -63,7 +65,7 @@ public class SendCourtesyMessageHandler {
             return;
         }
 
-        CourtesyDigitalAddressInt courtesyAddress = resolveCourtesyAddress(notification, recIndex, channel);
+        CourtesyDigitalAddressInt courtesyAddress = resolveCourtesyAddress(notification, recIndex, details);
         if (courtesyAddress == null) {
             log.warn("Courtesy address not found for channel={}, closing channel - iun={} id={}", channel, iun, recIndex);
             closeCourtesyChannelWithoutSuccess(notification, recIndex, details, CourtesyChannelFailureReasonInt.EXPECTED_FAILURE);
@@ -111,11 +113,8 @@ public class SendCourtesyMessageHandler {
         int waitMinutes = intervals.get(currentRetryIndex);
         int nextRetryIndex = currentRetryIndex + 1;
         Instant schedulingDate = Instant.now().plus(Duration.ofMinutes(waitMinutes));
-        SendCourtesyMessageActionDetails nextDetails = SendCourtesyMessageActionDetails.builder()
-                .channel(channel)
+        SendCourtesyMessageActionDetails nextDetails = details.toBuilder()
                 .retryIndex(nextRetryIndex)
-                .deliveryMode(details.getDeliveryMode())
-                .plannedChannels(details.getPlannedChannels())
                 .build();
         log.info("Rescheduling SEND_COURTESY_MESSAGE_ACTION channel={} nextRetryIndex={} waitMinutes={} schedulingDate={} - iun={} id={}",
                 channel, nextRetryIndex, waitMinutes, schedulingDate, iun, recIndex);
@@ -209,11 +208,31 @@ public class SendCourtesyMessageHandler {
                 .build());
     }
 
-    private CourtesyDigitalAddressInt resolveCourtesyAddress(NotificationInt notification, Integer recIndex, CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT channel) {
+    private CourtesyDigitalAddressInt resolveCourtesyAddress(NotificationInt notification, Integer recIndex, SendCourtesyMessageActionDetails details) {
+        if (StringUtils.hasText(details.getPlannedAddressId())) {
+            return resolveFrozenCourtesyAddress(notification, recIndex, details);
+        }
+
         return courtesyMessageUtils.getCourtesyAddresses(notification, recIndex).stream()
-                .filter(address -> channel.equals(address.getType()))
+                .filter(address -> details.getChannel().equals(address.getType()))
                 .findFirst()
                 .orElse(null);
+    }
+
+    private CourtesyDigitalAddressInt resolveFrozenCourtesyAddress(NotificationInt notification, Integer recIndex, SendCourtesyMessageActionDetails details) {
+        String internalId = notification.getRecipients().get(recIndex).getInternalId();
+        String address = confidentialInformationService.getPlannedCourtesyAddress(internalId, details.getPlannedAddressId()).block();
+
+        if (address == null) {
+            log.warn("Frozen courtesy address no longer available plannedAddressId={} - iun={} id={}",
+                    details.getPlannedAddressId(), notification.getIun(), recIndex);
+            return null;
+        }
+
+        return CourtesyDigitalAddressInt.builder()
+                .address(address)
+                .type(details.getChannel())
+                .build();
     }
 
     private Instant retrieveOrCalculateSchedulingAnalogDate(String iun, Integer recIndex) {

@@ -15,6 +15,8 @@ import org.springframework.context.annotation.Import;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 @Configuration
 @ConfigurationProperties( prefix = "pn.delivery-push-workflow")
@@ -194,6 +196,7 @@ public class PnDeliveryPushWorkflowConfigs {
     @Data
     public static class CourtesyRetry {
         private IntervalsMinutes intervalsMinutes;
+        private Duration plannedAddressTtl;
 
         @Data
         public static class IntervalsMinutes {
@@ -207,5 +210,30 @@ public class PnDeliveryPushWorkflowConfigs {
     @PostConstruct
     public void init() {
         log.info("PnDeliveryPushWorkflowConfigs={}", this);
+        validatePlannedAddressTtl();
+    }
+
+    private void validatePlannedAddressTtl() {
+        if (courtesyRetry == null || courtesyRetry.getPlannedAddressTtl() == null || courtesyRetry.getPlannedAddressTtl().isNegative() || courtesyRetry.getPlannedAddressTtl().isZero()) {
+            throw new IllegalStateException("Property pn.delivery-push-workflow.courtesy-retry.planned-address-ttl must be set to a positive duration");
+        }
+
+        Duration longestRetryWindow = longestCourtesyRetryWindow();
+        if (courtesyRetry.getPlannedAddressTtl().compareTo(longestRetryWindow) <= 0) {
+            throw new IllegalStateException("Property pn.delivery-push-workflow.courtesy-retry.planned-address-ttl (" + courtesyRetry.getPlannedAddressTtl()
+                    + ") must be greater than the longest courtesy retry window (" + longestRetryWindow + ")");
+        }
+    }
+
+    private Duration longestCourtesyRetryWindow() {
+        CourtesyRetry.IntervalsMinutes intervalsMinutes = courtesyRetry.getIntervalsMinutes();
+        if (intervalsMinutes == null) {
+            return Duration.ZERO;
+        }
+        return Stream.of(intervalsMinutes.getIo(), intervalsMinutes.getSms(), intervalsMinutes.getEmail(), intervalsMinutes.getTpp())
+                .filter(Objects::nonNull)
+                .map(intervals -> Duration.ofMinutes(intervals.stream().mapToLong(Integer::longValue).sum()))
+                .max(Duration::compareTo)
+                .orElse(Duration.ZERO);
     }
 }

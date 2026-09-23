@@ -16,13 +16,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 @Component
 @Slf4j
 @RequiredArgsConstructor
 public class CourtesyMessageUtils {
+    private static final Set<CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT> FREEZABLE_CHANNELS =
+            EnumSet.of(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.EMAIL,
+                    CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.SMS);
+
     private final AddressBookService addressBookService;
+    private final ConfidentialInformationService confidentialInformationService;
     private final TimelineService timelineService;
     private final TimelineUtils timelineUtils;
     private final NotificationUtils notificationUtils;
@@ -49,12 +56,15 @@ public class CourtesyMessageUtils {
                 .map(CourtesyDigitalAddressInt::getType)
                 .toList();
 
+        NotificationRecipientInt recipient = notificationUtils.getRecipientFromIndex(notification, recIndex);
+
         for (CourtesyDigitalAddressInt courtesyAddress : listCourtesyAddresses) {
             SendCourtesyMessageActionDetails details = SendCourtesyMessageActionDetails.builder()
                     .channel(courtesyAddress.getType())
                     .retryIndex(0)
                     .deliveryMode(deliveryMode)
                     .plannedChannels(plannedChannels)
+                    .plannedAddressId(freezeCourtesyAddress(recipient.getInternalId(), notification, recIndex, courtesyAddress))
                     .build();
             log.info("Scheduling SEND_COURTESY_MESSAGE_ACTION channel={} retryIndex=0 deliveryMode={} - iun={} id={}", courtesyAddress.getType(), deliveryMode, iun, recIndex);
             schedulerService.scheduleEvent(iun, recIndex, Instant.now(), ActionType.SEND_COURTESY_MESSAGE_ACTION, details);
@@ -62,6 +72,21 @@ public class CourtesyMessageUtils {
 
         log.debug("End dispatchCourtesyMessagesActions - iun={} id={}", iun, recIndex);
         return listCourtesyAddresses;
+    }
+
+    private String freezeCourtesyAddress(String internalId, NotificationInt notification, Integer recIndex, CourtesyDigitalAddressInt courtesyAddress) {
+        if (!FREEZABLE_CHANNELS.contains(courtesyAddress.getType())) {
+            return null;
+        }
+
+        try {
+            return confidentialInformationService.savePlannedCourtesyAddress(internalId, notification.getIun(), recIndex,
+                    courtesyAddress.getType(), courtesyAddress.getAddress()).block();
+        } catch (Exception ex) {
+            log.warn("Unable to freeze courtesy address for channel={}, scheduling without it - iun={} id={}",
+                    courtesyAddress.getType(), notification.getIun(), recIndex, ex);
+            return null;
+        }
     }
 
     public List<CourtesyDigitalAddressInt> getCourtesyAddresses(NotificationInt notification, Integer recIndex) {
