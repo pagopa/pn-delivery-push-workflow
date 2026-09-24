@@ -2,9 +2,12 @@ package it.pagopa.pn.deliverypushworkflow.action.notificationview;
 
 import it.pagopa.pn.commons.log.PnAuditLogBuilder;
 import it.pagopa.pn.commons.log.PnAuditLogEventType;
+import it.pagopa.pn.commons.log.dto.metrics.Dimension;
+import it.pagopa.pn.commons.log.dto.metrics.GeneralMetric;
 import it.pagopa.pn.commons.utils.LogUtils;
 import it.pagopa.pn.deliverypushworkflow.action.startworkflow.notificationvalidation.AttachmentUtils;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
+import it.pagopa.pn.deliverypushworkflow.config.CheckAttachmentsForViewedMode;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.documentcreation.DocumentCreationTypeInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.datavault.BaseRecipientDtoInt;
@@ -13,8 +16,9 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.Notificat
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notificationviewed.NotificationViewedInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.service.*;
+import it.pagopa.pn.deliverypushworkflow.utils.MetricUtils;
+import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -26,7 +30,7 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 @Component
-@Slf4j
+@CustomLog
 @RequiredArgsConstructor
 public class ViewNotification {
     private final SaveLegalFactsService legalFactStore;
@@ -61,7 +65,8 @@ public class ViewNotification {
     }
 
     private Mono<Boolean> checkThatAllAttachmentsArePresent(NotificationInt notification, boolean isRadd) {
-        if (!pnDeliveryPushWorkflowConfigs.isCheckAttachmentsForViewedEnabled() || isRadd) {
+        CheckAttachmentsForViewedMode mode = pnDeliveryPushWorkflowConfigs.getCheckAttachmentsForViewedMode();
+        if (mode == CheckAttachmentsForViewedMode.OFF || isRadd) {
             return Mono.just(true);
         }
 
@@ -79,9 +84,38 @@ public class ViewNotification {
                 .all(Boolean::booleanValue)
                 .doOnNext(allPresent -> {
                     if (!allPresent) {
-                        log.warn("View notification blocked, attachment not available in safe storage - iun={}", notification.getIun());
+                        log.warn("View notification attachment check failed, attachment not available in safe storage - iun={}", notification.getIun());
                     }
-                });
+                    logAttachmentCheckMetricIfNeeded(mode, allPresent, notification.getIun());
+                })
+                .map(allPresent -> mode == CheckAttachmentsForViewedMode.DRY_RUN || allPresent);
+    }
+
+    private void logAttachmentCheckMetricIfNeeded(
+            CheckAttachmentsForViewedMode mode,
+            boolean allPresent,
+            String iun
+    ) {
+        if (mode == CheckAttachmentsForViewedMode.DRY_RUN && allPresent) {
+            return;
+        }
+
+        String result = allPresent ? "OK" : "KO";
+        GeneralMetric metric = MetricUtils.generateGeneralMetric(
+                MetricUtils.MetricName.VIEW_NOTIFICATION_ATTACHMENTS_CHECK_RESULT,
+                1,
+                List.of(new Dimension("Result", result))
+        );
+        String textResult = allPresent ? "all attachments are present" : "some attachments are missing";
+        log.logMetric(
+                List.of(metric),
+                String.format(
+                        "View notification attachments check completed - iun=%s mode=%s result=%s",
+                        iun,
+                        mode,
+                        textResult
+                )
+        );
     }
 
     private boolean isAttachmentNotAvailable(WebClientResponseException ex, String iun, String key) {
