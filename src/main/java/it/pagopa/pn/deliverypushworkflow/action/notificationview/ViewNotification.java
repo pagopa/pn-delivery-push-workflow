@@ -66,7 +66,9 @@ public class ViewNotification {
 
     private Mono<Boolean> checkThatAllAttachmentsArePresent(NotificationInt notification, boolean isRadd) {
         CheckAttachmentsForViewedMode mode = pnDeliveryPushWorkflowConfigs.getCheckAttachmentsForViewedMode();
+        log.info("Start checkThatAllAttachmentsArePresent for iun={}", notification.getIun());
         if (mode == CheckAttachmentsForViewedMode.OFF || isRadd) {
+            log.info("Skipped checkThatAllAttachmentsArePresent for iun={} with mode={}", notification.getIun(), mode);
             return Mono.just(true);
         }
 
@@ -83,7 +85,7 @@ public class ViewNotification {
                 .takeUntil(isPresent -> !isPresent)
                 .all(Boolean::booleanValue)
                 .doOnNext(allPresent -> {
-                    if (!allPresent) {
+                    if (Boolean.FALSE.equals(allPresent)) {
                         log.warn("View notification attachment check failed, attachment not available in safe storage - iun={}", notification.getIun());
                     }
                     logAttachmentCheckMetricIfNeeded(mode, allPresent, notification.getIun());
@@ -96,24 +98,19 @@ public class ViewNotification {
             boolean allPresent,
             String iun
     ) {
-        if (mode == CheckAttachmentsForViewedMode.DRY_RUN && allPresent) {
-            return;
-        }
+        if(allPresent)return;
 
-        String result = allPresent ? "OK" : "KO";
         GeneralMetric metric = MetricUtils.generateGeneralMetric(
                 MetricUtils.MetricName.VIEW_NOTIFICATION_ATTACHMENTS_CHECK_RESULT,
                 1,
-                List.of(new Dimension("Result", result))
+                List.of(new Dimension("Result", "KO"))
         );
-        String textResult = allPresent ? "all attachments are present" : "some attachments are missing";
         log.logMetric(
                 List.of(metric),
                 String.format(
-                        "View notification attachments check completed - iun=%s mode=%s result=%s",
+                        "View notification attachments check completed, some attachments are missing - iun=%s mode=%s",
                         iun,
-                        mode,
-                        textResult
+                        mode
                 )
         );
     }
