@@ -30,7 +30,7 @@ public class PnDeliveryPushWorkflowConfigs {
 
     private boolean additionalLangsEnabled;
 
-    private boolean checkAttachmentsForViewedEnabled;
+    private CheckAttachmentsForViewedMode checkAttachmentsForViewedMode = CheckAttachmentsForViewedMode.OFF;
 
     private String templatesEngineBaseUrl;
 
