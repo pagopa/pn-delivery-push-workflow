@@ -458,7 +458,7 @@ Resources:
         ContainerEnvEntry25: !Sub 'PN_DELIVERYPUSHWORKFLOW_REWORKTTLADDRESSRANGE=${ReworkTTLAddressRange}'
         ContainerEnvEntry26: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_NOTIFICATIONREWORKUPDATEREVENT=${DeliveryPushToNotificationReworkUpdaterQueueName}'
         ContainerEnvEntry27: !Sub 'PN_DELIVERYPUSHWORKFLOW_NOTIFICATIONREWORKDOCUMENTEXPIRINGRANGE=${NotificationReworkDocumentExpiringRange}'
-        ContainerEnvEntry28: !Sub 'PN_DELIVERYPUSHWORKFLOW_INVALIDABLECATEGORIES={{resolve:ssm:/config/timeline/invalidable-categories}}'
+        ContainerEnvEntry28: 'PN_DELIVERYPUSHWORKFLOW_INVALIDABLECATEGORIES={{resolve:ssm:/config/timeline/invalidable-categories}}'
         ContainerEnvEntry29: !Sub 'PN_DELIVERYPUSHWORKFLOW_RADDALTBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
         ContainerEnvEntry30: 'PN_DELIVERYPUSHWORKFLOW_RADDSEARCHMODE={{resolve:ssm:/config/radd-coverage/search-mode}}'
         ContainerEnvEntry31: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_ANALOGRESPONSEEVENTS=${AnalogToDeliveryPushQueueName}'
@@ -466,7 +466,10 @@ Resources:
         ContainerEnvEntry33: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_RESUMEPOSTPAYMENT=${ResumePostPaymentQueueName}'
         ApplicativeEnvFileChecksum: !Ref ApplicativeEnvFileChecksum
         ParentMicroserviceName: !Sub '${ProjectName}-delivery-push-workflow'
-        JavaToolOptions: !Ref JavaToolOptions
+        JavaToolOptions: !Join
+          - ' '
+          - - '--add-modules=java.instrument --add-opens=java.base/java.lang=ALL-UNNAMED'
+            - !Ref JavaToolOptions
         MappedPaths: '/pn-delivery-push-workflow-service-not-available'
         ECSClusterName: !Ref ECSClusterName
         Subnets: !Join [ ',', !Ref SubnetsIds ]
