@@ -202,6 +202,7 @@ public class PnDeliveryPushWorkflowConfigs {
         public static class IntervalsMinutes {
             private List<Integer> io;
             private List<Integer> sms;
+            private List<Integer> whatsapp;
             private List<Integer> email;
             private List<Integer> tpp;
         }
@@ -230,7 +231,7 @@ public class PnDeliveryPushWorkflowConfigs {
         if (intervalsMinutes == null) {
             return Duration.ZERO;
         }
-        return Stream.of(intervalsMinutes.getIo(), intervalsMinutes.getSms(), intervalsMinutes.getEmail(), intervalsMinutes.getTpp())
+        return Stream.of(intervalsMinutes.getIo(), intervalsMinutes.getSms(), intervalsMinutes.getWhatsapp(), intervalsMinutes.getEmail(), intervalsMinutes.getTpp())
                 .filter(Objects::nonNull)
                 .map(intervals -> Duration.ofMinutes(intervals.stream().mapToLong(Integer::longValue).sum()))
                 .max(Duration::compareTo)

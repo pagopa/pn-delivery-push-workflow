@@ -370,6 +370,57 @@ class SendCourtesyMessageHandlerTest {
     }
 
     @Test
+    void handleSendCourtesyMessageActionWhatsappSuccessOnAnalogSchedulesAnalogWorkflow() {
+        //GIVEN
+        NotificationRecipientInt recipient = getNotificationRecipientInt();
+        NotificationInt notification = getNotificationInt(recipient);
+
+        Mockito.when(notificationService.getNotificationByIun(notification.getIun())).thenReturn(notification);
+        Mockito.when(notificationUtils.getRecipientFromIndex(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(recipient);
+        Mockito.when(addressBookService.getCourtesyAddress(Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(List.of(courtesyAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.WHATSAPP)));
+
+        //WHEN
+        sendCourtesyMessageHandler.handleSendCourtesyMessageAction(notification.getIun(), 0, details(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.WHATSAPP, DeliveryModeInt.ANALOG));
+
+        //THEN - WhatsApp segue lo stesso percorso dell'SMS (external channel) e, in modalità ANALOG, programma l'analogico dopo l'attesa
+        ArgumentCaptor<CourtesyDigitalAddressInt> addressCaptor = ArgumentCaptor.forClass(CourtesyDigitalAddressInt.class);
+        Mockito.verify(externalChannelService).sendCourtesyNotification(Mockito.eq(notification), addressCaptor.capture(),
+                Mockito.eq(0), Mockito.anyString(), Mockito.eq(DeliveryModeInt.ANALOG));
+        assertThat(addressCaptor.getValue().getType()).isEqualTo(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.WHATSAPP);
+        Mockito.verify(schedulerService).scheduleEvent(Mockito.eq(notification.getIun()), Mockito.eq(0), Mockito.any(Instant.class),
+                Mockito.eq(ActionType.ANALOG_WORKFLOW));
+    }
+
+    @Test
+    void handleSendCourtesyMessageActionWhatsappRetryableErrorUsesWhatsappIntervals() {
+        //GIVEN
+        NotificationRecipientInt recipient = getNotificationRecipientInt();
+        NotificationInt notification = getNotificationInt(recipient);
+
+        Mockito.when(notificationService.getNotificationByIun(notification.getIun())).thenReturn(notification);
+        Mockito.when(notificationUtils.getRecipientFromIndex(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(recipient);
+        Mockito.when(addressBookService.getCourtesyAddress(Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(List.of(courtesyAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.WHATSAPP)));
+        Mockito.doThrow(new WebClientResponseException(429, "Too Many Requests", new HttpHeaders(), null, null))
+                .when(externalChannelService).sendCourtesyNotification(Mockito.any(), Mockito.any(), Mockito.anyInt(), Mockito.anyString(), Mockito.any());
+        configureRetryIntervals(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.WHATSAPP, List.of(3, 6));
+
+        //WHEN
+        Instant before = Instant.now();
+        sendCourtesyMessageHandler.handleSendCourtesyMessageAction(notification.getIun(), 0, details(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.WHATSAPP, DeliveryModeInt.DIGITAL));
+
+        //THEN
+        ArgumentCaptor<Instant> dateCaptor = ArgumentCaptor.forClass(Instant.class);
+        ArgumentCaptor<SendCourtesyMessageActionDetails> detailsCaptor = ArgumentCaptor.forClass(SendCourtesyMessageActionDetails.class);
+        Mockito.verify(schedulerService).scheduleEvent(Mockito.eq(notification.getIun()), Mockito.eq(0), dateCaptor.capture(),
+                Mockito.eq(ActionType.SEND_COURTESY_MESSAGE_ACTION), detailsCaptor.capture());
+        assertThat(detailsCaptor.getValue().getChannel()).isEqualTo(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.WHATSAPP);
+        assertThat(detailsCaptor.getValue().getRetryIndex()).isEqualTo(1);
+        assertThat(dateCaptor.getValue()).isAfterOrEqualTo(before.plus(java.time.Duration.ofMinutes(3)));
+    }
+
+    @Test
     void handleSendCourtesyMessageActionAddressNotFound() {
         //GIVEN
         NotificationRecipientInt recipient = getNotificationRecipientInt();
@@ -726,6 +777,7 @@ class SendCourtesyMessageHandlerTest {
         switch (channel) {
             case EMAIL -> intervalsMinutes.setEmail(minutes);
             case SMS -> intervalsMinutes.setSms(minutes);
+            case WHATSAPP -> intervalsMinutes.setWhatsapp(minutes);
             case APPIO -> intervalsMinutes.setIo(minutes);
             case TPP -> intervalsMinutes.setTpp(minutes);
         }

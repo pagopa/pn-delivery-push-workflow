@@ -9,6 +9,7 @@ import java.io.IOException;
 public class TemplatesClientMock implements TemplatesClient {
 
     private static final String RESULT_STRING = "Templates As String Result";
+    public static final String WHATSAPP_RESULT_STRING = "{\"templateName\":\"send_avviso_notifica_digitale\",\"language\":\"it\",\"bodyParameters\":[\"Ente\",\"IUN\"],\"previewText\":\"Hai ricevuto una notifica SEND\"}";
 
     @Override
     public byte[] notificationViewedLegalFact(LanguageEnum xLanguage, NotificationViewedLegalFact notificationViewedLegalFact) {
@@ -53,6 +54,16 @@ public class TemplatesClientMock implements TemplatesClient {
     @Override
     public String notificationAarForSmsDigital(LanguageEnum xLanguage, NotificationAarForSmsDigital notificationAarForSms) {
         return RESULT_STRING;
+    }
+
+    @Override
+    public String notificationAarForWhatsappAnalog(LanguageEnum xLanguage, NotificationAarForSmsAnalog notificationAarForWhatsapp) {
+        return WHATSAPP_RESULT_STRING;
+    }
+
+    @Override
+    public String notificationAarForWhatsappDigital(LanguageEnum xLanguage, NotificationAarForSmsDigital notificationAarForWhatsapp) {
+        return WHATSAPP_RESULT_STRING;
     }
 
     @Override

@@ -26,7 +26,8 @@ import java.util.Set;
 public class CourtesyMessageUtils {
     private static final Set<CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT> FREEZABLE_CHANNELS =
             EnumSet.of(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.EMAIL,
-                    CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.SMS);
+                    CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.SMS,
+                    CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.WHATSAPP);
 
     private final AddressBookService addressBookService;
     private final ConfidentialInformationService confidentialInformationService;
