@@ -19,133 +19,113 @@ class TimelineElementInternalTest {
         Instant tPrimo = Instant.EPOCH.plus(1, ChronoUnit.DAYS);
         Instant tSecondo = Instant.EPOCH.plus(2, ChronoUnit.DAYS);
 
-        // caso 1: un xxx con data maggiore va dopo
-        TimelineElementInternal t1Progress = TimelineElementInternal.builder()
-                .timestamp(tPrimo)
-                .category(TimelineElementCategoryInt.SEND_DIGITAL_PROGRESS)
-                .build();
+        TimelineElementInternal progress = createElement(
+                tPrimo, TimelineElementCategoryInt.SEND_DIGITAL_PROGRESS);
+        TimelineElementInternal laterProgress = createElement(
+                tSecondo, TimelineElementCategoryInt.SEND_DIGITAL_PROGRESS);
 
-        TimelineElementInternal t2Progress = TimelineElementInternal.builder()
-                .timestamp(tSecondo)
-                .category(TimelineElementCategoryInt.SEND_DIGITAL_PROGRESS)
-                .build();
+        Assertions.assertTrue(progress.compareTo(laterProgress) < 0);
+        Assertions.assertTrue(laterProgress.compareTo(progress) > 0);
 
+        TimelineElementInternal feedback = createElement(
+                tPrimo, TimelineElementCategoryInt.SEND_DIGITAL_FEEDBACK);
 
-        Assertions.assertTrue(t1Progress.compareTo(t2Progress) < 0);
+        // A parità di timestamp, FEEDBACK precede PROGRESS per elementId.
+        Assertions.assertTrue(progress.compareTo(feedback) > 0);
+        Assertions.assertTrue(feedback.compareTo(progress) < 0);
 
-        // caso 2: un feedback con stessa data, va dopo
-        t2Progress= TimelineElementInternal.builder()
-                .timestamp(tPrimo)
-                .category(TimelineElementCategoryInt.SEND_DIGITAL_FEEDBACK)
-                .build();
+        // Il timestamp ha precedenza sull'elementId.
+        TimelineElementInternal laterFeedback = createElement(
+                tSecondo, TimelineElementCategoryInt.SEND_DIGITAL_FEEDBACK);
 
-        Assertions.assertTrue(t1Progress.compareTo(t2Progress) < 0);
-
-        // caso 3: un progress con data maggiore, va dopo il feedback
-
-        t1Progress = TimelineElementInternal.builder()
-                .timestamp(tSecondo)
-                .category(TimelineElementCategoryInt.SEND_DIGITAL_PROGRESS)
-                .build();
-        t2Progress= TimelineElementInternal.builder()
-                .timestamp(tPrimo)
-                .category(TimelineElementCategoryInt.SEND_DIGITAL_FEEDBACK)
-                .build();
-
-        Assertions.assertTrue(t1Progress.compareTo(t2Progress) > 0);
+        Assertions.assertTrue(progress.compareTo(laterFeedback) < 0);
+        Assertions.assertTrue(laterFeedback.compareTo(progress) > 0);
+        Assertions.assertTrue(laterProgress.compareTo(feedback) > 0);
     }
 
     @Test
     void compareToBaseAnalog() {
-
         Instant tPrimo = Instant.EPOCH.plus(1, ChronoUnit.DAYS);
         Instant tSecondo = Instant.EPOCH.plus(2, ChronoUnit.DAYS);
 
-        // caso 1: un xxx con data maggiore va dopo
-        TimelineElementInternal t1Progress = TimelineElementInternal.builder()
-                .timestamp(tPrimo)
-                .category(TimelineElementCategoryInt.SEND_ANALOG_PROGRESS)
-                .build();
+        TimelineElementInternal progress = createElement(
+                tPrimo, TimelineElementCategoryInt.SEND_ANALOG_PROGRESS);
+        TimelineElementInternal laterProgress = createElement(
+                tSecondo, TimelineElementCategoryInt.SEND_ANALOG_PROGRESS);
 
-        TimelineElementInternal t2Progress = TimelineElementInternal.builder()
-                .timestamp(tSecondo)
-                .category(TimelineElementCategoryInt.SEND_ANALOG_PROGRESS)
-                .build();
+        Assertions.assertTrue(progress.compareTo(laterProgress) < 0);
+        Assertions.assertTrue(laterProgress.compareTo(progress) > 0);
 
+        TimelineElementInternal feedback = createElement(
+                tPrimo, TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK);
 
-        Assertions.assertTrue(t1Progress.compareTo(t2Progress) < 0);
+        // A parità di timestamp, FEEDBACK precede PROGRESS per elementId.
+        Assertions.assertTrue(progress.compareTo(feedback) > 0);
+        Assertions.assertTrue(feedback.compareTo(progress) < 0);
 
-        // caso 2: un feedback con stessa data, va dopo
-        t2Progress= TimelineElementInternal.builder()
-                .timestamp(tPrimo)
-                .category(TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK)
-                .build();
+        // Il timestamp ha precedenza sull'elementId.
+        TimelineElementInternal laterFeedback = createElement(
+                tSecondo, TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK);
 
-        Assertions.assertTrue(t1Progress.compareTo(t2Progress) < 0);
-
-        // caso 3: un progress con data maggiore, va dopo il feedback
-
-        t1Progress = TimelineElementInternal.builder()
-                .timestamp(tSecondo)
-                .category(TimelineElementCategoryInt.SEND_ANALOG_PROGRESS)
-                .build();
-        t2Progress= TimelineElementInternal.builder()
-                .timestamp(tPrimo)
-                .category(TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK)
-                .build();
-
-        Assertions.assertTrue(t1Progress.compareTo(t2Progress) > 0);
+        Assertions.assertTrue(progress.compareTo(laterFeedback) < 0);
+        Assertions.assertTrue(laterFeedback.compareTo(progress) > 0);
+        Assertions.assertTrue(laterProgress.compareTo(feedback) > 0);
     }
-
 
     @Test
     void compareTo() {
-
         Instant tPrimo = Instant.EPOCH.plus(1, ChronoUnit.DAYS);
         Instant tSecondo = Instant.EPOCH.plus(2, ChronoUnit.DAYS);
 
-        TimelineElementInternal t1Progress = TimelineElementInternal.builder()
-                .timestamp(tPrimo)
-                .category(TimelineElementCategoryInt.SEND_DIGITAL_PROGRESS)
-                .build();
-
-        TimelineElementInternal t2Progress = TimelineElementInternal.builder()
-                .timestamp(tSecondo)
-                .category(TimelineElementCategoryInt.SEND_DIGITAL_PROGRESS)
-                .build();
+        TimelineElementInternal t1Progress = createElement(
+                tPrimo, TimelineElementCategoryInt.SEND_DIGITAL_PROGRESS);
+        TimelineElementInternal t2Progress = createElement(
+                tSecondo, TimelineElementCategoryInt.SEND_DIGITAL_PROGRESS);
 
         Set<TimelineElementInternal> set = Set.of(t1Progress, t2Progress);
         List<TimelineElementInternal> list = set.stream()
                 .sorted(Comparator.naturalOrder())
                 .toList();
 
-        Assertions.assertEquals(t1Progress, list.get(0));
-        Assertions.assertEquals(t2Progress, list.get(1));
-
+        Assertions.assertEquals(List.of(t1Progress, t2Progress), list);
     }
 
     @Test
     void compareToSame() {
+        Instant timestamp = Instant.EPOCH.plus(1, ChronoUnit.DAYS);
 
-        Instant tPrimo = Instant.EPOCH.plus(1, ChronoUnit.DAYS);
+        TimelineElementInternal progress = createElement(
+                timestamp, TimelineElementCategoryInt.SEND_DIGITAL_PROGRESS);
+        TimelineElementInternal feedback = createElement(
+                timestamp, TimelineElementCategoryInt.SEND_DIGITAL_FEEDBACK);
 
-        TimelineElementInternal t1Progress = TimelineElementInternal.builder()
-                .timestamp(tPrimo)
-                .category(TimelineElementCategoryInt.SEND_DIGITAL_PROGRESS)
-                .build();
-
-        TimelineElementInternal t2Progress = TimelineElementInternal.builder()
-                .timestamp(tPrimo)
-                .category(TimelineElementCategoryInt.SEND_DIGITAL_FEEDBACK)
-                .build();
-
-        Set<TimelineElementInternal> set = Set.of(t1Progress, t2Progress);
+        Set<TimelineElementInternal> set = Set.of(progress, feedback);
         List<TimelineElementInternal> list = set.stream()
                 .sorted(Comparator.naturalOrder())
                 .toList();
 
-        Assertions.assertEquals(t1Progress, list.get(0));
-        Assertions.assertEquals(t2Progress, list.get(1));
+        Assertions.assertEquals(List.of(feedback, progress), list);
+    }
 
+    @Test
+    void compareToSameTimestampAndElementId() {
+        TimelineElementInternal element = createElement(
+                Instant.EPOCH, TimelineElementCategoryInt.SEND_DIGITAL_PROGRESS);
+
+        TimelineElementInternal other = element.toBuilder()
+                .category(TimelineElementCategoryInt.SEND_DIGITAL_FEEDBACK)
+                .build();
+
+        Assertions.assertEquals(0, element.compareTo(other));
+        Assertions.assertEquals(0, other.compareTo(element));
+    }
+
+    private TimelineElementInternal createElement(
+            Instant timestamp, TimelineElementCategoryInt category) {
+        return TimelineElementInternal.builder()
+                .timestamp(timestamp)
+                .elementId(category.name())
+                .category(category)
+                .build();
     }
 }
