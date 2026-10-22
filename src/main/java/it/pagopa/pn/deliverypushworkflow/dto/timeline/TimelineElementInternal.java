@@ -36,8 +36,6 @@ public class TimelineElementInternal implements Comparable<TimelineElementIntern
     public int compareTo(@NotNull TimelineElementInternal o) {
         int order = this.timestamp.compareTo(o.getTimestamp());
         if (order == 0)
-            order = this.category.getPriority() - o.getCategory().getPriority();
-        if (order == 0)
             order = this.elementId.compareTo(o.getElementId());
         return order;
     }
