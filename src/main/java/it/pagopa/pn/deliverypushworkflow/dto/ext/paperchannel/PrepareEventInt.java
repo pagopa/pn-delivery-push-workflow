@@ -1,6 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel;
 
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ReceiverAddressSourceTypeInt;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -18,6 +19,7 @@ public class PrepareEventInt extends PaperEventInt {
     private CategorizedAttachmentsResultInt categorizedAttachmentsResult;
     private String productType;
     private String failureDetailCode;
+    private ReceiverAddressSourceTypeInt receiverAddressSourceType;
 
     public enum STATUS_CODE{
         OK,
