@@ -38,7 +38,7 @@ public class SendAnalogFeedbackDetailsInt extends CategoryTypeTimelineElementDet
     public String toLog() {
         return String.format(
                 "recIndex=%d sentAttemptMade=%d responseStatus=%s deliveryFailureCause=%s " +
-                        "physicalAddress=%s requestTimelineId=%s deliveryDetailCode=%s attachments=%s hasOnSiteInvestigation=%b",
+                        "physicalAddress=%s requestTimelineId=%s deliveryDetailCode=%s attachments=%s hasOnSiteInvestigation=%s",
                 recIndex,
                 sentAttemptMade,
                 responseStatus,

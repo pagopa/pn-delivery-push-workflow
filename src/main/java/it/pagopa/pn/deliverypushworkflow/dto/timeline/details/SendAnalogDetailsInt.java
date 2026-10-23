@@ -32,7 +32,7 @@ public class SendAnalogDetailsInt extends BaseAnalogDetailsInt implements Analog
     @Override
     public String toLog() {
         return String.format(
-                "recIndex=%d sentAttemptMade=%d relatedRequestId=%s physicalAddress=%s analogCost=%d productType=%s prepareRequestId=%s f24Attachments=%s, receiverAddressSourceType=%s hasOnSiteInvestigation=%b ,vat=%s",
+                "recIndex=%d sentAttemptMade=%d relatedRequestId=%s physicalAddress=%s analogCost=%d productType=%s prepareRequestId=%s f24Attachments=%s, receiverAddressSourceType=%s hasOnSiteInvestigation=%s ,vat=%s",
                 recIndex,
                 sentAttemptMade,
                 relatedRequestId,
