@@ -25,5 +25,5 @@ public class PaperChannelPrepareRequest {
     private final String relatedRequestId;
     private final PhysicalAddressInt discoveredAddress;
     private final Boolean aarWithRadd;
-    private ReceiverAddressSourceTypeInt receiverAddressSourceType;
+    private final ReceiverAddressSourceTypeInt receiverAddressSourceType;
 }
