@@ -20,6 +20,7 @@ class SimpleRegisteredLetterDetailsIntTest {
                 .foreignState("001")
                 .analogCost(100)
                 .physicalAddress(PhysicalAddressInt.builder().addressDetails("000").build())
+                .receiverAddressSourceType(ReceiverAddressSourceTypeInt.MITTENTE)
                 .categorizedAttachmentsResult(CategorizedAttachmentsResultInt.builder().acceptedAttachments(List.of(ResultFilterInt.builder().fileKey("fileKey").build())).build())
                 .build();
     }
@@ -27,7 +28,7 @@ class SimpleRegisteredLetterDetailsIntTest {
     @Test
     void toLog() {
         String log = detailsInt.toLog();
-        Assertions.assertEquals("recIndex=0 physicalAddress='Sensitive information' analogCost=100 productType=null prepareRequestId=null f24Attachments=[] vat=null", log);
+        Assertions.assertEquals("recIndex=0 physicalAddress='Sensitive information' analogCost=100 productType=null prepareRequestId=null f24Attachments=[] receiverAddressSourceType=MITTENTE vat=null", log);
     }
 
     @Test
