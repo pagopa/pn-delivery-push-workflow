@@ -21,10 +21,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.NotificationChanne
 import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.ResultFilterInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventIdParser;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.NotificationTimelineReworkedDetailsInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.PhysicalAddressRelatedTimelineElement;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendAnalogFeedbackDetailsInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.*;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.ProductTypeEnum;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.SendResponse;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.paperchannel.PaperChannelPrepareRequest;
@@ -173,6 +170,7 @@ public class PaperChannelServiceImpl implements PaperChannelService {
             String relatedEventId = null;
             PhysicalAddressInt receiverAddress = null;
             PhysicalAddressInt discoveredAddress = null;
+            ReceiverAddressSourceTypeInt initialAddressSource = null;
             if (sentAttemptMade > 0)
             {
                 // ricostruisco il related corrispondente, tanto ha la forma che gli avevo dato io all'iterazione precedente
@@ -200,6 +198,7 @@ public class PaperChannelServiceImpl implements PaperChannelService {
             {
                 // se sentAttemptMade è 0, il receiver addres è quello fornito dalla PA
                 receiverAddress = analogWorkflowUtils.getPhysicalAddress(notification, recIndex);
+                initialAddressSource =  paperChannelUtils.getInitialAddressSource(notification.getIun(), recIndex);
             }
 
             if (pnDeliveryPushWorkflowConfigs.getInvalidableCategories().contains(PREPARE_ANALOG_DOMICILE.getValue())) {
@@ -217,6 +216,7 @@ public class PaperChannelServiceImpl implements PaperChannelService {
                     .relatedRequestId(relatedEventId)
                     .discoveredAddress(discoveredAddress)
                     .aarWithRadd(aarWithRadd)
+                    .receiverAddressSourceType(initialAddressSource)
                     .build();
             paperChannelSendClient.prepare(prepareRequest);
 
@@ -319,7 +319,7 @@ public class PaperChannelServiceImpl implements PaperChannelService {
     @Override
     public String sendAnalogNotification(NotificationInt notification, Integer recIndex, int sentAttemptMade,
                                          String prepareRequestId, PhysicalAddressInt receiverAddress, String productType, List<String> replacedF24AttachmentUrls,
-                                         CategorizedAttachmentsResultInt categorizedAttachmentsResult) {
+                                         CategorizedAttachmentsResultInt categorizedAttachmentsResult, ReceiverAddressSourceTypeInt receiverAddressSourceType) {
         String timelineId = null;
 
         if (timelineUtils.checkIsNotificationCancellationRequested(notification.getIun())){
@@ -346,7 +346,10 @@ public class PaperChannelServiceImpl implements PaperChannelService {
 
             try {
                 String relatedEventId = null;
+                Boolean hasOnSiteInvestigation = null;
                 if (sentAttemptMade > 0) {
+                    PhysicalAddressInt discoveredAddress = retrieveDiscoveredAddressIfPresent(notification.getIun(), recIndex, sentAttemptMade, notification);
+                    hasOnSiteInvestigation = discoveredAddress != null;
                     relatedEventId = paperChannelUtils.buildPrepareAnalogDomicileEventId(notification, recIndex, sentAttemptMade - 1);
                 }
 
@@ -362,6 +365,8 @@ public class PaperChannelServiceImpl implements PaperChannelService {
                         .relatedRequestId(relatedEventId)
                         .productType(productType)
                         .prepareRequestId(prepareRequestId)
+                        .hasOnSiteInvestigation(hasOnSiteInvestigation)
+                        .receiverAddressSourceType(receiverAddressSourceType)
                         .build();
 
                 timelineId = paperChannelUtils.addSendAnalogNotificationToTimeline(notification, receiverAddress, recIndex, analogDtoInfo, replacedF24AttachmentUrls, categorizedAttachmentsResult, prepareRequestId);

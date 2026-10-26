@@ -442,6 +442,8 @@ public class TimelineUtils {
                 .f24Attachments(replacedF24AttachmentUrls)
                 .categorizedAttachmentsResult(categorizedAttachmentsResult)
                 .prepareRequestId(analogDtoInfo.getPrepareRequestId())
+                .hasOnSiteInvestigation(analogDtoInfo.getHasOnSiteInvestigation())
+                .receiverAddressSourceType(analogDtoInfo.getReceiverAddressSourceType())
                 .vat(notification.getVat())
                 .build();
 

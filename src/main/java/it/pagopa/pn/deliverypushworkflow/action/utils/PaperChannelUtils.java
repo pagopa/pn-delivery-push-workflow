@@ -9,8 +9,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.CategorizedAttachm
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.EventId;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventId;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendAnalogDetailsInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SimpleRegisteredLetterDetailsInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.*;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.SendResponse;
 import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import lombok.extern.slf4j.Slf4j;
@@ -52,6 +51,22 @@ public class PaperChannelUtils {
         );
     }
 
+    public ReceiverAddressSourceTypeInt getInitialAddressSource(String iun, int recIndex) {
+        Optional<TimelineElementInternal> validationResponse =
+                timelineService.getTimelineElementForSpecificRecipient(
+                        iun,
+                        recIndex,
+                        TimelineElementCategoryInt.PUBLIC_REGISTRY_VALIDATION_RESPONSE
+                );
+        ReceiverAddressSourceTypeInt initialAddressSource;
+        if (validationResponse.isPresent()) {
+            PublicRegistryValidationResponseDetailsInt details = (PublicRegistryValidationResponseDetailsInt) validationResponse.get().getDetails();
+            initialAddressSource = ReceiverAddressSourceTypeInt.valueOf(details.getRegistry());
+        } else {
+            initialAddressSource = ReceiverAddressSourceTypeInt.MITTENTE;
+        }
+        return initialAddressSource;
+    }
 
     public String buildPrepareAnalogDomicileEventId(NotificationInt notification, Integer recIndex, int sentAttemptMade) {
         return TimelineEventId.PREPARE_ANALOG_DOMICILE.buildEventId(
