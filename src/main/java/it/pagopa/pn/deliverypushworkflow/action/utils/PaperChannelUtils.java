@@ -51,21 +51,33 @@ public class PaperChannelUtils {
         );
     }
 
-    public ReceiverAddressSourceTypeInt getInitialAddressSource(String iun, int recIndex) {
-        Optional<TimelineElementInternal> validationResponse =
-                timelineService.getTimelineElementForSpecificRecipient(
+    /**
+     * Determina la fonte dell'indirizzo della validazione VAS,
+     * se presente; altrimenti restituisce MITTENTE.
+     */
+    public ReceiverAddressSourceTypeInt resolveAddressSource(String iun, int recIndex) {
+        Optional<TimelineElementInternal> addressValidationEvent = findPublicRegistryValidationEvent(iun, recIndex);
+
+        ReceiverAddressSourceTypeInt resolvedAddressSource;
+        if (addressValidationEvent.isPresent()) {
+            PublicRegistryValidationResponseDetailsInt details = (PublicRegistryValidationResponseDetailsInt) addressValidationEvent.get().getDetails();
+            resolvedAddressSource = ReceiverAddressSourceTypeInt.valueOf(details.getRegistry());
+        } else {
+            resolvedAddressSource = ReceiverAddressSourceTypeInt.MITTENTE;
+        }
+        log.debug("Receiver address source for iun {} and recIndex {}: {}", iun, recIndex, resolvedAddressSource);
+        return resolvedAddressSource;
+    }
+
+    /**
+     * Verifica la presenza dell'elemento di timeline PUBLIC_REGISTRY_VALIDATION_RESPONSE
+     */
+    private Optional<TimelineElementInternal> findPublicRegistryValidationEvent(String iun, int recIndex) {
+        return timelineService.getTimelineElementForSpecificRecipient(
                         iun,
                         recIndex,
                         TimelineElementCategoryInt.PUBLIC_REGISTRY_VALIDATION_RESPONSE
                 );
-        ReceiverAddressSourceTypeInt initialAddressSource;
-        if (validationResponse.isPresent()) {
-            PublicRegistryValidationResponseDetailsInt details = (PublicRegistryValidationResponseDetailsInt) validationResponse.get().getDetails();
-            initialAddressSource = ReceiverAddressSourceTypeInt.valueOf(details.getRegistry());
-        } else {
-            initialAddressSource = ReceiverAddressSourceTypeInt.MITTENTE;
-        }
-        return initialAddressSource;
     }
 
     public String buildPrepareAnalogDomicileEventId(NotificationInt notification, Integer recIndex, int sentAttemptMade) {

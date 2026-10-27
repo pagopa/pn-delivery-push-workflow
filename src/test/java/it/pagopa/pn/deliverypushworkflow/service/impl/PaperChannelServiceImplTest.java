@@ -785,10 +785,19 @@ class PaperChannelServiceImplTest {
     }
 
     @ExtendWith(MockitoExtension.class)
-    @Test
-    void prepareAnalogNotificationSecondAttemptWhenPaid_withSendAnalogTimeoutCreationRequest() {
+    @ParameterizedTest
+    @EnumSource(value = ReceiverAddressSourceTypeInt.class, names = {"MITTENTE", "ANPR", "REGISTRO_IMPRESE"})
+    void prepareAnalogNotificationSecondAttemptWhenPaid_withSendAnalogTimeoutCreationRequest(
+            ReceiverAddressSourceTypeInt source) {
         //GIVEN
         NotificationInt notificationInt = newNotificationWithPayments();
+        PhysicalAddressInt previousAddress = PhysicalAddressInt.builder()
+                .address("Via Roma 1").fullname("Destinatario").build();
+        Mockito.when(paperChannelUtils.resolveAddressSource(notificationInt.getIun(), 0)).thenReturn(source);
+        Mockito.when(paperChannelUtils.buildPrepareAnalogDomicileEventId(notificationInt, 0, 0))
+                .thenReturn("previous-prepare");
+        Mockito.when(paperChannelUtils.buildPrepareAnalogDomicileEventId(notificationInt, 0, 1))
+                .thenReturn("current-prepare");
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
         Mockito.lenient().when(timelineUtils.checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt())).thenReturn(true);
@@ -799,7 +808,8 @@ class PaperChannelServiceImplTest {
         Mockito.when(notificationUtils.getRecipientFromIndex(Mockito.any(), anyInt())).thenReturn(notificationInt.getRecipients().getFirst());
 
         TimelineElementInternal previousSendEvent = Mockito.mock(TimelineElementInternal.class);
-        Mockito.when(previousSendEvent.getDetails()).thenReturn(new SendAnalogDetailsInt());
+        Mockito.when(previousSendEvent.getDetails()).thenReturn(
+                SendAnalogDetailsInt.builder().physicalAddress(previousAddress).build());
 
         Mockito.when(attachmentUtils.retrieveSendAttachmentMode(Mockito.any(), Mockito.any())).thenReturn(SendAttachmentMode.AAR_DOCUMENTS);
         Mockito.when(analogDeliveryTimeoutUtils.isSendAnalogTimeoutCreationRequestPresent(Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(true);
@@ -810,7 +820,17 @@ class PaperChannelServiceImplTest {
         paperChannelService.prepareAnalogNotification(notificationInt, 0, 1);
 
         // THEN
-        Mockito.verify(paperChannelSendClient).prepare(Mockito.any());
+        ArgumentCaptor<PaperChannelPrepareRequest> captor = ArgumentCaptor.forClass(PaperChannelPrepareRequest.class);
+        Mockito.verify(paperChannelSendClient).prepare(captor.capture());
+        PaperChannelPrepareRequest request = captor.getValue();
+        Assertions.assertAll(
+                () -> Assertions.assertEquals(source, request.getReceiverAddressSourceType()),
+                () -> Assertions.assertEquals("current-prepare", request.getRequestId()),
+                () -> Assertions.assertEquals("previous-prepare", request.getRelatedRequestId()),
+                () -> Assertions.assertSame(previousAddress, request.getPaAddress()),
+                () -> Assertions.assertNull(request.getDiscoveredAddress())
+        );
+        Mockito.verify(paperChannelUtils).resolveAddressSource(notificationInt.getIun(), 0);
         Mockito.verify(attachmentUtils).retrieveAttachments(Mockito.any(),Mockito.any(),eq(SendAttachmentMode.AAR_DOCUMENTS), eq(F24ResolutionMode.URL),Mockito.any(),Mockito.any());
         Mockito.verify(auditLogEvent).generateSuccess(Mockito.anyString(), Mockito.any());
         Mockito.verify(auditLogEvent).log();
@@ -824,6 +844,16 @@ class PaperChannelServiceImplTest {
     void prepareAnalogNotificationWithAarAndDocument_withoutSendAnalogTimeoutCreationRequest() {
         //GIVEN
         NotificationInt notificationInt = newNotificationWithPayments();
+        PhysicalAddressInt previousAddress = PhysicalAddressInt.builder()
+                .address("Via Roma 1").fullname("Destinatario").build();
+        PhysicalAddressInt discoveredAddress = PhysicalAddressInt.builder()
+                .address("Via Milano 2").fullname("Destinatario").build();
+        Mockito.when(paperChannelUtils.resolveAddressSource(notificationInt.getIun(), 0))
+                .thenReturn(ReceiverAddressSourceTypeInt.MITTENTE);
+        Mockito.when(paperChannelUtils.buildPrepareAnalogDomicileEventId(notificationInt, 0, 0))
+                .thenReturn("previous-prepare");
+        Mockito.when(paperChannelUtils.buildPrepareAnalogDomicileEventId(notificationInt, 0, 1))
+                .thenReturn("current-prepare");
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
 
@@ -832,20 +862,33 @@ class PaperChannelServiceImplTest {
         Mockito.when(auditLogEvent.generateSuccess(Mockito.anyString(), Mockito.any())).thenReturn(auditLogEvent);
         Mockito.when(notificationUtils.getRecipientFromIndex(Mockito.any(), anyInt())).thenReturn(notificationInt.getRecipients().getFirst());
 
-        TimelineElementInternal previousSendEvent = Mockito.mock(TimelineElementInternal.class);
-        Mockito.when(previousSendEvent.getDetails()).thenReturn(new SendAnalogFeedbackDetailsInt());
+        TimelineElementInternal previousSendEvent = TimelineElementInternal.builder()
+                .details(SendAnalogDetailsInt.builder().physicalAddress(previousAddress).build()).build();
+        TimelineElementInternal previousFeedbackEvent = TimelineElementInternal.builder()
+                .details(SendAnalogFeedbackDetailsInt.builder().newAddress(discoveredAddress).build()).build();
 
         Mockito.when(attachmentUtils.retrieveSendAttachmentMode(Mockito.any(), Mockito.any())).thenReturn(SendAttachmentMode.AAR_DOCUMENTS);
         Mockito.when(analogDeliveryTimeoutUtils.isSendAnalogTimeoutCreationRequestPresent(Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(false);
-        Mockito.when(paperChannelUtils.buildSendAnalogDomicileEventId(eq(notificationInt), Mockito.anyInt(), Mockito.anyInt())).thenReturn(null);
-        Mockito.when(paperChannelUtils.getPaperChannelNotificationTimelineElement(Mockito.anyString(), Mockito.any())).thenReturn(previousSendEvent);
-        Mockito.when(paperChannelUtils.buildSendAnalogFeedbackEventId(eq(notificationInt), Mockito.anyInt(), Mockito.anyInt())).thenReturn(anyString());
+        Mockito.when(paperChannelUtils.buildSendAnalogDomicileEventId(notificationInt, 0, 0)).thenReturn("previous-send");
+        Mockito.when(paperChannelUtils.getPaperChannelNotificationTimelineElement(notificationInt.getIun(), "previous-send")).thenReturn(previousSendEvent);
+        Mockito.when(paperChannelUtils.buildSendAnalogFeedbackEventId(notificationInt, 0, 0)).thenReturn("previous-feedback");
+        Mockito.when(paperChannelUtils.getPaperChannelNotificationTimelineElement(notificationInt.getIun(), "previous-feedback")).thenReturn(previousFeedbackEvent);
 
         // WHEN
         paperChannelService.prepareAnalogNotification(notificationInt, 0, 1);
 
         // THEN
-        Mockito.verify(paperChannelSendClient).prepare(Mockito.any());
+        ArgumentCaptor<PaperChannelPrepareRequest> captor = ArgumentCaptor.forClass(PaperChannelPrepareRequest.class);
+        Mockito.verify(paperChannelSendClient).prepare(captor.capture());
+        PaperChannelPrepareRequest request = captor.getValue();
+        Assertions.assertAll(
+                () -> Assertions.assertEquals(ReceiverAddressSourceTypeInt.MITTENTE, request.getReceiverAddressSourceType()),
+                () -> Assertions.assertEquals("current-prepare", request.getRequestId()),
+                () -> Assertions.assertEquals("previous-prepare", request.getRelatedRequestId()),
+                () -> Assertions.assertSame(previousAddress, request.getPaAddress()),
+                () -> Assertions.assertSame(discoveredAddress, request.getDiscoveredAddress())
+        );
+        Mockito.verify(paperChannelUtils).resolveAddressSource(notificationInt.getIun(), 0);
         Mockito.verify(attachmentUtils).retrieveAttachments(Mockito.any(),Mockito.any(),eq(SendAttachmentMode.AAR_DOCUMENTS), eq(F24ResolutionMode.URL),Mockito.any(),Mockito.any());
         Mockito.verify(auditLogEvent).generateSuccess(Mockito.anyString(), Mockito.any());
         Mockito.verify(auditLogEvent).log();

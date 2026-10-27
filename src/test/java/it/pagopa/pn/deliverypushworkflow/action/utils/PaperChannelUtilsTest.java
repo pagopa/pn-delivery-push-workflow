@@ -48,7 +48,7 @@ class PaperChannelUtilsTest {
     @ParameterizedTest
     @NullSource
     @EnumSource(value = ReceiverAddressSourceTypeInt.class, names = {"ANPR", "REGISTRO_IMPRESE"})
-    void getInitialAddressSourceUsesRegistryOrSenderWhenValidationIsAbsent(
+    void resolveAddressSourceUsesRegistryOrMittenteWhenValidationIsAbsent(
             ReceiverAddressSourceTypeInt registry) {
         String iun = "IUN-1";
         int recIndex = 1;
@@ -65,7 +65,7 @@ class PaperChannelUtilsTest {
                 iun, recIndex, TimelineElementCategoryInt.PUBLIC_REGISTRY_VALIDATION_RESPONSE))
                 .thenReturn(validationResponse);
 
-        ReceiverAddressSourceTypeInt actual = paperChannelUtils.getInitialAddressSource(iun, recIndex);
+        ReceiverAddressSourceTypeInt actual = paperChannelUtils.resolveAddressSource(iun, recIndex);
 
         assertEquals(registry == null ? ReceiverAddressSourceTypeInt.MITTENTE : registry, actual);
         verify(timelineService).getTimelineElementForSpecificRecipient(
