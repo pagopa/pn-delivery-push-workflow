@@ -108,7 +108,7 @@ class PaperChannelServiceImplTest {
         NotificationInt notificationInt = newNotificationWithPayments();
         PhysicalAddressInt receiverAddress = PhysicalAddressInt.builder().address("Via Roma 1").build();
         Mockito.when(analogWorkflowUtils.getPhysicalAddress(notificationInt, 0)).thenReturn(receiverAddress);
-        Mockito.when(paperChannelUtils.getInitialAddressSource(notificationInt.getIun(), 0)).thenReturn(source);
+        Mockito.when(paperChannelUtils.resolveAddressSource(notificationInt.getIun(), 0)).thenReturn(source);
         Mockito.when(paperChannelUtils.buildPrepareSimpleRegisteredLetterEventId(notificationInt, 0))
                 .thenReturn("prepare-simple");
 
@@ -139,7 +139,7 @@ class PaperChannelServiceImplTest {
                 () -> Assertions.assertNull(request.getRelatedRequestId()),
                 () -> Assertions.assertNull(request.getDiscoveredAddress())
         );
-        Mockito.verify(paperChannelUtils).getInitialAddressSource(notificationInt.getIun(), 0);
+        Mockito.verify(paperChannelUtils).resolveAddressSource(notificationInt.getIun(), 0);
         Mockito.verify(paperChannelUtils).addPrepareSimpleRegisteredLetterToTimeline(
                 notificationInt, receiverAddress, 0, "prepare-simple");
         Mockito.verify(attachmentUtils).retrieveAttachments(any(),any(),eq(SendAttachmentMode.AAR_DOCUMENTS),eq(F24ResolutionMode.URL),any(),any());
@@ -181,7 +181,7 @@ class PaperChannelServiceImplTest {
         NotificationInt notificationInt = newNotificationWithPayments();
         PhysicalAddressInt receiverAddress = PhysicalAddressInt.builder().address("Via Roma 1").build();
         Mockito.when(analogWorkflowUtils.getPhysicalAddress(notificationInt, 0)).thenReturn(receiverAddress);
-        Mockito.when(paperChannelUtils.getInitialAddressSource(notificationInt.getIun(), 0))
+        Mockito.when(paperChannelUtils.resolveAddressSource(notificationInt.getIun(), 0))
                 .thenReturn(ReceiverAddressSourceTypeInt.ANPR);
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
@@ -387,7 +387,7 @@ class PaperChannelServiceImplTest {
         Mockito.verify(paperChannelUtils).addSendSimpleRegisteredLetterToTimeline(
                 notificationInt, physicalAddressInt, 0, sendResponse, "NR_SR", "req123",
                 List.of("replacedF24Url"), categorizedAttachmentsResult, source);
-        Mockito.verify(paperChannelUtils, Mockito.never()).getInitialAddressSource(anyString(), anyInt());
+        Mockito.verify(paperChannelUtils, Mockito.never()).resolveAddressSource(anyString(), anyInt());
         Mockito.verify(auditLogEvent).generateSuccess(any(), (Integer) any(), any());
         Mockito.verify(auditLogEvent).log();
         Mockito.verify(auditLogEvent, Mockito.never()).generateFailure(any());

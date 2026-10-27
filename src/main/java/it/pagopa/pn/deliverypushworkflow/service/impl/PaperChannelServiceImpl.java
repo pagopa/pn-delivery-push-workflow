@@ -134,7 +134,7 @@ public class PaperChannelServiceImpl implements PaperChannelService {
             PhysicalAddressInt receiverAddress = analogWorkflowUtils.getPhysicalAddress(notification, recIndex);
 
             // recupero la fonte dell'indirizzo
-            ReceiverAddressSourceTypeInt initialAddressSource = paperChannelUtils.getInitialAddressSource( notification.getIun(), recIndex );
+            ReceiverAddressSourceTypeInt resolvedAddressSource = paperChannelUtils.resolveAddressSource( notification.getIun(), recIndex );
 
             var prepareRequest = PaperChannelPrepareRequest.builder()
                     .notificationInt(notification)
@@ -144,7 +144,7 @@ public class PaperChannelServiceImpl implements PaperChannelService {
                     .analogType(PhysicalAddressInt.ANALOG_TYPE.SIMPLE_REGISTERED_LETTER)
                     .attachments(attachments)
                     .aarWithRadd(aarWithRadd)
-                    .receiverAddressSourceType(initialAddressSource)
+                    .receiverAddressSourceType(resolvedAddressSource)
                     .build();
 
             paperChannelSendClient.prepare(prepareRequest);
