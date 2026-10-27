@@ -170,7 +170,9 @@ public class PaperChannelServiceImpl implements PaperChannelService {
             String relatedEventId = null;
             PhysicalAddressInt receiverAddress = null;
             PhysicalAddressInt discoveredAddress = null;
-            ReceiverAddressSourceTypeInt initialAddressSource = null;
+            // Stabilisco la fonte iniziale dell’indirizzo, verificando se proviene dalla validazione VAS o dal mittente,
+            // e la passo a Paper Channel nella prepare di entrambi i tentativi
+            ReceiverAddressSourceTypeInt resolvedAddressSource = paperChannelUtils.resolveAddressSource(notification.getIun(), recIndex);
             if (sentAttemptMade > 0)
             {
                 // ricostruisco il related corrispondente, tanto ha la forma che gli avevo dato io all'iterazione precedente
@@ -198,7 +200,6 @@ public class PaperChannelServiceImpl implements PaperChannelService {
             {
                 // se sentAttemptMade è 0, il receiver addres è quello fornito dalla PA
                 receiverAddress = analogWorkflowUtils.getPhysicalAddress(notification, recIndex);
-                initialAddressSource =  paperChannelUtils.getInitialAddressSource(notification.getIun(), recIndex);
             }
 
             if (pnDeliveryPushWorkflowConfigs.getInvalidableCategories().contains(PREPARE_ANALOG_DOMICILE.getValue())) {
@@ -216,7 +217,7 @@ public class PaperChannelServiceImpl implements PaperChannelService {
                     .relatedRequestId(relatedEventId)
                     .discoveredAddress(discoveredAddress)
                     .aarWithRadd(aarWithRadd)
-                    .receiverAddressSourceType(initialAddressSource)
+                    .receiverAddressSourceType(resolvedAddressSource)
                     .build();
             paperChannelSendClient.prepare(prepareRequest);
 
