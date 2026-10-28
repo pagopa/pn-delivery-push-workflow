@@ -295,7 +295,27 @@ Parameters:
   DeliveryPushToExternalRegistriesQueueARN: # defined in pn-infra
     Type: String
     Description: 'delivery-push to external-registries queue ARN'
-  
+
+  LegalPaymentsEventQueueName:
+    Type: String
+    Description: 'LegalPaymentsEvent queue name'
+
+  LegalPaymentsEventQueueURL:
+    Type: String
+    Description: 'LegalPaymentsEvent queue URL'
+
+  LegalPaymentsEventQueueARN:
+    Type: String
+    Description: 'LegalPaymentsEvent queue ARN'
+
+  LegalPaymentsEventQueueAlarmARN:
+    Type: String
+    Description: 'LegalPaymentsEvent queue DLQ alarm ARN'
+
+  LegalPaymentsEventQueueAgeAlarmARN:
+    Type: String
+    Description: 'LegalPaymentsEvent queue age alarm ARN'
+
   # Lambda parameters
   NotificationCancellationActionInsertLambdaName:
     Type: String
@@ -545,6 +565,7 @@ Resources:
               - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${DeliveryPushToNotificationReworkUpdaterQueueName}
               - !Ref AnalogToDeliveryPushQueueARN
               - !Ref ResumePostPaymentQueueARN
+              - !Ref LegalPaymentsEventQueueARN
           - Effect: Allow
             Action:
               - 'ssm:GetParameter'
@@ -953,6 +974,7 @@ Resources:
                 Resource:
                   - !Ref ScheduledActionsQueueARN
                   - !Ref AnalogToDeliveryPushQueueARN
+                  - !Ref LegalPaymentsEventQueueARN
 
   PnCoreEventBusActionManagerToActionsQueueRule:
     Type: AWS::Events::Rule
@@ -975,6 +997,40 @@ Resources:
           InputPath: $.detail.body
           DeadLetterConfig:
             Arn: !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:pn-CoreEventBus-DLQ
+
+  LegalPaymentsEventQueueRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Route ActionManager events to LegalPaymentsEvent queue
+      RoleArn: !GetAtt "EventBusEnqueueRole.Arn"
+      EventBusName: !Sub '${ProjectName}-CoreEventBus'
+      EventPattern:
+        detail-type: [ "NoticePaymentsPaidEvent" ]
+        detail:
+            communicationType: "LEGAL"
+      Targets:
+        - Id: !Sub '${ProjectName}-CoreEventBus-LegalPaymentsEvent'
+          Arn: !Ref LegalPaymentsEventQueueARN
+          InputPath: $.detail.body
+          DeadLetterConfig:
+            Arn: !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:pn-CoreEventBus-DLQ
+
+  LegalPaymentsEventQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref LegalPaymentsEventQueueURL
+      PolicyDocument:
+        Statement:
+          - Sid: AllowEventBridgeToSendLegalPaymentsEvent
+            Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sqs:SendMessage
+            Resource: !Ref LegalPaymentsEventQueueARN
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !GetAtt LegalPaymentsEventQueueRule.Arn
 
   ScheduledActionsQueuePolicy:
     Type: AWS::SQS::QueuePolicy
