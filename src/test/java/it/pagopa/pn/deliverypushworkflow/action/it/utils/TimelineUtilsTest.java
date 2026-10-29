@@ -460,10 +460,200 @@ class TimelineUtilsTest {
 
         String timelineEventIdExpected = "SEND_ANALOG_FEEDBACK#IUN_Example_IUN_1234_Test#RECINDEX_0#ATTEMPT_1".replace("#", TimelineEventIdBuilder.DELIMITER);
 
+        SendAnalogFeedbackDetailsInt details =
+                (SendAnalogFeedbackDetailsInt) actual.getDetails();
+
         Assertions.assertAll(
                 () -> Assertions.assertEquals("Example_IUN_1234_Test", actual.getIun()),
                 () -> Assertions.assertEquals(timelineEventIdExpected, actual.getElementId()),
-                () -> Assertions.assertEquals("TEST_PA_ID", actual.getPaId())
+                () -> Assertions.assertEquals("TEST_PA_ID", actual.getPaId()),
+                () -> Assertions.assertEquals(Boolean.FALSE, details.getHasOnSiteInvestigation())
+        );
+    }
+
+    @Test
+    void buildFailureAnalogFeedbackTimelineElementWhenIsFirstAttempt() {
+        NotificationInt notification = buildNotification();
+        int sentAttemptMade = 0;
+        List<AttachmentDetailsInt> attachments = new ArrayList<>();
+        attachments.add(AttachmentDetailsInt.builder().url("key").build());
+
+        SendAnalogDetailsInt sendPaperDetails = SendAnalogDetailsInt.builder().build();
+
+        SendEventInt sendEventInt = SendEventInt.builder()
+                .statusDateTime(Instant.now())
+                .statusCode("KO")
+                .statusDetail("ABCD")
+                .deliveryFailureCause("M1")
+                .build();
+
+        final String sendRequestId = "send_request_id";
+
+        TimelineElementInternal actual = timelineUtils.buildFailureAnalogFeedbackTimelineElement(
+                notification, sentAttemptMade, attachments, sendPaperDetails, sendEventInt, sendRequestId
+        );
+
+        String timelineEventIdExpected = "SEND_ANALOG_FEEDBACK#IUN_Example_IUN_1234_Test#RECINDEX_0#ATTEMPT_0".replace("#", TimelineEventIdBuilder.DELIMITER);
+
+        Assertions.assertAll(
+                () -> Assertions.assertEquals("Example_IUN_1234_Test", actual.getIun()),
+                () -> Assertions.assertEquals(timelineEventIdExpected, actual.getElementId()),
+                () -> Assertions.assertEquals("TEST_PA_ID", actual.getPaId()),
+                () -> Assertions.assertNull(((SendAnalogFeedbackDetailsInt) actual.getDetails()).getHasOnSiteInvestigation())
+        );
+    }
+
+    @Test
+    void buildFailureAnalogFeedbackTimelineElementWhenDiscoveredAddressIsNull() {
+        NotificationInt notification = buildNotification();
+        int sentAttemptMade = 1;
+        List<AttachmentDetailsInt> attachments = new ArrayList<>();
+        attachments.add(AttachmentDetailsInt.builder().url("key").build());
+
+        SendAnalogDetailsInt sendPaperDetails = SendAnalogDetailsInt.builder().build();
+
+        SendEventInt sendEventInt = SendEventInt.builder()
+                .statusDateTime(Instant.now())
+                .statusCode("KO")
+                .statusDetail("ABCD")
+                .deliveryFailureCause("M1")
+                .build();
+
+        final String sendRequestId = "send_request_id";
+
+        TimelineElementInternal actual = timelineUtils.buildFailureAnalogFeedbackTimelineElement(
+                notification, sentAttemptMade, attachments, sendPaperDetails, sendEventInt, sendRequestId
+        );
+
+        String timelineEventIdExpected = "SEND_ANALOG_FEEDBACK#IUN_Example_IUN_1234_Test#RECINDEX_0#ATTEMPT_1".replace("#", TimelineEventIdBuilder.DELIMITER);
+
+        SendAnalogFeedbackDetailsInt details =
+                (SendAnalogFeedbackDetailsInt) actual.getDetails();
+
+        Assertions.assertAll(
+                () -> Assertions.assertEquals("Example_IUN_1234_Test", actual.getIun()),
+                () -> Assertions.assertEquals(timelineEventIdExpected, actual.getElementId()),
+                () -> Assertions.assertEquals("TEST_PA_ID", actual.getPaId()),
+                () -> Assertions.assertNull(details.getNewAddress()),
+                () -> Assertions.assertEquals(1, details.getSentAttemptMade()),
+                () -> Assertions.assertEquals(Boolean.FALSE, details.getHasOnSiteInvestigation())
+        );
+    }
+
+    @Test
+    void buildSuccessAnalogFeedbackTimelineElement() {
+        NotificationInt notification = buildNotification();
+        List<AttachmentDetailsInt> attachments = new ArrayList<>();
+        attachments.add(AttachmentDetailsInt.builder().url("key").build());
+
+        SendAnalogDetailsInt sendPaperDetails = SendAnalogDetailsInt.builder()
+                .sentAttemptMade(1)
+                .build();
+
+        SendEventInt sendEventInt = SendEventInt.builder()
+                .statusDateTime(Instant.now())
+                .statusCode("OK")
+                .statusDetail("ABCD")
+                .build();
+
+        final String sendRequestId = "send_request_id";
+
+        TimelineElementInternal actual = timelineUtils.buildSuccessAnalogFeedbackTimelineElement(
+                notification, attachments, sendPaperDetails, sendEventInt, sendRequestId
+        );
+
+        String timelineEventIdExpected =
+                "SEND_ANALOG_FEEDBACK#IUN_Example_IUN_1234_Test#RECINDEX_0#ATTEMPT_1"
+                        .replace("#", TimelineEventIdBuilder.DELIMITER);
+
+        SendAnalogFeedbackDetailsInt details =
+                (SendAnalogFeedbackDetailsInt) actual.getDetails();
+
+        Assertions.assertAll(
+                () -> Assertions.assertEquals("Example_IUN_1234_Test", actual.getIun()),
+                () -> Assertions.assertEquals(timelineEventIdExpected, actual.getElementId()),
+                () -> Assertions.assertEquals("TEST_PA_ID", actual.getPaId()),
+                () -> Assertions.assertEquals(ResponseStatusInt.OK, details.getResponseStatus()),
+                () -> Assertions.assertEquals(Boolean.FALSE, details.getHasOnSiteInvestigation())
+        );
+    }
+
+    @Test
+    void buildSuccessAnalogFeedbackTimelineElementWhenIsFirstAttempt() {
+        NotificationInt notification = buildNotification();
+        List<AttachmentDetailsInt> attachments = new ArrayList<>();
+        attachments.add(AttachmentDetailsInt.builder().url("key").build());
+
+        SendAnalogDetailsInt sendPaperDetails = SendAnalogDetailsInt.builder()
+                .sentAttemptMade(0)
+                .build();
+
+        SendEventInt sendEventInt = SendEventInt.builder()
+                .statusDateTime(Instant.now())
+                .statusCode("OK")
+                .statusDetail("ABCD")
+                .build();
+
+        final String sendRequestId = "send_request_id";
+
+        TimelineElementInternal actual = timelineUtils.buildSuccessAnalogFeedbackTimelineElement(
+                notification, attachments, sendPaperDetails, sendEventInt, sendRequestId
+        );
+
+        String timelineEventIdExpected =
+                "SEND_ANALOG_FEEDBACK#IUN_Example_IUN_1234_Test#RECINDEX_0#ATTEMPT_0"
+                        .replace("#", TimelineEventIdBuilder.DELIMITER);
+
+        SendAnalogFeedbackDetailsInt details =
+                (SendAnalogFeedbackDetailsInt) actual.getDetails();
+
+        Assertions.assertAll(
+                () -> Assertions.assertEquals("Example_IUN_1234_Test", actual.getIun()),
+                () -> Assertions.assertEquals(timelineEventIdExpected, actual.getElementId()),
+                () -> Assertions.assertEquals("TEST_PA_ID", actual.getPaId()),
+                () -> Assertions.assertEquals(ResponseStatusInt.OK, details.getResponseStatus()),
+                () -> Assertions.assertEquals(0, details.getSentAttemptMade()),
+                () -> Assertions.assertNull(details.getHasOnSiteInvestigation())
+        );
+    }
+
+    @Test
+    void buildSuccessAnalogFeedbackTimelineElementWhenDiscoveredAddressIsNull() {
+        NotificationInt notification = buildNotification();
+        List<AttachmentDetailsInt> attachments = new ArrayList<>();
+        attachments.add(AttachmentDetailsInt.builder().url("key").build());
+
+        SendAnalogDetailsInt sendPaperDetails = SendAnalogDetailsInt.builder()
+                .sentAttemptMade(1)
+                .build();
+
+        SendEventInt sendEventInt = SendEventInt.builder()
+                .statusDateTime(Instant.now())
+                .statusCode("OK")
+                .statusDetail("ABCD")
+                .build();
+
+        final String sendRequestId = "send_request_id";
+
+        TimelineElementInternal actual = timelineUtils.buildSuccessAnalogFeedbackTimelineElement(
+                notification, attachments, sendPaperDetails, sendEventInt, sendRequestId
+        );
+
+        String timelineEventIdExpected =
+                "SEND_ANALOG_FEEDBACK#IUN_Example_IUN_1234_Test#RECINDEX_0#ATTEMPT_1"
+                        .replace("#", TimelineEventIdBuilder.DELIMITER);
+
+        SendAnalogFeedbackDetailsInt details =
+                (SendAnalogFeedbackDetailsInt) actual.getDetails();
+
+        Assertions.assertAll(
+                () -> Assertions.assertEquals("Example_IUN_1234_Test", actual.getIun()),
+                () -> Assertions.assertEquals(timelineEventIdExpected, actual.getElementId()),
+                () -> Assertions.assertEquals("TEST_PA_ID", actual.getPaId()),
+                () -> Assertions.assertEquals(ResponseStatusInt.OK, details.getResponseStatus()),
+                () -> Assertions.assertNull(details.getNewAddress()),
+                () -> Assertions.assertEquals(1, details.getSentAttemptMade()),
+                () -> Assertions.assertEquals(Boolean.FALSE, details.getHasOnSiteInvestigation())
         );
     }
 
