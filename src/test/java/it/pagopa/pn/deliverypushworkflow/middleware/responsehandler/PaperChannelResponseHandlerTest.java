@@ -8,10 +8,14 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.CategorizedAttachm
 import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.PrepareEventInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.ResultFilterInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.SendEventInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ReceiverAddressSourceTypeInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.mockito.Mockito;
 
 import java.time.Instant;
@@ -37,8 +41,10 @@ class PaperChannelResponseHandlerTest {
         handler = new PaperChannelResponseHandler(analogWorkflowPaperChannelResponseHandler, timelineUtils);
     }
 
-    @Test
-    void prepareUpdateTest_OK() {
+    @ParameterizedTest
+    @NullSource
+    @EnumSource(ReceiverAddressSourceTypeEnum.class)
+    void prepareUpdateTest_OK(ReceiverAddressSourceTypeEnum source) {
 
         Instant instant = Instant.parse("2022-08-30T16:04:13.913859900Z");
 
@@ -47,6 +53,7 @@ class PaperChannelResponseHandlerTest {
         prepareEvent.setStatusDateTime(instant);
         prepareEvent.setRequestId("iun_event_idx_0");
         prepareEvent.setStatusDetail("ok");
+        prepareEvent.setReceiverAddressSourceType(source);
         prepareEvent.setReceiverAddress(new AnalogAddress());
         prepareEvent.setReplacedF24AttachmentUrls(List.of("replacedF24Urls"));
         prepareEvent.setCategorizedAttachments(new CategorizedAttachmentsResult());
@@ -72,6 +79,8 @@ class PaperChannelResponseHandlerTest {
                 .statusCode("OK")
                 .statusDateTime(instant)
                 .statusDetail("ok")
+                .receiverAddressSourceType(source == null ? null
+                        : ReceiverAddressSourceTypeInt.valueOf(source.getValue()))
                 .replacedF24AttachmentUrls(List.of("replacedF24Urls"))
                 .categorizedAttachmentsResult(CategorizedAttachmentsResultInt.builder()
                         .acceptedAttachments(List.of(ResultFilterInt.builder()

@@ -31,6 +31,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -261,18 +263,23 @@ class TimelineUtilsTest {
         );
     }
 
-    @Test
-    void buildSendAnalogNotificationTimelineElement() {
+    @ParameterizedTest
+    @CsvSource({
+            "0, MITTENTE,",
+            "1, INDAGINE, true",
+            "1, ANPR, false"
+    })
+    void buildSendAnalogNotificationTimelineElement(
+            int sentAttemptMade, ReceiverAddressSourceTypeInt source, Boolean investigation) {
         PhysicalAddressInt address = buildPhysicalAddressInt();
         Integer recIndex = 1;
         NotificationInt notification = buildNotification();
         String relatedRequestId = null;
-        int sentAttemptMade = 1;
         SendResponse sendResponse = new SendResponse()
                 .amount(10);
 
         String productType = "RN_AR";
-        String timelineEventIdExpected = "SEND_ANALOG_DOMICILE#IUN_Example_IUN_1234_Test#RECINDEX_1#ATTEMPT_1".replace("#", TimelineEventIdBuilder.DELIMITER);
+        String timelineEventIdExpected = ("SEND_ANALOG_DOMICILE#IUN_Example_IUN_1234_Test#RECINDEX_1#ATTEMPT_" + sentAttemptMade).replace("#", TimelineEventIdBuilder.DELIMITER);
 
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = CategorizedAttachmentsResultInt.builder().acceptedAttachments(new ArrayList<>()).discardedAttachments(new ArrayList<>()).build();
 
@@ -282,16 +289,30 @@ class TimelineUtilsTest {
                 .relatedRequestId(relatedRequestId)
                 .productType(productType)
                 .prepareRequestId("prepare_request_id")
+                .receiverAddressSourceType(source)
+                .hasOnSiteInvestigation(investigation)
                 .build();
 
         TimelineElementInternal actual = timelineUtils.buildSendAnalogNotificationTimelineElement(
                 address, recIndex, notification, analogDtoInfo, List.of("replacedF24AttachmentUrls"), categorizedAttachmentsResult, null
         );
 
+        SendAnalogDetailsInt details = Assertions.assertInstanceOf(SendAnalogDetailsInt.class, actual.getDetails());
         Assertions.assertAll(
                 () -> Assertions.assertEquals("Example_IUN_1234_Test", actual.getIun()),
                 () -> Assertions.assertEquals(timelineEventIdExpected, actual.getElementId()),
-                () -> Assertions.assertEquals("TEST_PA_ID", actual.getPaId())
+                () -> Assertions.assertEquals("TEST_PA_ID", actual.getPaId()),
+                () -> Assertions.assertEquals(TimelineElementCategoryInt.SEND_ANALOG_DOMICILE, actual.getCategory()),
+                () -> Assertions.assertEquals(source, details.getReceiverAddressSourceType()),
+                () -> Assertions.assertEquals(investigation, details.getHasOnSiteInvestigation()),
+                () -> Assertions.assertEquals(sentAttemptMade, details.getSentAttemptMade()),
+                () -> Assertions.assertEquals(recIndex, details.getRecIndex()),
+                () -> Assertions.assertEquals(address, details.getPhysicalAddress()),
+                () -> Assertions.assertEquals(10, details.getAnalogCost()),
+                () -> Assertions.assertEquals(productType, details.getProductType()),
+                () -> Assertions.assertEquals("prepare_request_id", details.getPrepareRequestId()),
+                () -> Assertions.assertEquals(List.of("replacedF24AttachmentUrls"), details.getF24Attachments()),
+                () -> Assertions.assertEquals(categorizedAttachmentsResult, details.getCategorizedAttachmentsResult())
         );
     }
 

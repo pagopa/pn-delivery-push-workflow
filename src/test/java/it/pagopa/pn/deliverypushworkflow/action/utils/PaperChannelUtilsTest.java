@@ -4,13 +4,22 @@ import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.PublicRegistryValidationResponseDetailsInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ReceiverAddressSourceTypeInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt;
 import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 class PaperChannelUtilsTest {
@@ -30,6 +39,35 @@ class PaperChannelUtilsTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         paperChannelUtils = new PaperChannelUtils(timelineService, timelineUtils, pnDeliveryPushWorkflowConfigs);
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @EnumSource(value = ReceiverAddressSourceTypeInt.class, names = {"ANPR", "REGISTRO_IMPRESE"})
+    void resolveAddressSourceUsesRegistryOrMittenteWhenValidationIsAbsent(
+            ReceiverAddressSourceTypeInt registry) {
+        String iun = "IUN-1";
+        int recIndex = 1;
+        Optional<TimelineElementInternal> validationResponse = registry == null
+                ? Optional.empty()
+                : Optional.of(TimelineElementInternal.builder()
+                        .category(TimelineElementCategoryInt.PUBLIC_REGISTRY_VALIDATION_RESPONSE)
+                        .details(PublicRegistryValidationResponseDetailsInt.builder()
+                                .recIndex(recIndex)
+                                .registry(registry.getValue())
+                                .build())
+                        .build());
+        when(timelineService.getTimelineElementForSpecificRecipient(
+                iun, recIndex, TimelineElementCategoryInt.PUBLIC_REGISTRY_VALIDATION_RESPONSE))
+                .thenReturn(validationResponse);
+
+        ReceiverAddressSourceTypeInt actual = paperChannelUtils.resolveAddressSource(iun, recIndex);
+
+        assertEquals(registry == null ? ReceiverAddressSourceTypeInt.MITTENTE : registry, actual);
+        verify(timelineService).getTimelineElementForSpecificRecipient(
+                iun, recIndex, TimelineElementCategoryInt.PUBLIC_REGISTRY_VALIDATION_RESPONSE);
+        verifyNoMoreInteractions(timelineService);
+        verifyNoInteractions(timelineUtils);
     }
 
     @Test
