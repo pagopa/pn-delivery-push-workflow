@@ -3,6 +3,7 @@ package it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.pap
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ReceiverAddressSourceTypeInt;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,4 +25,5 @@ public class PaperChannelPrepareRequest {
     private final String relatedRequestId;
     private final PhysicalAddressInt discoveredAddress;
     private final Boolean aarWithRadd;
+    private final ReceiverAddressSourceTypeInt receiverAddressSourceType;
 }

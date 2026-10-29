@@ -20,6 +20,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -77,6 +80,7 @@ class AnalogWorkflowPaperChannelResponseHandlerTest {
                 .statusDateTime(Instant.now())
                 .receiverAddress(PhysicalAddressInt.builder().address("via casa").build())
                 .requestId("IUN-01_abcd")
+                .receiverAddressSourceType(ReceiverAddressSourceTypeInt.REGISTRO_IMPRESE)
                 .build();
 
         NotificationInt notificationInt = NotificationInt.builder().iun("IUN-01").build();
@@ -97,6 +101,11 @@ class AnalogWorkflowPaperChannelResponseHandlerTest {
         // WHEN
         Assertions.assertDoesNotThrow(() -> analogWorkflowPaperChannelResponseHandler.paperChannelPrepareResponseHandler(prepareEventInt));
 
+        Mockito.verify(paperChannelService).sendAnalogNotification(
+                notificationInt, 0, 0, prepareEventInt.getRequestId(),
+                prepareEventInt.getReceiverAddress(), prepareEventInt.getProductType(),
+                prepareEventInt.getReplacedF24AttachmentUrls(), prepareEventInt.getCategorizedAttachmentsResult(),
+                ReceiverAddressSourceTypeInt.REGISTRO_IMPRESE);
         Mockito.verify( auditLogEvent).generateSuccess(Mockito.anyString());
         Mockito.verify( auditLogEvent).log();
         Mockito.verify( auditLogEvent, Mockito.never()).generateFailure(Mockito.any());
@@ -126,7 +135,7 @@ class AnalogWorkflowPaperChannelResponseHandlerTest {
         Mockito.when( auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_PD_PREPARE_RECEIVE), Mockito.anyString(), Mockito.any(), Mockito.any())).thenReturn(auditLogEvent);
         Mockito.when(auditLogEvent.generateWarning(Mockito.anyString())).thenReturn(auditLogEvent);
 
-        Mockito.when(paperChannelService.sendAnalogNotification(Mockito.any(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyString(), Mockito.any(), Mockito.anyString(), Mockito.isNull(), Mockito.isNull())).thenThrow(new PnPaperChannelChangedCostException());
+        Mockito.when(paperChannelService.sendAnalogNotification(Mockito.any(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyString(), Mockito.any(), Mockito.anyString(), Mockito.isNull(), Mockito.isNull(), Mockito.isNull())).thenThrow(new PnPaperChannelChangedCostException());
 
         Mockito.when(notificationService.getNotificationByIun(Mockito.anyString())).thenReturn(notificationInt);
         Mockito.when(paperChannelUtils.getPaperChannelNotificationTimelineElement(Mockito.anyString(), Mockito.anyString())).thenReturn(timelineElementInternal);
@@ -151,6 +160,7 @@ class AnalogWorkflowPaperChannelResponseHandlerTest {
                 .receiverAddress(PhysicalAddressInt.builder().address("via casa").build())
                 .productType("AR")
                 .requestId("IUN-01_abcd")
+                .receiverAddressSourceType(ReceiverAddressSourceTypeInt.ANPR)
                 .build();
 
         NotificationInt notificationInt = NotificationInt.builder().iun("IUN-01").build();
@@ -163,7 +173,7 @@ class AnalogWorkflowPaperChannelResponseHandlerTest {
         Mockito.when( auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_PD_PREPARE_RECEIVE), Mockito.anyString(), Mockito.any(), Mockito.any())).thenReturn(auditLogEvent);
         Mockito.when(auditLogEvent.generateWarning(Mockito.anyString())).thenReturn(auditLogEvent);
 
-        Mockito.when(paperChannelService.sendSimpleRegisteredLetter(Mockito.any(), Mockito.anyInt(), Mockito.anyString(), Mockito.any(), Mockito.anyString(), Mockito.isNull(), Mockito.isNull())).thenThrow(new PnPaperChannelChangedCostException());
+        Mockito.when(paperChannelService.sendSimpleRegisteredLetter(Mockito.any(), Mockito.anyInt(), Mockito.anyString(), Mockito.any(), Mockito.anyString(), Mockito.isNull(), Mockito.isNull(), Mockito.eq(ReceiverAddressSourceTypeInt.ANPR))).thenThrow(new PnPaperChannelChangedCostException());
 
         Mockito.when(notificationService.getNotificationByIun(Mockito.anyString())).thenReturn(notificationInt);
         Mockito.when(paperChannelUtils.getPaperChannelNotificationTimelineElement(Mockito.anyString(), Mockito.anyString())).thenReturn(timelineElementInternal);
@@ -171,6 +181,7 @@ class AnalogWorkflowPaperChannelResponseHandlerTest {
         // WHEN
         Assertions.assertDoesNotThrow(() -> analogWorkflowPaperChannelResponseHandler.paperChannelPrepareResponseHandler(prepareEventInt));
 
+        Mockito.verify(paperChannelService).prepareAnalogNotificationForSimpleRegisteredLetter(notificationInt, 0);
         Mockito.verify( auditLogEvent).generateWarning(Mockito.anyString());
         Mockito.verify( auditLogEvent).log();
         Mockito.verify( auditLogEvent, Mockito.never()).generateFailure(Mockito.any());
@@ -214,14 +225,19 @@ class AnalogWorkflowPaperChannelResponseHandlerTest {
     }
 
     @ExtendWith(MockitoExtension.class)
-    @Test
-    void paperChannelPrepareResponseHandlerWithF24replacedUrlSimpleRegisteredLetter() {
+    @ParameterizedTest
+    @NullSource
+    @EnumSource(value = ReceiverAddressSourceTypeInt.class, names = {"MITTENTE", "ANPR", "REGISTRO_IMPRESE"})
+    void paperChannelPrepareResponseHandlerWithF24replacedUrlSimpleRegisteredLetter(
+            ReceiverAddressSourceTypeInt source) {
         // GIVEN
         PrepareEventInt prepareEventInt = PrepareEventInt.builder()
                 .iun("IUN-01")
                 .statusCode(StatusCodeEnum.OK.getValue())
                 .statusDateTime(Instant.now())
                 .replacedF24AttachmentUrls(List.of("replacedF24AttachmentUrls"))
+                .receiverAddressSourceType(source)
+                .productType("RS")
                 .receiverAddress(PhysicalAddressInt.builder().address("via casa").build())
                 .requestId("IUN-01_abcd")
                 .build();
@@ -244,6 +260,12 @@ class AnalogWorkflowPaperChannelResponseHandlerTest {
         // WHEN
         Assertions.assertDoesNotThrow(() -> analogWorkflowPaperChannelResponseHandler.paperChannelPrepareResponseHandler(prepareEventInt));
 
+        Mockito.verify(paperChannelService).sendSimpleRegisteredLetter(
+                notificationInt, 0, prepareEventInt.getRequestId(), prepareEventInt.getReceiverAddress(),
+                prepareEventInt.getProductType(), prepareEventInt.getReplacedF24AttachmentUrls(),
+                prepareEventInt.getCategorizedAttachmentsResult(), source);
+        Mockito.verify(paperChannelService, Mockito.never())
+                .prepareAnalogNotificationForSimpleRegisteredLetter(Mockito.any(), Mockito.anyInt());
         Mockito.verify( auditLogEvent).generateSuccess(Mockito.anyString());
         Mockito.verify( auditLogEvent).log();
         Mockito.verify( auditLogEvent, Mockito.never()).generateFailure(Mockito.any());

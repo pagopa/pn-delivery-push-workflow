@@ -256,7 +256,7 @@ public class TimelineUtils {
     public TimelineElementInternal buildSendSimpleRegisteredLetterTimelineElement(Integer recIndex, NotificationInt notification, PhysicalAddressInt address,
                                                                                   SendResponse sendResponse, String productType, String prepareRequestId,
                                                                                   List<String> replacedF24AttachmentUrls,
-                                                                                  CategorizedAttachmentsResultInt categorizedAttachmentsResult) {
+                                                                                  CategorizedAttachmentsResultInt categorizedAttachmentsResult, ReceiverAddressSourceTypeInt receiverAddressSourceType) {
         log.debug("buildSendSimpleRegisteredLetterTimelineElement - IUN={} and id={}", notification.getIun(), recIndex);
 
         String elementId = TimelineEventId.SEND_SIMPLE_REGISTERED_LETTER.buildEventId(
@@ -276,6 +276,7 @@ public class TimelineUtils {
                 .prepareRequestId(prepareRequestId)
                 .f24Attachments(replacedF24AttachmentUrls)
                 .categorizedAttachmentsResult(categorizedAttachmentsResult)
+                .receiverAddressSourceType(receiverAddressSourceType)
                 .vat(notification.getVat())
                 .build();
 
@@ -442,6 +443,8 @@ public class TimelineUtils {
                 .f24Attachments(replacedF24AttachmentUrls)
                 .categorizedAttachmentsResult(categorizedAttachmentsResult)
                 .prepareRequestId(analogDtoInfo.getPrepareRequestId())
+                .hasOnSiteInvestigation(analogDtoInfo.getHasOnSiteInvestigation())
+                .receiverAddressSourceType(analogDtoInfo.getReceiverAddressSourceType())
                 .vat(notification.getVat())
                 .build();
 
@@ -659,6 +662,8 @@ public class TimelineUtils {
                 .sentAttemptMade(sendPaperDetails.getSentAttemptMade())
                 .serviceLevel(sendPaperDetails.getServiceLevel())
                 .newAddress(sendEventInt.getDiscoveredAddress())
+                .hasOnSiteInvestigation(hasDiscoveredAddress(sendEventInt.getDiscoveredAddress(),
+                        sendPaperDetails.getSentAttemptMade()))
                 .deliveryDetailCode(sendEventInt.getStatusDetail())
                 .notificationDate(sendEventInt.getStatusDateTime())
                 .deliveryFailureCause(sendEventInt.getDeliveryFailureCause())
@@ -674,6 +679,11 @@ public class TimelineUtils {
                 .legalFactsIds(legalFactsListEntryIds);
 
         return buildTimeline(notification, TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK, elementId, details, timelineBuilder);
+    }
+
+    private Boolean hasDiscoveredAddress(PhysicalAddressInt discoveredAddress,
+                                         int sentAttemptMade) {
+        return sentAttemptMade > 0 ? discoveredAddress != null : null;
     }
 
     private List<LegalFactsIdInt> getLegalFactsIdList(List<AttachmentDetailsInt> attachments) {
@@ -709,6 +719,8 @@ public class TimelineUtils {
                 .sentAttemptMade(sentAttemptMade)
                 .serviceLevel(sendPaperDetails.getServiceLevel())
                 .newAddress(sendEventInt.getDiscoveredAddress())
+                .hasOnSiteInvestigation(hasDiscoveredAddress(sendEventInt.getDiscoveredAddress(),
+                        sentAttemptMade))
                 .deliveryFailureCause(sendEventInt.getDeliveryFailureCause())
                 .deliveryDetailCode(sendEventInt.getStatusDetail())
                 .notificationDate(sendEventInt.getStatusDateTime())

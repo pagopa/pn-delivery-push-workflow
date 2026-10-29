@@ -9,8 +9,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.CategorizedAttachm
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.EventId;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventId;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SendAnalogDetailsInt;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SimpleRegisteredLetterDetailsInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.*;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.SendResponse;
 import it.pagopa.pn.deliverypushworkflow.service.TimelineService;
 import lombok.extern.slf4j.Slf4j;
@@ -52,6 +51,34 @@ public class PaperChannelUtils {
         );
     }
 
+    /**
+     * Determina la fonte dell'indirizzo della validazione VAS,
+     * se presente; altrimenti restituisce MITTENTE.
+     */
+    public ReceiverAddressSourceTypeInt resolveAddressSource(String iun, int recIndex) {
+        Optional<TimelineElementInternal> addressValidationEvent = findPublicRegistryValidationEvent(iun, recIndex);
+
+        ReceiverAddressSourceTypeInt resolvedAddressSource;
+        if (addressValidationEvent.isPresent()) {
+            PublicRegistryValidationResponseDetailsInt details = (PublicRegistryValidationResponseDetailsInt) addressValidationEvent.get().getDetails();
+            resolvedAddressSource = ReceiverAddressSourceTypeInt.valueOf(details.getRegistry());
+        } else {
+            resolvedAddressSource = ReceiverAddressSourceTypeInt.MITTENTE;
+        }
+        log.debug("Receiver address source for iun {} and recIndex {}: {}", iun, recIndex, resolvedAddressSource);
+        return resolvedAddressSource;
+    }
+
+    /**
+     * Verifica la presenza dell'elemento di timeline PUBLIC_REGISTRY_VALIDATION_RESPONSE
+     */
+    private Optional<TimelineElementInternal> findPublicRegistryValidationEvent(String iun, int recIndex) {
+        return timelineService.getTimelineElementForSpecificRecipient(
+                        iun,
+                        recIndex,
+                        TimelineElementCategoryInt.PUBLIC_REGISTRY_VALIDATION_RESPONSE
+                );
+    }
 
     public String buildPrepareAnalogDomicileEventId(NotificationInt notification, Integer recIndex, int sentAttemptMade) {
         return TimelineEventId.PREPARE_ANALOG_DOMICILE.buildEventId(
@@ -96,9 +123,9 @@ public class PaperChannelUtils {
 
     public String addSendSimpleRegisteredLetterToTimeline(NotificationInt notification, PhysicalAddressInt physicalAddress, Integer recIndex,
                                                           SendResponse sendResponse, String productType, String prepareRequestId,
-                                                          List<String> replacedF24AttachmentUrls, CategorizedAttachmentsResultInt categorizedAttachmentsResult) {
+                                                          List<String> replacedF24AttachmentUrls, CategorizedAttachmentsResultInt categorizedAttachmentsResult, ReceiverAddressSourceTypeInt receiverAddressSourceType) {
         TimelineElementInternal timelineElementInternal = timelineUtils.buildSendSimpleRegisteredLetterTimelineElement(
-                recIndex, notification, physicalAddress, sendResponse, productType, prepareRequestId, replacedF24AttachmentUrls, categorizedAttachmentsResult);
+                recIndex, notification, physicalAddress, sendResponse, productType, prepareRequestId, replacedF24AttachmentUrls, categorizedAttachmentsResult, receiverAddressSourceType);
         addTimelineElement(timelineElementInternal,
                 notification
         );
