@@ -118,7 +118,7 @@ Resources:
     Properties:
       TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/sqs-queue.yaml"
       Parameters:
-        QueueName: !Sub '${ProjectName}-legal_payments_event_queue'
+        QueueName: !Sub '${ProjectName}-legal-payments-event'
         AlarmSNSTopicName: !Ref AlarmSNSTopicName
         VisibilityTimeout: 60
         MaxReceiveCount: 10
