@@ -148,7 +148,16 @@ public class AnalogWorkflowPaperChannelResponseHandler {
             log.info("paperChannelPrepareResponseHandler prepare response is for simple registered letter, now registered letter can be sent iun={} requestId={} statusCode={} statusDesc={} statusDate={}", response.getIun(), response.getRequestId(), response.getStatusCode(), response.getStatusDetail(), response.getStatusDateTime());
 
             try {
-                String timelineId = this.paperChannelService.sendSimpleRegisteredLetter(notification, recIndex, requestId, receiverAddress, productType, replacedF24AttachmentUrls, categorizedAttachmentsResult);
+                String timelineId = this.paperChannelService.sendSimpleRegisteredLetter(
+                        notification,
+                        recIndex,
+                        requestId,
+                        receiverAddress,
+                        productType,
+                        replacedF24AttachmentUrls,
+                        categorizedAttachmentsResult,
+                        response.getReceiverAddressSourceType()
+                );
                 String auditlogmessage = timelineId==null?"nothing send":"generated timelineId="+timelineId;
                 auditLogEvent.generateSuccess(auditlogmessage).log();
             } catch (PnPaperChannelChangedCostException e) {

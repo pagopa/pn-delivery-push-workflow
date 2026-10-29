@@ -133,6 +133,9 @@ public class PaperChannelServiceImpl implements PaperChannelService {
             // nel caso della simple registgered, l'indirizzo è sempre quello fornito dalla pa
             PhysicalAddressInt receiverAddress = analogWorkflowUtils.getPhysicalAddress(notification, recIndex);
 
+            // recupero la fonte dell'indirizzo
+            ReceiverAddressSourceTypeInt resolvedAddressSource = paperChannelUtils.resolveAddressSource( notification.getIun(), recIndex );
+
             var prepareRequest = PaperChannelPrepareRequest.builder()
                     .notificationInt(notification)
                     .recipientInt(notificationUtils.getRecipientFromIndex(notification, recIndex))
@@ -141,6 +144,7 @@ public class PaperChannelServiceImpl implements PaperChannelService {
                     .analogType(PhysicalAddressInt.ANALOG_TYPE.SIMPLE_REGISTERED_LETTER)
                     .attachments(attachments)
                     .aarWithRadd(aarWithRadd)
+                    .receiverAddressSourceType(resolvedAddressSource)
                     .build();
 
             paperChannelSendClient.prepare(prepareRequest);
@@ -272,7 +276,7 @@ public class PaperChannelServiceImpl implements PaperChannelService {
     @Override
     public String sendSimpleRegisteredLetter(NotificationInt notification, Integer recIndex, String prepareRequestId, PhysicalAddressInt receiverAddress,
                                              String productType, List<String> replacedF24AttachmentUrls,
-                                             CategorizedAttachmentsResultInt categorizedAttachmentsResult) {
+                                             CategorizedAttachmentsResultInt categorizedAttachmentsResult,ReceiverAddressSourceTypeInt receiverAddressSourceType) {
         log.info("Registered Letter check if send to paperChannel - iun={} id={}", notification.getIun(), recIndex);
         if (timelineUtils.checkIsNotificationCancellationRequested(notification.getIun())){
             log.warn("sendSimpleRegisteredLetter blocked for cancelled iun {}", notification.getIun());
@@ -301,7 +305,7 @@ public class PaperChannelServiceImpl implements PaperChannelService {
                         new PaperChannelSendRequest(notification, notificationUtils.getRecipientFromIndex(notification, recIndex),
                                 receiverAddress, prepareRequestId, productType, attachments, paperChannelUtils.getSenderAddress(), paperChannelUtils.getSenderAddress()));
 
-                timelineId = paperChannelUtils.addSendSimpleRegisteredLetterToTimeline(notification, receiverAddress, recIndex, sendResponse, productType, prepareRequestId, replacedF24AttachmentUrls, categorizedAttachmentsResult);
+                timelineId = paperChannelUtils.addSendSimpleRegisteredLetterToTimeline(notification, receiverAddress, recIndex, sendResponse, productType, prepareRequestId, replacedF24AttachmentUrls, categorizedAttachmentsResult, receiverAddressSourceType);
                 log.info("Registered Letter sent to paperChannel - iun={} id={}", notification.getIun(), recIndex);
                 auditLogEvent.generateSuccess("send success cost={} send timelineId={}", sendResponse.getAmount(), timelineId).log();
 

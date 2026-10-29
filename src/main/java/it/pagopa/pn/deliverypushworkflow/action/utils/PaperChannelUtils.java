@@ -123,9 +123,9 @@ public class PaperChannelUtils {
 
     public String addSendSimpleRegisteredLetterToTimeline(NotificationInt notification, PhysicalAddressInt physicalAddress, Integer recIndex,
                                                           SendResponse sendResponse, String productType, String prepareRequestId,
-                                                          List<String> replacedF24AttachmentUrls, CategorizedAttachmentsResultInt categorizedAttachmentsResult) {
+                                                          List<String> replacedF24AttachmentUrls, CategorizedAttachmentsResultInt categorizedAttachmentsResult, ReceiverAddressSourceTypeInt receiverAddressSourceType) {
         TimelineElementInternal timelineElementInternal = timelineUtils.buildSendSimpleRegisteredLetterTimelineElement(
-                recIndex, notification, physicalAddress, sendResponse, productType, prepareRequestId, replacedF24AttachmentUrls, categorizedAttachmentsResult);
+                recIndex, notification, physicalAddress, sendResponse, productType, prepareRequestId, replacedF24AttachmentUrls, categorizedAttachmentsResult, receiverAddressSourceType);
         addTimelineElement(timelineElementInternal,
                 notification
         );

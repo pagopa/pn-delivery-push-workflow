@@ -3,6 +3,9 @@ package it.pagopa.pn.deliverypushworkflow.action.utils;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.CategorizedAttachmentsResultInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.SimpleRegisteredLetterDetailsInt;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.SendResponse;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.PublicRegistryValidationResponseDetailsInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ReceiverAddressSourceTypeInt;
@@ -17,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.Optional;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -68,6 +72,41 @@ class PaperChannelUtilsTest {
                 iun, recIndex, TimelineElementCategoryInt.PUBLIC_REGISTRY_VALIDATION_RESPONSE);
         verifyNoMoreInteractions(timelineService);
         verifyNoInteractions(timelineUtils);
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @EnumSource(value = ReceiverAddressSourceTypeInt.class, names = {"MITTENTE", "ANPR", "REGISTRO_IMPRESE"})
+    void addSendSimpleRegisteredLetterToTimelinePropagatesSourceAndSavesElement(
+            ReceiverAddressSourceTypeInt source) {
+        NotificationInt notification = NotificationInt.builder().iun("IUN-1").build();
+        PhysicalAddressInt address = PhysicalAddressInt.builder().address("Via Roma 1").build();
+        SendResponse response = new SendResponse().amount(125);
+        List<String> replacedAttachments = List.of("f24");
+        CategorizedAttachmentsResultInt attachments = CategorizedAttachmentsResultInt.builder()
+                .acceptedAttachments(List.of()).discardedAttachments(List.of()).build();
+        TimelineElementInternal element = TimelineElementInternal.builder()
+                .iun(notification.getIun())
+                .elementId("send-simple")
+                .category(TimelineElementCategoryInt.SEND_SIMPLE_REGISTERED_LETTER)
+                .details(SimpleRegisteredLetterDetailsInt.builder()
+                        .recIndex(1).physicalAddress(address).receiverAddressSourceType(source).build())
+                .build();
+        when(timelineUtils.buildSendSimpleRegisteredLetterTimelineElement(
+                1, notification, address, response, "RS", "prepare-simple",
+                replacedAttachments, attachments, source)).thenReturn(element);
+
+        String timelineId = paperChannelUtils.addSendSimpleRegisteredLetterToTimeline(
+                notification, address, 1, response, "RS", "prepare-simple",
+                replacedAttachments, attachments, source);
+
+        assertEquals("send-simple", timelineId);
+        var order = inOrder(timelineUtils, timelineService);
+        order.verify(timelineUtils).buildSendSimpleRegisteredLetterTimelineElement(
+                1, notification, address, response, "RS", "prepare-simple",
+                replacedAttachments, attachments, source);
+        order.verify(timelineService).addTimelineElement(same(element), same(notification));
+        verifyNoMoreInteractions(timelineUtils, timelineService);
     }
 
     @Test

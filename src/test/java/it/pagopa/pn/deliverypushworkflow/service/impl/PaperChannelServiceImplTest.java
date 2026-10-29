@@ -39,6 +39,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -99,10 +100,17 @@ class PaperChannelServiceImplTest {
     }
 
     @ExtendWith(MockitoExtension.class)
-    @Test
-    void prepareAnalogNotificationForSimpleRegisteredLetterWithAarAndDocument() {
+    @ParameterizedTest
+    @EnumSource(value = ReceiverAddressSourceTypeInt.class, names = {"MITTENTE", "ANPR", "REGISTRO_IMPRESE"})
+    void prepareAnalogNotificationForSimpleRegisteredLetterWithAarAndDocument(
+            ReceiverAddressSourceTypeInt source) {
         //GIVEN
         NotificationInt notificationInt = newNotificationWithPayments();
+        PhysicalAddressInt receiverAddress = PhysicalAddressInt.builder().address("Via Roma 1").build();
+        Mockito.when(analogWorkflowUtils.getPhysicalAddress(notificationInt, 0)).thenReturn(receiverAddress);
+        Mockito.when(paperChannelUtils.resolveAddressSource(notificationInt.getIun(), 0)).thenReturn(source);
+        Mockito.when(paperChannelUtils.buildPrepareSimpleRegisteredLetterEventId(notificationInt, 0))
+                .thenReturn("prepare-simple");
 
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(false);
 
@@ -117,7 +125,23 @@ class PaperChannelServiceImplTest {
         paperChannelService.prepareAnalogNotificationForSimpleRegisteredLetter(notificationInt, 0);
 
         // THEN
-        Mockito.verify(paperChannelSendClient).prepare(any());
+        ArgumentCaptor<PaperChannelPrepareRequest> captor =
+                ArgumentCaptor.forClass(PaperChannelPrepareRequest.class);
+        Mockito.verify(paperChannelSendClient).prepare(captor.capture());
+        PaperChannelPrepareRequest request = captor.getValue();
+        Assertions.assertAll(
+                () -> Assertions.assertEquals(source, request.getReceiverAddressSourceType()),
+                () -> Assertions.assertEquals("prepare-simple", request.getRequestId()),
+                () -> Assertions.assertSame(receiverAddress, request.getPaAddress()),
+                () -> Assertions.assertSame(notificationInt, request.getNotificationInt()),
+                () -> Assertions.assertSame(notificationInt.getRecipients().getFirst(), request.getRecipientInt()),
+                () -> Assertions.assertEquals(PhysicalAddressInt.ANALOG_TYPE.SIMPLE_REGISTERED_LETTER, request.getAnalogType()),
+                () -> Assertions.assertNull(request.getRelatedRequestId()),
+                () -> Assertions.assertNull(request.getDiscoveredAddress())
+        );
+        Mockito.verify(paperChannelUtils).resolveAddressSource(notificationInt.getIun(), 0);
+        Mockito.verify(paperChannelUtils).addPrepareSimpleRegisteredLetterToTimeline(
+                notificationInt, receiverAddress, 0, "prepare-simple");
         Mockito.verify(attachmentUtils).retrieveAttachments(any(),any(),eq(SendAttachmentMode.AAR_DOCUMENTS),eq(F24ResolutionMode.URL),any(),any());
         Mockito.verify(auditLogEvent).generateSuccess(Mockito.anyString(), any());
         Mockito.verify(auditLogEvent).log();
@@ -185,7 +209,6 @@ class PaperChannelServiceImplTest {
                 () -> Assertions.assertNull(request.getRelatedRequestId()),
                 () -> Assertions.assertNull(request.getDiscoveredAddress())
         );
-        Mockito.verify(paperChannelUtils).resolveAddressSource(notificationInt.getIun(), 0);
         Mockito.verify(attachmentUtils).retrieveAttachments(any(),any(),eq(SendAttachmentMode.AAR_DOCUMENTS), eq(F24ResolutionMode.URL),any(),any());
         Mockito.verify(auditLogEvent).generateSuccess(Mockito.anyString(), any());
         Mockito.verify(auditLogEvent).log();
@@ -328,8 +351,10 @@ class PaperChannelServiceImplTest {
     }
 
     @ExtendWith(MockitoExtension.class)
-    @Test
-    void sendSimpleRegisteredLetter() {
+    @ParameterizedTest
+    @NullSource
+    @EnumSource(value = ReceiverAddressSourceTypeInt.class, names = {"MITTENTE", "ANPR", "REGISTRO_IMPRESE"})
+    void sendSimpleRegisteredLetter(ReceiverAddressSourceTypeInt source) {
         //GIVEN
         PhysicalAddressInt physicalAddressInt = PhysicalAddressInt.builder().address("via casa").fullname("full name").build();
 
@@ -342,16 +367,27 @@ class PaperChannelServiceImplTest {
         PnAuditLogEvent auditLogEvent = Mockito.mock(PnAuditLogEvent.class);
         Mockito.when(auditLogService.buildAuditLogEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.eq(PnAuditLogEventType.AUD_PD_EXECUTE), Mockito.anyString(), Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(auditLogEvent);
         Mockito.when(auditLogEvent.generateSuccess(any(), (Integer) any(), any())).thenReturn(auditLogEvent);
-        Mockito.when(paperChannelSendClient.send(Mockito.any(PaperChannelSendRequest.class))).thenReturn(new SendResponse());
+        SendResponse sendResponse = new SendResponse().amount(125);
+        Mockito.when(paperChannelSendClient.send(Mockito.any(PaperChannelSendRequest.class))).thenReturn(sendResponse);
+        Mockito.when(paperChannelUtils.addSendSimpleRegisteredLetterToTimeline(
+                notificationInt, physicalAddressInt, 0, sendResponse, "NR_SR", "req123",
+                List.of("replacedF24Url"), categorizedAttachmentsResult, source)).thenReturn("send-simple");
 
 
         Mockito.when(attachmentUtils.retrieveSendAttachmentMode(Mockito.any(), Mockito.any())).thenReturn(SendAttachmentMode.AAR_DOCUMENTS_PAYMENTS);
 
         // WHEN
-        paperChannelService.sendSimpleRegisteredLetter(notificationInt, 0, "req123", physicalAddressInt, "NR_SR", List.of("replacedF24Url"), categorizedAttachmentsResult);
+        String timelineId = paperChannelService.sendSimpleRegisteredLetter(
+                notificationInt, 0, "req123", physicalAddressInt, "NR_SR",
+                List.of("replacedF24Url"), categorizedAttachmentsResult, source);
 
         // THEN
         Mockito.verify(paperChannelSendClient).send(any());
+        Assertions.assertEquals("send-simple", timelineId);
+        Mockito.verify(paperChannelUtils).addSendSimpleRegisteredLetterToTimeline(
+                notificationInt, physicalAddressInt, 0, sendResponse, "NR_SR", "req123",
+                List.of("replacedF24Url"), categorizedAttachmentsResult, source);
+        Mockito.verify(paperChannelUtils, Mockito.never()).resolveAddressSource(anyString(), anyInt());
         Mockito.verify(auditLogEvent).generateSuccess(any(), (Integer) any(), any());
         Mockito.verify(auditLogEvent).log();
         Mockito.verify(auditLogEvent, Mockito.never()).generateFailure(any());
@@ -371,7 +407,7 @@ class PaperChannelServiceImplTest {
         Mockito.when(timelineUtils.checkIsNotificationViewed(Mockito.anyString(), Mockito.anyInt())).thenReturn(true);
 
         // WHEN
-        paperChannelService.sendSimpleRegisteredLetter(notificationInt, 0, "req123", physicalAddressInt, "NR_SR", List.of("replacedF24Url"), categorizedAttachmentsResult);
+        paperChannelService.sendSimpleRegisteredLetter(notificationInt, 0, "req123", physicalAddressInt, "NR_SR", List.of("replacedF24Url"), categorizedAttachmentsResult, ReceiverAddressSourceTypeInt.MITTENTE);
 
         // THEN
         Mockito.verify(paperChannelSendClient, Mockito.never()).send(any());
@@ -390,7 +426,7 @@ class PaperChannelServiceImplTest {
         Mockito.when(timelineUtils.checkIsNotificationCancellationRequested(Mockito.anyString())).thenReturn(true);
 
         // WHEN
-        paperChannelService.sendSimpleRegisteredLetter(notificationInt, 0, "req123", physicalAddressInt, "NR_SR", List.of("replacedF24Url"), categorizedAttachmentsResult);
+        paperChannelService.sendSimpleRegisteredLetter(notificationInt, 0, "req123", physicalAddressInt, "NR_SR", List.of("replacedF24Url"), categorizedAttachmentsResult, ReceiverAddressSourceTypeInt.MITTENTE);
 
         // THEN
         Mockito.verify(paperChannelSendClient, Mockito.never()).send(any());
@@ -414,11 +450,11 @@ class PaperChannelServiceImplTest {
         Mockito.when(paperChannelSendClient.send(Mockito.any(PaperChannelSendRequest.class))).thenReturn(new SendResponse());
 
         // WHEN
-        paperChannelService.sendSimpleRegisteredLetter(notificationInt, 0, "req123", physicalAddressInt, "NR_SR", List.of("replacedF24Url"), categorizedAttachmentsResult);
+        paperChannelService.sendSimpleRegisteredLetter(notificationInt, 0, "req123", physicalAddressInt, "NR_SR", List.of("replacedF24Url"), categorizedAttachmentsResult, ReceiverAddressSourceTypeInt.MITTENTE);
 
         // THEN
         Mockito.verify(paperChannelSendClient).send(any());
-        Mockito.verify(paperChannelUtils).addSendSimpleRegisteredLetterToTimeline(any(), any(), eq(0), any(), any(), eq("req123"), any(), any());
+        Mockito.verify(paperChannelUtils).addSendSimpleRegisteredLetterToTimeline(any(), any(), eq(0), any(), any(), eq("req123"), any(), any(), eq(ReceiverAddressSourceTypeInt.MITTENTE));
         Mockito.verify(auditLogEvent).generateSuccess(any(), (Integer) any(), any());
         Mockito.verify(auditLogEvent).log();
         Mockito.verify(timelineUtils, Mockito.never()).checkIsNotificationPaid(Mockito.anyString(), Mockito.anyInt());
@@ -557,7 +593,7 @@ class PaperChannelServiceImplTest {
         Mockito.when(attachmentUtils.retrieveSendAttachmentMode(Mockito.any(), Mockito.any())).thenReturn(SendAttachmentMode.AAR);
         
         // WHEN
-        paperChannelService.sendSimpleRegisteredLetter(notificationInt, 0, "req123", physicalAddressInt, "NR_SR", Collections.emptyList(), categorizedAttachmentsResult);
+        paperChannelService.sendSimpleRegisteredLetter(notificationInt, 0, "req123", physicalAddressInt, "NR_SR", Collections.emptyList(), categorizedAttachmentsResult, ReceiverAddressSourceTypeInt.MITTENTE);
 
         // THEN
         Mockito.verify(attachmentUtils).retrieveAttachments(any(), any(), eq(SendAttachmentMode.AAR), eq(F24ResolutionMode.RESOLVE_WITH_REPLACED_LIST), any(), any());
@@ -584,7 +620,7 @@ class PaperChannelServiceImplTest {
         Mockito.when(attachmentUtils.retrieveSendAttachmentMode(Mockito.any(), Mockito.any())).thenReturn(SendAttachmentMode.AAR_DOCUMENTS_PAYMENTS);
 
         // WHEN
-        paperChannelService.sendSimpleRegisteredLetter(notificationInt, 0, "req123", physicalAddressInt, "NR_SR", List.of("replacedF24Url"), categorizedAttachmentsResult);
+        paperChannelService.sendSimpleRegisteredLetter(notificationInt, 0, "req123", physicalAddressInt, "NR_SR", List.of("replacedF24Url"), categorizedAttachmentsResult, ReceiverAddressSourceTypeInt.MITTENTE);
 
         // THEN
         Mockito.verify(attachmentUtils).retrieveAttachments(any(), any(), eq(SendAttachmentMode.AAR_DOCUMENTS_PAYMENTS), eq(F24ResolutionMode.RESOLVE_WITH_REPLACED_LIST), any(), any());
@@ -612,7 +648,7 @@ class PaperChannelServiceImplTest {
         Mockito.when(attachmentUtils.retrieveSendAttachmentMode(Mockito.any(), Mockito.any())).thenReturn(SendAttachmentMode.AAR_DOCUMENTS_PAYMENTS);
 
         // WHEN
-        paperChannelService.sendSimpleRegisteredLetter(notificationInt, 0, "req123", physicalAddressInt, "NR_SR", List.of("replacedF24Url"), categorizedAttachmentsResult);
+        paperChannelService.sendSimpleRegisteredLetter(notificationInt, 0, "req123", physicalAddressInt, "NR_SR", List.of("replacedF24Url"), categorizedAttachmentsResult, ReceiverAddressSourceTypeInt.MITTENTE);
 
         // THEN
         Mockito.verify(attachmentUtils).retrieveAttachments(any(), any(), eq(SendAttachmentMode.AAR_DOCUMENTS_PAYMENTS), eq(F24ResolutionMode.RESOLVE_WITH_REPLACED_LIST), any(), any());

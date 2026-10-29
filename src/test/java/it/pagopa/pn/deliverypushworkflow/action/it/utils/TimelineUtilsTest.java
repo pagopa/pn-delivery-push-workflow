@@ -33,6 +33,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -214,8 +216,10 @@ class TimelineUtilsTest {
         );
     }
 
-    @Test
-    void buildSendSimpleRegisteredLetterTimelineElement() {
+    @ParameterizedTest
+    @NullSource
+    @EnumSource(value = ReceiverAddressSourceTypeInt.class, names = {"MITTENTE", "ANPR", "REGISTRO_IMPRESE"})
+    void buildSendSimpleRegisteredLetterTimelineElement(ReceiverAddressSourceTypeInt source) {
         Integer recIndex = 1;
         NotificationInt notification = buildNotification();
         PhysicalAddressInt address = buildPhysicalAddressInt();
@@ -225,13 +229,28 @@ class TimelineUtilsTest {
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = CategorizedAttachmentsResultInt.builder().acceptedAttachments(new ArrayList<>()).discardedAttachments(new ArrayList<>()).build();
 
         String productType = "RN_AR";
+        List<String> replacedF24Attachments = List.of("replaced-f24");
         String timelineEventIdExpected = "SEND_SIMPLE_REGISTERED_LETTER#IUN_Example_IUN_1234_Test#RECINDEX_1".replace("#", TimelineEventIdBuilder.DELIMITER);
 
-        TimelineElementInternal actual = timelineUtils.buildSendSimpleRegisteredLetterTimelineElement(recIndex, notification, address, sendResponse, productType, "request_id", null, categorizedAttachmentsResult);
+        TimelineElementInternal actual = timelineUtils.buildSendSimpleRegisteredLetterTimelineElement(
+                recIndex, notification, address, sendResponse, productType, "request_id", replacedF24Attachments,
+                categorizedAttachmentsResult, source);
+        SimpleRegisteredLetterDetailsInt details =
+                Assertions.assertInstanceOf(SimpleRegisteredLetterDetailsInt.class, actual.getDetails());
         Assertions.assertAll(
                 () -> Assertions.assertEquals("Example_IUN_1234_Test", actual.getIun()),
                 () -> Assertions.assertEquals(timelineEventIdExpected, actual.getElementId()),
-                () -> Assertions.assertEquals("TEST_PA_ID", actual.getPaId())
+                () -> Assertions.assertEquals("TEST_PA_ID", actual.getPaId()),
+                () -> Assertions.assertEquals(TimelineElementCategoryInt.SEND_SIMPLE_REGISTERED_LETTER, actual.getCategory()),
+                () -> Assertions.assertEquals(source, details.getReceiverAddressSourceType()),
+                () -> Assertions.assertEquals(recIndex, details.getRecIndex()),
+                () -> Assertions.assertEquals(address, details.getPhysicalAddress()),
+                () -> Assertions.assertEquals(address.getForeignState(), details.getForeignState()),
+                () -> Assertions.assertEquals(10, details.getAnalogCost()),
+                () -> Assertions.assertEquals(productType, details.getProductType()),
+                () -> Assertions.assertEquals("request_id", details.getPrepareRequestId()),
+                () -> Assertions.assertEquals(replacedF24Attachments, details.getF24Attachments()),
+                () -> Assertions.assertSame(categorizedAttachmentsResult, details.getCategorizedAttachmentsResult())
         );
     }
 
