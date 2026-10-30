@@ -484,6 +484,7 @@ Resources:
         ContainerEnvEntry31: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_ANALOGRESPONSEEVENTS=${AnalogToDeliveryPushQueueName}'
         ContainerEnvEntry32: !Sub 'PN_DELIVERYPUSHWORKFLOW_NOTIFICATIONCOSTSERVICEBASEURL=http://${ApplicationLoadBalancerDomain}:8080'
         ContainerEnvEntry33: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_RESUMEPOSTPAYMENT=${ResumePostPaymentQueueName}'
+        ContainerEnvEntry34: !Sub 'PN_DELIVERYPUSHWORKFLOW_TOPICS_NOTICEPAYMENT=${LegalPaymentsEventQueueName}'
         ApplicativeEnvFileChecksum: !Ref ApplicativeEnvFileChecksum
         ParentMicroserviceName: !Sub '${ProjectName}-delivery-push-workflow'
         JavaToolOptions: !Ref JavaToolOptions
