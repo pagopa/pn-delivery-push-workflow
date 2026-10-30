@@ -4,6 +4,7 @@ import it.pagopa.pn.deliverypushworkflow.action.details.NotificationReworkReques
 import it.pagopa.pn.deliverypushworkflow.action.utils.InstantNowSupplier;
 import it.pagopa.pn.deliverypushworkflow.action.utils.TimelineUtils;
 import it.pagopa.pn.deliverypushworkflow.dto.address.*;
+import it.pagopa.pn.deliverypushworkflow.dto.cost.NoticePaymentInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.datavault.RecipientTypeInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationDocumentInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
@@ -37,6 +38,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -94,6 +96,59 @@ class TimelineUtilsTest {
 
         actual.setTimestamp(expected.getTimestamp());// unico campo che sarà diverso, essendo istant.now
         Assertions.assertEquals(expected.toString(), actual.toString());
+    }
+
+    @Test
+    void buildNoticePaymentPaidTimelineElement() {
+        NotificationInt notification = NotificationInt.builder()
+                .iun("Example_IUN_1234_Test")
+                .sentAt(Instant.parse("2026-10-28T10:00:00Z"))
+                .sender(NotificationSenderInt.builder().paId("TEST_PA_ID").build())
+                .recipients(Collections.singletonList(NotificationRecipientInt.builder()
+                        .recipientType(RecipientTypeInt.PF)
+                        .build()))
+                .build();
+        NoticePaymentInt event = NoticePaymentInt.builder()
+                .recIndex(0)
+                .iuv("iuv")
+                .noticeCode("notice-code")
+                .creditorTaxId("tax-id")
+                .creditorCompanyName("company")
+                .paymentDateTime(Instant.parse("2026-10-28T12:30:00Z"))
+                .dueDate(Instant.parse("2026-10-28T23:00:00Z"))
+                .paymentSourceChannel("channel")
+                .amount(1000)
+                .fee("100")
+                .paymentId("payment-id")
+                .pagopaPersistedTimestamp(Instant.parse("2026-10-28T12:31:00Z"))
+                .pagopaPublishedTimestamp(Instant.parse("2026-10-28T12:32:00Z"))
+                .sendIngestionTimestamp(Instant.parse("2026-10-28T12:33:00Z"))
+                .build();
+
+        TimelineElementInternal actual = timelineUtils.buildNoticePaymentPaidTimelineElement(notification, event, "payment-event-id");
+        PaymentNoticePaidDetailsInt details = (PaymentNoticePaidDetailsInt) actual.getDetails();
+
+        Assertions.assertAll(
+                () -> Assertions.assertEquals("Example_IUN_1234_Test", actual.getIun()),
+                () -> Assertions.assertEquals("payment-event-id", actual.getElementId()),
+                () -> Assertions.assertEquals("TEST_PA_ID", actual.getPaId()),
+                () -> Assertions.assertEquals(TimelineElementCategoryInt.PAYMENT_NOTICE_PAID, actual.getCategory()),
+                () -> Assertions.assertEquals(0, details.getRecIndex()),
+                () -> Assertions.assertEquals("PF", details.getRecipientType()),
+                () -> Assertions.assertEquals("iuv", details.getIuv()),
+                () -> Assertions.assertEquals("notice-code", details.getNoticeCode()),
+                () -> Assertions.assertEquals("tax-id", details.getCreditorTaxId()),
+                () -> Assertions.assertEquals("company", details.getCompanyName()),
+                () -> Assertions.assertEquals(event.getPaymentDateTime(), details.getEventTimestamp()),
+                () -> Assertions.assertEquals(LocalDate.parse("2026-10-28"), details.getDueDate()),
+                () -> Assertions.assertEquals("channel", details.getPaymentSourceChannel()),
+                () -> Assertions.assertEquals(1000, details.getAmount()),
+                () -> Assertions.assertEquals(100, details.getFee()),
+                () -> Assertions.assertEquals("payment-id", details.getEventId()),
+                () -> Assertions.assertEquals(event.getPagopaPersistedTimestamp(), details.getPagopaPersistedTimestamp()),
+                () -> Assertions.assertEquals(event.getPagopaPublishedTimestamp(), details.getPagopaPublishedTimestamp()),
+                () -> Assertions.assertEquals(event.getSendIngestionTimestamp(), details.getSendIngestionTimestamp())
+        );
     }
 
     @Test

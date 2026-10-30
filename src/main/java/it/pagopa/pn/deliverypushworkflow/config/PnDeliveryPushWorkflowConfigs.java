@@ -133,6 +133,7 @@ public class PnDeliveryPushWorkflowConfigs {
         private String notificationReworkUpdaterEvent;
         private String analogResponseEvents;
         private String resumePostPayment;
+        private String noticePayment;
     }
 
     @Data
