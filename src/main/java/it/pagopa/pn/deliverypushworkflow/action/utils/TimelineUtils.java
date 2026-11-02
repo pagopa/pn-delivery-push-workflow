@@ -681,9 +681,17 @@ public class TimelineUtils {
         return buildTimeline(notification, TimelineElementCategoryInt.SEND_ANALOG_FEEDBACK, elementId, details, timelineBuilder);
     }
 
+    /**
+     * Verifica se è stato individuato un nuovo indirizzo.
+     *
+     * @param discoveredAddress indirizzo individuato, se presente
+     * @param sentAttemptMade numero del tentativo di invio
+     * @return {@code true} se l'indirizzo individuato è presente al tentativo 0, {@code false} se è assente,
+     *         oppure {@code null} per gli altri tentativi
+     */
     private Boolean hasDiscoveredAddress(PhysicalAddressInt discoveredAddress,
                                          int sentAttemptMade) {
-        return sentAttemptMade > 0 ? discoveredAddress != null : null;
+        return sentAttemptMade == 0 ? discoveredAddress != null : null;
     }
 
     private List<LegalFactsIdInt> getLegalFactsIdList(List<AttachmentDetailsInt> attachments) {

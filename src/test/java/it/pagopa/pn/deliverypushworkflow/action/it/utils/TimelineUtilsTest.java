@@ -507,7 +507,7 @@ class TimelineUtilsTest {
                 () -> Assertions.assertEquals("Example_IUN_1234_Test", actual.getIun()),
                 () -> Assertions.assertEquals(timelineEventIdExpected, actual.getElementId()),
                 () -> Assertions.assertEquals("TEST_PA_ID", actual.getPaId()),
-                () -> Assertions.assertEquals(Boolean.FALSE, details.getHasOnSiteInvestigation())
+                () -> Assertions.assertNull(details.getHasOnSiteInvestigation())
         );
     }
 
@@ -539,7 +539,7 @@ class TimelineUtilsTest {
                 () -> Assertions.assertEquals("Example_IUN_1234_Test", actual.getIun()),
                 () -> Assertions.assertEquals(timelineEventIdExpected, actual.getElementId()),
                 () -> Assertions.assertEquals("TEST_PA_ID", actual.getPaId()),
-                () -> Assertions.assertNull(((SendAnalogFeedbackDetailsInt) actual.getDetails()).getHasOnSiteInvestigation())
+                () -> Assertions.assertEquals(Boolean.FALSE, ((SendAnalogFeedbackDetailsInt) actual.getDetails()).getHasOnSiteInvestigation())
         );
     }
 
@@ -576,7 +576,7 @@ class TimelineUtilsTest {
                 () -> Assertions.assertEquals("TEST_PA_ID", actual.getPaId()),
                 () -> Assertions.assertNull(details.getNewAddress()),
                 () -> Assertions.assertEquals(1, details.getSentAttemptMade()),
-                () -> Assertions.assertEquals(Boolean.FALSE, details.getHasOnSiteInvestigation())
+                () -> Assertions.assertNull(details.getHasOnSiteInvestigation())
         );
     }
 
@@ -614,7 +614,7 @@ class TimelineUtilsTest {
                 () -> Assertions.assertEquals(timelineEventIdExpected, actual.getElementId()),
                 () -> Assertions.assertEquals("TEST_PA_ID", actual.getPaId()),
                 () -> Assertions.assertEquals(ResponseStatusInt.OK, details.getResponseStatus()),
-                () -> Assertions.assertEquals(Boolean.FALSE, details.getHasOnSiteInvestigation())
+                () -> Assertions.assertNull(details.getHasOnSiteInvestigation())
         );
     }
 
@@ -653,7 +653,7 @@ class TimelineUtilsTest {
                 () -> Assertions.assertEquals("TEST_PA_ID", actual.getPaId()),
                 () -> Assertions.assertEquals(ResponseStatusInt.OK, details.getResponseStatus()),
                 () -> Assertions.assertEquals(0, details.getSentAttemptMade()),
-                () -> Assertions.assertNull(details.getHasOnSiteInvestigation())
+                () -> Assertions.assertEquals(Boolean.FALSE, details.getHasOnSiteInvestigation())
         );
     }
 
@@ -693,7 +693,7 @@ class TimelineUtilsTest {
                 () -> Assertions.assertEquals(ResponseStatusInt.OK, details.getResponseStatus()),
                 () -> Assertions.assertNull(details.getNewAddress()),
                 () -> Assertions.assertEquals(1, details.getSentAttemptMade()),
-                () -> Assertions.assertEquals(Boolean.FALSE, details.getHasOnSiteInvestigation())
+                () -> Assertions.assertNull(details.getHasOnSiteInvestigation())
         );
     }
 
