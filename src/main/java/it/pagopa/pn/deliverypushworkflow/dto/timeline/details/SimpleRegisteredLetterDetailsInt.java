@@ -24,18 +24,20 @@ public class SimpleRegisteredLetterDetailsInt extends BaseRegisteredLetterDetail
     protected String prepareRequestId;
     private List<String> f24Attachments;
     private CategorizedAttachmentsResultInt categorizedAttachmentsResult;
+    private ReceiverAddressSourceTypeInt receiverAddressSourceType;
     private Integer vat;
 
     @Override
     public String toLog() {
         return String.format(
-                "recIndex=%d physicalAddress=%s analogCost=%d productType=%s prepareRequestId=%s f24Attachments=%s vat=%s",
+                "recIndex=%d physicalAddress=%s analogCost=%d productType=%s prepareRequestId=%s f24Attachments=%s receiverAddressSourceType=%s vat=%s",
                 recIndex,
                 AuditLogUtils.SENSITIVE,
                 analogCost,
                 productType,
                 prepareRequestId,
                 !CollectionUtils.isEmpty(f24Attachments) ? String.join(",", f24Attachments) : Collections.emptyList(),
+                receiverAddressSourceType,
                 vat
         );
     }

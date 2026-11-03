@@ -38,7 +38,7 @@ public class TimelineServiceMapper {
 
         return TimelineElementInternal.builder()
                 .reworkId(timelineElement.getReworkId())
-                .reworkRequestType(Objects.nonNull(timelineElement.getReworkRequestType()) ? ReworkRequestTypeEnum.valueOf(timelineElement.getReworkRequestType()) : null)
+                .reworkRequestType(Objects.nonNull(timelineElement.getReworkRequestType()) ? ReworkRequestTypeEnum.valueOf(timelineElement.getReworkRequestType().name()) : null)
                 .iun(timelineElement.getIun())
                 .elementId(timelineElement.getElementId())
                 .timestamp(timelineElement.getTimestamp())
@@ -71,7 +71,7 @@ public class TimelineServiceMapper {
                 .category(TimelineCategory.valueOf(timelineElementInternal.getCategory().name()))
                 .details(toTimelineElementDetails(timelineElementInternal.getDetails(), timelineElementInternal.getCategory().name()))
                 .reworkId(timelineElementInternal.getReworkId())
-                .reworkRequestType(Objects.nonNull(timelineElementInternal.getReworkRequestType()) ? timelineElementInternal.getReworkRequestType().name() : null)
+                .reworkRequestType(Objects.nonNull(timelineElementInternal.getReworkRequestType()) ? TimelineElement.ReworkRequestTypeEnum.valueOf(timelineElementInternal.getReworkRequestType().name()) : null)
                 .notificationSentAt(timelineElementInternal.getNotificationSentAt());
     }
 

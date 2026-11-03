@@ -8,6 +8,7 @@ import it.pagopa.pn.deliverypushworkflow.action.it.utils.NotificationRecipientTe
 import it.pagopa.pn.deliverypushworkflow.action.it.utils.NotificationTestBuilder;
 import it.pagopa.pn.deliverypushworkflow.dto.address.PhysicalAddressInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ReceiverAddressSourceTypeInt;
 import it.pagopa.pn.deliverypushworkflow.exceptions.PnPaperChannelChangedCostException;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.Problem;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.ProblemError;
@@ -17,6 +18,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.MediaType;
@@ -89,9 +93,11 @@ class PaperChannelSendClientImplTestIT extends MockAWSObjectsTest {
         );
     }
 
-    @Test
-    void prepareAR() {
-        String requestId = "requestId";
+    @ParameterizedTest
+    @NullSource
+    @EnumSource(ReceiverAddressSourceTypeInt.class)
+    void prepareAR(ReceiverAddressSourceTypeInt source) throws JsonProcessingException {
+        String requestId = "prepareAR_" + source;
         String path = "/paper-channel-private/v1/b2b/paper-deliveries-prepare/{requestId}"
                 .replace("{requestId}", requestId);
 
@@ -105,6 +111,7 @@ class PaperChannelSendClientImplTestIT extends MockAWSObjectsTest {
                 .notificationInt(NotificationTestBuilder.builder().build())
                 .attachments(List.of("Att"))
                 .aarWithRadd(false)
+                .receiverAddressSourceType(source)
                 .build();
 
         new MockServerClient("localhost", 9998)
@@ -121,6 +128,20 @@ class PaperChannelSendClientImplTestIT extends MockAWSObjectsTest {
                     client.prepare(paperChannelPrepareRequest);
                 }
         );
+        var requests = mockServer.retrieveRecordedRequests(
+                request().withMethod("POST").withPath(path));
+        Assertions.assertEquals(1, requests.length);
+        var body = new ObjectMapper().readTree(requests[0].getBodyAsString());
+        Assertions.assertAll(
+                () -> Assertions.assertEquals(requestId, body.path("requestId").asText()),
+                () -> Assertions.assertEquals("AR", body.path("proposalProductType").asText()),
+                () -> Assertions.assertEquals("test", body.path("receiverAddress").path("address").asText())
+        );
+        if (source == null) {
+            Assertions.assertFalse(body.has("receiverAddressSourceType"));
+        } else {
+            Assertions.assertEquals(source.getValue(), body.path("receiverAddressSourceType").asText());
+        }
     }
 
 

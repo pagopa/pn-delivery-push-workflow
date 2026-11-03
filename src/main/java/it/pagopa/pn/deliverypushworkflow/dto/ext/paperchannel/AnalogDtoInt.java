@@ -1,5 +1,6 @@
 package it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel;
 
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ReceiverAddressSourceTypeInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.SendResponse;
 import lombok.Builder;
 import lombok.Getter;
@@ -14,4 +15,6 @@ public class AnalogDtoInt {
     private String prepareRequestId;
     private String relatedRequestId;
     private int sentAttemptMade;
+    private ReceiverAddressSourceTypeInt receiverAddressSourceType;
+    private Boolean hasOnSiteInvestigation;
 }

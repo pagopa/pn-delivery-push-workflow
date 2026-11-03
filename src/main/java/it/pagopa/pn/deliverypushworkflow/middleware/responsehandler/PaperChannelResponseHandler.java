@@ -11,6 +11,7 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.CategorizedAttachm
 import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.PrepareEventInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.ResultFilterInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.paperchannel.SendEventInt;
+import it.pagopa.pn.deliverypushworkflow.dto.timeline.details.ReceiverAddressSourceTypeInt;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.paperchannel.model.*;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.paperchannel.PaperChannelSendClient;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer.handler.utils.HandleEventUtils;
@@ -172,7 +173,13 @@ public class PaperChannelResponseHandler {
                 .requestId(event.getRequestId())
                 .statusDateTime(event.getStatusDateTime())
                 .failureDetailCode(Optional.ofNullable(event.getFailureDetailCode()).map(FailureDetailCodeEnum::getValue).orElse(null))
-                .productType(event.getProductType());
+                .productType(event.getProductType())
+                .receiverAddressSourceType(
+                        event.getReceiverAddressSourceType() == null
+                                ? null
+                                : ReceiverAddressSourceTypeInt.valueOf(
+                                event.getReceiverAddressSourceType().getValue())
+                );
 
         if (event.getCategorizedAttachments() != null) {
             CategorizedAttachmentsResult rawCategorizedAttachments = event.getCategorizedAttachments();

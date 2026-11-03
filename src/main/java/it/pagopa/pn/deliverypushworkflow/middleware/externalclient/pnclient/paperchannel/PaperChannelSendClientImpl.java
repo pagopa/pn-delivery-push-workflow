@@ -56,7 +56,14 @@ public class PaperChannelSendClientImpl implements PaperChannelSendClient {
         prepareRequest.setRelatedRequestId(paperChannelPrepareRequest.getRelatedRequestId());
         prepareRequest.setDiscoveredAddress(mapInternalToExternal(paperChannelPrepareRequest.getDiscoveredAddress()));
         prepareRequest.setAarWithRadd(paperChannelPrepareRequest.getAarWithRadd());
-
+        prepareRequest.setReceiverAddressSourceType(
+                paperChannelPrepareRequest.getReceiverAddressSourceType() == null
+                        ? null
+                        : ReceiverAddressSourceTypeEnum.fromValue(
+                        paperChannelPrepareRequest
+                                .getReceiverAddressSourceType()
+                                .getValue())
+        );
         paperMessagesApi.sendPaperPrepareRequest(paperChannelPrepareRequest.getRequestId(), prepareRequest, CLIENT_ID);
 
         log.debug("[exit] prepare iun={}  address={} recipient={} requestId={} attachments={} relatedRequestId={} aarWithRadd={}",
