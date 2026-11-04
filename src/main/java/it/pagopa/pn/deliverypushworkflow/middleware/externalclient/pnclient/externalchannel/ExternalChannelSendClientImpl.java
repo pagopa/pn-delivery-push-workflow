@@ -15,6 +15,9 @@ import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalchan
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalchannel.api.DigitalLegalMessagesApi;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalchannel.model.DigitalCourtesyMailRequest;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalchannel.model.DigitalCourtesySmsRequest;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalchannel.model.DigitalCourtesyWhatsappRequest;
+import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalchannel.model.WhatsappTemplate;
+import it.pagopa.pn.deliverypushworkflow.dto.courtesy.WhatsappTemplateDescriptor;
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalchannel.model.DigitalNotificationRequest;
 import it.pagopa.pn.deliverypushworkflow.service.utils.FileUtils;
 import lombok.CustomLog;
@@ -71,6 +74,8 @@ public class ExternalChannelSendClientImpl implements ExternalChannelSendClient 
             sendNotificationEMAIL(timelineEventId, notificationInt, recipientInt, digitalAddress, aarKey, quickAccessToken, deliveryMode);
         } else if (digitalAddress.getType() == CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.SMS) {
             sendNotificationSMS(timelineEventId, notificationInt, digitalAddress, deliveryMode, recipientInt);
+        } else if (digitalAddress.getType() == CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.WHATSAPP) {
+            sendNotificationWHATSAPP(timelineEventId, notificationInt, digitalAddress, deliveryMode, recipientInt);
         } else {
             log.error("channel type not supported for iun={}", notificationInt.getIun());
             throw new PnInternalException("channel type not supported", ERROR_CODE_DELIVERYPUSH_CHANNELTYPENOTSUPPORTED);
@@ -200,6 +205,41 @@ public class ExternalChannelSendClientImpl implements ExternalChannelSendClient 
         }
     }
 
+
+    private void sendNotificationWHATSAPP(String requestId, NotificationInt notificationInt, DigitalAddressInt digitalAddress, DeliveryModeInt deliveryMode, NotificationRecipientInt recipientInt)
+    {
+        try {
+            log.logInvokingAsyncExternalService(CLIENT_NAME, COURTESY_NOTIFICATION_REQUEST + "[WHATSAPP]", requestId);
+
+            String descriptorJson;
+            if (deliveryMode == null || deliveryMode == DeliveryModeInt.ANALOG) {
+                descriptorJson = legalFactGenerator.generateNotificationAARForWhatsappAnalog(notificationInt, recipientInt);
+            } else {
+                descriptorJson = legalFactGenerator.generateNotificationAARForWhatsappDigital(notificationInt, recipientInt);
+            }
+            WhatsappTemplateDescriptor descriptor = WhatsappTemplateDescriptor.fromJson(descriptorJson);
+
+            DigitalCourtesyWhatsappRequest digitalNotificationRequest = new DigitalCourtesyWhatsappRequest();
+            digitalNotificationRequest.setChannel(DigitalCourtesyWhatsappRequest.ChannelEnum.WHATSAPP);
+            digitalNotificationRequest.setRequestId(requestId);
+            digitalNotificationRequest.setCorrelationId(requestId);
+            digitalNotificationRequest.setEventType(EVENT_TYPE_COURTESY);
+            digitalNotificationRequest.setQos(DigitalCourtesyWhatsappRequest.QosEnum.BATCH);
+            digitalNotificationRequest.setReceiverDigitalAddress(digitalAddress.getAddress());
+            digitalNotificationRequest.setClientRequestTimeStamp(OffsetDateTime.now(ZoneOffset.UTC));
+            digitalNotificationRequest.setMessageText(descriptor.getPreviewText());
+            digitalNotificationRequest.setWhatsappTemplate(new WhatsappTemplate()
+                    .name(descriptor.getTemplateName())
+                    .language(descriptor.getLanguage())
+                    .bodyParameters(descriptor.getBodyParameters())
+                    .buttonParameters(descriptor.getButtonParameters()));
+
+            digitalCourtesyMessagesApi.sendCourtesyWhatsappMessage(requestId, cfg.getExternalchannelCxId(), digitalNotificationRequest);
+
+        } catch (Exception e) {
+            throw new PnInternalException("error sending WHATSAPP notification", ERROR_CODE_DELIVERYPUSH_SENDWHATSAPPNOTIFICATIONFAILED, e);
+        }
+    }
 }
 
 

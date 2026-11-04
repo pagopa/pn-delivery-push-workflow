@@ -131,6 +131,7 @@ public class SendCourtesyMessageHandler {
         List<Integer> channelIntervals = switch (channel) {
             case EMAIL -> intervalsMinutes.getEmail();
             case SMS -> intervalsMinutes.getSms();
+            case WHATSAPP -> intervalsMinutes.getWhatsapp();
             case APPIO -> intervalsMinutes.getIo();
             case TPP -> intervalsMinutes.getTpp();
         };
@@ -271,7 +272,7 @@ public class SendCourtesyMessageHandler {
 
         CourtesySendOutcome outcome;
         switch (courtesyAddress.getType()) {
-            case EMAIL, SMS -> outcome = manageCourtesyMessage(notification, recIndex, courtesyAddress, deliveryMode);
+            case EMAIL, SMS, WHATSAPP -> outcome = manageCourtesyMessage(notification, recIndex, courtesyAddress, deliveryMode);
             case APPIO -> outcome = manageIOMessage(notification, recIndex, courtesyAddress, schedulingAnalogDate, deliveryMode);
             case TPP -> outcome = manageTPPMessage(notification, recIndex, courtesyAddress, deliveryMode, schedulingAnalogDate);
             default -> {
