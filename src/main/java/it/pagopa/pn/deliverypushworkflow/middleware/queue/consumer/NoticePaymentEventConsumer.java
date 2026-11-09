@@ -2,6 +2,7 @@ package it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer;
 
 import io.awspring.cloud.sqs.annotation.SqsListener;
 import it.pagopa.pn.api.dto.events.PnNoticePaymentPaidEvent;
+import it.pagopa.pn.commons.exceptions.PnInternalException;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.cost.NoticePaymentInt;
 import it.pagopa.pn.deliverypushworkflow.middleware.externalclient.pnclient.nationalregistries.NationalRegistriesClient;
@@ -16,6 +17,7 @@ import org.springframework.messaging.Message;
 
 import java.util.List;
 
+import static it.pagopa.pn.deliverypushworkflow.exceptions.PnDeliveryPushExceptionCodes.ERROR_CODE_DELIVERYPUSH_INVALIDEVENTCODE;
 import static it.pagopa.pn.deliverypushworkflow.middleware.queue.utils.ChannelUtils.setMdc;
 
 @Configuration
@@ -38,9 +40,10 @@ public class NoticePaymentEventConsumer {
             if (!validationErrors.isEmpty()) {
                 log.error("{} validationErrors={}", VALIDATION_ERROR, validationErrors);
                 log.logEndingProcess(PROCESS_NAME);
-                return;
+                throw new PnInternalException("Validation errors: " + validationErrors, ERROR_CODE_DELIVERYPUSH_INVALIDEVENTCODE);
             }
             NoticePaymentInt response = NoticePaymentMapper.messageToInternal(message.getPayload());
+            HandleEventUtils.addIunToMdc(response.getIun());
             noticePaymentEventHandler.handleResponse(response);
 
         } catch (Exception ex) {

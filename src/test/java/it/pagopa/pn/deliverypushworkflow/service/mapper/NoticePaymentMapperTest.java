@@ -2,9 +2,11 @@ package it.pagopa.pn.deliverypushworkflow.service.mapper;
 
 import it.pagopa.pn.api.dto.events.PnNoticePaymentPaidEvent;
 import it.pagopa.pn.deliverypushworkflow.dto.cost.NoticePaymentInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.CommunicationType;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -17,7 +19,7 @@ class NoticePaymentMapperTest {
         PnNoticePaymentPaidEvent paymentEvent = mock(PnNoticePaymentPaidEvent.class);
         PnNoticePaymentPaidEvent.Payload payload = mock(PnNoticePaymentPaidEvent.Payload.class);
         Instant paymentDateTime = Instant.parse("2026-10-29T10:00:00Z");
-        Instant dueDate = Instant.parse("2026-11-29T23:59:59Z");
+        LocalDate dueDate = LocalDate.from(Instant.parse("2026-10-29T10:00:00Z").atZone(java.time.ZoneId.systemDefault()));
         Instant persistedTimestamp = Instant.parse("2026-10-29T10:01:00Z");
         Instant publishedTimestamp = Instant.parse("2026-10-29T10:02:00Z");
         Instant ingestionTimestamp = Instant.parse("2026-10-29T10:03:00Z");
@@ -43,6 +45,7 @@ class NoticePaymentMapperTest {
         when(payload.getKafkaPartition()).thenReturn("partition");
         when(payload.getIun()).thenReturn("iun");
         when(payload.getRecIndex()).thenReturn(1);
+        when(payload.getCommunicationType()).thenReturn("LEGAL");
 
         NoticePaymentInt actual = NoticePaymentMapper.messageToInternal(paymentEvent);
 
@@ -67,6 +70,7 @@ class NoticePaymentMapperTest {
                 .kafkaPartition("partition")
                 .iun("iun")
                 .recIndex(1)
+                .communicationType(CommunicationType.LEGAL)
                 .build(), actual);
     }
 }

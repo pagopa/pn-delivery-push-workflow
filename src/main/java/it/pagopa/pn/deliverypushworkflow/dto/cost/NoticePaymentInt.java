@@ -1,9 +1,10 @@
 package it.pagopa.pn.deliverypushworkflow.dto.cost;
 
-import it.pagopa.pn.api.dto.events.CommunicationType;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.CommunicationType;
 import lombok.*;
 
 import java.time.Instant;
+import java.time.LocalDate;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,7 +20,7 @@ public class NoticePaymentInt {
     private String creditorTaxId;
     private String creditorCompanyName;
     private Instant paymentDateTime;
-    private Instant dueDate;
+    private LocalDate dueDate;
     private Integer totalNotice;
     private String paymentSourceChannel;
     private Integer amount;

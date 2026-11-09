@@ -2,6 +2,7 @@ package it.pagopa.pn.deliverypushworkflow.service.mapper;
 
 import it.pagopa.pn.api.dto.events.PnNoticePaymentPaidEvent;
 import it.pagopa.pn.deliverypushworkflow.dto.cost.NoticePaymentInt;
+import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.CommunicationType;
 
 public class NoticePaymentMapper {
 
@@ -29,7 +30,7 @@ public class NoticePaymentMapper {
                 .pagopaPublishedTimestamp(payload.getPagopaPublishedTimestamp())
                 .sendIngestionTimestamp(payload.getSendIngestionTimestamp())
                 .kafkaPartition(payload.getKafkaPartition())
-                .communicationType(payload.getCommunicationType())
+                .communicationType(CommunicationType.valueOf(payload.getCommunicationType()))
                 .iun(payload.getIun())
                 .recIndex(payload.getRecIndex())
                 .build();

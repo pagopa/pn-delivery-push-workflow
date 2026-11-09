@@ -1,6 +1,7 @@
 package it.pagopa.pn.deliverypushworkflow.middleware.queue.consumer;
 
 import it.pagopa.pn.api.dto.events.PnNoticePaymentPaidEvent;
+import it.pagopa.pn.commons.exceptions.PnInternalException;
 import it.pagopa.pn.deliverypushworkflow.config.PnDeliveryPushWorkflowConfigs;
 import it.pagopa.pn.deliverypushworkflow.dto.cost.NoticePaymentInt;
 import it.pagopa.pn.deliverypushworkflow.middleware.responsehandler.NoticePaymentEventHandler;
@@ -55,12 +56,12 @@ class NoticePaymentEventConsumerTest {
     }
 
     @Test
-    void doesNotHandleEventWhenValidationFails() {
+    void throwsErrorWhenValidationFails() {
         PnNoticePaymentPaidEvent event = noticePaymentEvent("iun-123", 1);
         when(validator.validate(event)).thenReturn(List.of("noticeCode is required"));
         Message<PnNoticePaymentPaidEvent> message = MessageBuilder.withPayload(event).build();
 
-        consumer.noticePaymentEventConsumer(message);
+        assertThrows(PnInternalException.class, () -> consumer.noticePaymentEventConsumer(message));
 
         verify(validator).validate(event);
         verify(noticePaymentEventHandler, never()).handleResponse(any(NoticePaymentInt.class));
@@ -87,6 +88,7 @@ class NoticePaymentEventConsumerTest {
         Mockito.lenient().when(event.getPayload()).thenReturn(payload);
         Mockito.lenient().when(payload.getIun()).thenReturn(iun);
         Mockito.lenient().when(payload.getRecIndex()).thenReturn(recIndex);
+        Mockito.lenient().when(payload.getCommunicationType()).thenReturn("LEGAL");
         return event;
     }
 }
