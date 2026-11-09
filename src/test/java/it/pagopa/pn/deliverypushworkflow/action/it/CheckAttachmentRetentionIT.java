@@ -14,7 +14,6 @@ import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.Notificat
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.NotificationRecipientInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notificationviewed.NotificationViewedInt;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.EventId;
-import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineElementInternal;
 import it.pagopa.pn.deliverypushworkflow.dto.timeline.TimelineEventId;
 import it.pagopa.pn.deliverypushworkflow.logtest.ConsoleAppenderCustom;
 import it.pagopa.pn.deliverypushworkflow.middleware.queue.producer.abstractions.actionspool.ActionType;
@@ -111,18 +110,16 @@ class CheckAttachmentRetentionIT extends CommonTestConfiguration {
         );
 
         //Si attende fino a che non scada il tempo di scheduling del check attachment
-        TimelineElementInternal aarCreationRequest = timelineService.getTimelineElement(iun, timelineId).get();
-        Instant dateToWait = aarCreationRequest.getTimestamp().plus(attachmentRetentionTimeAfterValidation.plus(Duration.ofSeconds(5)));
         await()
                 .atMost(200, TimeUnit.SECONDS)
-                .untilAsserted(() -> Assertions.assertTrue(Instant.now().isAfter(dateToWait)));
-
-        //Viene quindi verificato che il metodo di check attachment sia stato effettivamente richiamato ...
-        Mockito.verify(checkAttachmentRetentionHandler).handleCheckAttachmentRetentionBeforeExpiration(Mockito.eq(iun), Mockito.any(Instant.class));
-        //... ma che non abbia effettuato l'update della retention perchè la notifica è già perfezionata (per presa visione)
-        Mockito.verify(attachmentUtils, Mockito.times(1)).changeAttachmentsRetention(Mockito.eq(notification), Mockito.anyInt());
-        // ... e che lo scheduling del check sia dunque avvenuto una sola volta
-        Mockito.verify(schedulerService, Mockito.times(1)).scheduleEvent(Mockito.eq(iun), Mockito.any(Instant.class), Mockito.eq(ActionType.CHECK_ATTACHMENT_RETENTION));
+                .untilAsserted(() -> {
+                    Mockito.verify(checkAttachmentRetentionHandler)
+                            .handleCheckAttachmentRetentionBeforeExpiration(Mockito.eq(iun), Mockito.any(Instant.class));
+                    Mockito.verify(attachmentUtils, Mockito.times(1))
+                            .changeAttachmentsRetention(Mockito.eq(notification), Mockito.anyInt());
+                    Mockito.verify(schedulerService, Mockito.times(1))
+                            .scheduleEvent(Mockito.eq(iun), Mockito.any(Instant.class), Mockito.eq(ActionType.CHECK_ATTACHMENT_RETENTION));
+                });
 
         ConsoleAppenderCustom.checkLogs();
     }
@@ -183,28 +180,16 @@ class CheckAttachmentRetentionIT extends CommonTestConfiguration {
             Assertions.assertTrue(timelineService.getTimelineElement(iun, timelineId).isPresent());
         });
 
-        //Si attende fino a che non scada il tempo di scheduling del check attachment
-        String timelineId = TimelineEventId.AAR_CREATION_REQUEST.buildEventId(
-                EventId.builder()
-                        .iun(iun)
-                        .recIndex(0)
-                        .build()
-        );
-
-        await().untilAsserted(() -> {
-            TimelineElementInternal aarCreationRequest = timelineService.getTimelineElement(iun, timelineId)
-                    .orElseThrow(() -> new IllegalStateException("Elemento timeline non trovato"));
-            Instant dateToWait = aarCreationRequest.getTimestamp().plus(attachmentRetentionTimeAfterValidation.plus(Duration.ofSeconds(5)));
-            await()
-                    .atMost(200, TimeUnit.SECONDS)
-                    .untilAsserted(() -> Assertions.assertTrue(Instant.now().isAfter(dateToWait)));
-        });
-        //Viene quindi verificato che il metodo di check attachment sia stato effettivamente richiamato ...
-        Mockito.verify(checkAttachmentRetentionHandler).handleCheckAttachmentRetentionBeforeExpiration(Mockito.eq(iun), Mockito.any(Instant.class));
-        //... ma che non abbia effettuato l'update della retention perchè la notifica è già perfezionata (per presa visione)
-        Mockito.verify(attachmentUtils, Mockito.times(2)).changeAttachmentsRetention(Mockito.eq(notification), Mockito.anyInt());
-        //... e che lo scheduling del check retention sia avvenuto una seconda volta
-        Mockito.verify(schedulerService, Mockito.times(2)).scheduleEvent(Mockito.eq(iun), Mockito.any(Instant.class), Mockito.eq(ActionType.CHECK_ATTACHMENT_RETENTION));
+        await()
+                .atMost(200, TimeUnit.SECONDS)
+                .untilAsserted(() -> {
+                    Mockito.verify(checkAttachmentRetentionHandler)
+                            .handleCheckAttachmentRetentionBeforeExpiration(Mockito.eq(iun), Mockito.any(Instant.class));
+                    Mockito.verify(attachmentUtils, Mockito.times(2))
+                            .changeAttachmentsRetention(Mockito.eq(notification), Mockito.anyInt());
+                    Mockito.verify(schedulerService, Mockito.times(2))
+                            .scheduleEvent(Mockito.eq(iun), Mockito.any(Instant.class), Mockito.eq(ActionType.CHECK_ATTACHMENT_RETENTION));
+                });
 
         ConsoleAppenderCustom.checkLogs();
     }

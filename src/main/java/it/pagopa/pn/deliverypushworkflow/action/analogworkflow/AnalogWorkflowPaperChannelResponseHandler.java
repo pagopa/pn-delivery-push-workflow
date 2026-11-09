@@ -128,14 +128,14 @@ public class AnalogWorkflowPaperChannelResponseHandler {
         String productType = response.getProductType();
         List<String> replacedF24AttachmentUrls = response.getReplacedF24AttachmentUrls();
         CategorizedAttachmentsResultInt categorizedAttachmentsResult = response.getCategorizedAttachmentsResult();
-
+        ReceiverAddressSourceTypeInt receiverAddressSourceType = response.getReceiverAddressSourceType();
         // se era una prepare di un analog, procedo con la sendanalog, altrimenti con la send della simpleregistered
         if (timelineElementInternal.getDetails() instanceof BaseAnalogDetailsInt sendAnalogDetails){
             log.info("paperChannelPrepareResponseHandler prepare response is for analog, sending it iun={} requestId={} statusCode={} statusDesc={} statusDate={}", response.getIun(), response.getRequestId(), response.getStatusCode(), response.getStatusDetail(), response.getStatusDateTime());
             int sentAttemptMade = sendAnalogDetails.getSentAttemptMade();
 
             try {
-                String timelineId = this.paperChannelService.sendAnalogNotification(notification, recIndex, sentAttemptMade, requestId, receiverAddress, productType, replacedF24AttachmentUrls, categorizedAttachmentsResult);
+                String timelineId = this.paperChannelService.sendAnalogNotification(notification, recIndex, sentAttemptMade, requestId, receiverAddress, productType, replacedF24AttachmentUrls, categorizedAttachmentsResult, receiverAddressSourceType );
                 String auditlogmessage = timelineId==null?"nothing send":"generated timelineId="+timelineId;
                 auditLogEvent.generateSuccess(auditlogmessage).log();
             } catch (PnPaperChannelChangedCostException e) {
@@ -148,7 +148,16 @@ public class AnalogWorkflowPaperChannelResponseHandler {
             log.info("paperChannelPrepareResponseHandler prepare response is for simple registered letter, now registered letter can be sent iun={} requestId={} statusCode={} statusDesc={} statusDate={}", response.getIun(), response.getRequestId(), response.getStatusCode(), response.getStatusDetail(), response.getStatusDateTime());
 
             try {
-                String timelineId = this.paperChannelService.sendSimpleRegisteredLetter(notification, recIndex, requestId, receiverAddress, productType, replacedF24AttachmentUrls, categorizedAttachmentsResult);
+                String timelineId = this.paperChannelService.sendSimpleRegisteredLetter(
+                        notification,
+                        recIndex,
+                        requestId,
+                        receiverAddress,
+                        productType,
+                        replacedF24AttachmentUrls,
+                        categorizedAttachmentsResult,
+                        response.getReceiverAddressSourceType()
+                );
                 String auditlogmessage = timelineId==null?"nothing send":"generated timelineId="+timelineId;
                 auditLogEvent.generateSuccess(auditlogmessage).log();
             } catch (PnPaperChannelChangedCostException e) {

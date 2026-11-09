@@ -25,12 +25,14 @@ public class SendAnalogDetailsInt extends BaseAnalogDetailsInt implements Analog
     private String prepareRequestId;
     private List<String> f24Attachments;
     private CategorizedAttachmentsResultInt categorizedAttachmentsResult;
+    private ReceiverAddressSourceTypeInt receiverAddressSourceType;
+    private Boolean hasOnSiteInvestigation;
     private Integer vat;
     
     @Override
     public String toLog() {
         return String.format(
-                "recIndex=%d sentAttemptMade=%d relatedRequestId=%s physicalAddress=%s analogCost=%d productType=%s prepareRequestId=%s f24Attachments=%s, vat=%s",
+                "recIndex=%d sentAttemptMade=%d relatedRequestId=%s physicalAddress=%s analogCost=%d productType=%s prepareRequestId=%s f24Attachments=%s, receiverAddressSourceType=%s hasOnSiteInvestigation=%s ,vat=%s",
                 recIndex,
                 sentAttemptMade,
                 relatedRequestId,
@@ -39,6 +41,8 @@ public class SendAnalogDetailsInt extends BaseAnalogDetailsInt implements Analog
                 productType,
                 prepareRequestId,
                 !CollectionUtils.isEmpty(f24Attachments) ? String.join(",", f24Attachments) : Collections.emptyList(),
+                receiverAddressSourceType,
+                hasOnSiteInvestigation,
                 vat
         );
     }
