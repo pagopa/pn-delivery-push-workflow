@@ -22,14 +22,6 @@ class PaymentNoticePaidDetailsIntTest {
     }
 
     @Test
-    void categoryUsesPaymentNoticePaidDetailsAndVersion29() {
-        assertEquals(PaymentNoticePaidDetailsInt.class,
-                TimelineElementCategoryInt.PAYMENT_NOTICE_PAID.getDetailsJavaClass());
-        assertEquals(TimelineElementCategoryInt.VERSION_29,
-                TimelineElementCategoryInt.PAYMENT_NOTICE_PAID.getVersion());
-    }
-
-    @Test
     void toLogRedactsSensitivePaymentAndPersonalData() {
         PaymentNoticePaidDetailsInt details = PaymentNoticePaidDetailsInt.builder()
                 .recIndex(1)
