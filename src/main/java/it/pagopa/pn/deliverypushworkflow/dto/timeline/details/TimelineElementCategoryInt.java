@@ -47,7 +47,9 @@ public enum TimelineElementCategoryInt {
     ANALOG_FAILURE_WORKFLOW_TIMEOUT(AnalogFailureWorkflowTimeoutDetailsInt.class),
     NOTIFICATION_TIMELINE_REWORKED(NotificationTimelineReworkedDetailsInt.class),
     COURTESY_CHANNEL_FAILED(CourtesyChannelFailedDetailsInt.class),
-    PUBLIC_REGISTRY_VALIDATION_RESPONSE(PublicRegistryValidationResponseDetailsInt.class);
+    PUBLIC_REGISTRY_VALIDATION_RESPONSE(PublicRegistryValidationResponseDetailsInt.class),
+    PAYMENT_NOTICE_PAID(PaymentNoticePaidDetailsInt.class);
+
 
     private final Class<? extends TimelineElementDetailsInt> detailsJavaClass;
 
