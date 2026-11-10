@@ -1008,7 +1008,7 @@ Resources:
       EventPattern:
         detail-type: [ "NoticePaymentsPaidEvent" ]
         detail:
-            communicationType: "LEGAL"
+            communicationType: [ "LEGAL" ]
       Targets:
         - Id: !Sub '${ProjectName}-CoreEventBus-LegalPaymentsEvent'
           Arn: !Ref LegalPaymentsEventQueueARN
