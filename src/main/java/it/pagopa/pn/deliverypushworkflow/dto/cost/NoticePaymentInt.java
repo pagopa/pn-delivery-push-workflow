@@ -20,7 +20,7 @@ public class NoticePaymentInt {
     private String creditorTaxId;
     private String creditorCompanyName;
     private Instant paymentDateTime;
-    private Instant dueDate;
+    private LocalDate dueDate;
     private Integer totalNotice;
     private String paymentSourceChannel;
     private Integer amount;

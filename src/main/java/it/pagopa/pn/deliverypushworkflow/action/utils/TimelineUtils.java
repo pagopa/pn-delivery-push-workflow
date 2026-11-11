@@ -29,7 +29,6 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.*;
 
 import static it.pagopa.pn.deliverypushworkflow.dto.timeline.details.TimelineElementCategoryInt.PAYMENT;
@@ -1485,7 +1484,7 @@ public class TimelineUtils {
                 .creditorTaxId(event.getCreditorTaxId())
                 .companyName(event.getCreditorCompanyName())
                 .eventTimestamp(event.getPaymentDateTime())
-                .dueDate(event.getDueDate())
+                .dueDate(event.getDueDate().toString())
                 .paymentSourceChannel(event.getPaymentSourceChannel())
                 .amount(event.getAmount())
                 .fee(event.getFee() == null ? null : Integer.valueOf(event.getFee()))

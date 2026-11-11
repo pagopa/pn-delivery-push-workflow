@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -56,7 +55,7 @@ class NoticePaymentMapperTest {
                 .creditorTaxId("tax-id")
                 .creditorCompanyName("creditor")
                 .paymentDateTime(paymentDateTime)
-                .dueDate(dueDate.atStartOfDay().toInstant(ZoneOffset.UTC))
+                .dueDate(dueDate)
                 .totalNotice(2)
                 .paymentSourceChannel("channel")
                 .amount(1200)

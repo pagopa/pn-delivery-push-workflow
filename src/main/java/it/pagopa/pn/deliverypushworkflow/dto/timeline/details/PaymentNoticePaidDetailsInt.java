@@ -5,7 +5,6 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.time.Instant;
-import java.time.LocalDate;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,7 +21,7 @@ public class PaymentNoticePaidDetailsInt extends CategoryTypeTimelineElementDeta
     private String creditorTaxId;
     private String companyName;
     private Instant eventTimestamp;
-    private Instant dueDate;
+    private String dueDate;
     private String paymentSourceChannel;
     private Integer amount;
     private Integer fee;
