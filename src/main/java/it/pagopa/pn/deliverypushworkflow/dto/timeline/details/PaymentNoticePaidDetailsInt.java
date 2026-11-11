@@ -22,7 +22,7 @@ public class PaymentNoticePaidDetailsInt extends CategoryTypeTimelineElementDeta
     private String creditorTaxId;
     private String companyName;
     private Instant eventTimestamp;
-    private LocalDate dueDate;
+    private Instant dueDate;
     private String paymentSourceChannel;
     private Integer amount;
     private Integer fee;

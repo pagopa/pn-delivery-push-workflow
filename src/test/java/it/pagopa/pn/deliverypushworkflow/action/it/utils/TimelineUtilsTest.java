@@ -144,7 +144,7 @@ class TimelineUtilsTest {
                 () -> Assertions.assertEquals("tax-id", details.getCreditorTaxId()),
                 () -> Assertions.assertEquals("company", details.getCompanyName()),
                 () -> Assertions.assertEquals(event.getPaymentDateTime(), details.getEventTimestamp()),
-                () -> Assertions.assertEquals(LocalDate.parse("2026-10-28"), details.getDueDate()),
+                () -> Assertions.assertEquals(LocalDate.parse("2026-10-28").atStartOfDay().toInstant(java.time.ZoneOffset.UTC), details.getDueDate()),
                 () -> Assertions.assertEquals("channel", details.getPaymentSourceChannel()),
                 () -> Assertions.assertEquals(1000, details.getAmount()),
                 () -> Assertions.assertEquals(100, details.getFee()),

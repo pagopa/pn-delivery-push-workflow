@@ -8,8 +8,7 @@ public class NoticePaymentMapper {
 
     private NoticePaymentMapper(){}
 
-    public static NoticePaymentInt messageToInternal(PnNoticePaymentPaidEvent paymentEvent) {
-        PnNoticePaymentPaidEvent.Payload payload = paymentEvent.getPayload();
+    public static NoticePaymentInt messageToInternal(PnNoticePaymentPaidEvent.Payload payload) {
 
         return NoticePaymentInt.builder()
                 .modelType(payload.getModelType())

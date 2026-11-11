@@ -32,7 +32,7 @@ public class NoticePaymentEventConsumer {
     private final NoticePaymentEventHandler noticePaymentEventHandler;
 
     @SqsListener(queueNames = "#{@pnDeliveryPushWorkflowConfigs.topics.noticePayment}")
-    public void noticePaymentEventConsumer(Message<PnNoticePaymentPaidEvent> message) {
+    public void noticePaymentEventConsumer(Message<PnNoticePaymentPaidEvent.Payload> message) {
         setMdc(message);
         try {
             log.info("Handle message from {} with content {}", NationalRegistriesClient.CLIENT_NAME, message);

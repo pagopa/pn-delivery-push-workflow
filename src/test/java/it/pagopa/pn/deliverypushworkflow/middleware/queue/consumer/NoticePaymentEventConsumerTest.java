@@ -40,9 +40,9 @@ class NoticePaymentEventConsumerTest {
 
     @Test
     void consumesAndMapsNoticePaymentPaidEvent() {
-        PnNoticePaymentPaidEvent event = noticePaymentEvent("iun-123", 1);
+        PnNoticePaymentPaidEvent.Payload event = noticePaymentEvent("iun-123", 1);
         when(validator.validate(event)).thenReturn(List.of());
-        Message<PnNoticePaymentPaidEvent> message = MessageBuilder.withPayload(event)
+        Message<PnNoticePaymentPaidEvent.Payload> message = MessageBuilder.withPayload(event)
                 .setHeader("aws_messageId", "message-id")
                 .build();
 
@@ -57,9 +57,9 @@ class NoticePaymentEventConsumerTest {
 
     @Test
     void throwsErrorWhenValidationFails() {
-        PnNoticePaymentPaidEvent event = noticePaymentEvent("iun-123", 1);
+        PnNoticePaymentPaidEvent.Payload event = noticePaymentEvent("iun-123", 1);
         when(validator.validate(event)).thenReturn(List.of("noticeCode is required"));
-        Message<PnNoticePaymentPaidEvent> message = MessageBuilder.withPayload(event).build();
+        Message<PnNoticePaymentPaidEvent.Payload> message = MessageBuilder.withPayload(event).build();
 
         assertThrows(PnInternalException.class, () -> consumer.noticePaymentEventConsumer(message));
 
@@ -69,9 +69,9 @@ class NoticePaymentEventConsumerTest {
 
     @Test
     void propagatesHandlerFailure() {
-        PnNoticePaymentPaidEvent event = noticePaymentEvent("iun-123", 1);
+        PnNoticePaymentPaidEvent.Payload event = noticePaymentEvent("iun-123", 1);
         when(validator.validate(event)).thenReturn(List.of());
-        Message<PnNoticePaymentPaidEvent> message = MessageBuilder.withPayload(event).build();
+        Message<PnNoticePaymentPaidEvent.Payload> message = MessageBuilder.withPayload(event).build();
         RuntimeException failure = new RuntimeException("processing failed");
         doThrow(failure).when(noticePaymentEventHandler).handleResponse(any(NoticePaymentInt.class));
 
@@ -82,13 +82,11 @@ class NoticePaymentEventConsumerTest {
         verify(noticePaymentEventHandler).handleResponse(any(NoticePaymentInt.class));
     }
 
-    private PnNoticePaymentPaidEvent noticePaymentEvent(String iun, int recIndex) {
-        PnNoticePaymentPaidEvent event = org.mockito.Mockito.mock(PnNoticePaymentPaidEvent.class);
+    private PnNoticePaymentPaidEvent.Payload noticePaymentEvent(String iun, int recIndex) {
         PnNoticePaymentPaidEvent.Payload payload = org.mockito.Mockito.mock(PnNoticePaymentPaidEvent.Payload.class);
-        Mockito.lenient().when(event.getPayload()).thenReturn(payload);
         Mockito.lenient().when(payload.getIun()).thenReturn(iun);
         Mockito.lenient().when(payload.getRecIndex()).thenReturn(recIndex);
         Mockito.lenient().when(payload.getCommunicationType()).thenReturn("LEGAL");
-        return event;
+        return payload;
     }
 }
