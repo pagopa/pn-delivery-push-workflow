@@ -4,6 +4,8 @@ import it.pagopa.pn.api.dto.events.PnNoticePaymentPaidEvent;
 import it.pagopa.pn.deliverypushworkflow.dto.cost.NoticePaymentInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.CommunicationType;
 
+import java.time.ZoneOffset;
+
 public class NoticePaymentMapper {
 
     private NoticePaymentMapper(){}
@@ -18,7 +20,7 @@ public class NoticePaymentMapper {
                 .creditorTaxId(payload.getCreditorTaxId())
                 .creditorCompanyName(payload.getCreditorCompanyName())
                 .paymentDateTime(payload.getPaymentDateTime())
-                .dueDate(payload.getDueDate())
+                .dueDate(payload.getDueDate().atStartOfDay().toInstant(ZoneOffset.UTC))
                 .totalNotice(payload.getTotalNotice())
                 .paymentSourceChannel(payload.getPaymentSourceChannel())
                 .amount(payload.getAmount())

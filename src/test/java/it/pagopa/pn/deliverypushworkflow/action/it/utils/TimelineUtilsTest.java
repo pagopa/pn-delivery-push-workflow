@@ -119,7 +119,7 @@ class TimelineUtilsTest {
                 .creditorTaxId("tax-id")
                 .creditorCompanyName("company")
                 .paymentDateTime(Instant.parse("2026-10-28T12:30:00Z"))
-                .dueDate(LocalDate.parse("2026-10-28"))
+                .dueDate(Instant.parse("2026-10-28T00:00:00Z"))
                 .paymentSourceChannel("channel")
                 .amount(1000)
                 .fee("100")
