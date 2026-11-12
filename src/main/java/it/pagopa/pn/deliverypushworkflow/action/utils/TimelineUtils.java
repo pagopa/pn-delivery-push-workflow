@@ -1484,7 +1484,7 @@ public class TimelineUtils {
                 .creditorTaxId(event.getCreditorTaxId())
                 .companyName(event.getCreditorCompanyName())
                 .eventTimestamp(event.getPaymentDateTime())
-                .dueDate(event.getDueDate())
+                .dueDate(event.getDueDate().toString())
                 .paymentSourceChannel(event.getPaymentSourceChannel())
                 .amount(event.getAmount())
                 .fee(event.getFee() == null ? null : Integer.valueOf(event.getFee()))

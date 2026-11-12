@@ -16,7 +16,6 @@ class NoticePaymentMapperTest {
 
     @Test
     void mapsAllNoticePaymentFields() {
-        PnNoticePaymentPaidEvent paymentEvent = mock(PnNoticePaymentPaidEvent.class);
         PnNoticePaymentPaidEvent.Payload payload = mock(PnNoticePaymentPaidEvent.Payload.class);
         Instant paymentDateTime = Instant.parse("2026-10-29T10:00:00Z");
         LocalDate dueDate = LocalDate.from(Instant.parse("2026-10-29T10:00:00Z").atZone(java.time.ZoneId.systemDefault()));
@@ -24,7 +23,6 @@ class NoticePaymentMapperTest {
         Instant publishedTimestamp = Instant.parse("2026-10-29T10:02:00Z");
         Instant ingestionTimestamp = Instant.parse("2026-10-29T10:03:00Z");
 
-        when(paymentEvent.getPayload()).thenReturn(payload);
         when(payload.getModelType()).thenReturn("model");
         when(payload.getIuv()).thenReturn("iuv");
         when(payload.getIur()).thenReturn("iur");
@@ -47,7 +45,7 @@ class NoticePaymentMapperTest {
         when(payload.getRecIndex()).thenReturn(1);
         when(payload.getCommunicationType()).thenReturn("LEGAL");
 
-        NoticePaymentInt actual = NoticePaymentMapper.messageToInternal(paymentEvent);
+        NoticePaymentInt actual = NoticePaymentMapper.messageToInternal(payload);
 
         assertEquals(NoticePaymentInt.builder()
                 .modelType("model")

@@ -10,8 +10,7 @@ import java.util.List;
 @Component
 public class NoticePaymentPaidEventValidator {
 
-    public List<String> validate(PnNoticePaymentPaidEvent event) {
-        PnNoticePaymentPaidEvent.Payload payload = event.getPayload();
+    public List<String> validate(PnNoticePaymentPaidEvent.Payload payload) {
         List<String> errors = new ArrayList<>();
         if (payload == null) {
             errors.add("payload is required");

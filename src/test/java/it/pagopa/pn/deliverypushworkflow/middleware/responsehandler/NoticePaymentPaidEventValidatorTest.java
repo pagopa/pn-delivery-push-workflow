@@ -15,22 +15,21 @@ class NoticePaymentPaidEventValidatorTest {
 
     @Test
     void returnsNoErrorsWhenRequiredFieldsAreValid() {
-        PnNoticePaymentPaidEvent event = noticePaymentEvent("iun-123", 0, "notice-code", "tax-id");
+        PnNoticePaymentPaidEvent.Payload event = noticePaymentEvent("iun-123", 0, "notice-code", "tax-id");
 
         assertEquals(List.of(), validator.validate(event));
     }
 
     @Test
     void reportsMissingPayload() {
-        PnNoticePaymentPaidEvent event = mock(PnNoticePaymentPaidEvent.class);
-        when(event.getPayload()).thenReturn(null);
+        PnNoticePaymentPaidEvent.Payload event = null;
 
         assertEquals(List.of("payload is required"), validator.validate(event));
     }
 
     @Test
     void reportsMissingRequiredFields() {
-        PnNoticePaymentPaidEvent event = noticePaymentEvent(null, null, "  ", null);
+        PnNoticePaymentPaidEvent.Payload event = noticePaymentEvent(null, null, "  ", null);
 
         assertEquals(List.of(
                 "iun is required",
@@ -42,20 +41,18 @@ class NoticePaymentPaidEventValidatorTest {
 
     @Test
     void reportsNegativeRecIndex() {
-        PnNoticePaymentPaidEvent event = noticePaymentEvent("iun-123", -1, "notice-code", "tax-id");
+        PnNoticePaymentPaidEvent.Payload event = noticePaymentEvent("iun-123", -1, "notice-code", "tax-id");
 
         assertEquals(List.of("recIndex must be non-negative"), validator.validate(event));
     }
 
-    private PnNoticePaymentPaidEvent noticePaymentEvent(
+    private PnNoticePaymentPaidEvent.Payload noticePaymentEvent(
             String iun, Integer recIndex, String noticeCode, String creditorTaxId) {
-        PnNoticePaymentPaidEvent event = mock(PnNoticePaymentPaidEvent.class);
         PnNoticePaymentPaidEvent.Payload payload = mock(PnNoticePaymentPaidEvent.Payload.class);
-        when(event.getPayload()).thenReturn(payload);
         when(payload.getIun()).thenReturn(iun);
         when(payload.getRecIndex()).thenReturn(recIndex);
         when(payload.getNoticeCode()).thenReturn(noticeCode);
         when(payload.getCreditorTaxId()).thenReturn(creditorTaxId);
-        return event;
+        return payload;
     }
 }

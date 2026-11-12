@@ -4,12 +4,12 @@ import it.pagopa.pn.api.dto.events.PnNoticePaymentPaidEvent;
 import it.pagopa.pn.deliverypushworkflow.dto.cost.NoticePaymentInt;
 import it.pagopa.pn.deliverypushworkflow.dto.ext.delivery.notification.CommunicationType;
 
+
 public class NoticePaymentMapper {
 
     private NoticePaymentMapper(){}
 
-    public static NoticePaymentInt messageToInternal(PnNoticePaymentPaidEvent paymentEvent) {
-        PnNoticePaymentPaidEvent.Payload payload = paymentEvent.getPayload();
+    public static NoticePaymentInt messageToInternal(PnNoticePaymentPaidEvent.Payload payload) {
 
         return NoticePaymentInt.builder()
                 .modelType(payload.getModelType())
