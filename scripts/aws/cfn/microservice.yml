@@ -662,8 +662,19 @@ Resources:
             Period: !Ref AutoscalingCheckPeriod
             Stat: Average
           ReturnData: False
+        - Id: m7
+          MetricStat:
+            Metric:
+              Dimensions:
+                - Name: QueueName
+                  Value: !Ref "LegalPaymentsEventQueueName"
+              Namespace: "AWS/SQS"
+              MetricName: "ApproximateNumberOfMessagesVisible"
+            Period: !Ref AutoscalingCheckPeriod
+            Stat: Average
+          ReturnData: False
         - Id: code
-          Expression: !Sub "IF(m5==0, 101, (100*(m1+m2+m3+m4+m6)) / (${ConsumedQueueMessagePerMinuteWorkflow} * m5) )"
+          Expression: !Sub "IF(m5==0, 101, (100*(m1+m2+m3+m4+m6+m7)) / (${ConsumedQueueMessagePerMinuteWorkflow} * m5) )"
           Label: !Sub "${ProjectName}-delivery-push-workflow-service-queue-custom-metric"
           ReturnData: False
         - Id: e1
