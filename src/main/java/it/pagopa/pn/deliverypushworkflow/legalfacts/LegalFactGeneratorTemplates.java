@@ -392,6 +392,32 @@ public class LegalFactGeneratorTemplates implements LegalFactGenerator {
     }
 
     /**
+     * Generates the WhatsApp template descriptor for the courtesy message of an analog notification.
+     * The template parameters are the same as the SMS ones, the template itself is separate
+     * (NotificationAARForWhatsAppAnalog in pn-templates-engine, approved on Meta).
+     */
+    @Override
+    public String generateNotificationAARForWhatsappAnalog(NotificationInt notification, NotificationRecipientInt recipientInt) {
+        log.info("retrieve NotificationAARForWhatsappAnalog template for iun {}", notification.getIun());
+        NotificationAarForSmsAnalog parameters = notificationAarForSmsAnalog(notification, recipientInt);
+        LanguageEnum language = getLanguage(notification.getAdditionalLanguages());
+        return templatesClient.notificationAarForWhatsappAnalog(language, parameters);
+    }
+
+    /**
+     * Generates the WhatsApp template descriptor for the courtesy message of a digital notification.
+     * The template parameters are the same as the SMS ones, the template itself is separate
+     * (NotificationAARForWhatsAppDigital in pn-templates-engine, approved on Meta).
+     */
+    @Override
+    public String generateNotificationAARForWhatsappDigital(NotificationInt notification, NotificationRecipientInt recipientInt) {
+        log.info("retrieve NotificationAARForWhatsappDigital template for iun {}", notification.getIun());
+        NotificationAarForSmsDigital parameters = notificationAarForSmsDigital(notification, recipientInt);
+        LanguageEnum language = getLanguage(notification.getAdditionalLanguages());
+        return templatesClient.notificationAarForWhatsappDigital(language, parameters);
+    }
+
+    /**
      * Generates a Base64-encoded QR code image for quick access, using the provided recipient and access token.
      *
      * @param recipient the {@link NotificationRecipientInt} object representing the recipient of the notification,

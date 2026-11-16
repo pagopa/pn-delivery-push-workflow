@@ -200,6 +200,32 @@ class CourtesyMessageUtilsTest {
     }
 
     @Test
+    void dispatchFreezesWhatsappAddress() {
+        //GIVEN
+        NotificationRecipientInt recipient = getNotificationRecipientInt();
+        NotificationInt notification = getNotificationInt(recipient);
+
+        Mockito.when(notificationUtils.getRecipientFromIndex(Mockito.any(NotificationInt.class), Mockito.anyInt())).thenReturn(recipient);
+        Mockito.when(addressBookService.getCourtesyAddress(Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(List.of(courtesyAddress(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.WHATSAPP)));
+
+        //WHEN
+        courtesyMessageUtils.scheduleCourtesyMessagesActions(notification, 0, DeliveryModeInt.ANALOG);
+
+        //THEN - il numero WhatsApp viene "congelato" come quello SMS, così i retry usano il valore al momento della pianificazione
+        Mockito.verify(confidentialInformationService).savePlannedCourtesyAddress(recipient.getInternalId(), notification.getIun(), 0,
+                CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.WHATSAPP, "indirizzo@test.it");
+        ArgumentCaptor<SendCourtesyMessageActionDetails> detailsCaptor = ArgumentCaptor.forClass(SendCourtesyMessageActionDetails.class);
+        Mockito.verify(schedulerService).scheduleEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.any(Instant.class),
+                Mockito.eq(ActionType.SEND_COURTESY_MESSAGE_ACTION), detailsCaptor.capture());
+        assertThat(detailsCaptor.getValue().getPlannedAddressId()).isEqualTo("COURTESY_PLANNED#" + notification.getIun() + "#0#WHATSAPP");
+        assertThat(detailsCaptor.getValue().getPlannedChannels()).containsExactly(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.WHATSAPP);
+        // con almeno un canale pianificato, l'analogico non parte subito
+        Mockito.verify(schedulerService, never()).scheduleEvent(Mockito.anyString(), Mockito.anyInt(), Mockito.any(Instant.class),
+                Mockito.eq(ActionType.ANALOG_WORKFLOW));
+    }
+
+    @Test
     void dispatchSchedulesWithoutPlannedAddressIdWhenFreezeFails() {
         //GIVEN
         NotificationRecipientInt recipient = getNotificationRecipientInt();

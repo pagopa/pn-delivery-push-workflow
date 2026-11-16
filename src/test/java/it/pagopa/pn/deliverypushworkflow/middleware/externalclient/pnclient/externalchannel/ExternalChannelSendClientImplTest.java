@@ -15,6 +15,7 @@ import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalchan
 import it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalchannel.api.DigitalLegalMessagesApi;
 import it.pagopa.pn.deliverypushworkflow.legalfacts.LegalFactGenerator;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -140,6 +141,57 @@ class ExternalChannelSendClientImplTest {
         assertDoesNotThrow(() -> client.sendCourtesyNotification(notificationInt, notificationRecipientInt, courtesyDigitalAddressInt, timelineEventId, aarKey, "", null));
         Mockito.verify(legalFactGenerator, Mockito.atLeastOnce())
                 .generateNotificationAARForSMSAnalog(notificationInt, notificationRecipientInt);
+    }
+
+    @ParameterizedTest
+    @ExtendWith(SpringExtension.class)
+    @EnumSource(value = DeliveryModeInt.class, names = {"ANALOG", "DIGITAL"})
+    void sendCourtesyNotificationWhatsapp(DeliveryModeInt deliveryMode) {
+        NotificationInt notificationInt = buildNotification();
+        NotificationRecipientInt notificationRecipientInt = buildNotificationRecipientInt();
+        CourtesyDigitalAddressInt courtesyDigitalAddressInt = CourtesyDigitalAddressInt.builder()
+                .address("+393331234567")
+                .type(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.WHATSAPP)
+                .build();
+        String descriptor = "{\"templateName\":\"send_avviso_notifica_digitale\",\"language\":\"it\","
+                + "\"bodyParameters\":[\"Ente\",\"IUN\"],\"previewText\":\"Hai ricevuto una notifica SEND\"}";
+        Mockito.when(legalFactGenerator.generateNotificationAARForWhatsappAnalog(notificationInt, notificationRecipientInt)).thenReturn(descriptor);
+        Mockito.when(legalFactGenerator.generateNotificationAARForWhatsappDigital(notificationInt, notificationRecipientInt)).thenReturn(descriptor);
+
+        assertDoesNotThrow(() -> client.sendCourtesyNotification(notificationInt, notificationRecipientInt, courtesyDigitalAddressInt, "002", "testKey", "", deliveryMode));
+
+        Mockito.verify(legalFactGenerator, Mockito.times(deliveryMode == DeliveryModeInt.ANALOG ? 1 : 0))
+                .generateNotificationAARForWhatsappAnalog(notificationInt, notificationRecipientInt);
+        Mockito.verify(legalFactGenerator, Mockito.times(deliveryMode == DeliveryModeInt.DIGITAL ? 1 : 0))
+                .generateNotificationAARForWhatsappDigital(notificationInt, notificationRecipientInt);
+        Mockito.verify(legalFactGenerator, Mockito.never()).generateNotificationAARForSMSAnalog(Mockito.any(), Mockito.any());
+        Mockito.verify(legalFactGenerator, Mockito.never()).generateNotificationAARForSMSDigital(Mockito.any(), Mockito.any());
+
+        org.mockito.ArgumentCaptor<it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalchannel.model.DigitalCourtesyWhatsappRequest> captor =
+                org.mockito.ArgumentCaptor.forClass(it.pagopa.pn.deliverypushworkflow.generated.openapi.msclient.externalchannel.model.DigitalCourtesyWhatsappRequest.class);
+        Mockito.verify(digitalCourtesyMessagesApi).sendCourtesyWhatsappMessage(Mockito.eq("002"), Mockito.any(), captor.capture());
+        var request = captor.getValue();
+        org.junit.jupiter.api.Assertions.assertEquals("+393331234567", request.getReceiverDigitalAddress());
+        org.junit.jupiter.api.Assertions.assertEquals("send_avviso_notifica_digitale", request.getWhatsappTemplate().getName());
+        org.junit.jupiter.api.Assertions.assertEquals(java.util.List.of("Ente", "IUN"), request.getWhatsappTemplate().getBodyParameters());
+        org.junit.jupiter.api.Assertions.assertEquals("Hai ricevuto una notifica SEND", request.getMessageText());
+        org.junit.jupiter.api.Assertions.assertEquals("COURTESY", request.getEventType());
+    }
+
+    @Test
+    @ExtendWith(SpringExtension.class)
+    void sendCourtesyNotificationWhatsappInvalidDescriptor() {
+        NotificationInt notificationInt = buildNotification();
+        NotificationRecipientInt notificationRecipientInt = buildNotificationRecipientInt();
+        CourtesyDigitalAddressInt courtesyDigitalAddressInt = CourtesyDigitalAddressInt.builder()
+                .address("+393331234567")
+                .type(CourtesyDigitalAddressInt.COURTESY_DIGITAL_ADDRESS_TYPE_INT.WHATSAPP)
+                .build();
+        Mockito.when(legalFactGenerator.generateNotificationAARForWhatsappDigital(notificationInt, notificationRecipientInt)).thenReturn("not a json");
+
+        org.junit.jupiter.api.Assertions.assertThrows(it.pagopa.pn.commons.exceptions.PnInternalException.class,
+                () -> client.sendCourtesyNotification(notificationInt, notificationRecipientInt, courtesyDigitalAddressInt, "003", "testKey", "", DeliveryModeInt.DIGITAL));
+        Mockito.verify(digitalCourtesyMessagesApi, Mockito.never()).sendCourtesyWhatsappMessage(Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @ParameterizedTest

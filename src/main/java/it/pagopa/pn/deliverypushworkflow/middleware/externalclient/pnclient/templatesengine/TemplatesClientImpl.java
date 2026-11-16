@@ -115,6 +115,16 @@ public class TemplatesClientImpl implements TemplatesClient {
         return templateEngineClient.notificationAarForSmsDigital(xLanguage, notificationAarForSms);
     }
 
+    @Override
+    public String notificationAarForWhatsappAnalog(LanguageEnum xLanguage, NotificationAarForSmsAnalog notificationAarForWhatsapp) {
+        return templateEngineClient.notificationAarForWhatsappAnalog(xLanguage, notificationAarForWhatsapp);
+    }
+
+    @Override
+    public String notificationAarForWhatsappDigital(LanguageEnum xLanguage, NotificationAarForSmsDigital notificationAarForWhatsapp) {
+        return templateEngineClient.notificationAarForWhatsappDigital(xLanguage, notificationAarForWhatsapp);
+    }
+
     /**
      * Generates an AAR for email for an analog notification in the specified language.
      *

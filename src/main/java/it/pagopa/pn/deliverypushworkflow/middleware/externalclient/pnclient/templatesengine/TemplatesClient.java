@@ -106,6 +106,26 @@ public interface TemplatesClient {
     String notificationAarForSmsDigital(LanguageEnum xLanguage, NotificationAarForSmsDigital notificationAarForSms);
 
     /**
+     * Generates the WhatsApp template descriptor (templateName, language, bodyParameters, previewText)
+     * for the courtesy message of an analog notification.
+     *
+     * @param xLanguage The language for the template.
+     * @param notificationAarForWhatsapp The parameters of the template (same model as the SMS one).
+     * @return the JSON descriptor of the WhatsApp template.
+     */
+    String notificationAarForWhatsappAnalog(LanguageEnum xLanguage, NotificationAarForSmsAnalog notificationAarForWhatsapp);
+
+    /**
+     * Generates the WhatsApp template descriptor (templateName, language, bodyParameters, previewText)
+     * for the courtesy message of a digital notification.
+     *
+     * @param xLanguage The language for the template.
+     * @param notificationAarForWhatsapp The parameters of the template (same model as the SMS one).
+     * @return the JSON descriptor of the WhatsApp template.
+     */
+    String notificationAarForWhatsappDigital(LanguageEnum xLanguage, NotificationAarForSmsDigital notificationAarForWhatsapp);
+
+    /**
      * Generates an AAR (Accountability and Receipt) for email for an analog notification in the specified language.
      *
      * @param xLanguage The language for the legal fact.

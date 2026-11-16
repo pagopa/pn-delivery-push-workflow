@@ -134,6 +134,22 @@ public interface LegalFactGenerator {
     String generateNotificationAARForSMSDigital(NotificationInt notification, NotificationRecipientInt recipientInt);
 
     /**
+     * Generates the WhatsApp template descriptor (JSON) of the courtesy message for an analog notification.
+     *
+     * @param notification the notification object containing details about the notification.
+     * @return a {@link String} with the JSON descriptor (templateName, language, bodyParameters, previewText).
+     */
+    String generateNotificationAARForWhatsappAnalog(NotificationInt notification, NotificationRecipientInt recipientInt);
+
+    /**
+     * Generates the WhatsApp template descriptor (JSON) of the courtesy message for a digital notification.
+     *
+     * @param notification the notification object containing details about the notification.
+     * @return a {@link String} with the JSON descriptor (templateName, language, bodyParameters, previewText).
+     */
+    String generateNotificationAARForWhatsappDigital(NotificationInt notification, NotificationRecipientInt recipientInt);
+
+    /**
      * Generates a PDF based on AnalogDeliveryWorkflowTimeoutLegalFact template.
      *
      * @param notification the notification object containing details about the notification.
